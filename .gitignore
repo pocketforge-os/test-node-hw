@@ -1,0 +1,21 @@
+# KiCad
+*-backups/
+*.kicad_sch-bak
+*.kicad_pcb-bak
+*.kicad_prl
+_autosave-*
+*.000
+*.bak
+fp-info-cache
+*.lck
+# KiCad ERC/DRC scratch
+*.rpt
+# OS / editor
+.DS_Store
+Thumbs.db
+*~
+.vscode/
+# Fabrication outputs (regenerated from source; don't track unless a release)
+/fab/
+/gerbers/
+*.zip
