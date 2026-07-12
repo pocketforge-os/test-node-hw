@@ -33,7 +33,6 @@ uv run --with easyeda2kicad easyeda2kicad --full --lcsc_id=<Cxxxxxx> --output li
 | INA226 (telemetry) | on LCSC — get the C# |
 | TL431 (OVP ref) | jellybean-ish; LCSC C# |
 | ESP32-S3-WROOM-1-N16R8 | on LCSC — get the C# (module footprint) |
-| AQY-series PhotoMOS (button) | on LCSC — get the C# |
 | Molex Micro-Fit 3.0 5-ckt (power) | LCSC C# or KiCad `Connector_Molex` lib |
 | JST-GH 1.25 8-pin (signal) | LCSC C# or KiCad `Connector_JST` lib |
 | microSD push-push socket | LCSC C# |
