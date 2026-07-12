@@ -4,9 +4,11 @@ Open-hardware KiCad sources for the **PocketForge per-device test-node board** (
 
 One PCB, one SKU, one per device under test: an **ESP32-S3** node + an **LTC3649 programmable "virtual
 battery"** (2.5–4.4 V, ~3 A, DAC-set) + an **integrated microSD mux** (hands-free host↔device SD swap) +
-a **12 V LED-strip switch** + a **power-button PhotoMOS** + a **FEL/USB-boot strap** + the **standard
+a **12 V LED-strip switch** + a **FEL/USB-boot strap** + the **standard
 Micro-Fit / JST-GH / SD-flex** interface. It permanently replaces the battery in a handheld and gives a
-host full remote control, running 24/7 for years across a ~40-node fleet.
+host full remote control, running 24/7 for years across a ~40-node fleet. (Cold-device power-on is done
+by cutting/restoring the emulated cell + the device VBUS — a VBUS low→high edge boots the SoC; there is
+no power-button actuator, that design is permanently abandoned — `tsp-bcx.24`.)
 
 Design intent: **2-layer, ~60 × 90 mm, JLCPCB-assembled, open hardware** (OSHW gear on the silk; repo goes
 public at release).

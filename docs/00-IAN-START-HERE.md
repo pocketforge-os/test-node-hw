@@ -2,13 +2,13 @@
 
 Welcome Ian. This repo holds the KiCad sources for **one open-hardware board** — a per-device automated
 test fixture that replaces the battery in a handheld game console and gives a host full remote control of
-it (programmable "virtual battery" voltage, hands-free microSD swap, power-button press, 12 V light-strip,
-and USB-boot recovery). One PCB, one SKU, meant to run **24/7 for years** across a ~40-node fleet, so
+it (programmable "virtual battery" voltage, hands-free microSD swap, cold-device power-on by cutting/
+restoring the cell + VBUS, 12 V light-strip, and USB-boot recovery). One PCB, one SKU, meant to run **24/7 for years** across a ~40-node fleet, so
 protection + thermal reliability are first-class. Target: **~2-layer, ~60 × 90 mm, JLCPCB-assembled.**
 
 ## What to read, in order
 1. **`01-design-brief.md`** — the complete spec: power tree, the LTC3649 virtual-battery buck, the ESP32-S3
-   node + GPIO map, the integrated microSD mux, the 12 V LED switch, the power-button PhotoMOS, the FEL
+   node + GPIO map, the integrated microSD mux, the 12 V LED switch, the FEL
    strap, and all connectors. **This is the master reference.**
 2. **`02-netlist-wiring-guide.md`** — every net → pin (the connectivity source-of-truth for the schematic).
 3. **`03-BOM.md`** — the parts + MPNs. The buck is decided (**LTC3649**); the protection/aux MPNs are being

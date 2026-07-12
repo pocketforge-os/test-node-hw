@@ -25,7 +25,7 @@ Net names to use verbatim. `*` = value/MPN Friday-gated. Power rails: `+12V`, `+
 ## B. Rails / regulators
 | net | pins | notes |
 |---|---|---|
-| +5V | MP1584.SW→L→out, servo header.+ | 12→5 V buck (aux/servo) |
+| +5V | MP1584.SW→L→out | 12→5 V buck (general-purpose aux rail; DNP if unused) |
 | +3V3 | BUCK33.out, ESP32.3V3, (SD ICs if shared) | 12(or5)→3.3 V BUCK, NOT an LDO |
 | +3V3_SD | (optional separate 3.3 V for the SD reader/mux) | quiet SD rail |
 | GND | all grounds; single-point star at C_cell | — |
@@ -42,7 +42,6 @@ Net names to use verbatim. `*` = value/MPN Friday-gated. Power rails: `+12V`, `+
 | MUX_IN2 | ESP32 → TS3A27518E.IN2 | 2nd select bit (or tie per truth table) |
 | MUX_EN | ESP32 → TS3A27518E.EN | mux enable / power-disable |
 | LED_GATE | ESP32 → AO3400A.G (100 Ω series, 10 k pulldown) | PWM, OFF at boot |
-| BTN_DRV | ESP32 → PhotoMOS LED (series R) | press = drive on |
 | INA_ALERT | INA226.ALERT → ESP32 (optional) | fast OV/OC flag |
 | CARD_DETECT | microSD socket CD switch → ESP32 | card present sense |
 
@@ -63,12 +62,13 @@ Each SD line (CLK, CMD, DAT0, DAT1, DAT2, DAT3) is one mux channel with 3 taps:
 
 ## F. Connectors
 - **Micro-Fit 3.0 5-pin (POWER):** 1=B+(BPLUS) · 2=B-(GND) · 3=NTC(10k→B-) · 4=AUX_SENSE · 5=ID_SEL
-- **JST-GH 1.25 8-pin (SIGNAL):** 1=UART_TX · 2=UART_RX · 3=GND · 4=BTN_A · 5=BTN_B · 6=I2C_SDA · 7=I2C_SCL · 8=GND
+- **JST-GH 1.25 8-pin (SIGNAL):** 1=UART_TX · 2=UART_RX · 3=GND · 4=RSVD · 5=RSVD · 6=I2C_SDA · 7=I2C_SCL · 8=GND  (pins 4–5 were the abandoned power-button pads BTN_A/BTN_B — now spare, `tsp-bcx.24`)
 - **SD-extender FLEX (per-variant):** SD_CLK_D, SD_CMD_D, SD_D0_D..D3_D, GND (+ card 3.3 V if needed)
 - **Barrel DC-005:** center=+12V_RAW, sleeve=GND
 - **USB (to host):** USB_DM, USB_DP, VBUS(n/c or sense), GND
 
 ## Off-board / firmware
 - MCP4728 ch-A = DAC_REF (buck reference). INA226 across the 10 mΩ shunt (BPLUS/CELLP).
-- EN_BUCK, SINK_EN, FEL_STRAP, MUX_*, LED_GATE, BTN_DRV = ESP32 GPIO. CARD_DETECT, INA_ALERT = inputs.
-- FEL strap + power-button + UART leave via the GH signal connector / per-device pigtail.
+- EN_BUCK, SINK_EN, FEL_STRAP, MUX_*, LED_GATE = ESP32 GPIO. CARD_DETECT, INA_ALERT = inputs.
+- FEL strap + UART leave via the GH signal connector / per-device pigtail. (There is no
+  power-button net — power-on is done by cutting/restoring the cell + VBUS; `tsp-bcx.24`.)

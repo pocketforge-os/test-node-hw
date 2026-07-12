@@ -2,7 +2,7 @@
 
 > Paste this whole brief into flux's Copilot as the design spec, then work block-by-block
 > (see `04-block-by-block-prompts.md`). This is the COMPLETE integrated board — power stage
-> + ESP32 controller + integrated microSD mux + 12 V switch + power-button presser + FEL
+> + ESP32 controller + integrated microSD mux + 12 V switch + FEL
 > strap + connectors. Assume you (the AI) are doing the full design: pick real in-stock
 > parts (give MPNs), place them, and wire every net. If you can't find a part, say so —
 > do NOT silently substitute. Use the exact net names in the "NET LIST" section.
@@ -15,9 +15,11 @@ A single open-hardware PCB — **one per device under test, ONE SKU** — that i
 of an automated firmware test rig. It permanently **replaces the LiPo battery** in a handheld
 game console (and other single-cell devices) and gives a remote host full control of the
 device: it powers the device with a **firmware-programmable "virtual battery" voltage**, can
-**swap the device's microSD card between a host writer and the device** without a human, can
-**press the power button**, drive a **12 V LED light strip**, and force the SoC's **USB-boot
-(FEL) recovery mode**. An on-board **ESP32-S3** is the local controller; the host talks to it
+**swap the device's microSD card between a host writer and the device** without a human, drive
+a **12 V LED light strip**, and force the SoC's **USB-boot (FEL) recovery mode**. Cold-device
+power-on is done by **cutting and restoring the emulated cell + the device VBUS** (a low→high
+VBUS edge boots the SoC) — never by pressing the power button. An on-board **ESP32-S3** is the
+local controller; the host talks to it
 over **USB (CDC serial)**. The board is meant to run **24/7 for years** across a ~40-node
 fleet, so reliability and protection are first-class.
 
@@ -34,7 +36,7 @@ gear logo** on the silkscreen.
   **12 V-rail TVS (~15–20 V standoff, NOT a 5 V part)** + bulk cap right at the input.
 - **12 V rail** feeds: the LED-strip switch, and the two step-down regulators below. **12 V must
   NEVER reach any analog signal pin or the cell node except through the buck.**
-- **5 V rail:** a **MP1584EN**-class buck (12 V→5 V) — a servo/aux rail (bulk cap for inrush).
+- **5 V rail:** a **MP1584EN**-class buck (12 V→5 V) — a general-purpose aux rail (bulk cap for inrush; DNP if unused).
 - **3.3 V rail:** a **buck (NOT an LDO** — an LDO dropping 12→3.3 V at SD-write current
   overheats). 3.3 V powers the **ESP32-S3** and the **microSD reader + mux**. Prefer giving the
   SD reader its own quiet 3.3 V and the ESP32 a clean feed; star-ground the analog section.
@@ -82,8 +84,8 @@ slow outer trim loop on the INA226 reading.
 - Module: **ESP32-S3-WROOM-1-N16R8** (16 MB flash / 8 MB PSRAM; PCB-antenna module,
   castellated, hand-solderable). It talks to the host over **native USB-CDC** (GPIO19/20).
 - **Duties:** I²C master to the DAC + INA226; GPIO drives the buck ENABLE, the FEL-strap, the
-  SD-mux select, the LED-strip FET, the power-button photoMOS; UART to the device's console.
-- **GPIO / I²C budget (~14 lines):**
+  SD-mux select, the LED-strip FET; UART to the device's console.
+- **GPIO / I²C budget (~13 lines):**
   | function | net(s) | count |
   |---|---|---|
   | I²C (DAC + INA226) | I2C_SDA, I2C_SCL | 2 |
@@ -93,7 +95,6 @@ slow outer trim loop on the INA226 reading.
   | FEL-strap assert (default NORMAL-BOOT unpowered) | FEL_STRAP | 1 |
   | SD-mux select | MUX_SEL (IN1), MUX_EN, [IN2] | 2–3 |
   | LED-strip FET gate (PWM) | LED_GATE | 1 |
-  | power-button photoMOS drive | BTN_DRV | 1 |
   | INA226 ALERT (optional) | INA_ALERT | 0–1 |
   - **Avoid strapping pins GPIO0/3/45/46** for must-be-defined-at-boot outputs; add external
     pulls so EN_BUCK, FEL_STRAP, LED_GATE, and the mux lines sit at SAFE levels at power-on
@@ -134,12 +135,24 @@ device boots from it).
   drain→strip return, strip+→12 V. Gate from `LED_GATE` GPIO via **100 Ω series + 10 kΩ
   pulldown** (defined-OFF at boot). PWM-capable. Resistive strip → no flyback diode needed.
 
-## 6. SUBSYSTEM E — POWER-BUTTON PRESSER
+## 6. SUBSYSTEM E — POWER-ON = HARNESS RELAYS (no button presser)
 
-- A **bidirectional MOSFET-output PhotoMOS relay** (Panasonic AQY PhotoMOS family) across the
-  device's power-button **PADS** (nets BTN_A / BTN_B on the signal connector): polarity-
-  agnostic, low Ron, galvanically isolated. Driven by `BTN_DRV` GPIO (LED side, with series R).
-  (Do NOT use a PC817 phototransistor — it's polarity-fragile and a real button is non-polar.)
+There is **no power-button presser** on this board — the whole idea (a soldered switch, an
+ESP32 GPIO, a PhotoMOS across the button pads, or any mechanical presser) is **permanently
+abandoned** (owner-directed 2026-07-12, bead `tsp-bcx.24`): the device power-button pads are
+un-solderable and a mechanical presser will never be pursued.
+
+Cold-device **power-on is done by cutting and restoring power**, exactly like inserting the
+battery and plugging in the charger by hand:
+
+1. Unplug the device **AC/VBUS** (its charge/data port).
+2. Power off gracefully if the OS is reachable; otherwise **cut the emulated cell** (disable
+   the virtual-battery buck / drop CELLP to 0 V — SUBSYSTEM A).
+3. Wait, then **restore the cell** (re-enable the buck to the target Vcell).
+4. **Restore AC/VBUS** — the VBUS low→high edge powers the SoC on.
+
+Keep the device's PMIC hardware power button as a normal **OS input event** (`axp2202-pek`);
+that is a real device feature, not something this board actuates.
 
 ## 7. SUBSYSTEM F — FEL / USB-BOOT STRAP
 
@@ -160,7 +173,8 @@ pigtail + an SD-flex, never a respin. Board-side boundaries:
   4. **AUX-SENSE** (Kelvin remote-sense return; forms the sense pair with B+)
   5. **ID/SEL** (device-ID / sense-select strap)
 - **SIGNAL — JST-GH 1.25, 8-pin** (keyed + latched):
-  1 UART_TX · 2 UART_RX · 3 GND · 4 BTN_A · 5 BTN_B · 6 I2C_SDA · 7 I2C_SCL · 8 GND
+  1 UART_TX · 2 UART_RX · 3 GND · 4 RSVD · 5 RSVD · 6 I2C_SDA · 7 I2C_SCL · 8 GND
+  (pins 4–5 were the abandoned power-button pads BTN_A/BTN_B — now spare/reserved, `tsp-bcx.24`)
 - **SD — an SD-extender FLEX** header from the mux DUT-side to the device microSD slot (short).
 - **BOARD INPUT — the 12 V barrel** (shared, not per-variant).
 - **Conventions:** connectors at the board EDGE, key-notch toward the edge, strain relief, a

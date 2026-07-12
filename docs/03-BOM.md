@@ -10,11 +10,10 @@ then upload that part's datasheet and have it re-verify pins. Prefer JLCPCB Basi
 | Setpoint DAC | MCP4728 | Microchip MCP4728-E/UN | 12-bit quad I²C DAC, internal Vref → buck REF |
 | Telemetry | INA226 | TI INA226AIDGSR | bidirectional V/I, 10 mΩ shunt, I²C, has ALERT |
 | OVP reference | TL431 | TL431 (adjustable, tight tol) | own 2.5 V ref; sets ~4.6 V trip via divider |
-| 5 V buck | MP1584EN | MPS MP1584EN | 12→5 V aux/servo rail |
+| 5 V buck | MP1584EN | MPS MP1584EN | 12→5 V general-purpose aux rail (DNP if unused) |
 | LED switch FET | AO3400A | AOS AO3400A (C20917) | SOT-23 logic-level N-FET, JLC Basic |
 | USB SD reader | GL823K-HCY04 | Genesys GL823K-HCY04 (LCSC C284879) | SSOP-16, hand-solderable |
 | SD analog mux | TS3A27518E | TI TS3A27518EPWR (C443721) | 6-ch bidir switch, ~50 MHz SI ceiling |
-| Power button | Panasonic AQY PhotoMOS | e.g. AQY212 / AQY282 family | bidirectional MOSFET-output photorelay |
 | Power connector | Molex Micro-Fit 3.0, 5-circuit | Molex 43045 / 43025 family | keyed + latched, ~5 A/ckt |
 | Signal connector | JST-GH 1.25, 8-pin | JST GH SM08B-GHS / BM08B-GHS | keyed + LATCHED |
 | Barrel jack | DC-005 2.1 mm | ≥3 A, center-positive | consider a locking/higher-current jack |
@@ -53,7 +52,7 @@ crowbar reliably clears the fuse and survives. `⚠` = a real compromise, see th
 ## Still TBD (jellybean / from KiCad stock libs, or confirm C# when Ian places them)
 - **Buck inductor** for the LTC3649 (size with tsp-bcx.9/M1 current; ~2.2–4.7 µH, ≥4 A sat).
 - microSD push-push socket (w/ card-detect); MP1584 5 V buck; MCP4728 DAC; INA226; TL431; ESP32-S3-WROOM-1;
-  AQY PhotoMOS; Micro-Fit 5-ckt; JST-GH 8-pin; DC-005 barrel; USB connector; ESD/TVS on the USB + SD-flex
+  Micro-Fit 5-ckt; JST-GH 8-pin; DC-005 barrel; USB connector; ESD/TVS on the USB + SD-flex
   lines; the SD-mux series-termination resistors; the 10 mΩ INA226 shunt; the 10 k NTC-fake.
 
 ## Design reminders (for schematic capture)
