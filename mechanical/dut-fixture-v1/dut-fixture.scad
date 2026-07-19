@@ -587,5 +587,7 @@ if (PART == "plate") {
     joiner();
 } else {
     fixture_plate();
-    if (SHOW_COMPONENTS) component_preview();
+    // OpenSCAD's background modifier keeps positioning/service ghosts visible
+    // in the editor while excluding the entire subtree from render and export.
+    if (SHOW_COMPONENTS) %component_preview();
 }

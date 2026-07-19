@@ -4,7 +4,8 @@ PYTHON ?= python3
 BUILD := build
 SOURCE := dut-fixture.scad
 
-.PHONY: all validate validate-overlap-guard validate-service-guard preview split clean
+.PHONY: all validate validate-overlap-guard validate-service-guard \
+	validate-preview-export preview split clean
 
 all: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/fit-coupon.stl
 
@@ -16,6 +17,9 @@ $(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) | $(BUILD)
 
 $(BUILD)/fit-coupon.stl: $(SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
+
+$(BUILD)/preview-export.stl: $(SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
 $(BUILD)/plate-lower.stl: $(SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_lower"' -D 'SHOW_COMPONENTS=false' $<
@@ -60,7 +64,13 @@ validate-service-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'service_keepout_guard=pass pair=webcam_below_service_vs_mosfet'
 
-validate: all split validate-overlap-guard validate-service-guard
+validate-preview-export: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/preview-export.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--equivalent-to $(BUILD)/pocketforge-dut-fixture-v1.stl \
+		$(BUILD)/preview-export.stl
+	@echo 'preview_export_guard=pass ghosts=excluded'
+
+validate: all split validate-overlap-guard validate-service-guard validate-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/pocketforge-dut-fixture-v1.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 250 --max-y 210 $(BUILD)/fit-coupon.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/plate-lower.stl
