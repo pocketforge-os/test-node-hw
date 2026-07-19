@@ -122,7 +122,7 @@ windows if that reading is wrong—nothing in the reusable hook changes.
   the J profile; no support.
 - Start at 0.30–0.40 mm layers for the 0.8 mm nozzle, 4 perimeters, 5 top/bottom
   layers, and 20–30% gyroid. Use the slicer's preview to verify the 1.2 mm-deep
-  anti-rotation channels and 0.8 mm raised labels survive the selected layer
+  anti-rotation channels and 1.2 mm raised labels survive the selected layer
   height.
 - The large central aperture is intentional: it saves material, improves
   airflow, keeps the open PCB/wiring untouched, and permits rear service.

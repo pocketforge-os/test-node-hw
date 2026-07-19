@@ -143,12 +143,14 @@ hook_keyway_depth = 1.2;
 hook_adjustment = 8.0;
 
 // ---- Raised labels, sized for the owner's 0.8 mm nozzle ------------------
-label_height = 0.8;
-label_stroke_growth = 0.35;
-title_box_size = [142, 18];
+// The generous stroke expansion and three-layer-at-0.4-mm emboss keep letter
+// stems from disappearing when the slicer quantizes fine font geometry.
+label_height = 1.2;
+label_stroke_growth = 0.55;
+title_box_size = [158, 20];
 title_box_centre = [plate_size.x / 2, 177];
-title_font_size = 9.0;
-orientation_font_size = 5.5;
+title_font_size = 10.5;
+orientation_font_size = 6.5;
 
 // ---- Design assertions ----------------------------------------------------
 assert(plate_size.x <= printable_bed.x && plate_size.y <= printable_bed.y,
