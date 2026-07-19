@@ -37,7 +37,8 @@ make validate      # production, coupon, split halves, joiner, and bed-bound che
 ```
 
 Pull requests touching `*.scad` run the repository-wide equivalent through the
-`OpenSCAD lint` GitHub check, parsing and evaluating every OpenSCAD source before merge.
+`OpenSCAD lint` GitHub check, parsing and evaluating every OpenSCAD source before merge. The wrapper
+explicitly rejects `ERROR:` diagnostics even when OpenSCAD incorrectly returns a zero process status.
 
 Generated files live under `build/` and are intentionally not committed. The production STL is
 `build/pocketforge-dut-fixture-v1.stl`.
@@ -51,7 +52,7 @@ more machinery than determinism here.
 - Production plate: **200 × 250 × 3.2 mm** in the source. Rotate it 90° in the slicer; the resulting
   250 × 200 mm bed footprint uses the MK3S long axis exactly and retains 5 mm nominal side margin.
   Prefer the split build if the slicer or printer profile reserves additional end clearance.
-- Exact CAD volume is about **157.9 cm³** before slicer compensation (roughly 196 g of PLA or 201 g
+- Exact CAD volume is about **158.2 cm³** before slicer compensation (roughly 196 g of PLA or 201 g
   of PETG if sliced effectively solid); the slicer's estimate remains authoritative.
 - Print flat with standoffs upward; no support material.
 - PLA is fine for layout verification. PETG is preferred for the final lab fixture because standoffs
@@ -68,7 +69,8 @@ more machinery than determinism here.
   two tie lands. The powered hub faces a machine-enforced 30 mm in-plate cable bay; the lower hub faces
   the bottom edge, where its cables continue into unbounded space beyond the fixture.
 - The ESP32 is oriented with its 18.5 mm short edge toward the bottom of the plate. A centred 10 mm
-  USB-C corridor reserves 20 mm below that edge while leaving its corner tie slots usable.
+  USB-C corridor reserves 20 mm below that edge. Four compact 3 × 2.2 mm tie slots sit on the two
+  short edges—two flanking USB-C and two mirrored on the opposite edge.
 
 The plate can also be exported along the empty horizontal corridor as 200 × 152.5 mm lower and
 200 × 97.5 mm upper sections. Both fit the MK3S without rotation:
@@ -78,8 +80,8 @@ make split
 ```
 
 Print `plate-lower.stl`, `plate-upper.stl`, and three copies of `joiner.stl`. Join from below at the
-three paired-hole locations using M3 × 10 screws, washers, and nuts. The one-piece plate retains these
-holes as general-purpose fixture/cable-management points.
+three paired-hole locations using M3 × 10 screws, washers, and nuts. Those six joiner holes exist only
+in the split exports; the one-piece plate remains solid across the seam.
 
 ## Measurement translation
 
@@ -100,7 +102,7 @@ centre spacing = far-edge spacing - hole diameter
 | Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes | Envelope measured; exact hole offsets provisional |
 | MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
 | Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
-| ESP32 | 23.67 × 18.5 mm; short-edge USB-C; zip-tie retention | Envelope measured; tie positions interpreted from sketch |
+| ESP32 | 23.67 × 18.5 mm; short-edge USB-C; four 3 × 2.2 mm short-edge tie slots | Envelope measured; tie positions interpreted from sketch |
 | Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends; one 30 mm long-side service zone | Measured |
 | Unpowered USB hub | 105 × 24 mm; long-side connectors face off-plate | Explicitly allowed estimate; parameterized |
 | 4040 frame anchors | Eight 12 × 5.5 mm rounded slots | Tunable; verify actual heavy-duty tie in coupon |

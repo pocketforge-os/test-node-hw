@@ -5,6 +5,7 @@ on:
     paths:
       - "**/*.scad"
       - "scripts/lint-openscad.sh"
+      - "scripts/test-lint-openscad.sh"
       - "mechanical/dut-fixture-v1/Makefile"
       - ".github/workflows/openscad-lint.yml"
 
@@ -32,6 +33,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes openscad xvfb
+
+      - name: Reject ERROR diagnostics even with a zero process status
+        run: scripts/test-lint-openscad.sh
 
       - name: Parse and evaluate every OpenSCAD source
         run: xvfb-run --auto-servernum scripts/lint-openscad.sh
