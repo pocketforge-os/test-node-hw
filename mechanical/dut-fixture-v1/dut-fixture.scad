@@ -87,8 +87,10 @@ antenna_size = [14.3, 110.0];            // width measured; length provisional
 antenna_tie_y = [15, 55, 95];
 
 esp32_origin = [45.2, 91];
-esp32_size = [24.0, 65.0];               // provisional dev-board envelope
-esp32_tie_y = [8, 57];
+esp32_size = [23.67, 18.5];               // owner-measured physical envelope
+// Two narrow straps near the ends, matching the four surrounding slots in the
+// owner's sketch while retaining 0.5 mm from each board end to the slot edge.
+esp32_tie_y = [4.5, esp32_size.y - 4.5];
 
 // Owner-corrected caliper measurement of this physical DP100 revision.
 dp100_origin = [102, 170];
@@ -252,7 +254,7 @@ module fixture_labels(engrave = true) {
     engraved_text("BOOST", [8, 49]);
     engraved_text("MOSFET", [58, 51]);
     engraved_text("ANT", [75, 140], 3.0, 90);
-    engraved_text("ESP32", [41.2, 112], 3.0, 90);
+    engraved_text("ESP32", [45.2, 86]);
     engraved_text("DP100", [140, 165]);
     engraved_text("WEBCAM (UNDER)", [120, 126]);
     engraved_text("POWERED HUB", [101, 36], 3.0, 90);
