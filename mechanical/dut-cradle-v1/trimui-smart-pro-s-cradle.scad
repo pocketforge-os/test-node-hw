@@ -146,11 +146,11 @@ hook_adjustment = 8.0;
 // The generous stroke expansion and three-layer-at-0.4-mm emboss keep letter
 // stems from disappearing when the slicer quantizes fine font geometry.
 label_height = 1.2;
-label_stroke_growth = 0.70;
-title_box_size = [176, 22];
-title_box_centre = [plate_size.x / 2, 177];
-title_font_size = 12.0;
-orientation_font_size = 7.5;
+label_stroke_growth = 0.85;
+title_box_size = [190, 24];
+title_box_centre = [plate_size.x / 2, 176.5];
+title_font_size = 14.4;
+orientation_font_size = 9.0;
 
 // ---- Design assertions ----------------------------------------------------
 assert(plate_size.x <= printable_bed.x && plate_size.y <= printable_bed.y,
@@ -222,8 +222,8 @@ module carrier_labels() {
     orientation_label([device_origin.x, 154.5], "TOP", "left");
     orientation_label([device_origin.x + device_body_size.x, 154.5],
                       "TOP", "right");
-    orientation_label([device_origin.x, 42.0], "BOTTOM", "left");
-    orientation_label([device_origin.x + device_body_size.x, 42.0],
+    orientation_label([device_origin.x, 38.0], "BOTTOM", "left");
+    orientation_label([device_origin.x + device_body_size.x, 38.0],
                       "BOTTOM", "right");
 }
 
