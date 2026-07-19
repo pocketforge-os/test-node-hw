@@ -20,12 +20,23 @@ openscad_bin=${OPENSCAD:-openscad}
 for index in "${!sources[@]}"; do
   source=${sources[$index]}
   echo "openscad_lint_source=$source"
-  "$openscad_bin" \
-    --hardwarnings \
-    --check-parameters=true \
-    --check-parameter-ranges=true \
-    -o "$lint_dir/$index.csg" \
-    "$source"
+  if ! diagnostics=$(
+    "$openscad_bin" \
+      --hardwarnings \
+      --check-parameters=true \
+      --check-parameter-ranges=true \
+      -o "$lint_dir/$index.csg" \
+      "$source" 2>&1
+  ); then
+    printf '%s\n' "$diagnostics" >&2
+    echo "openscad_lint=fail source=$source reason=nonzero_exit" >&2
+    exit 1
+  fi
+  printf '%s\n' "$diagnostics"
+  if grep -q '^ERROR:' <<<"$diagnostics"; then
+    echo "openscad_lint=fail source=$source reason=error_diagnostic" >&2
+    exit 1
+  fi
 done
 
 echo "openscad_lint=pass sources=${#sources[@]}"

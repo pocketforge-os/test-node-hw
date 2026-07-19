@@ -9,14 +9,11 @@ SOURCE := dut-fixture.scad
 
 all: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/fit-coupon.stl
 
-# CSG export is the fast OpenSCAD parse/evaluation gate: it catches syntax,
-# undefined-variable, parameter, warning, and assertion failures without CGAL.
-$(BUILD)/lint.csg: $(SOURCE) | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
-		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
-
-lint: $(BUILD)/lint.csg
-	@echo 'openscad_lint=pass source=$(SOURCE)'
+# Repository-wide CSG export is the fast parse/evaluation gate. The wrapper
+# also rejects OpenSCAD ERROR diagnostics because CSG assertion failures may
+# otherwise return a successful process status.
+lint:
+	cd ../.. && OPENSCAD='$(OPENSCAD)' scripts/lint-openscad.sh
 
 $(BUILD):
 	mkdir -p $@

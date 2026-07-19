@@ -101,12 +101,14 @@ antenna_origin = [42, 230.7];
 antenna_size = [110.0, 14.3];             // width measured; length provisional
 antenna_tie_x = [25, 85];
 
-esp32_origin = [8, 57.8];
+esp32_origin = [8, 55.7];
 // Oriented with the 18.5 mm short/USB-C edge facing the bottom of the plate.
 esp32_size = [18.5, 23.67];               // owner-measured physical envelope
-// Two narrow straps near the ends, matching the four surrounding slots in the
-// owner's sketch while retaining 1 mm from each board end to the slot edge.
-esp32_tie_y = [4.5, esp32_size.y - 4.5];
+// Two compact slots flank the connector on each short edge. These are smaller
+// than the general fixture slot so the USB-C corridor remains unobstructed.
+esp32_tie_slot = [3.0, 2.2];
+esp32_tie_x = [1.75, esp32_size.x - 1.75];
+esp32_tie_service_clearance = 1.0;
 esp32_usb_service_depth = 20.0;
 esp32_usb_service_width = 10.0;            // centred USB-C plug/cable envelope
 esp32_usb_service_origin = [esp32_origin.x +
@@ -211,12 +213,12 @@ module point_standoff_bores(origin, points, pilot) {
         through_hole([origin.x + point.x, origin.y + point.y], pilot);
 }
 
-module transverse_tie_slots(origin, envelope, offsets_x) {
+module transverse_tie_slots(origin, envelope, offsets_x, dimensions = zip_slot) {
     // A strap crosses the component's short (Y) axis; slots run along X.
     for (x = offsets_x)
-        for (y = [-zip_edge_gap - zip_slot.y / 2,
-                  envelope.y + zip_edge_gap + zip_slot.y / 2])
-            tie_slot([origin.x + x, origin.y + y], 0);
+        for (y = [-zip_edge_gap - dimensions.y / 2,
+                  envelope.y + zip_edge_gap + dimensions.y / 2])
+            tie_slot([origin.x + x, origin.y + y], 0, dimensions);
 }
 
 module lateral_tie_slots(origin, envelope, offsets_y) {
@@ -244,10 +246,12 @@ module fixture_cutouts() {
     for (feature = frame_tie_features)
         tie_slot(feature[1], feature[2], frame_tie_slot);
 
-    // Split-print bridge holes (also useful general-purpose fixture holes).
-    for (x = joiner_centres_x)
-        for (y = joiner_hole_y)
-            through_hole([x, y], joiner_hole_diameter);
+    // Joiner holes belong only to the optional split exports. The one-piece
+    // plate stays unperforated at the seam.
+    if (PART == "plate_lower" || PART == "plate_upper")
+        for (x = joiner_centres_x)
+            for (y = joiner_hole_y)
+                through_hole([x, y], joiner_hole_diameter);
 
     four_standoff_bores(relay_origin, relay_size, relay_hole_centres, m25_pilot_diameter);
     four_standoff_bores(bpi_origin, bpi_size, bpi_hole_centres, m25_pilot_diameter);
@@ -257,7 +261,8 @@ module fixture_cutouts() {
     for (feature = dp100_tie_features)
         tie_slot(feature[1], feature[2]);
     transverse_tie_slots(antenna_origin, antenna_size, antenna_tie_x);
-    lateral_tie_slots(esp32_origin, esp32_size, esp32_tie_y);
+    transverse_tie_slots(esp32_origin, esp32_size, esp32_tie_x,
+                         esp32_tie_slot);
     transverse_tie_slots(powered_hub_origin, powered_hub_size, powered_hub_tie_x);
     transverse_tie_slots(unpowered_hub_origin, unpowered_hub_size, unpowered_hub_tie_x);
 
@@ -297,7 +302,7 @@ module fixture_labels(engrave = true) {
     engraved_text("BOOST", [149, 91]);
     engraved_text("MOSFET", [157, 117]);
     engraved_text("ANT", [88, 236]);
-    engraved_text("ESP32", [8, 54.8]);
+    engraved_text("ESP32", [8, 52.7]);
     engraved_text("DP100", [126, 159]);
     engraved_text("WEBCAM (UNDER)", [76, 149]);
     engraved_text("POWERED HUB", [89, 74]);
@@ -447,6 +452,16 @@ assert(esp32_size.x < esp32_size.y,
        "ESP32 short USB-C edge must face the bottom of the plate");
 assert(esp32_usb_service_width <= esp32_size.x,
        "ESP32 USB-C service width exceeds its short edge");
+assert(len(esp32_tie_x) == 2 &&
+       abs(esp32_tie_x[0] + esp32_tie_x[1] - esp32_size.x) < epsilon,
+       "ESP32 requires two mirrored slots on each short edge");
+assert(esp32_tie_x[0] + esp32_tie_slot.x / 2 +
+       esp32_tie_service_clearance <=
+       (esp32_size.x - esp32_usb_service_width) / 2 &&
+       esp32_tie_x[1] - esp32_tie_slot.x / 2 -
+       esp32_tie_service_clearance >=
+       (esp32_size.x + esp32_usb_service_width) / 2,
+       "ESP32 USB-C corridor overlaps its short-edge tie slots");
 assert(abs((esp32_usb_service_origin.x + esp32_usb_service_width / 2) -
            (esp32_origin.x + esp32_size.x / 2)) < epsilon &&
        abs(esp32_usb_service_origin.y + esp32_usb_service_depth -
@@ -478,13 +493,15 @@ component_envelopes = [
     ["usb_hub", unpowered_hub_origin, unpowered_hub_size]
 ];
 
-function transverse_slot_envelopes(owner, origin, envelope, offsets_x) = [
+function transverse_slot_envelopes(owner, origin, envelope, offsets_x,
+                                   dimensions = zip_slot) = [
     for (x = offsets_x)
-        for (y = [-zip_edge_gap - zip_slot.y / 2,
-                  envelope.y + zip_edge_gap + zip_slot.y / 2])
+        for (y = [-zip_edge_gap - dimensions.y / 2,
+                  envelope.y + zip_edge_gap + dimensions.y / 2])
             [str(owner, "_tie_", x, "_", y),
-             [origin.x + x - zip_slot.x / 2, origin.y + y - zip_slot.y / 2],
-             [zip_slot.x, zip_slot.y], owner]
+             [origin.x + x - dimensions.x / 2,
+              origin.y + y - dimensions.y / 2],
+             dimensions, owner]
 ];
 function lateral_slot_envelopes(owner, origin, envelope, offsets_y) = [
     for (y = offsets_y)
@@ -507,7 +524,8 @@ frame_tie_feature_envelopes = [
 retention_feature_envelopes = concat(
     [for (feature = dp100_tie_features) owned_slot_envelope(feature)],
     transverse_slot_envelopes("antenna", antenna_origin, antenna_size, antenna_tie_x),
-    lateral_slot_envelopes("esp32", esp32_origin, esp32_size, esp32_tie_y),
+    transverse_slot_envelopes("esp32", esp32_origin, esp32_size,
+                              esp32_tie_x, esp32_tie_slot),
     transverse_slot_envelopes("powered_hub", powered_hub_origin, powered_hub_size,
                               powered_hub_tie_x),
     transverse_slot_envelopes("usb_hub", unpowered_hub_origin, unpowered_hub_size,
