@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Iterable, Iterator, Tuple
 
 Point = Tuple[float, float, float]
+Triangle = Tuple[Point, Point, Point]
 
 
 def binary_vertices(data: bytes) -> Iterator[Point]:
@@ -45,6 +46,14 @@ def vertices(path: Path) -> Iterable[Point]:
     yield from ascii_vertices(data)
 
 
+def canonical_triangles(points: list[Point]) -> list[Triangle]:
+    """Ignore facet order, winding, and each triangle's starting vertex."""
+    return sorted(
+        tuple(sorted(points[offset : offset + 3]))  # type: ignore[arg-type]
+        for offset in range(0, len(points), 3)
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("stl", type=Path)
@@ -54,6 +63,7 @@ def main() -> int:
     parser.add_argument("--bed-x", type=float)
     parser.add_argument("--bed-y", type=float)
     parser.add_argument("--allow-rotate", action="store_true")
+    parser.add_argument("--equivalent-to", type=Path)
     args = parser.parse_args()
 
     if (args.bed_x is None) != (args.bed_y is None):
@@ -64,6 +74,24 @@ def main() -> int:
         raise SystemExit(f"invalid STL: vertex_count={len(points)}")
     if not all(math.isfinite(value) for point in points for value in point):
         raise SystemExit("invalid STL: non-finite coordinate")
+
+    equivalent_to = "n/a"
+    if args.equivalent_to is not None:
+        expected_points = list(vertices(args.equivalent_to))
+        if not expected_points or len(expected_points) % 3:
+            raise SystemExit(
+                f"invalid comparison STL: vertex_count={len(expected_points)}"
+            )
+        if not all(
+            math.isfinite(value) for point in expected_points for value in point
+        ):
+            raise SystemExit("invalid comparison STL: non-finite coordinate")
+        if canonical_triangles(points) != canonical_triangles(expected_points):
+            raise SystemExit(
+                f"mesh_mismatch: actual_triangles={len(points) // 3} "
+                f"expected_triangles={len(expected_points) // 3}"
+            )
+        equivalent_to = str(args.equivalent_to)
 
     mins = tuple(min(point[axis] for point in points) for axis in range(3))
     maxs = tuple(max(point[axis] for point in points) for axis in range(3))
@@ -111,7 +139,8 @@ def main() -> int:
         f"min={','.join(f'{v:.3f}' for v in mins)} "
         f"max={','.join(f'{v:.3f}' for v in maxs)} "
         f"size={','.join(f'{v:.3f}' for v in size)} "
-        f"volume_cm3={volume_cm3:.3f} bed_orientation={bed_orientation}"
+        f"volume_cm3={volume_cm3:.3f} bed_orientation={bed_orientation} "
+        f"equivalent_to={equivalent_to}"
     )
     return 0
 

@@ -108,8 +108,11 @@ centre spacing = far-edge spacing - hole diameter
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
 Preview component blocks are translucent interface envelopes, not cosmetic models. They are omitted
-from every production STL and exist to expose inaccessible connectors and bad cable paths. Pairwise
-component spacing is also machine-enforced: every render/export asserts at least 3 mm between envelopes;
-retention slots keep at least 1 mm from components and one another; reserved webcam/hub service zones
-stay clear; and full M3 joiner screw-head keep-outs may not intersect components, tie slots, or service
-zones. `make validate` includes an intentional relay/antenna collision that must be rejected.
+from every production STL and exist to expose inaccessible connectors and bad cable paths. The complete
+preview subtree uses OpenSCAD's `%` background modifier, so even a manual STL export from the default
+preview view contains only the printable fixture. `make validate` proves that preview and production
+exports have identical triangle geometry. Pairwise component spacing is also machine-enforced: every
+render/export asserts at least 3 mm between envelopes; retention slots keep at least 1 mm from
+components and one another; reserved webcam/hub service zones stay clear; and full M3 joiner screw-head
+keep-outs may not intersect components, tie slots, or service zones. `make validate` includes an
+intentional relay/antenna collision that must be rejected.
