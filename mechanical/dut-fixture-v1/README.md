@@ -87,7 +87,7 @@ centre spacing = far-edge spacing - hole diameter
 | Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes | Envelope measured; exact hole offsets provisional |
 | MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
 | Antenna | 14.3 mm wide | Length/tie positions provisional |
-| ESP32 | Zip-tie retention | Envelope/tie positions provisional |
+| ESP32 | 23.67 × 18.5 mm; zip-tie retention | Envelope measured; tie positions interpreted from sketch |
 | Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends | Measured |
 | Unpowered USB hub | 105 × 24 mm | Explicitly allowed estimate; parameterized |
 
