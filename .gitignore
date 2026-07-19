@@ -21,4 +21,5 @@ Thumbs.db
 *.zip
 # Generated OpenSCAD renders and meshes
 mechanical/**/build/
+mechanical/**/*.stl
 **/__pycache__/

@@ -19,7 +19,10 @@ epsilon = 0.05;
 
 // ---- Printer / plate -------------------------------------------------------
 printer_bed = [250, 210];             // Prusa i3 MK3S advertised build area
-plate_size = [200, 250];              // rotate 90° to use the MK3S long axis
+printer_edge_margin = 1.5;            // proven necessary by physical slicer/bed fit
+printable_bed = printer_bed - [2 * printer_edge_margin,
+                               2 * printer_edge_margin];
+plate_size = [200, 247];              // rotate 90°; retains 1.5 mm on every bed edge
 plate_thickness = 3.2;
 plate_corner_radius = 4;
 // Eight frame anchors: one slot toward each adjacent rail at every corner.
@@ -46,7 +49,7 @@ frame_tie_features = [
 
 // Optional horizontal split follows the empty corridor below the top row.
 // Three below-plate joiners bridge the seam without crossing a component.
-split_y = 152.5;
+split_y = 150.0;
 joiner_centres_x = [7.0, 139.0, 192.0];
 joiner_hole_y = [split_y - 6, split_y + 5];
 joiner_hole_diameter = 3.4;            // M3 clearance
@@ -55,6 +58,8 @@ joiner_head_diameter = 6.0;            // keep-out for a typical M3 pan head
 // ---- Printed fastener interfaces ------------------------------------------
 standoff_outer_diameter = 7.0;
 standoff_height = 6.0;
+relay_standoff_outer_diameter = 9.0;  // wider base for the tall relay towers
+relay_standoff_height = standoff_height + 20.0;
 m25_pilot_diameter = 2.2;              // tune after printing fit_coupon
 m2_pilot_diameter = 1.7;               // tune after printing fit_coupon
 zip_slot = [7.0, 2.2];                 // common 2.0 mm-wide cable tie
@@ -66,7 +71,7 @@ zip_edge_gap = 2.0;
 
 // Layout is organized around a central webcam, accessible hub ends, a clear
 // 4040-frame perimeter, and compact functional groups.
-relay_origin = [30, 152.7];
+relay_origin = [20, 152.7];
 relay_size = [51.85, 72.70];
 relay_hole_diameter = 3.0;
 relay_hole_far_spacing = [48.03, 69.93];
@@ -78,12 +83,24 @@ bpi_hole_diameter = 2.6;
 bpi_hole_far_spacing = [25.60, 60.96];
 bpi_hole_centres = bpi_hole_far_spacing - [bpi_hole_diameter, bpi_hole_diameter];
 
-// The handwritten boost-board dimensions are clear; diagonal hole coordinates
-// are an initial interpretation of the roughly 1 mm edge gaps in the sketch.
+// The diagonal holes have a 5 mm horizontal gap from the hole edge to the
+// adjacent short board side. The sketch also records 1.1 mm at the top hole
+// and 0.7 mm at the bottom hole. Convert those edge gaps to centre coordinates
+// by adding the 1.5 mm radius of each 3 mm hole.
 boost_origin = [149, 96];
 boost_size = [43.16, 21.23];
 boost_hole_diameter = 3.0;
-boost_hole_centres = [[2.5, boost_size.y - 2.5], [boost_size.x - 2.5, 2.5]];
+boost_hole_side_clearance = 5.0;
+boost_hole_top_clearance = 1.1;
+boost_hole_bottom_clearance = 0.7;
+boost_hole_radius = boost_hole_diameter / 2;
+boost_hole_side_centre_inset = boost_hole_side_clearance + boost_hole_radius;
+boost_hole_centres = [
+    [boost_hole_side_centre_inset,
+     boost_size.y - boost_hole_top_clearance - boost_hole_radius],
+    [boost_size.x - boost_hole_side_centre_inset,
+     boost_hole_bottom_clearance + boost_hole_radius]
+];
 
 // Board outline was not dimensioned. The 2.2 mm holes and 15.58 mm far-edge
 // spacing were; both holes are shown nearly touching the same board edge.
@@ -97,20 +114,23 @@ mosfet_hole_centres = [
     [mosfet_hole_x, (mosfet_size.y + mosfet_hole_centre_spacing) / 2]
 ];
 
-antenna_origin = [42, 230.7];
+antenna_origin = [42, 228.5];
 antenna_size = [110.0, 14.3];             // width measured; length provisional
 antenna_tie_x = [25, 85];
+// A 0.1 mm inset lets the slots meet the antenna edge while preserving both
+// the relay clearance below and over 2 mm of material at the plate's top edge.
+antenna_tie_edge_gap = -0.1;
 
-esp32_origin = [8, 55.7];
+esp32_origin = [8, 54.9];
 // Oriented with the 18.5 mm short/USB-C edge facing the bottom of the plate.
 esp32_size = [18.5, 23.67];               // owner-measured physical envelope
 // Two compact slots flank the connector on each short edge. These are smaller
 // than the general fixture slot so the USB-C corridor remains unobstructed.
-esp32_tie_slot = [3.0, 2.2];
-esp32_tie_x = [1.75, esp32_size.x - 1.75];
-esp32_tie_service_clearance = 1.0;
+esp32_tie_slot = [3.0, 3.0];
+esp32_tie_x = [3.25, esp32_size.x - 3.25];
+esp32_tie_service_clearance = 0.25;
 esp32_usb_service_depth = 20.0;
-esp32_usb_service_width = 10.0;            // centred USB-C plug/cable envelope
+esp32_usb_service_width = 8.5;             // centred USB-C receptacle/cable corridor
 esp32_usb_service_origin = [esp32_origin.x +
                             (esp32_size.x - esp32_usb_service_width) / 2,
                             esp32_origin.y - esp32_usb_service_depth];
@@ -131,7 +151,8 @@ dp100_tie_features = [
 ];
 
 webcam_keepout = [71.0, 31.55];
-webcam_aperture = [37.0, 14.69];
+webcam_aperture_minimum = [44.75, 19.5];  // owner-corrected after physical fit
+webcam_aperture = webcam_aperture_minimum;
 webcam_aperture_clearance = 0.40;         // total diametral/width clearance
 webcam_aperture_radius = 5.0;
 webcam_centre = [plate_size.x / 2, 132.0];
@@ -143,16 +164,21 @@ webcam_below_service_size = [webcam_keepout.x, webcam_below_clearance];
 
 // Each hub exposes one connector-bearing long edge toward clear space. The
 // powered hub gets a full in-plate cable bay; the lower hub opens off the edge.
-hub_side_service_depth = 30.0;
-powered_hub_connector_side = "bottom";
+powered_hub_long_side_service_depth = 25.0;
+powered_hub_end_service_depth = 18.0;
+unpowered_hub_long_side_service_depth = 20.0;
+unpowered_hub_end_service_depth = 20.0;
+hub_end_service_width = 12.0;
+powered_hub_connector_side = "top";
 unpowered_hub_connector_side = "bottom";
 hub_tie_service_clearance = 1.0;
-powered_hub_origin = [66.9, 67.0];
+powered_hub_origin = [66.9, 41.0];
 powered_hub_size = [105.07, 24.0];
+powered_hub_tie_slot = [7.0, 2.7];
 // Important measured offsets: 24 mm from one end, 39 mm from the other.
 powered_hub_tie_x = [24.0, powered_hub_size.x - 39.0];
 
-unpowered_hub_origin = [64.0, 7.0];
+unpowered_hub_origin = [63.25, 7.0];
 unpowered_hub_size = [105.0, 24.0];       // owner allowed an estimate
 unpowered_hub_tie_x = [25.0, 80.0];
 
@@ -187,19 +213,21 @@ module tie_slot(point, rotation = 0, dimensions = zip_slot) {
 }
 
 // Standoff and bore modules deliberately share the same short coordinate loop.
-module four_standoffs(origin, envelope, spacing, pilot, height = standoff_height) {
+module four_standoffs(origin, envelope, spacing, pilot, height = standoff_height,
+                      outer_diameter = standoff_outer_diameter) {
     margin = (envelope - spacing) / 2;
     for (dx = [margin.x, margin.x + spacing.x])
         for (dy = [margin.y, margin.y + spacing.y])
             translate([origin.x + dx, origin.y + dy, plate_thickness])
-                cylinder(d = standoff_outer_diameter, h = height);
+                cylinder(d = outer_diameter, h = height);
 }
 
 module four_standoff_bores(origin, envelope, spacing, pilot, height = standoff_height) {
     margin = (envelope - spacing) / 2;
     for (dx = [margin.x, margin.x + spacing.x])
         for (dy = [margin.y, margin.y + spacing.y])
-            through_hole([origin.x + dx, origin.y + dy], pilot);
+            through_hole([origin.x + dx, origin.y + dy], pilot,
+                         plate_thickness + height + 2);
 }
 
 module point_standoffs(origin, points, pilot, height = standoff_height) {
@@ -213,11 +241,12 @@ module point_standoff_bores(origin, points, pilot) {
         through_hole([origin.x + point.x, origin.y + point.y], pilot);
 }
 
-module transverse_tie_slots(origin, envelope, offsets_x, dimensions = zip_slot) {
+module transverse_tie_slots(origin, envelope, offsets_x, dimensions = zip_slot,
+                            edge_gap = zip_edge_gap) {
     // A strap crosses the component's short (Y) axis; slots run along X.
     for (x = offsets_x)
-        for (y = [-zip_edge_gap - dimensions.y / 2,
-                  envelope.y + zip_edge_gap + dimensions.y / 2])
+        for (y = [-edge_gap - dimensions.y / 2,
+                  envelope.y + edge_gap + dimensions.y / 2])
             tie_slot([origin.x + x, origin.y + y], 0, dimensions);
 }
 
@@ -234,7 +263,8 @@ module plate_solid() {
 }
 
 module fixture_standoffs() {
-    four_standoffs(relay_origin, relay_size, relay_hole_centres, m25_pilot_diameter);
+    four_standoffs(relay_origin, relay_size, relay_hole_centres, m25_pilot_diameter,
+                   relay_standoff_height, relay_standoff_outer_diameter);
     four_standoffs(bpi_origin, bpi_size, bpi_hole_centres, m25_pilot_diameter);
     point_standoffs(boost_origin, boost_hole_centres, m25_pilot_diameter);
     point_standoffs(mosfet_origin, mosfet_hole_centres, m2_pilot_diameter);
@@ -253,17 +283,20 @@ module fixture_cutouts() {
             for (y = joiner_hole_y)
                 through_hole([x, y], joiner_hole_diameter);
 
-    four_standoff_bores(relay_origin, relay_size, relay_hole_centres, m25_pilot_diameter);
+    four_standoff_bores(relay_origin, relay_size, relay_hole_centres, m25_pilot_diameter,
+                        relay_standoff_height);
     four_standoff_bores(bpi_origin, bpi_size, bpi_hole_centres, m25_pilot_diameter);
     point_standoff_bores(boost_origin, boost_hole_centres, m25_pilot_diameter);
     point_standoff_bores(mosfet_origin, mosfet_hole_centres, m2_pilot_diameter);
 
     for (feature = dp100_tie_features)
         tie_slot(feature[1], feature[2]);
-    transverse_tie_slots(antenna_origin, antenna_size, antenna_tie_x);
+    transverse_tie_slots(antenna_origin, antenna_size, antenna_tie_x,
+                         zip_slot, antenna_tie_edge_gap);
     transverse_tie_slots(esp32_origin, esp32_size, esp32_tie_x,
                          esp32_tie_slot);
-    transverse_tie_slots(powered_hub_origin, powered_hub_size, powered_hub_tie_x);
+    transverse_tie_slots(powered_hub_origin, powered_hub_size, powered_hub_tie_x,
+                         powered_hub_tie_slot);
     transverse_tie_slots(unpowered_hub_origin, unpowered_hub_size, unpowered_hub_tie_x);
 
     // Webcam is offered from below; only the smaller rear housing protrudes.
@@ -273,8 +306,6 @@ module fixture_cutouts() {
         linear_extrude(height = plate_thickness + 2)
             rounded_rect_2d(opening, webcam_aperture_radius);
 
-    if (SHOW_LABELS)
-        fixture_labels(engrave = true);
 }
 
 module fixture_plate() {
@@ -288,30 +319,31 @@ module fixture_plate() {
 }
 
 // ---- Labels and preview-only component envelopes --------------------------
-module engraved_text(label, point, size = 3.2, rotation = 0) {
-    translate([point.x, point.y, plate_thickness - 0.45])
-        linear_extrude(height = 0.6)
+module preview_text(label, point, size = 3.2, rotation = 0) {
+    color("SeaGreen", 0.8)
+        translate([point.x, point.y, plate_thickness + 0.2])
+        linear_extrude(height = 0.4)
             rotate(rotation)
                 text(label, size = size, halign = "left", valign = "baseline",
                      font = "Liberation Sans:style=Bold");
 }
 
-module fixture_labels(engrave = true) {
-    engraved_text("RELAY", [30, 159]);
-    engraved_text("BPI M2 ZERO", [10, 108], 3.0, 90);
-    engraved_text("BOOST", [149, 91]);
-    engraved_text("MOSFET", [157, 117]);
-    engraved_text("ANT", [88, 236]);
-    engraved_text("ESP32", [8, 52.7]);
-    engraved_text("DP100", [126, 159]);
-    engraved_text("WEBCAM (UNDER)", [76, 149]);
-    engraved_text("POWERED HUB", [89, 74]);
-    engraved_text("USB HUB", [103, 38]);
+module fixture_labels() {
+    preview_text("RELAY", [20, 159]);
+    preview_text("BPI M2 ZERO", [10, 108], 3.0, 90);
+    preview_text("BOOST", [149, 91]);
+    preview_text("MOSFET", [157, 117]);
+    preview_text("ANT", [88, 236]);
+    preview_text("ESP32", [8, 51.9]);
+    preview_text("DP100", [126, 159]);
+    preview_text("WEBCAM (UNDER)", [76, 149]);
+    preview_text("POWERED HUB", [89, 48]);
+    preview_text("USB HUB", [103, 14]);
 }
 
-module envelope(origin, size, height, colour, radius = 2) {
+module envelope(origin, size, height, colour, radius = 2, lift = standoff_height) {
     color(colour, 0.45)
-        translate([origin.x, origin.y, plate_thickness + standoff_height + 0.2])
+        translate([origin.x, origin.y, plate_thickness + lift + 0.2])
             rounded_prism([size.x, size.y, height], min(radius, min(size.x, size.y) / 2));
 }
 
@@ -322,7 +354,8 @@ module service_keepout_preview(origin, size, colour = "Crimson") {
 }
 
 module component_preview() {
-    envelope(relay_origin, relay_size, 15, "RoyalBlue");
+    envelope(relay_origin, relay_size, 15, "RoyalBlue", 2,
+             relay_standoff_height);
     envelope(bpi_origin, bpi_size, 7, "SteelBlue");
     envelope(boost_origin, boost_size, 12, "DarkOrange");
     envelope(mosfet_origin, mosfet_size, 8, "Teal");
@@ -379,7 +412,8 @@ module fit_coupon() {
                          font = "Liberation Sans:style=Bold");
         engraved_coupon_text("ZIP", [5, 5], 3);
         engraved_coupon_text("FRAME", [56, 5], 2.3);
-        engraved_coupon_text("CAMERA 37.4 x 15.09", [73, 5], 2.5);
+        engraved_coupon_text(str("CAMERA ", opening.x, " x ", opening.y),
+                             [73, 5], 2.5);
     }
 }
 
@@ -390,10 +424,14 @@ module engraved_coupon_text(label, point, size) {
 }
 
 // ---- Split-print parts ------------------------------------------------------
+fixture_max_height = plate_thickness + max(standoff_height,
+                                            relay_standoff_height);
+
 module plate_lower() {
     intersection() {
         fixture_plate();
-        translate([-1, -1, -1]) cube([plate_size.x + 2, split_y + 1, 20]);
+        translate([-1, -1, -1])
+            cube([plate_size.x + 2, split_y + 1, fixture_max_height + 2]);
     }
 }
 
@@ -401,7 +439,8 @@ module plate_upper() {
     intersection() {
         fixture_plate();
         translate([-1, split_y, -1])
-            cube([plate_size.x + 2, plate_size.y - split_y + 1, 20]);
+            cube([plate_size.x + 2, plate_size.y - split_y + 1,
+                  fixture_max_height + 2]);
     }
 }
 
@@ -416,8 +455,8 @@ module joiner() {
 function rectangle_fits_bed(size, bed) =
     (size.x <= bed.x && size.y <= bed.y) ||
     (size.x <= bed.y && size.y <= bed.x);
-assert(rectangle_fits_bed(plate_size, printer_bed),
-       "Fixture plate exceeds configured printer bed in both orientations");
+assert(rectangle_fits_bed(plate_size, printable_bed),
+       "Fixture plate exceeds the printer bed after required edge margins");
 function envelope_inside_plate(origin, size) =
     origin.x >= 0 && origin.y >= 0 &&
     origin.x + size.x <= plate_size.x && origin.y + size.y <= plate_size.y;
@@ -438,18 +477,38 @@ assert(envelope_inside_plate(unpowered_hub_origin, unpowered_hub_size), "USB hub
 assert(webcam_aperture.x + webcam_aperture_clearance <= webcam_keepout.x &&
        webcam_aperture.y + webcam_aperture_clearance <= webcam_keepout.y,
        "Webcam aperture exceeds its keep-out");
+assert(webcam_aperture.x >= webcam_aperture_minimum.x &&
+       webcam_aperture.y >= webcam_aperture_minimum.y,
+       "Webcam aperture is smaller than the physically measured minimum");
+assert(relay_origin.x == 20 && relay_standoff_height >= 26 &&
+       relay_standoff_outer_diameter >= 9,
+       "Relay must retain its DP100 clearance and physically verified tall standoffs");
+relay_low_standoff_y = relay_origin.y +
+                        (relay_size.y - relay_hole_centres.y) / 2 -
+                        relay_standoff_outer_diameter / 2;
+assert(relay_low_standoff_y >= split_y,
+       "Split seam intersects a tall relay standoff");
+assert(boost_hole_side_clearance == 5 &&
+       boost_hole_side_centre_inset == 6.5 &&
+       boost_hole_top_clearance == 1.1 &&
+       boost_hole_bottom_clearance == 0.7,
+       "Boost mounting holes do not match their measured edge clearances");
 assert(len(frame_tie_features) == 8,
        "Exactly eight 4040-frame tie anchors are required");
 assert(webcam_centre.x == plate_size.x / 2,
        "Webcam must remain centred left-to-right");
 assert(webcam_below_clearance >= 20,
        "Webcam requires at least 20 mm clear immediately below");
-assert(hub_side_service_depth >= 30,
-       "USB hub connector keep-outs require at least 30 mm depth");
+assert(powered_hub_long_side_service_depth >= 25 &&
+       powered_hub_end_service_depth >= 18 &&
+       unpowered_hub_end_service_depth >= 20,
+       "USB hub connector keep-outs are smaller than the physical-fit measurements");
 assert(esp32_usb_service_depth >= 20,
        "ESP32 requires at least 20 mm USB connector clearance below");
 assert(esp32_size.x < esp32_size.y,
        "ESP32 short USB-C edge must face the bottom of the plate");
+assert(esp32_tie_slot.y >= 3,
+       "ESP32 tie slots require the physically requested width allowance");
 assert(esp32_usb_service_width <= esp32_size.x,
        "ESP32 USB-C service width exceeds its short edge");
 assert(len(esp32_tie_x) == 2 &&
@@ -472,9 +531,12 @@ assert(len(dp100_tie_features) == 2,
 assert(dp100_tie_features[0][1].x < dp100_origin.x &&
        dp100_tie_features[1][1].x > dp100_origin.x + dp100_size.x,
        "DP100 tie slots must remain on opposite short sides");
-assert(powered_hub_connector_side == "bottom" &&
+assert(powered_hub_connector_side == "top" &&
        unpowered_hub_connector_side == "bottom",
-       "Each USB hub connector bank must face its clear lower long side");
+       "USB hub connector banks must face their physically verified clear sides");
+assert(powered_hub_origin.y - (unpowered_hub_origin.y + unpowered_hub_size.y) <= 11 &&
+       hub_end_service_width >= 12,
+       "USB hubs must retain the compact physical-fit layout and end-cable width");
 
 // Transparent preview solids can visually hide intersections. Make layout
 // safety machine-enforced instead: every exported part hard-fails if any two
@@ -494,10 +556,11 @@ component_envelopes = [
 ];
 
 function transverse_slot_envelopes(owner, origin, envelope, offsets_x,
-                                   dimensions = zip_slot) = [
+                                   dimensions = zip_slot,
+                                   edge_gap = zip_edge_gap) = [
     for (x = offsets_x)
-        for (y = [-zip_edge_gap - dimensions.y / 2,
-                  envelope.y + zip_edge_gap + dimensions.y / 2])
+        for (y = [-edge_gap - dimensions.y / 2,
+                  envelope.y + edge_gap + dimensions.y / 2])
             [str(owner, "_tie_", x, "_", y),
              [origin.x + x - dimensions.x / 2,
               origin.y + y - dimensions.y / 2],
@@ -523,11 +586,12 @@ frame_tie_feature_envelopes = [
 ];
 retention_feature_envelopes = concat(
     [for (feature = dp100_tie_features) owned_slot_envelope(feature)],
-    transverse_slot_envelopes("antenna", antenna_origin, antenna_size, antenna_tie_x),
+    transverse_slot_envelopes("antenna", antenna_origin, antenna_size,
+                              antenna_tie_x, zip_slot, antenna_tie_edge_gap),
     transverse_slot_envelopes("esp32", esp32_origin, esp32_size,
                               esp32_tie_x, esp32_tie_slot),
     transverse_slot_envelopes("powered_hub", powered_hub_origin, powered_hub_size,
-                              powered_hub_tie_x),
+                              powered_hub_tie_x, powered_hub_tie_slot),
     transverse_slot_envelopes("usb_hub", unpowered_hub_origin, unpowered_hub_size,
                               unpowered_hub_tie_x),
     frame_tie_feature_envelopes
@@ -554,18 +618,34 @@ function long_side_service_envelopes(owner, origin, envelope, depth, side,
         [for (i = [0 : 2])
             long_side_service_segment(owner, origin, envelope, depth, side,
                                       i, starts[i], ends[i])];
+function end_service_envelope(owner, origin, envelope, depth, side,
+                              corridor_width = hub_end_service_width) =
+    side == "left" ?
+        [str(owner, "_left_end_connector"),
+         [origin.x - depth, origin.y + (envelope.y - corridor_width) / 2],
+         [depth, corridor_width], owner] :
+        [str(owner, "_right_end_connector"),
+         [origin.x + envelope.x,
+          origin.y + (envelope.y - corridor_width) / 2],
+         [depth, corridor_width], owner];
 hub_service_envelopes = concat(
     long_side_service_envelopes("powered_hub", powered_hub_origin,
-                                powered_hub_size, hub_side_service_depth,
+                                powered_hub_size, powered_hub_long_side_service_depth,
                                 powered_hub_connector_side, powered_hub_tie_x),
     long_side_service_envelopes("usb_hub", unpowered_hub_origin,
-                                unpowered_hub_size, hub_side_service_depth,
-                                unpowered_hub_connector_side, unpowered_hub_tie_x)
+                                unpowered_hub_size, unpowered_hub_long_side_service_depth,
+                                unpowered_hub_connector_side, unpowered_hub_tie_x),
+    [end_service_envelope("powered_hub", powered_hub_origin,
+                          powered_hub_size, powered_hub_end_service_depth, "right"),
+     end_service_envelope("usb_hub", unpowered_hub_origin,
+                          unpowered_hub_size, unpowered_hub_end_service_depth, "left"),
+     end_service_envelope("usb_hub", unpowered_hub_origin,
+                          unpowered_hub_size, unpowered_hub_end_service_depth, "right")]
 );
 assert(len(powered_hub_tie_x) == 2 && len(unpowered_hub_tie_x) == 2,
        "Long-side hub service segmentation requires two tie offsets per hub");
-assert(len(hub_service_envelopes) == 6,
-       "Each USB hub requires one three-segment long-side connector keep-out");
+assert(len(hub_service_envelopes) == 9,
+       "USB hub long-side and end-connector keep-outs are incomplete");
 service_envelopes = concat(
     [["webcam_below_service", webcam_below_service_origin,
       webcam_below_service_size, "webcam"],
@@ -629,11 +709,13 @@ for (service = service_envelopes) {
                    str("Service keep-out violation: ", service[0],
                        " vs ", component[0]));
     for (feature = retention_feature_envelopes)
-        assert(!envelopes_violate_clearance([service[0], service[1], service[2]],
-                                            [feature[0], feature[1], feature[2]],
-                                            service_clearance),
-               str("Service/retention collision: ", service[0],
-                   " vs ", feature[0]));
+        let(clearance = service[3] == "esp32" && feature[3] == "esp32" ?
+                        esp32_tie_service_clearance : service_clearance)
+            assert(!envelopes_violate_clearance([service[0], service[1], service[2]],
+                                                [feature[0], feature[1], feature[2]],
+                                                clearance),
+                   str("Service/retention collision: ", service[0],
+                       " vs ", feature[0]));
     for (fastener = joiner_fastener_envelopes)
         assert(!envelopes_violate_clearance([service[0], service[1], service[2]],
                                             fastener, 0),
@@ -662,4 +744,5 @@ if (PART == "plate") {
     // OpenSCAD's background modifier keeps positioning/service ghosts visible
     // in the editor while excluding the entire subtree from render and export.
     if (SHOW_COMPONENTS) %component_preview();
+    if (SHOW_LABELS) %fixture_labels();
 }

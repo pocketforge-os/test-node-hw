@@ -77,10 +77,11 @@ validate-preview-export: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/previe
 	@echo 'preview_export_guard=pass ghosts=excluded'
 
 validate: lint all split validate-overlap-guard validate-service-guard validate-preview-export
-	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/pocketforge-dut-fixture-v1.stl
+	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 --allow-rotate $(BUILD)/pocketforge-dut-fixture-v1.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 250 --max-y 210 $(BUILD)/fit-coupon.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/plate-lower.stl
-	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/plate-upper.stl
+	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate \
+		--min-size-z 29.2 --max-z 29.2 $(BUILD)/plate-upper.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 20 --max-y 30 $(BUILD)/joiner.stl
 
 clean:
