@@ -146,11 +146,11 @@ hook_adjustment = 8.0;
 // The generous stroke expansion and three-layer-at-0.4-mm emboss keep letter
 // stems from disappearing when the slicer quantizes fine font geometry.
 label_height = 1.2;
-label_stroke_growth = 0.55;
-title_box_size = [158, 20];
+label_stroke_growth = 0.70;
+title_box_size = [176, 22];
 title_box_centre = [plate_size.x / 2, 177];
-title_font_size = 10.5;
-orientation_font_size = 6.5;
+title_font_size = 12.0;
+orientation_font_size = 7.5;
 
 // ---- Design assertions ----------------------------------------------------
 assert(plate_size.x <= printable_bed.x && plate_size.y <= printable_bed.y,
