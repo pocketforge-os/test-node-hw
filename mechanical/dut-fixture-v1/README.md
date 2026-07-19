@@ -49,31 +49,38 @@ more machinery than determinism here.
 
 ## Layout and print settings
 
-- Production plate: **200 × 250 × 3.2 mm** in the source. Rotate it 90° in the slicer; the resulting
-  250 × 200 mm bed footprint uses the MK3S long axis exactly and retains 5 mm nominal side margin.
+- Production plate: **200 × 247 × 3.2 mm** in the source. Rotate it 90° in the slicer; the resulting
+  247 × 200 mm bed footprint retains 1.5 mm on each long-axis edge and 5 mm on each short-axis edge.
+  The CAD and mesh checks treat that inset **247 × 207 mm** area—not the advertised 250 × 210 mm
+  maximum—as the printable bed, following the first physical slicing attempt.
   Prefer the split build if the slicer or printer profile reserves additional end clearance.
-- Exact CAD volume is about **158.2 cm³** before slicer compensation (roughly 196 g of PLA or 201 g
+- Exact CAD volume is about **160.7 cm³** before slicer compensation (roughly 199 g of PLA or 204 g
   of PETG if sliced effectively solid); the slicer's estimate remains authoritative.
 - Print flat with standoffs upward; no support material.
 - PLA is fine for layout verification. PETG is preferred for the final lab fixture because standoffs
   and cable-tie lands tolerate flex and heat better.
 - Starting profile: 0.20 mm layers, 4 perimeters, 5 top/bottom layers, 15–20% gyroid infill. Use the
-  split build for a brim or whenever the configured printable Y range is less than the nominal 250 mm.
+  split build for a brim or whenever the configured printable Y range is less than 247 mm.
 - Eight 12 × 5.5 mm rounded slots mount the fixture to a 4040 frame: every corner has one horizontal
   and one vertical anchor, aimed toward its two adjacent rails. The 5.5 mm opening is intended for a
   common 4.8 mm heavy-duty cable tie; confirm the actual tie in the fit coupon before printing the
   plate. A 5 mm component keep-out remains around every frame slot for threading access.
 - The webcam is centred left-to-right and kept near the plate centre. A machine-enforced 71 × 20 mm
   clear strip immediately below it is reserved for the owner's later secondary block.
-- Both USB hubs are horizontal. Each has only one connector-bearing long edge, segmented around its
-  two tie lands. The powered hub faces a machine-enforced 30 mm in-plate cable bay; the lower hub faces
-  the bottom edge, where its cables continue into unbounded space beyond the fixture.
-- The ESP32 is oriented with its 18.5 mm short edge toward the bottom of the plate. A centred 10 mm
-  USB-C corridor reserves 20 mm below that edge. Four compact 3 × 2.2 mm tie slots sit on the two
-  short edges—two flanking USB-C and two mirrored on the opposite edge.
+- The upper powered USB/Ethernet hub has a 25 mm connector bay above it and an 18 × 12 mm cable
+  corridor at its right end. Its lower and left sides reserve no unused cable space. Its two 7 × 2.7 mm
+  tie-slot pairs include the extra 0.5 mm width requested after the first physical fit.
+- The lower USB hub retains its physically proven bottom-edge placement. Its connector side opens
+  beyond the plate, while centred 20 × 12 mm cable corridors reserve both narrow ends. The two hub
+  bodies are separated only by the roughly 10 mm required for their independent zip-tie slots.
+- The ESP32 is oriented with its 18.5 mm short edge toward the bottom of the plate. A centred 8.5 mm
+  USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots sit 1.5 mm farther inward
+  than the first print—two flanking USB-C and two mirrored on the opposite edge.
+- The four-channel opto-isolated relay moves 10 mm left and sits on 26 mm-high, 9 mm-diameter
+  standoffs, providing vertical clearance for the adjacent DP100 connections.
 
-The plate can also be exported along the empty horizontal corridor as 200 × 152.5 mm lower and
-200 × 97.5 mm upper sections. Both fit the MK3S without rotation:
+The plate can also be exported along the empty horizontal corridor as 200 × 150 mm lower and
+200 × 97 mm upper sections. Both fit the MK3S without rotation:
 
 ```sh
 make split
@@ -81,7 +88,8 @@ make split
 
 Print `plate-lower.stl`, `plate-upper.stl`, and three copies of `joiner.stl`. Join from below at the
 three paired-hole locations using M3 × 10 screws, washers, and nuts. Those six joiner holes exist only
-in the split exports; the one-piece plate remains solid across the seam.
+in the split exports; the one-piece plate remains solid across the seam. Split validation also requires
+the upper part to retain the complete 29.2 mm fixture height so tall relay standoffs cannot be clipped.
 
 ## Measurement translation
 
@@ -96,15 +104,15 @@ centre spacing = far-edge spacing - hole diameter
 |---|---:|---|
 | ALIENTEK DP100 | 94.6 × 62.2 mm | Owner-corrected physical measurement |
 | DP100 tie positions | Two total: one on each short side, 21 / 25 mm down from top | Interpreted from sketch; parameterized |
-| Webcam | 71 × 31.55 mm keep-out; 37 × 14.69 mm aperture; 71 × 20 mm lower clear strip | Measured; aperture gets 0.4 mm clearance |
-| 4-channel relay | 51.85 × 72.70 mm; Ø3 holes; 45.03 × 66.93 mm centres | Converted from measured far edges |
+| Webcam | 71 × 31.55 mm keep-out; 44.75 × 19.5 mm minimum aperture; 71 × 20 mm lower clear strip | Physically fit; printable opening gets 0.4 mm clearance |
+| 4-channel relay | 51.85 × 72.70 mm; Ø3 holes; 45.03 × 66.93 mm centres; 26 mm standoffs | Measured; height owner-corrected after physical fit |
 | BPI-M2-Zero | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres | Converted from measured far edges |
-| Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes | Envelope measured; exact hole offsets provisional |
+| Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes with 5 mm horizontal hole-edge-to-board-edge gaps (6.5 mm X centre insets), plus 1.1 mm top and 0.7 mm bottom gaps | Owner-corrected from physical fit and annotated measurement |
 | MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
 | Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
-| ESP32 | 23.67 × 18.5 mm; short-edge USB-C; four 3 × 2.2 mm short-edge tie slots | Envelope measured; tie positions interpreted from sketch |
-| Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends; one 30 mm long-side service zone | Measured |
-| Unpowered USB hub | 105 × 24 mm; long-side connectors face off-plate | Explicitly allowed estimate; parameterized |
+| ESP32 | 23.67 × 18.5 mm; short-edge USB-C; four 3 × 3 mm short-edge tie slots | Envelope measured; slot fit owner-corrected after first print |
+| Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends; 25 mm top and 18 mm right service | Measured and physically fit |
+| Unpowered USB hub | 105 × 24 mm; bottom connectors off-plate; 20 mm at both narrow ends | Estimated envelope; placement and service physically fit |
 | 4040 frame anchors | Eight 12 × 5.5 mm rounded slots | Tunable; verify actual heavy-duty tie in coupon |
 
 ## Refinement workflow
@@ -116,8 +124,10 @@ centre spacing = far-edge spacing - hole diameter
 
 Preview component blocks are translucent interface envelopes, not cosmetic models. They are omitted
 from every production STL and exist to expose inaccessible connectors and bad cable paths. The complete
-preview subtree uses OpenSCAD's `%` background modifier, so even a manual STL export from the default
-preview view contains only the printable fixture. `make validate` proves that preview and production
+preview subtree—including the component labels—uses OpenSCAD's `%` background modifier. Labels remain
+visible in the editor but are intentionally absent from printable meshes because the lab printer uses
+a 0.8 mm nozzle. Even a manual STL export from the default preview view contains only the printable
+fixture. `make validate` proves that preview and production
 exports have identical triangle geometry. Pairwise component spacing is also machine-enforced: every
 render/export asserts at least 3 mm between envelopes; retention slots keep at least 1 mm from
 components and one another; reserved webcam/hub service zones stay clear; and full M3 joiner screw-head
