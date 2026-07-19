@@ -57,7 +57,7 @@ validate-service-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/intentional-service-collision.log; \
 		mesh=$(BUILD)/intentional-service-collision.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="fit_coupon"' \
-			-D 'mosfet_origin=[70,95.22]' $(SOURCE) >$$log 2>&1; then \
+			-D 'mosfet_origin=[50,95.22]' $(SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: intentional webcam service-zone collision was not rejected' >&2; exit 1; \
 		fi; \
 		grep -q 'Service keep-out violation: webcam_below_service vs mosfet' $$log; \
