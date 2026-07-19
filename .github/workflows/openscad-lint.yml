@@ -1,0 +1,28 @@
+name: OpenSCAD lint
+
+on:
+  pull_request:
+    paths:
+      - "**/*.scad"
+      - "scripts/lint-openscad.sh"
+      - "mechanical/dut-fixture-v1/Makefile"
+      - ".github/workflows/openscad-lint.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install OpenSCAD
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes openscad xvfb
+
+      - name: Parse and evaluate every OpenSCAD source
+        run: xvfb-run --auto-servernum scripts/lint-openscad.sh
