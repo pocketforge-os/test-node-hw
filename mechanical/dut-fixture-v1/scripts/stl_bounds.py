@@ -51,7 +51,13 @@ def main() -> int:
     parser.add_argument("--max-x", type=float)
     parser.add_argument("--max-y", type=float)
     parser.add_argument("--max-z", type=float)
+    parser.add_argument("--bed-x", type=float)
+    parser.add_argument("--bed-y", type=float)
+    parser.add_argument("--allow-rotate", action="store_true")
     args = parser.parse_args()
+
+    if (args.bed_x is None) != (args.bed_y is None):
+        parser.error("--bed-x and --bed-y must be specified together")
 
     points = list(vertices(args.stl))
     if not points or len(points) % 3:
@@ -73,6 +79,22 @@ def main() -> int:
                 f"oversize: {axes[axis]}={size[axis]:.3f} mm > {limit:.3f} mm"
             )
 
+    bed_orientation = "n/a"
+    if args.bed_x is not None and args.bed_y is not None:
+        direct = size[0] <= args.bed_x + 1e-6 and size[1] <= args.bed_y + 1e-6
+        rotated = (
+            args.allow_rotate
+            and size[0] <= args.bed_y + 1e-6
+            and size[1] <= args.bed_x + 1e-6
+        )
+        if not direct and not rotated:
+            raise SystemExit(
+                f"bed_oversize: part={size[0]:.3f}x{size[1]:.3f} mm "
+                f"bed={args.bed_x:.3f}x{args.bed_y:.3f} mm "
+                f"allow_rotate={args.allow_rotate}"
+            )
+        bed_orientation = "direct" if direct else "rotated_90"
+
     signed_volume_mm3 = 0.0
     for offset in range(0, len(points), 3):
         a, b, c = points[offset : offset + 3]
@@ -89,7 +111,7 @@ def main() -> int:
         f"min={','.join(f'{v:.3f}' for v in mins)} "
         f"max={','.join(f'{v:.3f}' for v in maxs)} "
         f"size={','.join(f'{v:.3f}' for v in size)} "
-        f"volume_cm3={volume_cm3:.3f}"
+        f"volume_cm3={volume_cm3:.3f} bed_orientation={bed_orientation}"
     )
     return 0
 

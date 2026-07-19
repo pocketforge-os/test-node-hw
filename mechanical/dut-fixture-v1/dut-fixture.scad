@@ -19,17 +19,23 @@ epsilon = 0.05;
 
 // ---- Printer / plate -------------------------------------------------------
 printer_bed = [250, 210];             // Prusa i3 MK3S advertised build area
-plate_size = [240, 200];              // 5 mm margin on every bed edge
+plate_size = [200, 240];              // portrait like sketch; rotate 90° to print
 plate_thickness = 3.2;
 plate_corner_radius = 4;
 fixture_mount_diameter = 4.3;         // M4 clearance
-fixture_mount_inset = 7.5;
+fixture_mount_head_diameter = 8.0;    // keep-out for a typical M4 pan head
+fixture_mount_points = [
+    [7.5, 7.5], [plate_size.x - 7.5, 7.5],
+    [64, plate_size.y - 7.5], [plate_size.x - 7.5, 160]
+];
 
-// Optional split-plate joiners. The full plate also retains these useful holes.
-split_x = plate_size.x / 2;
-joiner_centres_y = [10, 86, 126, 190];
+// Optional split-plate seam follows the empty corridor between the left-side
+// controller boards and right-side instruments. No component crosses it.
+split_x = 102.5;
+joiner_centres_y = [7, 126, 166];
 joiner_hole_x = [split_x - 6, split_x + 6];
 joiner_hole_diameter = 3.4;            // M3 clearance
+joiner_head_diameter = 6.0;            // keep-out for a typical M3 pan head
 
 // ---- Printed fastener interfaces ------------------------------------------
 standoff_outer_diameter = 7.0;
@@ -43,13 +49,15 @@ zip_edge_gap = 2.0;
 // Hole spacing in the notes was measured far outside-edge to far outside-edge.
 // Therefore centre spacing = noted spacing - hole diameter.
 
-relay_origin = [8, 119];
+// Layout intentionally follows the owner's paper mock-up from top to bottom:
+// relay / antenna / DP100; BPI / ESP32 / webcam; converters; vertical hubs.
+relay_origin = [8, 159];
 relay_size = [51.85, 72.70];
 relay_hole_diameter = 3.0;
 relay_hole_far_spacing = [48.03, 69.93];
 relay_hole_centres = relay_hole_far_spacing - [relay_hole_diameter, relay_hole_diameter];
 
-bpi_origin = [8, 46];
+bpi_origin = [8, 86];
 bpi_size = [29.90, 65.00];
 bpi_hole_diameter = 2.6;
 bpi_hole_far_spacing = [25.60, 60.96];
@@ -57,14 +65,14 @@ bpi_hole_centres = bpi_hole_far_spacing - [bpi_hole_diameter, bpi_hole_diameter]
 
 // The handwritten boost-board dimensions are clear; diagonal hole coordinates
 // are an initial interpretation of the roughly 1 mm edge gaps in the sketch.
-boost_origin = [8, 16];
+boost_origin = [8, 54];
 boost_size = [43.16, 21.23];
 boost_hole_diameter = 3.0;
 boost_hole_centres = [[2.5, boost_size.y - 2.5], [boost_size.x - 2.5, 2.5]];
 
 // Board outline was not dimensioned. The 2.2 mm holes and 15.58 mm far-edge
 // spacing were; both holes are shown nearly touching the same board edge.
-mosfet_origin = [58, 17];
+mosfet_origin = [58, 56];
 mosfet_size = [35.0, 18.0];             // provisional envelope, easy to tune
 mosfet_hole_diameter = 2.2;
 mosfet_hole_centre_spacing = 15.58 - mosfet_hole_diameter;
@@ -74,34 +82,34 @@ mosfet_hole_centres = [
     [mosfet_hole_x, (mosfet_size.y + mosfet_hole_centre_spacing) / 2]
 ];
 
-antenna_origin = [50, 45];
+antenna_origin = [79, 122];
 antenna_size = [14.3, 110.0];            // width measured; length provisional
 antenna_tie_y = [15, 55, 95];
 
-esp32_origin = [73, 72];
+esp32_origin = [45.2, 91];
 esp32_size = [24.0, 65.0];               // provisional dev-board envelope
 esp32_tie_y = [8, 57];
 
 // Owner-corrected caliper measurement of this physical DP100 revision.
-dp100_origin = [137, 130];
+dp100_origin = [102, 170];
 dp100_size = [94.6, 62.2];
 // Interpreted from the end-offset annotations; straps sit near the end caps.
 dp100_tie_x = [21.0, dp100_size.x - 19.5];
 
-webcam_origin = [124, 91];
+webcam_origin = [104, 131];
 webcam_keepout = [71.0, 31.55];
 webcam_aperture = [37.0, 14.69];
 webcam_aperture_clearance = 0.40;         // total diametral/width clearance
 webcam_aperture_radius = 5.0;
 
-powered_hub_origin = [124, 56];
-powered_hub_size = [105.07, 24.0];
+powered_hub_origin = [105, 15];
+powered_hub_size = [24.0, 105.07];
 // Important measured offsets: 24 mm from one end, 39 mm from the other.
-powered_hub_tie_x = [24.0, powered_hub_size.x - 39.0];
+powered_hub_tie_y = [24.0, powered_hub_size.y - 39.0];
 
-unpowered_hub_origin = [124, 20];
-unpowered_hub_size = [105.0, 24.0];       // owner allowed an estimate
-unpowered_hub_tie_x = [25.0, 80.0];
+unpowered_hub_origin = [145, 15];
+unpowered_hub_size = [24.0, 105.0];       // owner allowed an estimate
+unpowered_hub_tie_y = [25.0, 80.0];
 
 // ---- Basic geometry --------------------------------------------------------
 module rounded_rect_2d(size, radius) {
@@ -189,9 +197,8 @@ module fixture_standoffs() {
 
 module fixture_cutouts() {
     // Whole-fixture mounting holes.
-    for (x = [fixture_mount_inset, plate_size.x - fixture_mount_inset])
-        for (y = [fixture_mount_inset, plate_size.y - fixture_mount_inset])
-            through_hole([x, y], fixture_mount_diameter);
+    for (point = fixture_mount_points)
+        through_hole(point, fixture_mount_diameter);
 
     // Split-print bridge holes (also useful general-purpose fixture holes).
     for (x = joiner_hole_x)
@@ -206,8 +213,8 @@ module fixture_cutouts() {
     transverse_tie_slots(dp100_origin, dp100_size, dp100_tie_x);
     lateral_tie_slots(antenna_origin, antenna_size, antenna_tie_y);
     lateral_tie_slots(esp32_origin, esp32_size, esp32_tie_y);
-    transverse_tie_slots(powered_hub_origin, powered_hub_size, powered_hub_tie_x);
-    transverse_tie_slots(unpowered_hub_origin, unpowered_hub_size, unpowered_hub_tie_x);
+    lateral_tie_slots(powered_hub_origin, powered_hub_size, powered_hub_tie_y);
+    lateral_tie_slots(unpowered_hub_origin, unpowered_hub_size, unpowered_hub_tie_y);
 
     // Webcam is offered from below; only the smaller rear housing protrudes.
     opening = webcam_aperture + [webcam_aperture_clearance, webcam_aperture_clearance];
@@ -240,16 +247,16 @@ module engraved_text(label, point, size = 3.2, rotation = 0) {
 }
 
 module fixture_labels(engrave = true) {
-    engraved_text("RELAY", [8, 114]);
-    engraved_text("BPI M2 ZERO", [8, 41]);
-    engraved_text("BOOST", [8, 11]);
-    engraved_text("MOSFET", [58, 12]);
-    engraved_text("ANT", [46, 73], 3.0, 90);
-    engraved_text("ESP32", [69, 91], 3.0, 90);
-    engraved_text("DP100", [137, 125]);
-    engraved_text("WEBCAM (UNDER)", [124, 86]);
-    engraved_text("POWERED HUB", [124, 51]);
-    engraved_text("USB HUB", [124, 15]);
+    engraved_text("RELAY", [8, 154]);
+    engraved_text("BPI M2 ZERO", [8, 81]);
+    engraved_text("BOOST", [8, 49]);
+    engraved_text("MOSFET", [58, 51]);
+    engraved_text("ANT", [75, 140], 3.0, 90);
+    engraved_text("ESP32", [41.2, 112], 3.0, 90);
+    engraved_text("DP100", [140, 165]);
+    engraved_text("WEBCAM (UNDER)", [120, 126]);
+    engraved_text("POWERED HUB", [101, 36], 3.0, 90);
+    engraved_text("USB HUB", [141, 49], 3.0, 90);
 }
 
 module envelope(origin, size, height, colour, radius = 2) {
@@ -342,8 +349,11 @@ module joiner() {
     }
 }
 
-assert(plate_size.x <= printer_bed.x && plate_size.y <= printer_bed.y,
-       "Fixture plate exceeds configured printer bed");
+function rectangle_fits_bed(size, bed) =
+    (size.x <= bed.x && size.y <= bed.y) ||
+    (size.x <= bed.y && size.y <= bed.x);
+assert(rectangle_fits_bed(plate_size, printer_bed),
+       "Fixture plate exceeds configured printer bed in both orientations");
 function envelope_inside_plate(origin, size) =
     origin.x >= 0 && origin.y >= 0 &&
     origin.x + size.x <= plate_size.x && origin.y + size.y <= plate_size.y;
@@ -360,6 +370,89 @@ assert(envelope_inside_plate(unpowered_hub_origin, unpowered_hub_size), "USB hub
 assert(webcam_aperture.x + webcam_aperture_clearance <= webcam_keepout.x &&
        webcam_aperture.y + webcam_aperture_clearance <= webcam_keepout.y,
        "Webcam aperture exceeds its keep-out");
+
+// Transparent preview solids can visually hide intersections. Make layout
+// safety machine-enforced instead: every exported part hard-fails if any two
+// component envelopes have less than this edge-to-edge clearance.
+component_clearance = 3.0;
+component_envelopes = [
+    ["relay", relay_origin, relay_size],
+    ["bpi", bpi_origin, bpi_size],
+    ["boost", boost_origin, boost_size],
+    ["mosfet", mosfet_origin, mosfet_size],
+    ["antenna", antenna_origin, antenna_size],
+    ["esp32", esp32_origin, esp32_size],
+    ["dp100", dp100_origin, dp100_size],
+    ["webcam", webcam_origin, webcam_keepout],
+    ["powered_hub", powered_hub_origin, powered_hub_size],
+    ["usb_hub", unpowered_hub_origin, unpowered_hub_size]
+];
+
+function transverse_slot_envelopes(owner, origin, envelope, offsets_x) = [
+    for (x = offsets_x)
+        for (y = [-zip_edge_gap - zip_slot.y / 2,
+                  envelope.y + zip_edge_gap + zip_slot.y / 2])
+            [str(owner, "_tie_", x, "_", y),
+             [origin.x + x - zip_slot.x / 2, origin.y + y - zip_slot.y / 2],
+             [zip_slot.x, zip_slot.y], owner]
+];
+function lateral_slot_envelopes(owner, origin, envelope, offsets_y) = [
+    for (y = offsets_y)
+        for (x = [-zip_edge_gap - zip_slot.y / 2,
+                  envelope.x + zip_edge_gap + zip_slot.y / 2])
+            [str(owner, "_tie_", x, "_", y),
+             [origin.x + x - zip_slot.y / 2, origin.y + y - zip_slot.x / 2],
+             [zip_slot.y, zip_slot.x], owner]
+];
+retention_feature_envelopes = concat(
+    transverse_slot_envelopes("dp100", dp100_origin, dp100_size, dp100_tie_x),
+    lateral_slot_envelopes("antenna", antenna_origin, antenna_size, antenna_tie_y),
+    lateral_slot_envelopes("esp32", esp32_origin, esp32_size, esp32_tie_y),
+    lateral_slot_envelopes("powered_hub", powered_hub_origin, powered_hub_size,
+                           powered_hub_tie_y),
+    lateral_slot_envelopes("usb_hub", unpowered_hub_origin, unpowered_hub_size,
+                           unpowered_hub_tie_y)
+);
+retention_clearance = 1.0;
+
+function envelopes_violate_clearance(a, b, clearance) =
+    !(a[1].x + a[2].x + clearance <= b[1].x ||
+      b[1].x + b[2].x + clearance <= a[1].x ||
+      a[1].y + a[2].y + clearance <= b[1].y ||
+      b[1].y + b[2].y + clearance <= a[1].y);
+
+fixture_fastener_envelopes = [
+    for (i = [0 : len(fixture_mount_points) - 1])
+        [str("fixture_mount_", i),
+         fixture_mount_points[i] - [fixture_mount_head_diameter / 2,
+                                    fixture_mount_head_diameter / 2],
+         [fixture_mount_head_diameter, fixture_mount_head_diameter]]
+];
+joiner_fastener_envelopes = [
+    for (x = joiner_hole_x)
+        for (y = joiner_centres_y)
+            [str("joiner_fastener_", x, "_", y),
+             [x - joiner_head_diameter / 2, y - joiner_head_diameter / 2],
+             [joiner_head_diameter, joiner_head_diameter]]
+];
+
+for (i = [0 : len(component_envelopes) - 2])
+    for (j = [i + 1 : len(component_envelopes) - 1])
+        assert(!envelopes_violate_clearance(component_envelopes[i], component_envelopes[j],
+                                            component_clearance),
+               str("Component envelope clearance violation: ", component_envelopes[i][0],
+                   " vs ", component_envelopes[j][0]));
+for (fastener = concat(fixture_fastener_envelopes, joiner_fastener_envelopes))
+    for (component = component_envelopes)
+        assert(!envelopes_violate_clearance(fastener, component, 0),
+               str("Fastener keep-out violation: ", fastener[0], " vs ", component[0]));
+for (feature = retention_feature_envelopes)
+    for (component = component_envelopes)
+        if (feature[3] != component[0])
+            assert(!envelopes_violate_clearance([feature[0], feature[1], feature[2]], component,
+                                                retention_clearance),
+                   str("Retention-feature clearance violation: ", feature[0],
+                       " vs ", component[0]));
 
 if (PART == "plate") {
     fixture_plate();
