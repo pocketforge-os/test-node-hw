@@ -19,7 +19,7 @@ epsilon = 0.05;
 
 // ---- Printer / plate -------------------------------------------------------
 printer_bed = [250, 210];             // Prusa i3 MK3S advertised build area
-plate_size = [200, 240];              // portrait like sketch; rotate 90° to print
+plate_size = [200, 250];              // rotate 90° to use the MK3S long axis
 plate_thickness = 3.2;
 plate_corner_radius = 4;
 // Eight frame anchors: one slot toward each adjacent rail at every corner.
@@ -66,13 +66,13 @@ zip_edge_gap = 2.0;
 
 // Layout is organized around a central webcam, accessible hub ends, a clear
 // 4040-frame perimeter, and compact functional groups.
-relay_origin = [30, 154.9];
+relay_origin = [30, 152.7];
 relay_size = [51.85, 72.70];
 relay_hole_diameter = 3.0;
 relay_hole_far_spacing = [48.03, 69.93];
 relay_hole_centres = relay_hole_far_spacing - [relay_hole_diameter, relay_hole_diameter];
 
-bpi_origin = [14, 86.8];
+bpi_origin = [14, 84.6];
 bpi_size = [29.90, 65.00];
 bpi_hole_diameter = 2.6;
 bpi_hole_far_spacing = [25.60, 60.96];
@@ -97,25 +97,36 @@ mosfet_hole_centres = [
     [mosfet_hole_x, (mosfet_size.y + mosfet_hole_centre_spacing) / 2]
 ];
 
-antenna_origin = [42, 8];
+antenna_origin = [42, 230.7];
 antenna_size = [110.0, 14.3];             // width measured; length provisional
 antenna_tie_x = [25, 85];
 
-esp32_origin = [8, 62];
-esp32_size = [23.67, 18.5];               // owner-measured physical envelope
+esp32_origin = [8, 57.8];
+// Oriented with the 18.5 mm short/USB-C edge facing the bottom of the plate.
+esp32_size = [18.5, 23.67];               // owner-measured physical envelope
 // Two narrow straps near the ends, matching the four surrounding slots in the
 // owner's sketch while retaining 1 mm from each board end to the slot edge.
 esp32_tie_y = [4.5, esp32_size.y - 4.5];
 esp32_usb_service_depth = 20.0;
-esp32_usb_service_origin = [esp32_origin.x,
+esp32_usb_service_width = 10.0;            // centred USB-C plug/cable envelope
+esp32_usb_service_origin = [esp32_origin.x +
+                            (esp32_size.x - esp32_usb_service_width) / 2,
                             esp32_origin.y - esp32_usb_service_depth];
-esp32_usb_service_size = [esp32_size.x, esp32_usb_service_depth];
+esp32_usb_service_size = [esp32_usb_service_width, esp32_usb_service_depth];
 
 // Owner-corrected caliper measurement of this physical DP100 revision.
 dp100_origin = [89.5, 162];
 dp100_size = [94.6, 62.2];
-// Interpreted from the end-offset annotations; straps sit near the end caps.
-dp100_tie_x = [21.0, dp100_size.x - 19.5];
+// The owner sketch has exactly one slot on each short side. The vertical
+// offsets are measured down from the top edge in that sketch.
+dp100_tie_features = [
+    ["dp100_left_tie",
+     [dp100_origin.x - zip_edge_gap - zip_slot.y / 2,
+      dp100_origin.y + dp100_size.y - 21.0], 90, "dp100"],
+    ["dp100_right_tie",
+     [dp100_origin.x + dp100_size.x + zip_edge_gap + zip_slot.y / 2,
+      dp100_origin.y + dp100_size.y - 25.0], 90, "dp100"]
+];
 
 webcam_keepout = [71.0, 31.55];
 webcam_aperture = [37.0, 14.69];
@@ -128,13 +139,18 @@ webcam_below_service_origin = [webcam_origin.x,
                                webcam_origin.y - webcam_below_clearance];
 webcam_below_service_size = [webcam_keepout.x, webcam_below_clearance];
 
-hub_end_service_depth = 30.0;
-powered_hub_origin = [66.9, 61.7];
+// Each hub exposes one connector-bearing long edge toward clear space. The
+// powered hub gets a full in-plate cable bay; the lower hub opens off the edge.
+hub_side_service_depth = 30.0;
+powered_hub_connector_side = "bottom";
+unpowered_hub_connector_side = "bottom";
+hub_tie_service_clearance = 1.0;
+powered_hub_origin = [66.9, 67.0];
 powered_hub_size = [105.07, 24.0];
 // Important measured offsets: 24 mm from one end, 39 mm from the other.
 powered_hub_tie_x = [24.0, powered_hub_size.x - 39.0];
 
-unpowered_hub_origin = [66.9, 27.6];
+unpowered_hub_origin = [64.0, 7.0];
 unpowered_hub_size = [105.0, 24.0];       // owner allowed an estimate
 unpowered_hub_tie_x = [25.0, 80.0];
 
@@ -238,7 +254,8 @@ module fixture_cutouts() {
     point_standoff_bores(boost_origin, boost_hole_centres, m25_pilot_diameter);
     point_standoff_bores(mosfet_origin, mosfet_hole_centres, m2_pilot_diameter);
 
-    transverse_tie_slots(dp100_origin, dp100_size, dp100_tie_x);
+    for (feature = dp100_tie_features)
+        tie_slot(feature[1], feature[2]);
     transverse_tie_slots(antenna_origin, antenna_size, antenna_tie_x);
     lateral_tie_slots(esp32_origin, esp32_size, esp32_tie_y);
     transverse_tie_slots(powered_hub_origin, powered_hub_size, powered_hub_tie_x);
@@ -279,8 +296,8 @@ module fixture_labels(engrave = true) {
     engraved_text("BPI M2 ZERO", [10, 108], 3.0, 90);
     engraved_text("BOOST", [149, 91]);
     engraved_text("MOSFET", [157, 117]);
-    engraved_text("ANT", [88, 13]);
-    engraved_text("ESP32", [8, 59]);
+    engraved_text("ANT", [88, 236]);
+    engraved_text("ESP32", [8, 54.8]);
     engraved_text("DP100", [126, 159]);
     engraved_text("WEBCAM (UNDER)", [76, 149]);
     engraved_text("POWERED HUB", [89, 74]);
@@ -422,10 +439,27 @@ assert(webcam_centre.x == plate_size.x / 2,
        "Webcam must remain centred left-to-right");
 assert(webcam_below_clearance >= 20,
        "Webcam requires at least 20 mm clear immediately below");
-assert(hub_end_service_depth >= 30,
-       "USB hubs require at least 30 mm connector clearance at both ends");
+assert(hub_side_service_depth >= 30,
+       "USB hub connector keep-outs require at least 30 mm depth");
 assert(esp32_usb_service_depth >= 20,
        "ESP32 requires at least 20 mm USB connector clearance below");
+assert(esp32_size.x < esp32_size.y,
+       "ESP32 short USB-C edge must face the bottom of the plate");
+assert(esp32_usb_service_width <= esp32_size.x,
+       "ESP32 USB-C service width exceeds its short edge");
+assert(abs((esp32_usb_service_origin.x + esp32_usb_service_width / 2) -
+           (esp32_origin.x + esp32_size.x / 2)) < epsilon &&
+       abs(esp32_usb_service_origin.y + esp32_usb_service_depth -
+           esp32_origin.y) < epsilon,
+       "ESP32 USB-C keep-out must be centred on its bottom short edge");
+assert(len(dp100_tie_features) == 2,
+       "DP100 requires exactly two side tie slots");
+assert(dp100_tie_features[0][1].x < dp100_origin.x &&
+       dp100_tie_features[1][1].x > dp100_origin.x + dp100_size.x,
+       "DP100 tie slots must remain on opposite short sides");
+assert(powered_hub_connector_side == "bottom" &&
+       unpowered_hub_connector_side == "bottom",
+       "Each USB hub connector bank must face its clear lower long side");
 
 // Transparent preview solids can visually hide intersections. Make layout
 // safety machine-enforced instead: every exported part hard-fails if any two
@@ -463,12 +497,15 @@ function lateral_slot_envelopes(owner, origin, envelope, offsets_y) = [
 function oriented_slot_envelope(feature, dimensions) =
     let(size = feature[2] == 0 ? dimensions : [dimensions.y, dimensions.x])
         [feature[0], feature[1] - size / 2, size, "frame"];
+function owned_slot_envelope(feature, dimensions = zip_slot) =
+    let(size = feature[2] == 0 ? dimensions : [dimensions.y, dimensions.x])
+        [feature[0], feature[1] - size / 2, size, feature[3]];
 frame_tie_feature_envelopes = [
     for (feature = frame_tie_features)
         oriented_slot_envelope(feature, frame_tie_slot)
 ];
 retention_feature_envelopes = concat(
-    transverse_slot_envelopes("dp100", dp100_origin, dp100_size, dp100_tie_x),
+    [for (feature = dp100_tie_features) owned_slot_envelope(feature)],
     transverse_slot_envelopes("antenna", antenna_origin, antenna_size, antenna_tie_x),
     lateral_slot_envelopes("esp32", esp32_origin, esp32_size, esp32_tie_y),
     transverse_slot_envelopes("powered_hub", powered_hub_origin, powered_hub_size,
@@ -480,20 +517,37 @@ retention_feature_envelopes = concat(
 retention_clearance = 1.0;
 frame_tie_component_clearance = 5.0;
 
-function end_service_envelopes(owner, origin, envelope, depth) = [
-    // Outside the plate is inherently clear, so edge-adjacent service zones
-    // are clipped to printable area while still reserving `depth` in reality.
-    [str(owner, "_left_connector"), [max(0, origin.x - depth), origin.y],
-     [min(depth, origin.x), envelope.y], owner],
-    [str(owner, "_right_connector"), [origin.x + envelope.x, origin.y],
-     [min(depth, plate_size.x - (origin.x + envelope.x)), envelope.y], owner]
-];
+function long_side_service_segment(owner, origin, envelope, depth, side,
+                                   index, start_x, end_x) =
+    side == "bottom" ?
+        [str(owner, "_long_side_connector_", index),
+         [origin.x + start_x, max(0, origin.y - depth)],
+         [end_x - start_x, min(depth, origin.y)], owner] :
+        [str(owner, "_long_side_connector_", index),
+         [origin.x + start_x, origin.y + envelope.y],
+         [end_x - start_x, depth], owner];
+function long_side_service_envelopes(owner, origin, envelope, depth, side,
+                                     tie_offsets) =
+    let(half_slot = zip_slot.x / 2 + hub_tie_service_clearance,
+        starts = [0, tie_offsets[0] + half_slot,
+                  tie_offsets[1] + half_slot],
+        ends = [tie_offsets[0] - half_slot,
+                tie_offsets[1] - half_slot, envelope.x])
+        [for (i = [0 : 2])
+            long_side_service_segment(owner, origin, envelope, depth, side,
+                                      i, starts[i], ends[i])];
 hub_service_envelopes = concat(
-    end_service_envelopes("powered_hub", powered_hub_origin, powered_hub_size,
-                          hub_end_service_depth),
-    end_service_envelopes("usb_hub", unpowered_hub_origin, unpowered_hub_size,
-                          hub_end_service_depth)
+    long_side_service_envelopes("powered_hub", powered_hub_origin,
+                                powered_hub_size, hub_side_service_depth,
+                                powered_hub_connector_side, powered_hub_tie_x),
+    long_side_service_envelopes("usb_hub", unpowered_hub_origin,
+                                unpowered_hub_size, hub_side_service_depth,
+                                unpowered_hub_connector_side, unpowered_hub_tie_x)
 );
+assert(len(powered_hub_tie_x) == 2 && len(unpowered_hub_tie_x) == 2,
+       "Long-side hub service segmentation requires two tie offsets per hub");
+assert(len(hub_service_envelopes) == 6,
+       "Each USB hub requires one three-segment long-side connector keep-out");
 service_envelopes = concat(
     [["webcam_below_service", webcam_below_service_origin,
       webcam_below_service_size, "webcam"],
