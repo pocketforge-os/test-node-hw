@@ -30,7 +30,7 @@ the boss to suit a heat-set insert.
 OpenSCAD 2021.01 or newer is sufficient:
 
 ```sh
-make preview       # component-envelope layout image
+make preview       # angled + top-down component-envelope layout images
 make validate      # production, coupon, split halves, joiner, and bed-bound checks
 ```
 
@@ -43,9 +43,10 @@ more machinery than determinism here.
 
 ## Layout and print settings
 
-- Production plate: **240 × 200 × 3.2 mm**, inside the MK3S 250 × 210 mm envelope with 5 mm nominal
-  margin on all four sides.
-- Exact CAD volume is about **152.6 cm³** before slicer compensation (roughly 190 g of PLA or 194 g
+- Production plate: **200 × 240 × 3.2 mm** in the source so the editor follows the owner's portrait
+  paper mock-up. Rotate it 90° in the slicer; the resulting 240 × 200 mm bed footprint fits inside the
+  MK3S 250 × 210 mm envelope with 5 mm nominal margin on all four sides.
+- Exact CAD volume is about **152.7 cm³** before slicer compensation (roughly 190 g of PLA or 194 g
   of PETG if sliced effectively solid); the slicer's estimate remains authoritative.
 - Print flat with standoffs upward; no support material.
 - PLA is fine for layout verification. PETG is preferred for the final lab fixture because standoffs
@@ -53,16 +54,18 @@ more machinery than determinism here.
 - Starting profile: 0.20 mm layers, 4 perimeters, 5 top/bottom layers, 15–20% gyroid infill. A brim is
   optional; the 5 mm bed margin limits brim width, so use the split build if more adhesion margin is
   needed.
-- Four 4.3 mm corner holes mount the entire fixture to a shelf, frame, or old-school wooden breadboard.
+- Four 4.3 mm perimeter holes mount the entire fixture to a shelf, frame, or old-school wooden
+  breadboard. Their locations avoid all components using an enforced 8 mm screw-head keep-out.
 
-The plate can also be exported as two 120 × 200 mm halves:
+The plate can also be exported along the empty vertical corridor as 102.5 × 240 mm and 97.5 × 240 mm
+halves. Each half fits the MK3S after the same 90° bed rotation:
 
 ```sh
 make split
 ```
 
-Print `plate-left.stl`, `plate-right.stl`, and four copies of `joiner.stl`. Join from below using the
-four paired hole rows and M3 × 10 screws, washers, and nuts. The one-piece plate retains these holes as
+Print `plate-left.stl`, `plate-right.stl`, and three copies of `joiner.stl`. Join from below using the
+three paired hole rows and M3 × 10 screws, washers, and nuts. The one-piece plate retains these holes as
 general-purpose fixture/cable-management points.
 
 ## Measurement translation
@@ -96,4 +99,8 @@ centre spacing = far-edge spacing - hole diameter
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
 Preview component blocks are translucent interface envelopes, not cosmetic models. They are omitted
-from every production STL and exist to expose collisions, inaccessible connectors, and bad cable paths.
+from every production STL and exist to expose inaccessible connectors and bad cable paths. Pairwise
+component spacing is also machine-enforced: every render/export asserts at least 3 mm between envelopes,
+retention slots keep at least 1 mm from every other component, and full M3/M4 screw-head keep-outs may
+not intersect a component. `make validate` includes an intentional relay/antenna collision that must be
+rejected.
