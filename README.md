@@ -21,6 +21,7 @@ public at release).
 - `kicad/` — the KiCad 9 project. `test-node-placement-template.kicad_sch` is a placement head-start
   (parts placed, power rails attached, signal wiring to be drawn).
 - `lib/` — symbols/footprints for the specialized parts.
+- `mechanical/` — parametric 3D-printable fixture plates for current lab harnesses.
 
 ## Status
 Pre-fab. Schematic + placement in progress; **PCB order gated** on the Fri 2026-07-03 EE review + the

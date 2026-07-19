@@ -19,3 +19,6 @@ Thumbs.db
 /fab/
 /gerbers/
 *.zip
+# Generated OpenSCAD renders and meshes
+mechanical/**/build/
+**/__pycache__/
