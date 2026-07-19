@@ -41,7 +41,11 @@ Pull requests touching `*.scad` run the repository-wide equivalent through the
 explicitly rejects `ERROR:` diagnostics even when OpenSCAD incorrectly returns a zero process status.
 
 Generated files live under `build/` and are intentionally not committed. The production STL is
-`build/pocketforge-dut-fixture-v1.stl`.
+`build/pocketforge-dut-fixture-v1.stl`. Every push that changes OpenSCAD source or its build tooling
+also runs the `OpenSCAD artifacts` workflow. After full mesh validation, it publishes the production
+plate, fit coupon, split fallback, joiner, layout previews, and SHA-256 checksums as a downloadable
+30-day workflow artifact. New OpenSCAD projects join the same process by adding one project entry to
+the workflow matrix.
 
 No container is required for this: OpenSCAD is a single distro package, the source is portable, and
 the stdlib-only bounds validator removes Python dependency drift. A container would add substantially
