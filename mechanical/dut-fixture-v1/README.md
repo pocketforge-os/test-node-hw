@@ -32,8 +32,12 @@ OpenSCAD 2021.01 or newer is sufficient:
 
 ```sh
 make preview       # angled + top-down component-envelope layout images
+make lint          # fast parser/evaluation gate without a CGAL render
 make validate      # production, coupon, split halves, joiner, and bed-bound checks
 ```
+
+Pull requests touching `*.scad` run the repository-wide equivalent through the
+`OpenSCAD lint` GitHub check, parsing and evaluating every OpenSCAD source before merge.
 
 Generated files live under `build/` and are intentionally not committed. The production STL is
 `build/pocketforge-dut-fixture-v1.stl`.

@@ -4,10 +4,19 @@ PYTHON ?= python3
 BUILD := build
 SOURCE := dut-fixture.scad
 
-.PHONY: all validate validate-overlap-guard validate-service-guard \
+.PHONY: all lint validate validate-overlap-guard validate-service-guard \
 	validate-preview-export preview split clean
 
 all: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/fit-coupon.stl
+
+# CSG export is the fast OpenSCAD parse/evaluation gate: it catches syntax,
+# undefined-variable, parameter, warning, and assertion failures without CGAL.
+$(BUILD)/lint.csg: $(SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
+
+lint: $(BUILD)/lint.csg
+	@echo 'openscad_lint=pass source=$(SOURCE)'
 
 $(BUILD):
 	mkdir -p $@
@@ -70,7 +79,7 @@ validate-preview-export: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/previe
 		$(BUILD)/preview-export.stl
 	@echo 'preview_export_guard=pass ghosts=excluded'
 
-validate: all split validate-overlap-guard validate-service-guard validate-preview-export
+validate: lint all split validate-overlap-guard validate-service-guard validate-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/pocketforge-dut-fixture-v1.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 250 --max-y 210 $(BUILD)/fit-coupon.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/plate-lower.stl

@@ -1,0 +1,37 @@
+name: OpenSCAD lint
+
+on:
+  pull_request:
+    paths:
+      - "**/*.scad"
+      - "scripts/lint-openscad.sh"
+      - "mechanical/dut-fixture-v1/Makefile"
+      - ".github/workflows/openscad-lint.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes openscad xvfb
+
+      - name: Parse and evaluate every OpenSCAD source
+        run: xvfb-run --auto-servernum scripts/lint-openscad.sh
