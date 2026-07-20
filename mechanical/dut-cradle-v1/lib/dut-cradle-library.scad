@@ -117,11 +117,17 @@ module pf_j_hook_installed(
     m3_clearance,
     nut_across_flats,
     nut_depth,
+    nut_capture_wall,
     key_size,
     keyway_depth,
     epsilon = 0.05
 ) {
     total_height = rear_gap + throat + lip_thickness;
+    nut_circumradius = nut_across_flats / (2 * cos(30));
+    nut_capture_radius = nut_circumradius + nut_capture_wall;
+
+    assert(nut_capture_wall > 0,
+           "Nut capture wall must be positive");
 
     difference() {
         union() {
@@ -130,6 +136,12 @@ module pf_j_hook_installed(
                     pf_rounded_rect_2d(
                         [base_outward + base_inward, width], base_radius
                     );
+
+            // The screw is deliberately offset from the anti-rotation key.
+            // Give its top-loading nut a complete local perimeter rather than
+            // allowing the hex pocket to break through the narrow hook base.
+            translate([screw_offset.x, screw_offset.y, 0])
+                cylinder(r = nut_capture_radius, h = base_height, $fn = 48);
 
             // Continuous stem; the generous section is intentional for a
             // 0.8 mm nozzle and survives repeated device servicing.
@@ -201,6 +213,7 @@ module pf_installed_j_hook(
     m3_clearance,
     nut_across_flats,
     nut_depth,
+    nut_capture_wall,
     key_size,
     keyway_depth,
     epsilon = 0.05
@@ -211,8 +224,8 @@ module pf_installed_j_hook(
                 throat, rear_gap, width, wall, lip_depth, lip_thickness,
                 support_depth, support_thickness, base_outward, base_inward,
                 base_height, base_radius, screw_offset, key_offset,
-                m3_clearance, nut_across_flats, nut_depth, key_size,
-                keyway_depth, epsilon
+                m3_clearance, nut_across_flats, nut_depth, nut_capture_wall,
+                key_size, keyway_depth, epsilon
             );
 }
 
@@ -235,19 +248,29 @@ module pf_print_oriented_j_hook(
     m3_clearance,
     nut_across_flats,
     nut_depth,
+    nut_capture_wall,
     key_size,
     keyway_depth,
     epsilon = 0.05
 ) {
     total_height = rear_gap + throat + lip_thickness;
-    translate([base_outward, total_height, width / 2])
-        rotate([90, 0, 0])
+    nut_circumradius = nut_across_flats / (2 * cos(30));
+    nut_capture_radius = nut_circumradius + nut_capture_wall;
+    print_x_offset = max(base_outward,
+                         -screw_offset.x + nut_capture_radius);
+    print_z_offset = max(width / 2,
+                         key_offset.y + key_size.y / 2,
+                         screw_offset.y + nut_capture_radius);
+    // Rest the unmodified broad face on the bed.  The asymmetric nut boss then
+    // grows upward instead of becoming a low point that would require support.
+    translate([print_x_offset, keyway_depth, print_z_offset])
+        rotate([-90, 0, 0])
             pf_j_hook_installed(
                 throat, rear_gap, width, wall, lip_depth, lip_thickness,
                 support_depth, support_thickness, base_outward, base_inward,
                 base_height, base_radius, screw_offset, key_offset,
-                m3_clearance, nut_across_flats, nut_depth, key_size,
-                keyway_depth, epsilon
+                m3_clearance, nut_across_flats, nut_depth, nut_capture_wall,
+                key_size, keyway_depth, epsilon
             );
 }
 

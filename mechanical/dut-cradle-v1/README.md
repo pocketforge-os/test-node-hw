@@ -101,6 +101,9 @@ Assembly order:
 M3 × 12 is the calculated starting length for a 3.2 mm carrier, 4.4 mm hook
 base, washer, and 2.4 mm-class nut. Verify it on the coupon. The screw and nut
 sit 8 mm outside the shell edge, so excess length cannot point into the DUT.
+Each nut pocket has a complete 2.4 mm radial capture wall—three extrusion widths
+with the lab's 0.8 mm nozzle—so tightening torque cannot spin the nut out through
+the side of the formerly narrow base.
 
 ## Profile measurements and assumptions
 

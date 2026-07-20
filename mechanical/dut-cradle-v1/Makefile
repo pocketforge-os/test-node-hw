@@ -13,8 +13,8 @@ SMART_PRO_SOURCE := trimui-smart-pro-cradle.scad
 # previous GL context is settling. Serialize previews and leave a short gap.
 .NOTPARALLEL:
 
-.PHONY: all lint validate validate-profile-guard validate-family-equivalence \
-	validate-preview-export preview clean
+.PHONY: all lint validate validate-profile-guard validate-nut-capture-guard \
+	validate-family-equivalence validate-preview-export preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 	$(BUILD)/trimui-smart-pro-carrier.stl \
@@ -96,6 +96,18 @@ validate-profile-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'profile_guard=pass case=undersized_hook_throat'
 
+validate-nut-capture-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-nut-capture.log; \
+		mesh=$(BUILD)/invalid-nut-capture.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="hook"' \
+			-D 'm3_nut_capture_wall=1.6' $(FAMILY_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: undersized nut capture wall was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'M3 nut capture wall must remain at least three 0.8 mm nozzle widths' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'nut_capture_guard=pass case=undersized_capture_wall'
+
 validate-family-equivalence: $(CHECKS)/smart-pro-s-unlabelled.stl \
 	$(CHECKS)/smart-pro-unlabelled.stl
 	$(PYTHON) scripts/stl_bounds.py \
@@ -115,17 +127,17 @@ validate-preview-export: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 		$(CHECKS)/smart-pro-assembly-export.stl
 	@echo 'preview_export_guard=pass models=smart_pro_s,smart_pro ghosts=excluded'
 
-validate: lint all validate-profile-guard validate-family-equivalence \
-	validate-preview-export
+validate: lint all validate-profile-guard validate-nut-capture-guard \
+	validate-family-equivalence validate-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-carrier.stl
-	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 30 --max-z 12 \
+	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 30 --max-z 16 \
 		$(BUILD)/j-hook.stl
-	$(PYTHON) scripts/stl_bounds.py --max-x 80 --max-y 80 --max-z 12 \
+	$(PYTHON) scripts/stl_bounds.py --max-x 80 --max-y 80 --max-z 16 \
 		$(BUILD)/j-hook-set.stl
-	$(PYTHON) scripts/stl_bounds.py --max-x 80 --max-y 80 --max-z 12 \
+	$(PYTHON) scripts/stl_bounds.py --max-x 80 --max-y 80 --max-z 16 \
 		$(BUILD)/fit-coupon.stl
 
 clean:

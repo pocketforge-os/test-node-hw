@@ -138,6 +138,7 @@ hook_base_radius = 1.5;
 m3_clearance = 3.5;
 m3_nut_across_flats = 6.0;
 m3_nut_depth = 2.8;
+m3_nut_capture_wall = 2.4;               // three walls with a 0.8 mm nozzle
 hook_screw_offset = [-8.0, -3.5];
 hook_key_offset = [-8.0, 3.5];
 hook_key_size = [4.0, 3.2];
@@ -165,6 +166,8 @@ assert(device_rear_gap >= hook_base_height,
        "Rear shelf must sit above the clamp base");
 assert(hook_throat > device_body_depth,
        "Hook throat must retain the DUT with positive clearance");
+assert(m3_nut_capture_wall >= 2.4,
+       "M3 nut capture wall must remain at least three 0.8 mm nozzle widths");
 assert(hook_lip_depth <=
        min((device_body_size.x - screen_size.x) / 2,
            (device_body_size.y - screen_size.y) / 2),
@@ -271,7 +274,7 @@ module one_hook_installed(pose, throat = hook_throat,
         hook_support_thickness, hook_base_outward, hook_base_inward,
         hook_base_height, hook_base_radius, hook_screw_offset,
         hook_key_offset, m3_clearance, nut_af, m3_nut_depth,
-        hook_key_size, hook_keyway_depth, epsilon
+        m3_nut_capture_wall, hook_key_size, hook_keyway_depth, epsilon
     );
 }
 
@@ -283,7 +286,7 @@ module one_hook_printable(throat = hook_throat,
         hook_support_thickness, hook_base_outward, hook_base_inward,
         hook_base_height, hook_base_radius, hook_screw_offset,
         hook_key_offset, m3_clearance, nut_af, m3_nut_depth,
-        hook_key_size, hook_keyway_depth, epsilon
+        m3_nut_capture_wall, hook_key_size, hook_keyway_depth, epsilon
     );
 }
 
