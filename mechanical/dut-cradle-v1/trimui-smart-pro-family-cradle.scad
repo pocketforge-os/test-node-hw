@@ -138,7 +138,7 @@ hook_base_height = 4.4;
 hook_base_radius = 1.5;
 
 m3_clearance = 3.5;
-m3_nut_across_flats = 5.8;               // owner fit: 0.1 mm tighter per flat
+m3_nut_across_flats = 5.6;               // second fit: another 0.1 mm per flat
 m3_nut_depth = 2.8;
 m3_nut_capture_wall = 2.4;               // three walls with a 0.8 mm nozzle
 hook_screw_offset = [-8.0, -3.5];
@@ -316,10 +316,10 @@ module mount_coupon_plate() {
 }
 
 module fit_coupon() {
-    // Left-to-right: 5.7, 5.8, and 5.9 mm nut-AF trials.  Hold the validated
+    // Left-to-right: 5.5, 5.6, and 5.7 mm nut-AF trials.  Hold the validated
     // 11.3 mm throat constant so the coupon changes only one fit variable.
     throat_trials = [hook_throat, hook_throat, hook_throat];
-    nut_trials = [5.7, 5.8, 5.9];
+    nut_trials = [5.5, 5.6, 5.7];
     for (index = [0 : len(throat_trials) - 1])
         translate([index * 24, 0, 0])
             one_hook_printable(throat_trials[index], nut_trials[index]);

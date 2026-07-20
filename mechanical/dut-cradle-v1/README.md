@@ -53,9 +53,9 @@ make build/fit-coupon.stl
 The three hooks all use the production 11.3 mm throat and are ordered
 left-to-right by M3 nut-pocket size:
 
-1. 5.7 mm across flats;
-2. 5.8 mm across flats (production default);
-3. 5.9 mm across flats.
+1. 5.5 mm across flats;
+2. 5.6 mm across flats (production default);
+3. 5.7 mm across flats.
 
 The detached coupon plate contains the production 3.5 mm M3 adjustment slot
 and shallow anti-rotation keyway. Check the actual device edge at all proposed
@@ -85,7 +85,7 @@ at the triangle level; the raised title is the only model difference.
 ## Hardware and assembly
 
 - 6 printed J-hooks (PETG preferred);
-- 6 × M3 nuts (coupon tests 5.7, 5.8, and 5.9 mm across-flat pockets);
+- 6 × M3 nuts (coupon tests 5.5, 5.6, and 5.7 mm across-flat pockets);
 - 6 × M3 × 12 mm pan-head machine screws;
 - 6 × M3 washers under the plate;
 - optional thin felt/TPU pads at shell contacts;
