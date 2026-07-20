@@ -9,7 +9,7 @@ The first mechanical family supports both the **TrimUI Smart Pro** and
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
 loose datums. Every hook has a rear shelf, so the six perimeter contacts—not
-the open PCB and not the shoulder triggers—establish a 6 mm carrier gap.
+the open PCB and not the shoulder triggers—establish an 11 mm carrier gap.
 
 ## Why separate parts
 
@@ -39,6 +39,11 @@ device outline, service aperture, safe contacts, and optical center may change.
 | `hook_set` | Six production J-hooks arranged for one print |
 | `fit_coupon` | Three throat/nut variants plus the production screw-slot/keyway coupon |
 
+There is only one hook implementation and one single-hook export. `hook_set`
+instances that same parameterized module six times for slicer convenience; it
+does not duplicate source geometry. A future device family reuses the library
+and supplies its own throat, stand-off, fastener, and contact parameters.
+
 ## Print the coupon first
 
 ```sh
@@ -47,15 +52,15 @@ make build/fit-coupon.stl
 
 The three hooks are ordered left-to-right:
 
-1. 12.2 mm throat, 5.8 mm M3 nut pocket;
-2. 12.6 mm throat, 6.0 mm M3 nut pocket (production default);
-3. 13.0 mm throat, 6.0 mm M3 nut pocket.
+1. 11.0 mm throat, 5.8 mm M3 nut pocket;
+2. 11.3 mm throat, 6.0 mm M3 nut pocket (production default);
+3. 11.6 mm throat, 6.0 mm M3 nut pocket.
 
 The detached coupon plate contains the production 3.5 mm M3 adjustment slot
 and shallow anti-rotation keyway. Check the actual device edge at all proposed
-contact regions: the photographed DUT is open and wired, and the 12 mm value is
-a local measurement rather than a guaranteed uniform shell thickness. A thin
-0.5–1 mm felt or TPU contact pad is recommended for the final hooks.
+contact regions: 11.3 mm is the owner-corrected internal capture gap after the
+first physical fit, not a claim that shell thickness is uniform. A thin 0.5–1
+mm felt or TPU contact pad is recommended for the final hooks.
 
 ## Build and validate
 
@@ -107,12 +112,12 @@ the side of the formerly narrow base.
 
 ## Profile measurements and assumptions
 
-| Parameter | Initial value | Status |
+| Parameter | Current value | Status |
 |---|---:|---|
 | Shell envelope | 188.35 × 79.77 mm | Owner measurement |
-| Local edge capture depth | 12.0 mm | Owner measurement; coupon required |
-| Production hook throat | 12.6 mm | 0.6 mm passive clearance |
-| Rear carrier gap | 6.0 mm | Design choice |
+| Modeled local edge depth | 10.7 mm | Preview proxy derived from fit gap and passive clearance |
+| Production hook throat | 11.3 mm | Owner correction after first physical fit |
+| Rear carrier gap | 11.0 mm | Owner correction: original 6 mm + 5 mm trigger clearance |
 | Front lip overlap | 2.8 mm | Design choice; below screen margin |
 | Rear service aperture | 158 × 52 mm | Design choice; leaves perimeter structure |
 | Top-left safe window | 35.41–50 mm from left | Interpreted from nested sketch dimensions |

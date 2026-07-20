@@ -13,8 +13,9 @@ SMART_PRO_SOURCE := trimui-smart-pro-cradle.scad
 # previous GL context is settling. Serialize previews and leave a short gap.
 .NOTPARALLEL:
 
-.PHONY: all lint validate validate-profile-guard validate-nut-capture-guard \
-	validate-family-equivalence validate-preview-export preview clean
+.PHONY: all lint validate validate-profile-guard validate-rear-gap-guard \
+	validate-nut-capture-guard validate-family-equivalence \
+	validate-preview-export preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 	$(BUILD)/trimui-smart-pro-carrier.stl \
@@ -89,12 +90,23 @@ preview: $(BUILD)/layout-smart-pro-s-preview.png \
 validate-profile-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-throat.log; mesh=$(BUILD)/invalid-throat.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="hook"' \
-			-D 'hook_throat=11.5' $(FAMILY_SOURCE) >$$log 2>&1; then \
+			-D 'hook_throat=10.6' $(FAMILY_SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: undersized hook throat was not rejected' >&2; exit 1; \
 		fi; \
 		grep -q 'Hook throat must retain the DUT with positive clearance' $$log; \
 		rm -f $$log $$mesh; \
 		echo 'profile_guard=pass case=undersized_hook_throat'
+
+validate-rear-gap-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-rear-gap.log; mesh=$(BUILD)/invalid-rear-gap.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="hook"' \
+			-D 'device_rear_gap=10.0' $(FAMILY_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: undersized rear carrier gap was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'Rear carrier gap must preserve the owner-validated trigger clearance' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'rear_gap_guard=pass case=undersized_trigger_clearance'
 
 validate-nut-capture-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-nut-capture.log; \
@@ -127,8 +139,9 @@ validate-preview-export: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 		$(CHECKS)/smart-pro-assembly-export.stl
 	@echo 'preview_export_guard=pass models=smart_pro_s,smart_pro ghosts=excluded'
 
-validate: lint all validate-profile-guard validate-nut-capture-guard \
-	validate-family-equivalence validate-preview-export
+validate: lint all validate-profile-guard validate-rear-gap-guard \
+	validate-nut-capture-guard validate-family-equivalence \
+	validate-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \

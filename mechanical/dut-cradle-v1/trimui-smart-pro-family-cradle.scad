@@ -62,7 +62,9 @@ frame_tie_features = [
 // production exports use one of the two tiny label-only wrappers.
 device_name = is_undef(DEVICE_LABEL) ? "TrimUI Smart Pro S" : DEVICE_LABEL;
 device_body_size = [188.35, 79.77];       // owner caliper measurement
-device_body_depth = 12.0;                // measured local hook capture depth
+// Preview proxy derived from the owner-fit 11.3 mm throat while preserving the
+// original 0.6 mm passive clearance; the throat itself is authoritative.
+device_body_depth = 10.7;
 device_corner_radius = 35.0;             // preview outline; not a fit surface
 device_origin = (plate_size - device_body_size) / 2;
 device_centre = device_origin + device_body_size / 2;
@@ -75,7 +77,7 @@ optical_offset = [0, 0];
 
 // The open/wired rear of the DUT must never touch the carrier.  Six perimeter
 // shelves establish this gap and a large aperture leaves the centre accessible.
-device_rear_gap = 6.0;
+device_rear_gap = 11.0;                  // owner fit: +5 mm trigger clearance
 rear_service_window = [158.0, 52.0];
 rear_service_origin = device_centre - rear_service_window / 2;
 rear_service_radius = 8.0;
@@ -123,7 +125,7 @@ function pose_surface(pose) =
               pf_scale_2d(-pose_play(pose), pose_inward(pose)));
 
 // ---- Separately printed J-hook -------------------------------------------
-hook_throat = device_body_depth + 0.6;    // passive capture, never squeeze DUT
+hook_throat = 11.3;                      // owner-corrected internal capture gap
 hook_width = 10.0;
 hook_wall = 4.0;
 hook_lip_depth = 2.8;
@@ -164,6 +166,8 @@ assert(device_origin.x > hook_base_outward &&
        "Insufficient plate margin outside DUT for clamps");
 assert(device_rear_gap >= hook_base_height,
        "Rear shelf must sit above the clamp base");
+assert(device_rear_gap >= 11.0,
+       "Rear carrier gap must preserve the owner-validated trigger clearance");
 assert(hook_throat > device_body_depth,
        "Hook throat must retain the DUT with positive clearance");
 assert(m3_nut_capture_wall >= 2.4,
@@ -312,10 +316,10 @@ module mount_coupon_plate() {
 }
 
 module fit_coupon() {
-    // Left-to-right: 12.2/5.8, 12.6/6.0, and 13.0/6.0 mm
+    // Left-to-right: 11.0/5.8, 11.3/6.0, and 11.6/6.0 mm
     // throat/nut-AF combinations.  The detached plate carries the exact
     // production screw slot and anti-rotation keyway.
-    throat_trials = [12.2, 12.6, 13.0];
+    throat_trials = [11.0, 11.3, 11.6];
     nut_trials = [5.8, 6.0, 6.0];
     for (index = [0 : len(throat_trials) - 1])
         translate([index * 24, 0, 0])
