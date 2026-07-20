@@ -3,7 +3,8 @@
 This is the camera-facing half of a PocketForge test harness: a reusable
 **device carrier / DUT cradle** that fixes a handheld at a repeatable optical
 datum without loading its controls, triggers, display, or exposed rear wiring.
-The first profile is the **TrimUI Smart Pro S**.
+The first mechanical family supports both the **TrimUI Smart Pro** and
+**TrimUI Smart Pro S**, which share the same enclosure and control layout.
 
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
@@ -16,9 +17,13 @@ OpenSCAD modules are the template mechanism:
 
 - [`lib/dut-cradle-library.scad`](lib/dut-cradle-library.scad) contains the
   reusable carrier fastener and J-hook geometry.
-- [`trimui-smart-pro-s-cradle.scad`](trimui-smart-pro-s-cradle.scad) is the
-  device profile and presentation/export wrapper: shell dimensions, optical
-  offset, contact windows, hook poses, labels, and common 4040 datum.
+- [`trimui-smart-pro-family-cradle.scad`](trimui-smart-pro-family-cradle.scad)
+  contains the shared mechanical profile: shell dimensions, optical offset,
+  contact windows, hook poses, labels, and common 4040 datum.
+- [`trimui-smart-pro-s-cradle.scad`](trimui-smart-pro-s-cradle.scad) and
+  [`trimui-smart-pro-cradle.scad`](trimui-smart-pro-cradle.scad) are tiny model
+  wrappers that supply only `TrimUI Smart Pro S` or `TrimUI Smart Pro` as the
+  raised title.
 
 A future handheld gets a new wrapper/profile while reusing the library. The
 carrier envelope and eight corner frame anchors remain standardized; the
@@ -61,12 +66,15 @@ make validate
 
 Generated STLs and PNGs live under `build/`, remain uncommitted, and are
 published as a GitHub Actions artifact on relevant pushes. The main outputs are
-`trimui-smart-pro-s-carrier.stl`, `j-hook.stl`, and `j-hook-set.stl`.
+`trimui-smart-pro-s-carrier.stl`, `trimui-smart-pro-carrier.stl`, `j-hook.stl`,
+and `j-hook-set.stl`.
 
 Validation parses every repository OpenSCAD source, renders all meshes, proves
 the 247 × 200 mm plate fits the conservative 247 × 207 mm Prusa envelope,
 rejects an undersized hook throat, and proves preview-only geometry cannot leak
-into a carrier export.
+into either carrier export. A family-equivalence guard also exports both plates
+without labels and proves their mechanical meshes are byte-for-byte equivalent
+at the triangle level; the raised title is the only model difference.
 
 ## Hardware and assembly
 
