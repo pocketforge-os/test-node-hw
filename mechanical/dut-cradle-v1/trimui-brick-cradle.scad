@@ -26,9 +26,9 @@ printer_edge_margin = 1.5;
 printable_bed = printer_bed - [2 * printer_edge_margin,
                                2 * printer_edge_margin];
 
-// The extra right/left margin reserves a collision-free vertical label lane
-// while the portrait plate remains materially smaller than the Smart Pro one.
-plate_size = [148, 180];
+// The 205 mm height reserves the same top-title convention as the accepted
+// Smart Pro carriers while staying inside the conservative 207 mm Y envelope.
+plate_size = [148, 205];
 plate_thickness = 3.2;
 plate_corner_radius = 4.0;
 
@@ -158,13 +158,13 @@ hook_adjustment = 8.0;
 // ---- Labels for the 0.8 mm nozzle ----------------------------------------
 label_height = 1.2;
 label_stroke_growth = 1.10;
-title_font_size = 13.0;
+title_box_size = [94.0, 24.0];
+title_box_centre = [plate_size.x / 2, plate_size.y - 15.0];
+title_font_size = 14.4;
 orientation_font_size = 10.5;
 label_feature_clearance = 2.4;  // three 0.8 mm nozzle widths
 
-title_label_center = [plate_size.x - 13.0, plate_size.y / 2];
-title_label_half_length = 50.0; // conservative lane for "TrimUI Brick"
-top_label_center = [plate_size.x / 2 + 12.0, plate_size.y - 18.0];
+top_label_center = [plate_size.x - 25.0, plate_size.y - 36.0];
 bottom_label_center = [plate_size.x / 2, 11.5];
 
 // ---- Explicit mechanical invariants --------------------------------------
@@ -178,17 +178,22 @@ upper_contact_window = [
     device_origin.x + upper_contact_inset - upper_hook_width / 2,
     device_origin.x + upper_contact_inset + upper_hook_width / 2
 ];
-right_side_surface = pose_surface(clamp_poses[3]);
-right_side_screw_point = pf_add_2d(
-    right_side_surface,
-    pf_rotate_2d(hook_screw_offset, pose_angle(clamp_poses[3]))
+title_box_min = title_box_centre - title_box_size / 2;
+title_box_max = title_box_centre + title_box_size / 2;
+top_left_slot_outer_x = frame_tie_corner_offset + frame_tie_slot.x / 2;
+top_right_slot_inner_x = plate_size.x - frame_tie_corner_offset -
+                         frame_tie_slot.x / 2;
+upper_hook_surface = pose_surface(clamp_poses[4]);
+upper_hook_screw_point = pf_add_2d(
+    upper_hook_surface,
+    pf_rotate_2d(hook_screw_offset, pose_angle(clamp_poses[4]))
 );
-right_side_mount_outer_x = max(
-    right_side_surface.x + hook_base_outward,
-    right_side_screw_point.x + (hook_adjustment + m3_clearance) / 2
+upper_mount_outer_y = max(
+    upper_hook_surface.y + hook_base_outward,
+    upper_hook_screw_point.y + (hook_adjustment + m3_clearance) / 2
 );
-title_label_inner_x = title_label_center.x -
-                      title_font_size / 2 - label_stroke_growth;
+top_label_outer_y = top_label_center.y +
+                    orientation_font_size / 2 + label_stroke_growth;
 bottom_label_outer_y = bottom_label_center.y +
                        orientation_font_size / 2 + label_stroke_growth;
 bottom_left_surface = pose_surface(clamp_poses[0]);
@@ -213,16 +218,13 @@ assert(upper_lip_depth < screen_top_margin,
        "Brick upper lip could cover active screen pixels");
 assert(upper_contact_window.y < top_usb_keepout.x,
        "Brick upper retainer entered the centred USB-host keep-out");
-assert(title_label_inner_x >= right_side_mount_outer_x +
-           label_feature_clearance,
-       "Brick side title entered the right hook mount or adjustment sweep");
-assert(title_label_center.y - title_label_half_length >=
-           frame_tie_corner_offset + frame_tie_slot.x / 2 +
-           label_feature_clearance &&
-       title_label_center.y + title_label_half_length <=
-           plate_size.y - frame_tie_corner_offset -
-           frame_tie_slot.x / 2 - label_feature_clearance,
-       "Brick side title entered a right-side 4040 frame slot lane");
+assert(title_box_min.x >= top_left_slot_outer_x + label_feature_clearance &&
+       title_box_max.x <= top_right_slot_inner_x - label_feature_clearance,
+       "Brick top title box entered a top 4040 frame slot lane");
+assert(title_box_min.y >= upper_mount_outer_y + label_feature_clearance,
+       "Brick top title box entered the upper hook adjustment sweep");
+assert(top_label_outer_y + label_feature_clearance <= title_box_min.y,
+       "Brick TOP orientation label entered the device title box");
 assert(bottom_label_outer_y + label_feature_clearance <=
            bottom_mount_inner_y,
        "Brick BOTTOM label entered a lower hook adjustment sweep");
@@ -253,9 +255,30 @@ module embossed_text(point, message, size, rotation = 0,
                          font = "Liberation Sans:style=Bold");
 }
 
+// Match the accepted Smart Pro title treatment: a raised outlined box with a
+// centered bold device name, all sized for the owner's 0.8 mm nozzle.
+module label_box(centre, size, message, font_size) {
+    translate([centre.x - size.x / 2,
+               centre.y - size.y / 2,
+               plate_thickness]) {
+        linear_extrude(height = label_height)
+            difference() {
+                pf_rounded_rect_2d(size, 2.0);
+                translate([1.2, 1.2])
+                    pf_rounded_rect_2d(size - [2.4, 2.4], 1.2);
+            }
+        translate([size.x / 2, size.y / 2, 0])
+            linear_extrude(height = label_height)
+                offset(delta = label_stroke_growth)
+                    text(message, size = font_size,
+                         halign = "center", valign = "center",
+                         font = "Liberation Sans:style=Bold");
+    }
+}
+
 module carrier_labels() {
-    embossed_text(title_label_center, device_name,
-                  title_font_size, 90);
+    label_box(title_box_centre, title_box_size,
+              device_name, title_font_size);
     embossed_text(top_label_center, "TOP", orientation_font_size);
     embossed_text(bottom_label_center, "BOTTOM",
                   orientation_font_size);

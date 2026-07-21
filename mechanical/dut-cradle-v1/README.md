@@ -34,6 +34,9 @@ OpenSCAD modules are the template mechanism:
 A future handheld gets a new wrapper/profile while reusing the library. The
 carrier envelope and eight corner frame anchors remain standardized; the
 device outline, service aperture, safe contacts, and optical center may change.
+Every device profile reserves a dedicated top margin for a centered, horizontal
+device-name title box; names do not use side margins or share space with clamp
+mounts. Orientation labels may move to suit the device-specific keep-outs.
 
 `PART` selects independent printable objects:
 
