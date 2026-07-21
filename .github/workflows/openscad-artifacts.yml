@@ -28,6 +28,8 @@ jobs:
         project:
           - name: dut-fixture-v1
             path: mechanical/dut-fixture-v1
+          - name: dut-cradle-v1
+            path: mechanical/dut-cradle-v1
     steps:
       # The organization does not allow third-party checkout actions. Fetch the
       # immutable triggering commit directly, matching openscad-lint.yml.

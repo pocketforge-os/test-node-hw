@@ -7,6 +7,7 @@ on:
       - "scripts/lint-openscad.sh"
       - "scripts/test-lint-openscad.sh"
       - "mechanical/dut-fixture-v1/Makefile"
+      - "mechanical/dut-cradle-v1/Makefile"
       - ".github/workflows/openscad-lint.yml"
 
 permissions:
