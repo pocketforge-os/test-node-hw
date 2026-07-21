@@ -18,7 +18,8 @@ BRICK_SOURCE := trimui-brick-cradle.scad
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
-	validate-brick-label-clearance-guard validate-brick-preview-export \
+	validate-brick-label-clearance-guard validate-brick-print-foot-guard \
+	validate-brick-preview-export \
 	preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
@@ -229,6 +230,18 @@ validate-brick-label-clearance-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'brick_label_clearance_guard=pass case=previous_narrow_plate'
 
+validate-brick-print-foot-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-brick-print-foot.log; \
+		mesh=$(BUILD)/invalid-brick-print-foot.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="upper_hook"' \
+			-D 'hook_spine_width=10.0' $(BRICK_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: protruding Brick print-foot nub was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'anti-rotation keys must not protrude below the broad print face' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'brick_print_foot_guard=pass case=key_below_broad_face'
+
 validate-brick-preview-export: $(BUILD)/trimui-brick-carrier.stl \
 	$(CHECKS)/brick-assembly-export.stl
 	$(PYTHON) scripts/stl_bounds.py \
@@ -240,7 +253,8 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
-	validate-brick-label-clearance-guard validate-brick-preview-export
+	validate-brick-label-clearance-guard validate-brick-print-foot-guard \
+	validate-brick-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \

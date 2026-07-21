@@ -143,6 +143,10 @@ hook_base_outward = 13.0;
 hook_base_inward = 4.0;
 hook_base_height = 4.4;
 hook_base_radius = 1.5;
+// Keep a Smart-Pro-width spine/base for a full broad-side first layer while
+// leaving the 9/6 mm shell-contact shelves and lips narrow. This preserves the
+// already-printed carrier's keyway locations and all device keep-outs.
+hook_spine_width = 10.4;
 
 m3_clearance = 3.5;
 m3_nut_across_flats = 5.6;               // Smart Pro owner-validated press fit
@@ -154,6 +158,7 @@ hook_key_size = [4.0, 3.2];
 hook_key_clearance = 0.35;
 hook_keyway_depth = 1.2;
 hook_adjustment = 8.0;
+print_face_margin = 0.10;
 
 // ---- Labels for the 0.8 mm nozzle ----------------------------------------
 label_height = 1.2;
@@ -235,6 +240,9 @@ assert(lower_side_contact_height - lower_hook_width / 2 >
        "The complete Brick side-contact band must land on the straight thick shell");
 assert(m3_nut_capture_wall >= 2.4,
        "Brick M3 nut capture wall must remain at least three nozzle widths");
+assert(hook_key_offset.y + hook_key_size.y / 2 + print_face_margin <=
+           hook_spine_width / 2,
+       "Brick anti-rotation keys must not protrude below the broad print face");
 assert(rear_service_origin.x > device_origin.x &&
        rear_service_origin.y > device_origin.y &&
        rear_service_origin.x + rear_service_window.x <
@@ -332,7 +340,7 @@ module one_hook_installed(pose) {
         hook_base_height, hook_base_radius, hook_screw_offset,
         hook_key_offset, m3_clearance, m3_nut_across_flats,
         m3_nut_depth, m3_nut_capture_wall, hook_key_size,
-        hook_keyway_depth, epsilon
+        hook_keyway_depth, epsilon, hook_spine_width
     );
 }
 
@@ -344,7 +352,7 @@ module lower_hook_printable(throat = lower_throat) {
         hook_base_height, hook_base_radius, hook_screw_offset,
         hook_key_offset, m3_clearance, m3_nut_across_flats,
         m3_nut_depth, m3_nut_capture_wall, hook_key_size,
-        hook_keyway_depth, epsilon
+        hook_keyway_depth, epsilon, hook_spine_width
     );
 }
 
@@ -356,7 +364,7 @@ module upper_hook_printable(throat = upper_throat) {
         hook_base_height, hook_base_radius, hook_screw_offset,
         hook_key_offset, m3_clearance, m3_nut_across_flats,
         m3_nut_depth, m3_nut_capture_wall, hook_key_size,
-        hook_keyway_depth, epsilon
+        hook_keyway_depth, epsilon, hook_spine_width
     );
 }
 

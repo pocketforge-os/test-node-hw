@@ -40,6 +40,13 @@ throat, width, support depth, and a shallow 1.2 mm front lip. This avoids a new
 two-axis corner-cup mechanism during the first physical iteration and makes
 every fit surface independently inspectable.
 
+Both hooks retain a 10.4 mm-wide structural spine/base even though their shell
+contacts remain 9 mm and 6 mm wide. That spine keeps the existing keyway datum
+compatible with already printed carriers and puts a continuous broad face on
+the print bed. The anti-rotation key is therefore 0.1 mm above layer one rather
+than becoming a small support-requiring foot; the short contact shelves bridge
+outward from the spine without support.
+
 The upper hook is 17 mm from the device's left edge. Its 6 mm contact window is
 well left of the centered 16 mm USB-host keep-out. Its 1.2 mm lip is below the
 modeled 1.8 mm top bezel and must be confirmed against the physical glass before
@@ -113,7 +120,9 @@ The source's `PART` selector accepts `assembly`, `plate`, `lower_hook`,
 
 - PETG preferred; no supports.
 - Carrier flat with labels upward.
-- Hooks are exported on their broad strong side; do not auto-orient upright.
+- Hooks are exported on their broad strong spine; do not auto-orient upright.
+  Their anti-rotation nub intentionally faces upward and begins 0.1 mm above
+  the bed, so no support or slicer-generated raft should be needed.
 - Start at 0.30–0.40 mm layers for the 0.8 mm nozzle, 4 perimeters, 5 top and
   bottom layers, and 20–30% gyroid infill.
 
@@ -126,5 +135,7 @@ Validation covers parser/evaluation lint, manifold meshes, Prusa bed bounds,
 preview/export isolation, the 8 mm minimum rear-access rule, and exact equality
 of the upper/lower front contact datums. A negative label-clearance guard also
 proves that an undersized plate is rejected rather than allowing the centered
-top title box to enter either 4040 attachment slot. Final closure still
-requires the owner's explicit physical fit and webcam-view confirmation.
+top title box to enter either 4040 attachment slot. A print-foot regression
+guard rejects any spine that would let the anti-rotation key become the lowest
+feature. Final closure still requires the owner's explicit physical fit and
+webcam-view confirmation.
