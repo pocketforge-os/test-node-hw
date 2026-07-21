@@ -5,19 +5,21 @@ carrier with the PocketForge fleet's standard top title and eight 4040-frame
 zip-tie anchors. It reuses the parametric M3 captive-nut/keyed hook mechanism
 while introducing grip-aware lower contacts and a curved-bottom fit coupon.
 
-The carrier deliberately keeps the device front on one plane. Owner calipers
-show an 18.77 mm hook-capture depth but as much as 29 mm at the no-contact grip
-extremes. Every hook therefore uses a 20.23 mm rear spacer: 10.23 mm for the
-grip protrusion plus 10 mm of actual carrier clearance. The equal top/bottom
-spacers are intentional because all four hooks contact the same shell plane:
+The carrier deliberately keeps the device front on one plane while reproducing
+the owner-measured shell step: 21.63 mm at the bottom contacts and 13.33 mm at
+the top contacts. The no-contact rear grip extremes reach 29 mm, so the common
+shell-front plane is 39 mm above the carrier: 29 mm of device plus 10 mm of
+actual clearance. The top spacer is therefore 8.30 mm taller than the bottom
+spacer to compensate for the thinner upper shell:
 
 | Contact profile | Body depth | Rear gap | Passive throat | Front capture datum |
 |---|---:|---:|---:|---:|
-| Lower grip-aware | 18.77 mm | 20.23 mm | 19.37 mm | 39.60 mm |
-| Upper screen-safe | 18.77 mm | 20.23 mm | 19.37 mm | 39.60 mm |
+| Lower grip-aware | 21.63 mm | 17.37 mm | 22.23 mm | 39.60 mm |
+| Upper screen-safe | 13.33 mm | 25.67 mm | 13.93 mm | 39.60 mm |
 
-The hook-contact shell reaches a 39.00 mm front plane; the remaining 0.60 mm is
-passive hook clearance, never intended as clamp pressure.
+Both shell regions reach the 39.00 mm front plane; the hook lips reach a shared
+39.60 mm capture datum. That remaining 0.60 mm is passive clearance, never
+intended as clamp pressure.
 
 ## Retention decision
 
@@ -55,9 +57,12 @@ Manufacturer source:
 | Parameter | Value | Status |
 |---|---:|---|
 | Front envelope | 83 × 126 mm | Anbernic nominal; owner caliper confirmation required |
-| Hook-capture shell depth | 18.77 mm | Owner caliper |
+| Lower hook-capture depth | 21.63 mm | Owner caliper |
+| Upper hook-capture depth | 13.33 mm | Owner caliper |
+| Shell-depth step | 8.30 mm | Derived: 21.63 − 13.33 |
 | Maximum rear grip depth | 29 mm | Owner caliper |
-| Hook spacer / thin-shell rear gap | 20.23 mm | Derived: 29 − 18.77 + 10 |
+| Lower hook spacer / rear gap | 17.37 mm | Derived: 29 + 10 − 21.63 |
+| Upper hook spacer / rear gap | 25.67 mm | Derived: 29 + 10 − 13.33 |
 | Lower grip/control-region height | 70 mm | Owner drawing; placement aid only |
 | Upper safe bezel band | 8 mm | Owner drawing |
 | Variable side/grip depth | 19–29 mm | Owner caliper; explicit no-contact region |
@@ -136,9 +141,10 @@ make validate
 ```
 
 Validation covers OpenSCAD lint, manifold and bed bounds, preview/export
-isolation, exact hook-family front-datum equality, a negative guard against
-measuring the rear gap from the thin shell, trigger/control/top and bottom-USB
-keep-outs, minimum curved-shelf reach, the flat first-layer spine, and discrete
-non-overlapping rows in the four-hook print set. Final closure still
+isolation, the exact 13.33/21.63 mm stepped profile, hook-family front-datum
+equality, a negative guard against measuring rear clearance from anything but
+the 29 mm grip extreme, trigger/control/top and bottom-USB keep-outs, minimum
+curved-shelf reach, the flat first-layer spine, and discrete non-overlapping
+rows in the four-hook print set. Final closure still
 requires owner confirmation of the actual 83 × 126 mm envelope, coupon fit,
 full-carrier stability, unobstructed controls, and webcam visibility.

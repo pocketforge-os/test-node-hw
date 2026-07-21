@@ -66,20 +66,20 @@ device_bottom_corner_radius = 14.0;       // preview proxy, not a fit surface
 device_origin = [(plate_size.x - device_body_size.x) / 2, 34.0];
 device_centre = device_origin + device_body_size / 2;
 
-// Owner-caliper shell thickness at the top/bottom hook locations. The lower
-// side grips reach 29 mm overall depth, but are explicit no-contact regions.
+// Owner-caliper shell thickness at the actual top/bottom hook locations. The
+// lower shell is 8.30 mm deeper than the upper shell. Side grips reach 29 mm
+// overall depth, but remain explicit no-contact regions.
 lower_region_height = 70.0;
-measured_body_depth = 18.77;
+lower_body_depth = 21.63;
+upper_body_depth = 13.33;
+body_depth_step = lower_body_depth - upper_body_depth;
 maximum_grip_depth = 29.0;
-rear_grip_protrusion = maximum_grip_depth - measured_body_depth;
-lower_body_depth = measured_body_depth;
-upper_body_depth = measured_body_depth;
-
-// The rear gap is measured from the 18.77 mm hook-contact shell. Add the full
-// rear grip protrusion so even the 29 mm extreme retains 10 mm to the carrier.
 minimum_grip_clearance = 10.0;
-lower_rear_gap = minimum_grip_clearance + rear_grip_protrusion;
-upper_rear_gap = lower_rear_gap;
+device_front_plane_from_carrier = maximum_grip_depth +
+                                  minimum_grip_clearance;
+lower_rear_gap = device_front_plane_from_carrier - lower_body_depth;
+upper_rear_gap = device_front_plane_from_carrier - upper_body_depth;
+rear_grip_protrusion = maximum_grip_depth - lower_body_depth;
 passive_depth_clearance = 0.60;
 lower_throat = lower_body_depth + passive_depth_clearance;
 upper_throat = upper_body_depth + passive_depth_clearance;
@@ -243,13 +243,18 @@ assert(plate_size.x <= printable_bed.x && plate_size.y <= printable_bed.y,
 assert(device_origin.x > hook_base_outward &&
        device_origin.y > hook_base_outward,
        "RG353V carrier lacks clamp margin outside the DUT");
-assert(abs((lower_rear_gap - rear_grip_protrusion) -
-           minimum_grip_clearance) < 0.01 &&
-       abs((upper_rear_gap - rear_grip_protrusion) -
-           minimum_grip_clearance) < 0.01,
+assert(abs(lower_body_depth - 21.63) < 0.01 &&
+       abs(upper_body_depth - 13.33) < 0.01 &&
+       abs(body_depth_step - 8.30) < 0.01,
+       "RG353V profile must preserve the 13.33/21.63 mm stepped shell");
+assert(device_front_plane_from_carrier - maximum_grip_depth >=
+           minimum_grip_clearance &&
+       minimum_grip_clearance >= 10.0,
        "RG353V rear datum must preserve 10 mm behind the maximum grip depth");
 assert(abs(lower_front_datum - upper_front_datum) < 0.01,
        "RG353V hook families must share one flat front contact plane");
+assert(abs((upper_rear_gap - lower_rear_gap) - body_depth_step) < 0.01,
+       "RG353V unequal spacers must compensate the 8.30 mm shell step");
 assert(lower_throat > lower_body_depth && upper_throat > upper_body_depth,
        "RG353V hook throats must retain positive passive clearance");
 assert(lower_support_depth >= 10.0,
@@ -301,7 +306,9 @@ assert(m3_nut_capture_wall >= 2.4,
 assert(hook_key_offset.y + hook_key_size.y / 2 + print_face_margin <=
            hook_spine_width / 2,
        "RG353V anti-rotation keys must not protrude below the broad print face");
-assert(hook_set_row_spacing >= lower_rear_gap + lower_throat +
+assert(hook_set_row_spacing >=
+           max(lower_rear_gap + lower_throat,
+               upper_rear_gap + upper_throat) +
            hook_lip_thickness + 2.0,
        "RG353V arranged hook rows must remain discrete printable parts");
 assert(rear_service_origin.x > device_origin.x &&
@@ -430,8 +437,8 @@ module upper_hook_printable() {
 module hook_set() {
     for (column = [0 : 1])
         translate([column * 27, 0, 0]) lower_hook_printable();
-    // The 20.23 mm grip-clearing spacer makes each printable hook 44.8 mm
-    // long; keep the rows separated so slicers receive four discrete parts.
+    // Both unequal spacer/throat pairs reach the common 39.60 mm capture
+    // datum, making each printable hook 44.8 mm long. Keep rows discrete.
     translate([0, hook_set_row_spacing, 0]) upper_hook_printable();
     translate([27, hook_set_row_spacing, 0]) upper_hook_printable();
 }
@@ -478,13 +485,31 @@ module rg353v_outline_2d() {
 }
 
 module rg353v_device_preview() {
-    front_plane = plate_thickness + lower_rear_gap + lower_body_depth;
+    front_plane = plate_thickness + device_front_plane_from_carrier;
 
-    color([0.12, 0.14, 0.16, 0.62])
+    // The shell preview is split at the owner-measured 70 mm transition. Its
+    // unequal rear surfaces and common front plane expose spacer mistakes.
+    color([0.12, 0.14, 0.16, 0.68])
         translate([device_origin.x, device_origin.y,
                    plate_thickness + lower_rear_gap])
-            linear_extrude(height = measured_body_depth)
-                rg353v_outline_2d();
+            intersection() {
+                linear_extrude(height = lower_body_depth)
+                    rg353v_outline_2d();
+                cube([device_body_size.x, lower_region_height,
+                      lower_body_depth]);
+            }
+
+    color([0.20, 0.22, 0.24, 0.68])
+        translate([device_origin.x, device_origin.y,
+                   plate_thickness + upper_rear_gap])
+            intersection() {
+                linear_extrude(height = upper_body_depth)
+                    rg353v_outline_2d();
+                translate([0, lower_region_height, 0])
+                    cube([device_body_size.x,
+                          device_body_size.y - lower_region_height,
+                          upper_body_depth]);
+            }
 
     // Rear-only grip bulges make the maximum 29 mm depth and resulting 10 mm
     // carrier clearance visible. They are deliberately absent at all hooks.
@@ -511,7 +536,7 @@ module rg353v_device_preview() {
 }
 
 module keep_out_preview() {
-    front_plane = plate_thickness + lower_rear_gap + lower_body_depth;
+    front_plane = plate_thickness + device_front_plane_from_carrier;
 
     // Safe top/bottom contact bands are green.
     color([0.15, 0.95, 0.35, 0.78]) {

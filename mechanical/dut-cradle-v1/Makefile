@@ -17,6 +17,7 @@ RG353V_SOURCE := anbernic-rg353v-cradle.scad
 .PHONY: all lint validate validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-rg353v-flat-datum-guard \
+	validate-rg353v-stepped-profile-guard \
 	validate-rg353v-grip-clearance-guard \
 	validate-rg353v-hook-set-spacing-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
@@ -195,7 +196,7 @@ validate-rg353v-flat-datum-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-rg353v-datum.log; \
 		mesh=$(BUILD)/invalid-rg353v-datum.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="lower_hook"' \
-			-D 'upper_body_depth=17.77' $(RG353V_SOURCE) >$$log 2>&1; then \
+			-D 'upper_rear_gap=17.37' $(RG353V_SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: misaligned RG353V front datum was not rejected' >&2; \
 			exit 1; \
 		fi; \
@@ -203,11 +204,23 @@ validate-rg353v-flat-datum-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'rg353v_flat_datum_guard=pass case=misaligned_hook_family_datums'
 
+validate-rg353v-stepped-profile-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-rg353v-stepped-profile.log; \
+		mesh=$(BUILD)/invalid-rg353v-stepped-profile.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="upper_hook"' \
+			-D 'upper_body_depth=21.63' $(RG353V_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: uniform RG353V shell profile was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'RG353V profile must preserve the 13.33/21.63 mm stepped shell' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'rg353v_stepped_profile_guard=pass case=uniform_shell'
+
 validate-rg353v-grip-clearance-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-rg353v-grip-clearance.log; \
 		mesh=$(BUILD)/invalid-rg353v-grip-clearance.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="lower_hook"' \
-			-D 'lower_rear_gap=10.0' -D 'upper_rear_gap=10.0' \
+			-D 'device_front_plane_from_carrier=31.63' \
 			$(RG353V_SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: RG353V grip interference datum was not rejected' >&2; \
 			exit 1; \
@@ -286,6 +299,7 @@ validate-rg353v-preview-export: $(BUILD)/anbernic-rg353v-carrier.stl \
 validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-rg353v-flat-datum-guard \
+	validate-rg353v-stepped-profile-guard \
 	validate-rg353v-grip-clearance-guard \
 	validate-rg353v-hook-set-spacing-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
