@@ -8,6 +8,8 @@ on:
       - "scripts/test-lint-openscad.sh"
       - "mechanical/dut-fixture-v1/Makefile"
       - "mechanical/dut-cradle-v1/Makefile"
+      - "mechanical/dut-chassis-2020-v1/Makefile"
+      - "mechanical/dut-chassis-2020-v1/scripts/**"
       - ".github/workflows/openscad-lint.yml"
 
 permissions:

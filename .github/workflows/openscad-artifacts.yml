@@ -30,6 +30,8 @@ jobs:
             path: mechanical/dut-fixture-v1
           - name: dut-cradle-v1
             path: mechanical/dut-cradle-v1
+          - name: dut-chassis-2020-v1
+            path: mechanical/dut-chassis-2020-v1
     steps:
       # The organization does not allow third-party checkout actions. Fetch the
       # immutable triggering commit directly, matching openscad-lint.yml.
@@ -65,7 +67,10 @@ jobs:
         run: |
           set -euo pipefail
           cd "${PROJECT_PATH}/build"
-          sha256sum -- *.stl layout-*.png > SHA256SUMS
+          find . -maxdepth 1 -type f \
+            \( -name '*.stl' -o -name 'layout-*.png' \
+               -o -name 'cut-list.csv' -o -name 'cut-list.md' \) \
+            -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
 
       - name: Upload printable meshes and previews
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -74,6 +79,8 @@ jobs:
           path: |
             ${{ matrix.project.path }}/build/*.stl
             ${{ matrix.project.path }}/build/layout-*.png
+            ${{ matrix.project.path }}/build/cut-list.csv
+            ${{ matrix.project.path }}/build/cut-list.md
             ${{ matrix.project.path }}/build/SHA256SUMS
           if-no-files-found: error
           compression-level: 9
