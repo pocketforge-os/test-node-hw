@@ -66,17 +66,19 @@ device_bottom_corner_radius = 14.0;       // preview proxy, not a fit surface
 device_origin = [(plate_size.x - device_body_size.x) / 2, 34.0];
 device_centre = device_origin + device_body_size / 2;
 
-// Owner-caliper shell thickness. The lower grip/control region rises about
-// 70 mm, but does not establish a different hook capture depth.
+// Owner-caliper shell thickness at the top/bottom hook locations. The lower
+// side grips reach 29 mm overall depth, but are explicit no-contact regions.
 lower_region_height = 70.0;
 measured_body_depth = 18.77;
+maximum_grip_depth = 29.0;
+rear_grip_protrusion = maximum_grip_depth - measured_body_depth;
 lower_body_depth = measured_body_depth;
 upper_body_depth = measured_body_depth;
 
-// Ten millimetres behind the shell clears the beefy rear grips and triggers,
-// provides airflow, and admits a finger. Both hook families share this datum.
-minimum_rear_clearance = 10.0;
-lower_rear_gap = 10.0;
+// The rear gap is measured from the 18.77 mm hook-contact shell. Add the full
+// rear grip protrusion so even the 29 mm extreme retains 10 mm to the carrier.
+minimum_grip_clearance = 10.0;
+lower_rear_gap = minimum_grip_clearance + rear_grip_protrusion;
 upper_rear_gap = lower_rear_gap;
 passive_depth_clearance = 0.60;
 lower_throat = lower_body_depth + passive_depth_clearance;
@@ -179,6 +181,7 @@ hook_key_clearance = 0.35;
 hook_keyway_depth = 1.2;
 hook_adjustment = 8.0;
 print_face_margin = 0.10;
+hook_set_row_spacing = 50.0;
 
 // ---- Fleet-standard labels for the 0.8 mm nozzle -------------------------
 label_height = 1.2;
@@ -240,9 +243,11 @@ assert(plate_size.x <= printable_bed.x && plate_size.y <= printable_bed.y,
 assert(device_origin.x > hook_base_outward &&
        device_origin.y > hook_base_outward,
        "RG353V carrier lacks clamp margin outside the DUT");
-assert(lower_rear_gap >= minimum_rear_clearance &&
-       upper_rear_gap >= minimum_rear_clearance,
-       "RG353V rear gaps must preserve hand, trigger, and wiring access");
+assert(abs((lower_rear_gap - rear_grip_protrusion) -
+           minimum_grip_clearance) < 0.01 &&
+       abs((upper_rear_gap - rear_grip_protrusion) -
+           minimum_grip_clearance) < 0.01,
+       "RG353V rear datum must preserve 10 mm behind the maximum grip depth");
 assert(abs(lower_front_datum - upper_front_datum) < 0.01,
        "RG353V hook families must share one flat front contact plane");
 assert(lower_throat > lower_body_depth && upper_throat > upper_body_depth,
@@ -296,6 +301,9 @@ assert(m3_nut_capture_wall >= 2.4,
 assert(hook_key_offset.y + hook_key_size.y / 2 + print_face_margin <=
            hook_spine_width / 2,
        "RG353V anti-rotation keys must not protrude below the broad print face");
+assert(hook_set_row_spacing >= lower_rear_gap + lower_throat +
+           hook_lip_thickness + 2.0,
+       "RG353V arranged hook rows must remain discrete printable parts");
 assert(rear_service_origin.x > device_origin.x &&
        rear_service_origin.y > device_origin.y &&
        rear_service_origin.x + rear_service_window.x <
@@ -422,8 +430,10 @@ module upper_hook_printable() {
 module hook_set() {
     for (column = [0 : 1])
         translate([column * 27, 0, 0]) lower_hook_printable();
-    translate([0, 43, 0]) upper_hook_printable();
-    translate([27, 43, 0]) upper_hook_printable();
+    // The 20.23 mm grip-clearing spacer makes each printable hook 44.8 mm
+    // long; keep the rows separated so slicers receive four discrete parts.
+    translate([0, hook_set_row_spacing, 0]) upper_hook_printable();
+    translate([27, hook_set_row_spacing, 0]) upper_hook_printable();
 }
 
 // Two bottom mount interfaces at their production 21 mm separation. Printing
@@ -470,27 +480,21 @@ module rg353v_outline_2d() {
 module rg353v_device_preview() {
     front_plane = plate_thickness + lower_rear_gap + lower_body_depth;
 
-    color([0.12, 0.14, 0.16, 0.62]) {
+    color([0.12, 0.14, 0.16, 0.62])
         translate([device_origin.x, device_origin.y,
                    plate_thickness + lower_rear_gap])
-            intersection() {
-                linear_extrude(height = lower_body_depth)
-                    rg353v_outline_2d();
-                cube([device_body_size.x, lower_region_height,
-                      lower_body_depth]);
-            }
+            linear_extrude(height = measured_body_depth)
+                rg353v_outline_2d();
 
-        translate([device_origin.x, device_origin.y,
-                   plate_thickness + upper_rear_gap])
-            intersection() {
-                linear_extrude(height = upper_body_depth)
-                    rg353v_outline_2d();
-                translate([0, lower_region_height, 0])
-                    cube([device_body_size.x,
-                          device_body_size.y - lower_region_height,
-                          upper_body_depth]);
-            }
-    }
+    // Rear-only grip bulges make the maximum 29 mm depth and resulting 10 mm
+    // carrier clearance visible. They are deliberately absent at all hooks.
+    color([0.50, 0.18, 0.70, 0.72])
+        for (grip_x = [device_origin.x + 9,
+                       device_origin.x + device_body_size.x - 25])
+            translate([grip_x, device_origin.y + 7,
+                       plate_thickness + minimum_grip_clearance])
+                linear_extrude(height = rear_grip_protrusion)
+                    pf_rounded_rect_2d([16, 56], 7);
 
     color([0.10, 0.55, 0.88, 0.78])
         translate([screen_origin.x, screen_origin.y, front_plane + 0.05])

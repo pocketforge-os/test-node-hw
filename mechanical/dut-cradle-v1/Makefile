@@ -17,6 +17,8 @@ RG353V_SOURCE := anbernic-rg353v-cradle.scad
 .PHONY: all lint validate validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-rg353v-flat-datum-guard \
+	validate-rg353v-grip-clearance-guard \
+	validate-rg353v-hook-set-spacing-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
@@ -123,12 +125,19 @@ $(BUILD)/layout-anbernic-rg353v-top.png: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
 		--projection=ortho --camera=90,102.5,700,90,102.5,0 \
 		-D 'PART="assembly"' $<
 
+$(BUILD)/layout-anbernic-rg353v-side.png: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,800 \
+		--projection=ortho --camera=500,102.5,25,90,102.5,25 \
+		-D 'PART="assembly"' $<
+
 preview: $(BUILD)/layout-smart-pro-s-preview.png \
 	$(BUILD)/layout-smart-pro-s-top.png \
 	$(BUILD)/layout-smart-pro-preview.png \
 	$(BUILD)/layout-smart-pro-top.png \
 	$(BUILD)/layout-anbernic-rg353v-preview.png \
-	$(BUILD)/layout-anbernic-rg353v-top.png
+	$(BUILD)/layout-anbernic-rg353v-top.png \
+	$(BUILD)/layout-anbernic-rg353v-side.png
 
 validate-profile-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-throat.log; mesh=$(BUILD)/invalid-throat.stl; \
@@ -186,13 +195,38 @@ validate-rg353v-flat-datum-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-rg353v-datum.log; \
 		mesh=$(BUILD)/invalid-rg353v-datum.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="lower_hook"' \
-			-D 'upper_rear_gap=17.0' $(RG353V_SOURCE) >$$log 2>&1; then \
+			-D 'upper_body_depth=17.77' $(RG353V_SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: misaligned RG353V front datum was not rejected' >&2; \
 			exit 1; \
 		fi; \
 		grep -q 'RG353V hook families must share one flat front contact plane' $$log; \
 		rm -f $$log $$mesh; \
 		echo 'rg353v_flat_datum_guard=pass case=misaligned_hook_family_datums'
+
+validate-rg353v-grip-clearance-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-rg353v-grip-clearance.log; \
+		mesh=$(BUILD)/invalid-rg353v-grip-clearance.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="lower_hook"' \
+			-D 'lower_rear_gap=10.0' -D 'upper_rear_gap=10.0' \
+			$(RG353V_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: RG353V grip interference datum was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'RG353V rear datum must preserve 10 mm behind the maximum grip depth' $$log; \
+		rm -f $$log $$mesh; \
+	echo 'rg353v_grip_clearance_guard=pass case=gap_measured_from_thin_shell'
+
+validate-rg353v-hook-set-spacing-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-rg353v-hook-set-spacing.log; \
+		mesh=$(BUILD)/invalid-rg353v-hook-set-spacing.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="hook_set"' \
+			-D 'hook_set_row_spacing=43.0' $(RG353V_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: overlapping RG353V hook rows were not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'RG353V arranged hook rows must remain discrete printable parts' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'rg353v_hook_set_spacing_guard=pass case=overlapping_rows'
 
 validate-rg353v-trigger-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-rg353v-trigger.log; \
@@ -252,6 +286,8 @@ validate-rg353v-preview-export: $(BUILD)/anbernic-rg353v-carrier.stl \
 validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-rg353v-flat-datum-guard \
+	validate-rg353v-grip-clearance-guard \
+	validate-rg353v-hook-set-spacing-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export
@@ -273,7 +309,7 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 45 --max-z 18 \
 		--min-bed-contact-area 150 \
 		$(BUILD)/anbernic-rg353v-upper-hook.stl
-	$(PYTHON) scripts/stl_bounds.py --max-x 85 --max-y 90 --max-z 18 \
+	$(PYTHON) scripts/stl_bounds.py --max-x 85 --max-y 100 --max-z 18 \
 		$(BUILD)/anbernic-rg353v-hook-set.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 75 --max-y 90 --max-z 18 \
 		$(BUILD)/anbernic-rg353v-fit-coupon.stl
