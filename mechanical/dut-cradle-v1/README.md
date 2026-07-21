@@ -11,11 +11,10 @@ device-specific hook shapes, and a curved-bottom fit coupon; see
 
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
-loose datums. Every hook has a rear shelf, so the six perimeter contacts—not
-the open PCB and not the shoulder triggers—establish an 11 mm carrier gap.
-Later device profiles may use fewer contacts when their controls or shell
-geometry make the six-point family inappropriate; the RG353V intentionally
-uses only four top/bottom contacts.
+loose datums. The Smart Pro family uses those contacts to establish an 11 mm
+carrier gap. The stepped RG353V profile also uses six contacts, but places its
+side pair inside the owner-confirmed 37 mm lower clear bands and preserves
+10 mm behind its deepest rear grips.
 
 ## Why separate parts
 

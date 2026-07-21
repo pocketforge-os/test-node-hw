@@ -20,6 +20,7 @@ RG353V_SOURCE := anbernic-rg353v-cradle.scad
 	validate-rg353v-stepped-profile-guard \
 	validate-rg353v-grip-clearance-guard \
 	validate-rg353v-hook-set-spacing-guard \
+	validate-rg353v-side-retention-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
@@ -241,6 +242,18 @@ validate-rg353v-hook-set-spacing-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'rg353v_hook_set_spacing_guard=pass case=overlapping_rows'
 
+validate-rg353v-side-retention-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-rg353v-side-retention.log; \
+		mesh=$(BUILD)/invalid-rg353v-side-retention.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="plate"' \
+			-D 'side_contact_height=38.0' $(RG353V_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: out-of-band RG353V side contacts were not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'RG353V side hooks must remain inside the 37 mm clear lower band' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'rg353v_side_retention_guard=pass case=contact_above_clear_band'
+
 validate-rg353v-trigger-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-rg353v-trigger.log; \
 		mesh=$(BUILD)/invalid-rg353v-trigger.stl; \
@@ -302,6 +315,7 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-rg353v-stepped-profile-guard \
 	validate-rg353v-grip-clearance-guard \
 	validate-rg353v-hook-set-spacing-guard \
+	validate-rg353v-side-retention-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export

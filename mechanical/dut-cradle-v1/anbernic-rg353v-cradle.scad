@@ -3,8 +3,8 @@
  *
  * Coordinates: X left-to-right, Y bottom-to-top, Z toward the webcam; mm.
  * The RG353V has a strongly rounded lower grip while its upper display edge
- * permits only shallow contact. Per-hook shelves share one measured shell
- * depth and one rear datum so the front glass remains parallel to the camera.
+ * permits only shallow contact. Unequal hook spacers compensate the stepped
+ * shell so the front glass remains parallel to the camera.
  *
  * PART choices: assembly, plate, lower_hook, upper_hook, hook_set, fit_coupon.
  * Preview geometry is background-only and cannot leak into printable exports.
@@ -57,9 +57,8 @@ frame_tie_features = [
 
 // ---- RG353V measured / manufacturer mechanical profile -------------------
 device_name = "Anbernic RG353V";
-// Anbernic publishes 12.6 x 8.3 x 2.1 cm. The owner's local depth and contact
-// measurements below govern the fit; confirm this front envelope by caliper.
-device_body_size = [83.0, 126.0];
+// Anbernic publishes 12.6 x 8.3 x 2.1 cm; owner calipers govern this fit.
+device_body_size = [83.25, 126.42];
 device_bottom_corner_radius = 14.0;       // preview proxy, not a fit surface
 // Lower the DUT slightly from plate centre to make room for top-edge hook
 // adjustment while retaining the fleet-standard title lane.
@@ -99,25 +98,28 @@ rear_service_window = [59.0, 102.0];
 rear_service_origin = device_centre - rear_service_window / 2;
 rear_service_radius = 8.0;
 
-// ---- Four top/bottom contacts / explicit keep-outs -----------------------
+// ---- Six perimeter contacts / explicit keep-outs -------------------------
 // Top and bottom contact centres are each 31 mm inward from the corresponding
-// device edge, exactly matching the owner sketch (therefore 21 mm apart).
+// device edge, exactly matching the owner sketch (therefore 21.25 mm apart).
 bottom_contact_inset = 31.0;
 top_contact_inset = 31.0;
+side_clear_height = 37.0;
+side_contact_height = 25.0;
 bottom_port_keepout_width = 13.0;
 top_center_keepout_width = 13.0;
 top_shoulder_keepout_width = 24.0;
 
 // Manufacturer imagery shows rear shoulder triggers at the outer top corners,
 // a left volume rocker, and a right power/reset/dual-TF stack. Owner calipers
-// put the side/grip depth anywhere from 19 to 29 mm. Both sides therefore stay
-// completely contact-free.
+// put the side/grip depth anywhere from 19 to 29 mm. The owner's newer outline
+// confirms the lower 37 mm is clear on both sides and shares the 21.63 mm
+// lower-shell depth; all side contacts remain below that boundary.
 trigger_keepout_y = [60.0, 82.0];
 left_volume_keepout_y = [82.0, 106.0];
 right_power_keepout_y = [96.0, 108.0];
 right_reset_keepout_y = [79.0, 92.0];
 right_tf1_keepout_y = [50.0, 67.0];
-right_tf2_keepout_y = [25.0, 42.0];
+right_tf2_keepout_y = [37.0, 50.0];
 
 // pose = [name, exact shell-edge contact point, inward angle, play, kind]
 clamp_poses = [
@@ -128,6 +130,13 @@ clamp_poses = [
      [device_origin.x + device_body_size.x - bottom_contact_inset,
       device_origin.y],
      90, 0.25, "lower"],
+    ["left_lower_side",
+     [device_origin.x, device_origin.y + side_contact_height],
+     0, 0.25, "lower"],
+    ["right_lower_side",
+     [device_origin.x + device_body_size.x,
+      device_origin.y + side_contact_height],
+     180, 0.25, "lower"],
     ["top_left",
      [device_origin.x + top_contact_inset,
       device_origin.y + device_body_size.y],
@@ -154,6 +163,7 @@ function pose_surface(pose) =
 // still supplies the broad, support-free print face.
 lower_hook_width = 8.0;
 upper_hook_width = 8.0;
+side_hook_width = lower_hook_width;
 hook_wall = 4.0;
 lower_lip_depth = 3.0;
 upper_lip_depth = 1.2;
@@ -226,10 +236,10 @@ bottom_left_screw_point = pf_add_2d(
 );
 bottom_mount_inner_y = bottom_left_screw_point.y -
                        (hook_adjustment + m3_clearance) / 2;
-top_left_surface = pose_surface(clamp_poses[2]);
+top_left_surface = pose_surface(clamp_poses[4]);
 top_left_screw_point = pf_add_2d(
     top_left_surface,
-    pf_rotate_2d(hook_screw_offset, pose_angle(clamp_poses[2]))
+    pf_rotate_2d(hook_screw_offset, pose_angle(clamp_poses[4]))
 );
 top_mount_outer_y = top_left_screw_point.y +
                     (hook_adjustment + m3_clearance) / 2;
@@ -262,8 +272,12 @@ assert(lower_support_depth >= 10.0,
 assert(lower_lip_depth < bottom_contact_inset -
        device_bottom_corner_radius,
        "RG353V bottom lips entered the rounded corner transition");
-assert(side_contact_count == 0,
-       "RG353V variable-depth sides must remain completely contact-free");
+assert(side_contact_count == 2,
+       "RG353V requires two lower-side retention contacts");
+assert(side_contact_height - side_hook_width / 2 >=
+           device_bottom_corner_radius + 2.0 &&
+       side_contact_height + side_hook_width / 2 <= side_clear_height,
+       "RG353V side hooks must remain inside the 37 mm clear lower band");
 assert(top_left_x - upper_hook_width / 2 >=
            device_origin.x + top_shoulder_keepout_width &&
        top_right_x + upper_hook_width / 2 <=
@@ -435,15 +449,15 @@ module upper_hook_printable() {
 }
 
 module hook_set() {
-    for (column = [0 : 1])
+    // Four identical lower-profile hooks serve the bottom and lower sides.
+    for (column = [0 : 2])
         translate([column * 27, 0, 0]) lower_hook_printable();
-    // Both unequal spacer/throat pairs reach the common 39.60 mm capture
-    // datum, making each printable hook 44.8 mm long. Keep rows discrete.
-    translate([0, hook_set_row_spacing, 0]) upper_hook_printable();
+    translate([0, hook_set_row_spacing, 0]) lower_hook_printable();
     translate([27, hook_set_row_spacing, 0]) upper_hook_printable();
+    translate([54, hook_set_row_spacing, 0]) upper_hook_printable();
 }
 
-// Two bottom mount interfaces at their production 21 mm separation. Printing
+// Two bottom mount interfaces at their production 21.25 mm separation. Printing
 // this small plate plus two lower hooks validates the curved lower shell before
 // spending filament on the full carrier.
 module curved_bottom_coupon_plate() {
@@ -549,6 +563,13 @@ module keep_out_preview() {
                        device_origin.y + device_body_size.y - 1,
                        front_plane + 0.7])
                 cube([upper_hook_width, 2, 0.8]);
+        for (side_x = [device_origin.x - 1,
+                       device_origin.x + device_body_size.x - 1])
+            translate([side_x,
+                       device_origin.y + side_contact_height -
+                           side_hook_width / 2,
+                       front_plane + 0.7])
+                cube([2, side_hook_width, 0.8]);
     }
 
     // Rear triggers occupy both the side transition and outer top corners.
