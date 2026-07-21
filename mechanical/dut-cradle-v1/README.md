@@ -5,11 +5,17 @@ This is the camera-facing half of a PocketForge test harness: a reusable
 datum without loading its controls, triggers, display, or exposed rear wiring.
 The first mechanical family supports both the **TrimUI Smart Pro** and
 **TrimUI Smart Pro S**, which share the same enclosure and control layout.
+The **Anbernic RG353V** profile adds a portrait grip-aware carrier, two
+device-specific hook shapes, and a curved-bottom fit coupon; see
+[`README-anbernic-rg353v.md`](README-anbernic-rg353v.md).
 
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
 loose datums. Every hook has a rear shelf, so the six perimeter contacts—not
 the open PCB and not the shoulder triggers—establish an 11 mm carrier gap.
+Later device profiles may use fewer contacts when their controls or shell
+geometry make the six-point family inappropriate; the RG353V intentionally
+uses only four top/bottom contacts.
 
 ## Why separate parts
 
@@ -28,6 +34,9 @@ OpenSCAD modules are the template mechanism:
 A future handheld gets a new wrapper/profile while reusing the library. The
 carrier envelope and eight corner frame anchors remain standardized; the
 device outline, service aperture, safe contacts, and optical center may change.
+Profiles may also widen only the structural hook spine while keeping their
+shell-contact shelves narrow, which guarantees broad-face first-layer adhesion
+without changing device overlap.
 
 `PART` selects independent printable objects:
 
