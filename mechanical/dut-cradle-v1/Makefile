@@ -18,7 +18,8 @@ BRICK_SOURCE := trimui-brick-cradle.scad
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
-	validate-brick-preview-export preview clean
+	validate-brick-label-clearance-guard validate-brick-preview-export \
+	preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 	$(BUILD)/trimui-smart-pro-carrier.stl \
@@ -118,7 +119,7 @@ $(BUILD)/layout-trimui-brick-preview.png: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 $(BUILD)/layout-trimui-brick-top.png: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 	$(PREVIEW_SETTLE)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1400 \
-		--projection=ortho --camera=66,90,650,66,90,0 \
+		--projection=ortho --camera=74,90,650,74,90,0 \
 		-D 'PART="assembly"' $<
 
 preview: $(BUILD)/layout-smart-pro-s-preview.png \
@@ -216,6 +217,18 @@ validate-brick-side-contact-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'brick_side_contact_guard=pass case=corner_arc_overlap'
 
+validate-brick-label-clearance-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-brick-label-clearance.log; \
+		mesh=$(BUILD)/invalid-brick-label-clearance.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="plate"' \
+			-D 'plate_size=[132,180]' $(BRICK_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: Brick title/mount collision was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'side title entered the right hook mount' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'brick_label_clearance_guard=pass case=old_narrow_plate'
+
 validate-brick-preview-export: $(BUILD)/trimui-brick-carrier.stl \
 	$(CHECKS)/brick-assembly-export.stl
 	$(PYTHON) scripts/stl_bounds.py \
@@ -227,7 +240,7 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
-	validate-brick-preview-export
+	validate-brick-label-clearance-guard validate-brick-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \

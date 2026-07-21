@@ -26,9 +26,9 @@ printer_edge_margin = 1.5;
 printable_bed = printer_bed - [2 * printer_edge_margin,
                                2 * printer_edge_margin];
 
-// 29.6 mm side margins closely match the Smart Pro carrier while the portrait
-// plate removes the large amount of unused landscape material.
-plate_size = [132, 180];
+// The extra right/left margin reserves a collision-free vertical label lane
+// while the portrait plate remains materially smaller than the Smart Pro one.
+plate_size = [148, 180];
 plate_thickness = 3.2;
 plate_corner_radius = 4.0;
 
@@ -157,9 +157,15 @@ hook_adjustment = 8.0;
 
 // ---- Labels for the 0.8 mm nozzle ----------------------------------------
 label_height = 1.2;
-label_stroke_growth = 0.85;
-title_font_size = 10.0;
-orientation_font_size = 8.0;
+label_stroke_growth = 1.10;
+title_font_size = 13.0;
+orientation_font_size = 10.5;
+label_feature_clearance = 2.4;  // three 0.8 mm nozzle widths
+
+title_label_center = [plate_size.x - 13.0, plate_size.y / 2];
+title_label_half_length = 50.0; // conservative lane for "TrimUI Brick"
+top_label_center = [plate_size.x / 2 + 12.0, plate_size.y - 18.0];
+bottom_label_center = [plate_size.x / 2, 11.5];
 
 // ---- Explicit mechanical invariants --------------------------------------
 lower_front_datum = lower_rear_gap + lower_throat;
@@ -172,6 +178,26 @@ upper_contact_window = [
     device_origin.x + upper_contact_inset - upper_hook_width / 2,
     device_origin.x + upper_contact_inset + upper_hook_width / 2
 ];
+right_side_surface = pose_surface(clamp_poses[3]);
+right_side_screw_point = pf_add_2d(
+    right_side_surface,
+    pf_rotate_2d(hook_screw_offset, pose_angle(clamp_poses[3]))
+);
+right_side_mount_outer_x = max(
+    right_side_surface.x + hook_base_outward,
+    right_side_screw_point.x + (hook_adjustment + m3_clearance) / 2
+);
+title_label_inner_x = title_label_center.x -
+                      title_font_size / 2 - label_stroke_growth;
+bottom_label_outer_y = bottom_label_center.y +
+                       orientation_font_size / 2 + label_stroke_growth;
+bottom_left_surface = pose_surface(clamp_poses[0]);
+bottom_left_screw_point = pf_add_2d(
+    bottom_left_surface,
+    pf_rotate_2d(hook_screw_offset, pose_angle(clamp_poses[0]))
+);
+bottom_mount_inner_y = bottom_left_screw_point.y -
+                       (hook_adjustment + m3_clearance) / 2;
 
 assert(plate_size.x <= printable_bed.x && plate_size.y <= printable_bed.y,
        "Brick carrier exceeds the conservative Prusa printable envelope");
@@ -187,6 +213,19 @@ assert(upper_lip_depth < screen_top_margin,
        "Brick upper lip could cover active screen pixels");
 assert(upper_contact_window.y < top_usb_keepout.x,
        "Brick upper retainer entered the centred USB-host keep-out");
+assert(title_label_inner_x >= right_side_mount_outer_x +
+           label_feature_clearance,
+       "Brick side title entered the right hook mount or adjustment sweep");
+assert(title_label_center.y - title_label_half_length >=
+           frame_tie_corner_offset + frame_tie_slot.x / 2 +
+           label_feature_clearance &&
+       title_label_center.y + title_label_half_length <=
+           plate_size.y - frame_tie_corner_offset -
+           frame_tie_slot.x / 2 - label_feature_clearance,
+       "Brick side title entered a right-side 4040 frame slot lane");
+assert(bottom_label_outer_y + label_feature_clearance <=
+           bottom_mount_inner_y,
+       "Brick BOTTOM label entered a lower hook adjustment sweep");
 assert(lower_side_contact_height - lower_hook_width / 2 >
            device_bottom_corner_radius &&
        lower_side_contact_height + lower_hook_width / 2 <
@@ -215,10 +254,10 @@ module embossed_text(point, message, size, rotation = 0,
 }
 
 module carrier_labels() {
-    embossed_text([119.0, plate_size.y / 2], device_name,
+    embossed_text(title_label_center, device_name,
                   title_font_size, 90);
-    embossed_text([78.0, 162.0], "TOP", orientation_font_size);
-    embossed_text([plate_size.x / 2, 12.0], "BOTTOM",
+    embossed_text(top_label_center, "TOP", orientation_font_size);
+    embossed_text(bottom_label_center, "BOTTOM",
                   orientation_font_size);
 }
 

@@ -1,9 +1,11 @@
 # TrimUI Brick DUT cradle
 
 This profile centers the portrait **TrimUI Brick (TG3040)** on a compact
-132 × 180 mm carrier while preserving the fixture family's eight 4040-frame
+148 × 180 mm carrier while preserving the fixture family's eight 4040-frame
 zip-tie anchors. It deliberately uses the same physically accepted J-hook,
 M3 captive-nut, and anti-rotation key mechanism as the Smart Pro family.
+The added side margin reserves a collision-free lane for 13 mm bold title
+lettering sized for the 0.8 mm nozzle.
 
 The Brick is not uniformly thick. Its lower 20 mm region is 20 mm deep while
 the upper body is 12 mm deep. A single shelf height would tilt the display or
@@ -121,5 +123,7 @@ make validate
 
 Validation covers parser/evaluation lint, manifold meshes, Prusa bed bounds,
 preview/export isolation, the 8 mm minimum rear-access rule, and exact equality
-of the upper/lower front contact datums. Final closure still requires the
-owner's explicit physical fit and webcam-view confirmation.
+of the upper/lower front contact datums. A negative label-clearance guard also
+proves that restoring the old narrow plate is rejected rather than allowing the
+larger side title to enter a hook adjustment sweep. Final closure still
+requires the owner's explicit physical fit and webcam-view confirmation.
