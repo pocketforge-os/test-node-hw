@@ -3,15 +3,18 @@
 This profile centers the landscape **Powkiddy X55** on a 247 × 175 mm carrier
 with the PocketForge fleet's top title and eight 4040-frame zip-tie anchors.
 It reuses the keyed M3 captive-nut hook mechanism while giving the X55 a traced
-curved-shell proxy, three edge-specific hook profiles, and explicit safe bands
-for the crowded top and bottom edges.
+XY outline, a nonuniform photo-derived rear shell, three edge-specific hook
+profiles, and explicit safe bands for the crowded top and bottom edges.
 
 The owner trace, not the marketing box, governs retention. The front shell is
 210 mm wide at its grips, 200 mm immediately below the shoulder keys, and
 88.76 mm high. Powkiddy publishes a larger 212.5 × 94.5 × 19 mm overall
 envelope. The preview carries both facts: the dark shell follows the traced
 contact envelope, while its shoulder stacks reach toward the published outer
-envelope. Production hooks never use the manufacturer XY box as a fit surface.
+envelope. Its 19 mm Z value is treated only as the deepest grip envelope. A
+13 mm rounded core, 14.3 mm center-back crown, and two smooth hourglass grip
+fields replace the former uniform extrusion. Production hooks never use the
+manufacturer XY box as a fit surface.
 
 ## Retention decision
 
@@ -28,11 +31,13 @@ Six passive contacts leave every port and control accessible:
 
 Bottom shelves are 10 mm deep, side shelves 8 mm, and top shelves 7 mm. Their
 front lips are respectively 3.0, 2.4, and 1.6 mm, keeping the top retainers
-shallow around the display and shoulder controls. All three profiles share one
-19.6 mm passive throat: Powkiddy's published 19 mm depth plus 0.6 mm play.
-They also share a 10 mm carrier-to-shell rear gap. That depth is intentionally
-provisional until owner calipers confirm the local top, bottom, side, and
-maximum rear/trigger depths.
+shallow around the display and shoulder controls. The front glass is now the
+common clamp datum; each provisional hook has its own local depth and matching
+rear shelf height. Bottom, top, and side contact estimates are 14.4, 13.8, and
+14.6 mm, each with 0.6 mm passive throat play. Their carrier-to-shell rear gaps
+are therefore 14.6, 15.2, and 14.4 mm. The deepest grip still retains a full
+10 mm service gap. These photo-derived fit values remain intentionally blocked
+on owner calipers before printing.
 
 Green ghosts in the assembly show selected contact regions. Orange ghosts are
 top buttons/connectors measured by the owner; red ghosts are shoulder and
@@ -53,6 +58,13 @@ No reusable X55 STEP/STL shell was located in the public model repositories
 searched during design. The proxy therefore combines owner measurements with
 official front, rear, top, bottom, and angled product imagery; it does not
 pretend that a photograph-derived decorative surface is a metrology scan.
+Independent real-device references were also used to distinguish the shallow
+center body from the rear palm lobes:
+
+- <https://yoshives.com/powkiddy-x55-review/> — straight rear and both short
+  ends;
+- <https://www.tikgadget.jp/powkiddy-x55-review/> — rear oblique and true
+  top-edge photographs.
 
 | Parameter | Value | Status |
 |---|---:|---|
@@ -60,9 +72,13 @@ pretend that a photograph-derived decorative surface is a metrology scan.
 | Width immediately below triggers | 200 mm | Owner measurement |
 | Traced shell height | 88.76 mm | Owner measurement; fit authority |
 | Published overall envelope | 212.5 × 94.5 × 19 mm | Powkiddy reference only |
-| Modeled local capture depth | 19 mm | Published proxy; owner caliper needed |
-| Hook throat | 19.6 mm | Derived proxy: 19 + 0.6 mm passive play |
-| Rear carrier gap | 10 mm | Fleet service datum; max-depth check needed |
+| Rounded center core | 13.0 mm | Photo-derived reconstruction |
+| Center-back crown | 14.3 mm | Photo-derived reconstruction |
+| Deepest rear grip | 19.0 mm | Published maximum envelope; caliper needed |
+| Bottom contact / throat / rear gap | 14.4 / 15.0 / 14.6 mm | Photo-derived provisional fit |
+| Top contact / throat / rear gap | 13.8 / 14.4 / 15.2 mm | Photo-derived provisional fit |
+| Side contact / throat / rear gap | 14.6 / 15.2 / 14.4 mm | Photo-derived provisional fit |
+| Minimum rear service gap | 10 mm | Fleet datum at deepest grip |
 | Bottom central exclusion | 58 mm | Owner measurement; dual TF cards |
 | Bottom-left safe span | 28 mm | Owner measurement |
 | Bottom-right safe span | 20 mm | Owner measurement |
@@ -99,8 +115,10 @@ make build/powkiddy-x55-fit-coupon.stl
 | `powkiddy-x55-hook-set.stl` | Optional arranged set of all six hooks |
 | `powkiddy-x55-fit-coupon.stl` | Print first; production bottom spacing and two hooks |
 
-The source `PART` selector accepts `assembly`, `plate`, `bottom_hook`,
-`top_hook`, `side_hook`, `hook_set`, and `fit_coupon`.
+The source `PART` selector accepts `assembly`, `device_preview`, `plate`,
+`bottom_hook`, `top_hook`, `side_hook`, `hook_set`, and `fit_coupon`.
+`device_preview` isolates the curved reference shell for inspection; it remains
+OpenSCAD background geometry and cannot enter an STL.
 
 ## Coupon, hardware, and assembly
 
@@ -135,7 +153,9 @@ make validate
 ```
 
 Validation covers OpenSCAD syntax, manifold and bed bounds, exact preservation
-of the owner's 210/200/88.76 mm datums, the minimum rear service gap, top safe
-bands, the 58 mm dual-TF exclusion, support-free hook first layers, and proof
-that the high-fidelity preview cannot leak into production STLs. Closure still
-requires owner coupon and full-carrier fit confirmation.
+of the owner's 210/200/88.76 mm datums, nonuniform core/crown/grip depth
+ordering, a common front plane across all three local hook profiles, the
+minimum rear service gap, top safe bands, the 58 mm dual-TF exclusion,
+support-free hook first layers, and proof that the preview cannot leak into
+production STLs. Closure still requires local depth calipers, then owner coupon
+and full-carrier fit confirmation.

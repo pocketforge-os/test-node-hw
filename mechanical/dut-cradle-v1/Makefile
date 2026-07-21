@@ -26,6 +26,7 @@ X55_SOURCE := powkiddy-x55-cradle.scad
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
 	validate-x55-owner-profile-guard validate-x55-rear-gap-guard \
+	validate-x55-curved-profile-guard \
 	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
 	validate-x55-print-foot-guard validate-x55-preview-export \
 	preview clean
@@ -183,6 +184,24 @@ $(BUILD)/layout-powkiddy-x55-side.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
 		--projection=ortho --camera=500,87.5,25,123.5,87.5,25 \
 		-D 'PART="assembly"' $<
 
+$(BUILD)/layout-powkiddy-x55-rear-reference.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) --preview -o $@ --imgsize=1600,1050 \
+		--projection=ortho --camera=123.5,84,-400,123.5,84,20 \
+		-D 'PART="device_preview"' $<
+
+$(BUILD)/layout-powkiddy-x55-end-reference.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) --preview -o $@ --imgsize=1200,1000 \
+		--projection=ortho --camera=450,84,25,123.5,84,25 \
+		-D 'PART="device_preview"' $<
+
+$(BUILD)/layout-powkiddy-x55-edge-reference.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) --preview -o $@ --imgsize=1600,800 \
+		--projection=ortho --camera=123.5,400,25,123.5,84,25 \
+		-D 'PART="device_preview"' $<
+
 preview: $(BUILD)/layout-smart-pro-s-preview.png \
 	$(BUILD)/layout-smart-pro-s-top.png \
 	$(BUILD)/layout-smart-pro-preview.png \
@@ -192,7 +211,10 @@ preview: $(BUILD)/layout-smart-pro-s-preview.png \
 	$(BUILD)/layout-anbernic-rg353v-side.png \
 	$(BUILD)/layout-powkiddy-x55-preview.png \
 	$(BUILD)/layout-powkiddy-x55-top.png \
-	$(BUILD)/layout-powkiddy-x55-side.png
+	$(BUILD)/layout-powkiddy-x55-side.png \
+	$(BUILD)/layout-powkiddy-x55-rear-reference.png \
+	$(BUILD)/layout-powkiddy-x55-end-reference.png \
+	$(BUILD)/layout-powkiddy-x55-edge-reference.png
 
 validate-profile-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-throat.log; mesh=$(BUILD)/invalid-throat.stl; \
@@ -385,6 +407,18 @@ validate-x55-rear-gap-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'x55_rear_gap_guard=pass case=undersized_service_gap'
 
+validate-x55-curved-profile-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-x55-curved-profile.log; \
+		mesh=$(BUILD)/invalid-x55-curved-profile.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="side_hook"' \
+			-D 'device_core_depth=19.0' $(X55_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: uniform X55 depth profile was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'X55 rear shell must preserve its core/crown/grip depth ordering' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'x55_curved_profile_guard=pass case=uniform_depth_extrusion'
+
 validate-x55-top-safe-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-x55-top-safe.log; \
 		mesh=$(BUILD)/invalid-x55-top-safe.stl; \
@@ -438,6 +472,7 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
 	validate-x55-owner-profile-guard validate-x55-rear-gap-guard \
+	validate-x55-curved-profile-guard \
 	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
 	validate-x55-print-foot-guard validate-x55-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
