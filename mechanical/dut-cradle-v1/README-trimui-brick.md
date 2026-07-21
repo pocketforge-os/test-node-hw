@@ -1,11 +1,12 @@
 # TrimUI Brick DUT cradle
 
 This profile centers the portrait **TrimUI Brick (TG3040)** on a compact
-148 × 205 mm carrier while preserving the fixture family's eight 4040-frame
+180 × 205 mm carrier while preserving the fixture family's eight 4040-frame
 zip-tie anchors. It deliberately uses the same physically accepted J-hook,
 M3 captive-nut, and anti-rotation key mechanism as the Smart Pro family.
 The added top margin carries the same centered outlined device-name box as the
 Smart Pro carriers, using 14.4 mm bold lettering sized for the 0.8 mm nozzle.
+The 124 mm-wide box leaves generous text padding without thinning the strokes.
 
 The Brick is not uniformly thick. Its lower 20 mm region is 20 mm deep while
 the upper body is 12 mm deep. A single shelf height would tilt the display or

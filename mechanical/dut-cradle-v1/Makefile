@@ -119,7 +119,7 @@ $(BUILD)/layout-trimui-brick-preview.png: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 $(BUILD)/layout-trimui-brick-top.png: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 	$(PREVIEW_SETTLE)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1400 \
-		--projection=ortho --camera=74,102.5,700,74,102.5,0 \
+		--projection=ortho --camera=90,102.5,700,90,102.5,0 \
 		-D 'PART="assembly"' $<
 
 preview: $(BUILD)/layout-smart-pro-s-preview.png \
@@ -221,13 +221,13 @@ validate-brick-label-clearance-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-brick-label-clearance.log; \
 		mesh=$(BUILD)/invalid-brick-label-clearance.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="plate"' \
-			-D 'plate_size=[132,205]' $(BRICK_SOURCE) >$$log 2>&1; then \
+			-D 'plate_size=[148,205]' $(BRICK_SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: Brick title/mount collision was not rejected' >&2; \
 			exit 1; \
 		fi; \
 		grep -q 'top title box entered a top 4040 frame slot lane' $$log; \
 		rm -f $$log $$mesh; \
-		echo 'brick_label_clearance_guard=pass case=undersized_top_title_lane'
+		echo 'brick_label_clearance_guard=pass case=previous_narrow_plate'
 
 validate-brick-preview-export: $(BUILD)/trimui-brick-carrier.stl \
 	$(CHECKS)/brick-assembly-export.stl

@@ -28,7 +28,7 @@ printable_bed = printer_bed - [2 * printer_edge_margin,
 
 // The 205 mm height reserves the same top-title convention as the accepted
 // Smart Pro carriers while staying inside the conservative 207 mm Y envelope.
-plate_size = [148, 205];
+plate_size = [180, 205];
 plate_thickness = 3.2;
 plate_corner_radius = 4.0;
 
@@ -158,7 +158,7 @@ hook_adjustment = 8.0;
 // ---- Labels for the 0.8 mm nozzle ----------------------------------------
 label_height = 1.2;
 label_stroke_growth = 1.10;
-title_box_size = [94.0, 24.0];
+title_box_size = [124.0, 24.0];
 title_box_centre = [plate_size.x / 2, plate_size.y - 15.0];
 title_font_size = 14.4;
 orientation_font_size = 10.5;
