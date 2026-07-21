@@ -5,6 +5,9 @@ This is the camera-facing half of a PocketForge test harness: a reusable
 datum without loading its controls, triggers, display, or exposed rear wiring.
 The first mechanical family supports both the **TrimUI Smart Pro** and
 **TrimUI Smart Pro S**, which share the same enclosure and control layout.
+The compact portrait profile supports the **TrimUI Brick** while reusing the
+same proven M3/keyway hook mechanism; see
+[`README-trimui-brick.md`](README-trimui-brick.md).
 
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
@@ -24,6 +27,9 @@ OpenSCAD modules are the template mechanism:
   [`trimui-smart-pro-cradle.scad`](trimui-smart-pro-cradle.scad) are tiny model
   wrappers that supply only `TrimUI Smart Pro S` or `TrimUI Smart Pro` as the
   raised title.
+- [`trimui-brick-cradle.scad`](trimui-brick-cradle.scad) supplies the Brick's
+  portrait plate, stepped-depth preview, five contact poses, and two hook
+  profiles while importing the same reusable hook implementation.
 
 A future handheld gets a new wrapper/profile while reusing the library. The
 carrier envelope and eight corner frame anchors remain standardized; the
@@ -73,14 +79,17 @@ make validate
 Generated STLs and PNGs live under `build/`, remain uncommitted, and are
 published as a GitHub Actions artifact on relevant pushes. The main outputs are
 `trimui-smart-pro-s-carrier.stl`, `trimui-smart-pro-carrier.stl`, `j-hook.stl`,
-and `j-hook-set.stl`.
+`j-hook-set.stl`, plus the `trimui-brick-*` carrier/hook/coupon exports listed
+in the Brick README.
 
 Validation parses every repository OpenSCAD source, renders all meshes, proves
 the 247 × 200 mm plate fits the conservative 247 × 207 mm Prusa envelope,
 rejects an undersized hook throat, and proves preview-only geometry cannot leak
 into either carrier export. A family-equivalence guard also exports both plates
 without labels and proves their mechanical meshes are byte-for-byte equivalent
-at the triangle level; the raised title is the only model difference.
+at the triangle level; the raised title is the only model difference. Brick
+guards independently reject a non-flat front datum and rear finger clearance
+below 8 mm.
 
 ## Hardware and assembly
 
