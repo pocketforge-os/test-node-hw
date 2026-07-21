@@ -5,8 +5,9 @@
  * Owner-caliper dimensions govern every retention surface. Manufacturer data
  * is retained separately as a preview/reference envelope only.
  *
- * PART choices: assembly, plate, bottom_hook, top_hook, side_hook, hook_set,
- * fit_coupon. Preview geometry is background-only and cannot enter an STL.
+ * PART choices: assembly, device_preview, plate, bottom_hook, top_hook,
+ * side_hook, hook_set, fit_coupon. Preview geometry is background-only and
+ * cannot enter an STL.
  */
 
 include <lib/dut-cradle-library.scad>;
@@ -61,7 +62,8 @@ device_body_height = 88.76;
 device_body_size = [device_max_width, device_body_height];
 
 // Powkiddy publishes 212.5 x 94.5 x 19 mm. The extra XY envelope belongs to
-// shoulders/edge protrusions, not the owner's traced hook-contact shell.
+// shoulders/edge protrusions, not the owner's traced hook-contact shell. The
+// 19 mm value is the maximum grip envelope, not a uniform body extrusion.
 manufacturer_envelope = [212.5, 94.5, 19.0];
 manufacturer_side_overhang =
     (manufacturer_envelope.x - device_max_width) / 2;
@@ -69,16 +71,29 @@ shoulder_preview_height = 6.0;
 shoulder_preview_origin_y = device_body_height -
     (shoulder_preview_height -
      (manufacturer_envelope.y - device_body_height));
-device_body_depth = manufacturer_envelope.z;
+device_max_depth = manufacturer_envelope.z;
 passive_depth_clearance = 0.60;
-hook_throat = device_body_depth + passive_depth_clearance;
 
-// Ten millimetres behind the nominal back shell follows the accepted fleet
-// service datum. This remains deliberately named because the owner must still
-// confirm the X55's maximum rear/trigger depth with calipers before printing.
+// The front glass is the common clamp datum. Ten millimetres behind the
+// deepest grip follows the accepted fleet service datum; shallower local hook
+// contacts therefore receive a larger carrier-to-shell gap.
 minimum_rear_access = 10.0;
 device_rear_gap = minimum_rear_access;
-device_front_plane_from_carrier = device_rear_gap + device_body_depth;
+device_front_plane_from_carrier = device_rear_gap + device_max_depth;
+
+// Photo-derived Z reconstruction. Straight rear, short-end, and top-edge
+// photographs show a shallow center shell inside the 19 mm grip envelope.
+// These values make the preview honest and size the three provisional hook
+// families independently; owner calipers remain the final fit authority.
+device_core_depth = 13.0;
+device_centre_back_depth = 14.3;
+device_grip_depth = device_max_depth;
+bottom_contact_depth = 14.4;
+top_contact_depth = 13.8;
+side_contact_depth = 14.6;
+shell_edge_radius = 1.4;
+rear_crown_depth = device_centre_back_depth - device_core_depth;
+grip_bulge_depth = device_grip_depth - device_core_depth;
 
 device_origin = [(plate_size.x - device_max_width) / 2, 40.0];
 device_centre = device_origin + device_body_size / 2;
@@ -172,6 +187,14 @@ function pose_surface(pose) =
     pf_add_2d(pose_contact(pose),
               pf_scale_2d(-pose_play(pose), pose_inward(pose)));
 
+function contact_depth(kind) =
+    kind == "bottom" ? bottom_contact_depth :
+    kind == "top" ? top_contact_depth : side_contact_depth;
+function local_rear_gap(kind) =
+    device_front_plane_from_carrier - contact_depth(kind);
+function local_hook_throat(kind) =
+    contact_depth(kind) + passive_depth_clearance;
+
 // ---- Shared hook hardware / edge-specific contact profiles ---------------
 bottom_hook_width = 8.0;
 top_hook_width = 8.0;
@@ -259,8 +282,24 @@ assert(device_origin.x >= hook_base_outward,
 assert(device_rear_gap >= minimum_rear_access &&
        minimum_rear_access >= 10.0,
        "X55 rear service gap must remain at least 10 mm");
-assert(hook_throat > device_body_depth,
-       "X55 hook throat must retain positive passive clearance");
+assert(device_core_depth < device_centre_back_depth &&
+       device_centre_back_depth < device_grip_depth &&
+       abs(device_grip_depth - manufacturer_envelope.z) < 0.01,
+       "X55 rear shell must preserve its core/crown/grip depth ordering");
+assert(bottom_contact_depth < device_max_depth &&
+       top_contact_depth < device_max_depth &&
+       side_contact_depth < device_max_depth,
+       "X55 local contacts must not collapse back to the maximum envelope");
+for (kind = ["bottom", "top", "side"]) {
+    assert(local_rear_gap(kind) >= minimum_rear_access,
+           str("X55 ", kind, " hook violates the rear service gap"));
+    assert(local_hook_throat(kind) > contact_depth(kind),
+           str("X55 ", kind, " hook lacks positive passive clearance"));
+    assert(abs(local_rear_gap(kind) + local_hook_throat(kind) -
+               (device_front_plane_from_carrier + passive_depth_clearance)) <
+               0.01,
+           str("X55 ", kind, " hook lost the common front-plane datum"));
+}
 assert(top_left_contact_x - top_hook_width / 2 >= top_left_safe.x &&
        top_left_contact_x + top_hook_width / 2 <= top_left_safe.y,
        "X55 top-left hook left its measured safe band");
@@ -298,7 +337,8 @@ assert(m3_nut_capture_wall >= 2.4,
 assert(hook_key_offset.y + hook_key_size.y / 2 + print_face_margin <=
            hook_spine_width / 2,
        "X55 anti-rotation key must not protrude below the broad print face");
-assert(hook_set_row_spacing >= device_rear_gap + hook_throat +
+assert(hook_set_row_spacing >= minimum_rear_access + device_max_depth +
+           passive_depth_clearance +
            hook_lip_thickness + hook_keyway_depth + 2.0,
        "X55 arranged hook rows must remain discrete printable parts");
 assert(rear_service_origin.x >= device_origin.x + 10 &&
@@ -393,7 +433,8 @@ module one_hook_installed(pose) {
     kind = pose_kind(pose);
     pf_installed_j_hook(
         pose_surface(pose), pose_angle(pose), plate_thickness,
-        hook_throat, device_rear_gap, hook_width(kind), hook_wall,
+        local_hook_throat(kind), local_rear_gap(kind),
+        hook_width(kind), hook_wall,
         hook_lip_depth(kind), hook_lip_thickness,
         hook_support_depth(kind), hook_support_thickness,
         hook_base_outward, hook_base_inward, hook_base_height,
@@ -406,7 +447,8 @@ module one_hook_installed(pose) {
 
 module one_hook_printable(kind) {
     pf_print_oriented_j_hook(
-        hook_throat, device_rear_gap, hook_width(kind), hook_wall,
+        local_hook_throat(kind), local_rear_gap(kind),
+        hook_width(kind), hook_wall,
         hook_lip_depth(kind), hook_lip_thickness,
         hook_support_depth(kind), hook_support_thickness,
         hook_base_outward, hook_base_inward, hook_base_height,
@@ -453,9 +495,11 @@ module fit_coupon() {
     translate([64, 43, 0]) one_hook_printable("bottom");
 }
 
-// ---- Preview-only high-fidelity device proxy -----------------------------
-// The polygon follows the owner trace: 210 mm maximum width, a 200 mm upper
-// reference width, and the X55's shallow lower waist / broad hand grips.
+// ---- Preview-only photo-derived device proxy -----------------------------
+// XY follows the owner trace. Z is reconstructed from straight rear,
+// short-end, and top-edge photographs: a shallow rounded core, a gentle rear
+// crown, and four overlapping grip lobes that reach the 19 mm maximum only at
+// the palm bulges. This is intentionally not a uniform marketing-box prism.
 module x55_outline_2d() {
     polygon(points = [
         [35, 0], [58, 0.2], [82, 0.8], [105, 0.4], [128, 0.8],
@@ -466,6 +510,178 @@ module x55_outline_2d() {
         [10, 84], [6, 80], [3, 73], [1, 62], [0, 45], [1, 32],
         [3, 22], [6, 14], [12, 7], [22, 2]
     ]);
+}
+
+module x55_xy_clip(z_min, z_max, inset = 0) {
+    translate([device_origin.x, device_origin.y, z_min])
+        linear_extrude(height = z_max - z_min)
+            offset(delta = -inset)
+                x55_outline_2d();
+}
+
+module x55_rounded_core(front_z) {
+    rear_z = front_z - device_core_depth;
+    translate([device_origin.x, device_origin.y,
+               rear_z + shell_edge_radius])
+        minkowski() {
+            linear_extrude(height =
+                           device_core_depth - 2 * shell_edge_radius)
+                offset(delta = -shell_edge_radius)
+                    x55_outline_2d();
+            sphere(r = shell_edge_radius, $fn = 24);
+        }
+}
+
+module ellipsoid(diameters) {
+    scale([diameters.x / 2, diameters.y / 2, diameters.z / 2])
+        sphere(r = 1, $fn = 36);
+}
+
+module x55_rear_crown(front_z) {
+    // A broad, low ellipsoid removes the false planar back from the center.
+    crown_front_depth = device_core_depth - 1.5;
+    crown_z_radius =
+        (device_centre_back_depth - crown_front_depth) / 2;
+    crown_size = [194, 76, 2 * crown_z_radius];
+    crown_centre_z = front_z -
+        (device_centre_back_depth + crown_front_depth) / 2;
+    intersection() {
+        x55_xy_clip(front_z - device_centre_back_depth - 0.05,
+                    front_z - crown_front_depth + 0.05, 0.5);
+        translate([device_centre.x, device_centre.y, crown_centre_z])
+            ellipsoid(crown_size);
+    }
+}
+
+function x55_bell(value) =
+    let(unit = min(1, abs(value)))
+        pow(max(0, 1 - unit * unit), 2);
+
+function x55_grip_gain(inward_x, local_y) =
+    x55_bell((inward_x - 15) / 40) *
+    max(x55_bell((local_y - 18) / 36),
+        x55_bell((local_y - (device_body_height - 17)) / 36));
+
+function x55_grip_surface_depth(inward_x, local_y) =
+    device_core_depth + grip_bulge_depth *
+        x55_grip_gain(inward_x, local_y);
+
+assert(abs(x55_grip_surface_depth(15, 18) - device_grip_depth) < 0.01,
+       "X55 grip field must reach the published 19 mm maximum");
+assert(x55_grip_surface_depth(15, device_body_height / 2) > 14.0 &&
+       x55_grip_surface_depth(15, device_body_height / 2) < 15.0,
+       "X55 short-end profile must retain its photo-derived hourglass waist");
+
+module x55_grip_mesh(front_z) {
+    // The explicit height field avoids the four-sphere toy shape: each grip
+    // reaches 19 mm in two broad palm lobes and relaxes smoothly to a 14-ish
+    // millimetre waist at the short-edge midpoint.
+    grid_x = 16;
+    grid_y = 24;
+    field_width = 55;
+    base_depth = device_core_depth - 0.6;
+    row = grid_x + 1;
+    layer = row * (grid_y + 1);
+    function point_index(ix, iy, base = false) =
+        (base ? layer : 0) + iy * row + ix;
+    function global_x(inward_x) = device_origin.x + inward_x;
+
+    rear_points = [
+        for (iy = [0 : grid_y], ix = [0 : grid_x])
+            let(inward_x = field_width * ix / grid_x,
+                local_y = device_body_height * iy / grid_y)
+                [global_x(inward_x), device_origin.y + local_y,
+                 front_z - x55_grip_surface_depth(inward_x, local_y)]
+    ];
+    base_points = [
+        for (iy = [0 : grid_y], ix = [0 : grid_x])
+            let(inward_x = field_width * ix / grid_x,
+                local_y = device_body_height * iy / grid_y)
+                [global_x(inward_x), device_origin.y + local_y,
+                 front_z - base_depth]
+    ];
+    rear_faces = [
+        for (iy = [0 : grid_y - 1], ix = [0 : grid_x - 1]) each [
+            [point_index(ix, iy), point_index(ix, iy + 1),
+             point_index(ix + 1, iy + 1)],
+            [point_index(ix, iy), point_index(ix + 1, iy + 1),
+             point_index(ix + 1, iy)]
+        ]
+    ];
+    base_faces = [
+        for (iy = [0 : grid_y - 1], ix = [0 : grid_x - 1]) each [
+            [point_index(ix, iy, true), point_index(ix + 1, iy, true),
+             point_index(ix + 1, iy + 1, true)],
+            [point_index(ix, iy, true),
+             point_index(ix + 1, iy + 1, true),
+             point_index(ix, iy + 1, true)]
+        ]
+    ];
+    lower_faces = [
+        for (ix = [0 : grid_x - 1]) each [
+            [point_index(ix, 0), point_index(ix + 1, 0),
+             point_index(ix + 1, 0, true)],
+            [point_index(ix, 0), point_index(ix + 1, 0, true),
+             point_index(ix, 0, true)]
+        ]
+    ];
+    upper_faces = [
+        for (ix = [0 : grid_x - 1]) each [
+            [point_index(ix, grid_y), point_index(ix, grid_y, true),
+             point_index(ix + 1, grid_y, true)],
+            [point_index(ix, grid_y),
+             point_index(ix + 1, grid_y, true),
+             point_index(ix + 1, grid_y)]
+        ]
+    ];
+    outer_faces = [
+        for (iy = [0 : grid_y - 1]) each [
+            [point_index(0, iy), point_index(0, iy, true),
+             point_index(0, iy + 1, true)],
+            [point_index(0, iy), point_index(0, iy + 1, true),
+             point_index(0, iy + 1)]
+        ]
+    ];
+    inner_faces = [
+        for (iy = [0 : grid_y - 1]) each [
+            [point_index(grid_x, iy), point_index(grid_x, iy + 1),
+             point_index(grid_x, iy + 1, true)],
+            [point_index(grid_x, iy),
+             point_index(grid_x, iy + 1, true),
+             point_index(grid_x, iy, true)]
+        ]
+    ];
+
+    polyhedron(
+        points = concat(rear_points, base_points),
+        faces = concat(rear_faces, base_faces, lower_faces, upper_faces,
+                       outer_faces, inner_faces),
+        convexity = 8
+    );
+}
+
+module x55_grip_lobes(front_z) {
+    intersection() {
+        x55_xy_clip(front_z - device_grip_depth - 0.05,
+                    front_z - device_core_depth + 1.0, 0.20);
+        union() {
+            x55_grip_mesh(front_z);
+            translate([2 * device_centre.x, 0, 0])
+                mirror([1, 0, 0])
+                    x55_grip_mesh(front_z);
+        }
+    }
+}
+
+module x55_curved_shell(front_z) {
+    union() {
+        color([0.16, 0.18, 0.19, 0.74])
+            x55_rounded_core(front_z);
+        color([0.13, 0.15, 0.17, 0.78])
+            x55_rear_crown(front_z);
+        color([0.10, 0.12, 0.14, 0.84])
+            x55_grip_lobes(front_z);
+    }
 }
 
 module cross_control(point, size, z) {
@@ -481,13 +697,10 @@ module cross_control(point, size, z) {
 }
 
 module x55_device_preview() {
-    rear_z = plate_thickness + device_rear_gap;
+    deepest_rear_z = plate_thickness + device_rear_gap;
     front_z = plate_thickness + device_front_plane_from_carrier;
 
-    color([0.15, 0.17, 0.18, 0.72])
-        translate([device_origin.x, device_origin.y, rear_z])
-            linear_extrude(height = device_body_depth)
-                x55_outline_2d();
+    x55_curved_shell(front_z);
 
     color([0.08, 0.42, 0.78, 0.80])
         translate([screen_origin.x, screen_origin.y, front_z + 0.05])
@@ -519,21 +732,22 @@ module x55_device_preview() {
                         device_max_width + manufacturer_side_overhang]])
             translate([device_origin.x + x_pair.x,
                        device_origin.y + shoulder_preview_origin_y,
-                       rear_z + device_body_depth - 4])
+                       front_z - 4])
                 linear_extrude(height = 4.2)
                     hull() {
                         translate([3, 1]) circle(r = 3);
                         translate([x_pair.y - x_pair.x - 3, 3]) circle(r = 3);
                     }
 
-    // Back grip pads make the pronounced rear palm contours visible without
-    // claiming an unmeasured extra Z depth.
-    color([0.45, 0.18, 0.65, 0.62])
-        for (x = [device_origin.x + 7,
-                  device_origin.x + device_max_width - 30])
-            translate([x, device_origin.y + 9, rear_z - 0.15])
-                linear_extrude(height = 0.3)
-                    pf_rounded_rect_2d([23, 54], 9);
+    // Rear datum dots expose the reconstructed depth bands in preview. The
+    // purple deepest points are exactly the published 19 mm envelope.
+    color([0.55, 0.20, 0.78, 0.78])
+        for (x = [device_origin.x + 15,
+                  device_origin.x + device_max_width - 15],
+             y = [device_origin.y + 18,
+                  device_origin.y + device_body_height - 17])
+            translate([x, y, deepest_rear_z - 0.15])
+                cylinder(d = 3.0, h = 0.3, $fn = 24);
 }
 
 module band_preview(range, y, width, color_value, z) {
@@ -595,6 +809,10 @@ module assembly() {
 
 if (PART == "assembly") {
     assembly();
+} else if (PART == "device_preview") {
+    %x55_device_preview();
+    if (SHOW_KEEP_OUTS)
+        %keep_out_preview();
 } else if (PART == "plate") {
     carrier_plate();
 } else if (PART == "bottom_hook") {
