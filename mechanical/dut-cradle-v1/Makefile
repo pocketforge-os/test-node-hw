@@ -268,8 +268,10 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-brick-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 45 --max-z 18 \
+		--min-bed-contact-area 150 \
 		$(BUILD)/trimui-brick-lower-hook.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 45 --max-z 18 \
+		--min-bed-contact-area 150 \
 		$(BUILD)/trimui-brick-upper-hook.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 80 --max-y 85 --max-z 18 \
 		$(BUILD)/trimui-brick-hook-set.stl
