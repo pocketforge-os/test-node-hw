@@ -9,6 +9,7 @@ FAMILY_SOURCE := trimui-smart-pro-family-cradle.scad
 SMART_PRO_S_SOURCE := trimui-smart-pro-s-cradle.scad
 SMART_PRO_SOURCE := trimui-smart-pro-cradle.scad
 RG353V_SOURCE := anbernic-rg353v-cradle.scad
+X55_SOURCE := powkiddy-x55-cradle.scad
 
 # OpenSCAD 2021.01 can corrupt a back-to-back off-screen PNG frame while its
 # previous GL context is settling. Serialize previews and leave a short gap.
@@ -24,6 +25,9 @@ RG353V_SOURCE := anbernic-rg353v-cradle.scad
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
+	validate-x55-owner-profile-guard validate-x55-rear-gap-guard \
+	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
+	validate-x55-print-foot-guard validate-x55-preview-export \
 	preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
@@ -33,7 +37,13 @@ all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 	$(BUILD)/anbernic-rg353v-lower-hook.stl \
 	$(BUILD)/anbernic-rg353v-upper-hook.stl \
 	$(BUILD)/anbernic-rg353v-hook-set.stl \
-	$(BUILD)/anbernic-rg353v-fit-coupon.stl
+	$(BUILD)/anbernic-rg353v-fit-coupon.stl \
+	$(BUILD)/powkiddy-x55-carrier.stl \
+	$(BUILD)/powkiddy-x55-bottom-hook.stl \
+	$(BUILD)/powkiddy-x55-top-hook.stl \
+	$(BUILD)/powkiddy-x55-side-hook.stl \
+	$(BUILD)/powkiddy-x55-hook-set.stl \
+	$(BUILD)/powkiddy-x55-fit-coupon.stl
 
 lint:
 	cd ../.. && OPENSCAD='$(OPENSCAD)' scripts/lint-openscad.sh
@@ -74,6 +84,25 @@ $(BUILD)/anbernic-rg353v-hook-set.stl: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
 $(BUILD)/anbernic-rg353v-fit-coupon.stl: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' $<
 
+$(BUILD)/powkiddy-x55-carrier.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
+		-D 'SHOW_DEVICE=false' -D 'SHOW_HOOKS=false' $<
+
+$(BUILD)/powkiddy-x55-bottom-hook.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="bottom_hook"' $<
+
+$(BUILD)/powkiddy-x55-top-hook.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="top_hook"' $<
+
+$(BUILD)/powkiddy-x55-side-hook.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="side_hook"' $<
+
+$(BUILD)/powkiddy-x55-hook-set.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="hook_set"' $<
+
+$(BUILD)/powkiddy-x55-fit-coupon.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' $<
+
 $(CHECKS)/smart-pro-s-assembly-export.stl: $(SMART_PRO_S_SOURCE) $(FAMILY_SOURCE) $(LIBRARY) | $(CHECKS)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="assembly"' \
 		-D 'SHOW_DEVICE=true' -D 'SHOW_HOOKS=true' -D 'SHOW_KEEP_OUTS=true' $<
@@ -83,6 +112,10 @@ $(CHECKS)/smart-pro-assembly-export.stl: $(SMART_PRO_SOURCE) $(FAMILY_SOURCE) $(
 		-D 'SHOW_DEVICE=true' -D 'SHOW_HOOKS=true' -D 'SHOW_KEEP_OUTS=true' $<
 
 $(CHECKS)/rg353v-assembly-export.stl: $(RG353V_SOURCE) $(LIBRARY) | $(CHECKS)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="assembly"' \
+		-D 'SHOW_DEVICE=true' -D 'SHOW_HOOKS=true' -D 'SHOW_KEEP_OUTS=true' $<
+
+$(CHECKS)/x55-assembly-export.stl: $(X55_SOURCE) $(LIBRARY) | $(CHECKS)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="assembly"' \
 		-D 'SHOW_DEVICE=true' -D 'SHOW_HOOKS=true' -D 'SHOW_KEEP_OUTS=true' $<
 
@@ -133,13 +166,33 @@ $(BUILD)/layout-anbernic-rg353v-side.png: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
 		--projection=ortho --camera=500,102.5,25,90,102.5,25 \
 		-D 'PART="assembly"' $<
 
+$(BUILD)/layout-powkiddy-x55-preview.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) --preview -o $@ --imgsize=1600,1100 \
+		--projection=ortho --viewall -D 'PART="assembly"' $<
+
+$(BUILD)/layout-powkiddy-x55-top.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) --preview -o $@ --imgsize=1600,1100 \
+		--projection=ortho --camera=123.5,87.5,650,123.5,87.5,0 \
+		-D 'PART="assembly"' $<
+
+$(BUILD)/layout-powkiddy-x55-side.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) --preview -o $@ --imgsize=1600,800 \
+		--projection=ortho --camera=500,87.5,25,123.5,87.5,25 \
+		-D 'PART="assembly"' $<
+
 preview: $(BUILD)/layout-smart-pro-s-preview.png \
 	$(BUILD)/layout-smart-pro-s-top.png \
 	$(BUILD)/layout-smart-pro-preview.png \
 	$(BUILD)/layout-smart-pro-top.png \
 	$(BUILD)/layout-anbernic-rg353v-preview.png \
 	$(BUILD)/layout-anbernic-rg353v-top.png \
-	$(BUILD)/layout-anbernic-rg353v-side.png
+	$(BUILD)/layout-anbernic-rg353v-side.png \
+	$(BUILD)/layout-powkiddy-x55-preview.png \
+	$(BUILD)/layout-powkiddy-x55-top.png \
+	$(BUILD)/layout-powkiddy-x55-side.png
 
 validate-profile-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-throat.log; mesh=$(BUILD)/invalid-throat.stl; \
@@ -309,6 +362,71 @@ validate-rg353v-preview-export: $(BUILD)/anbernic-rg353v-carrier.stl \
 		$(CHECKS)/rg353v-assembly-export.stl
 	@echo 'rg353v_preview_export_guard=pass ghosts=excluded'
 
+validate-x55-owner-profile-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-x55-owner-profile.log; \
+		mesh=$(BUILD)/invalid-x55-owner-profile.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="side_hook"' \
+			-D 'device_max_width=209.0' $(X55_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: altered X55 owner profile was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'X55 profile must preserve owner 210/200/88.76 mm shell datums' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'x55_owner_profile_guard=pass case=altered_caliper_envelope'
+
+validate-x55-rear-gap-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-x55-rear-gap.log; \
+		mesh=$(BUILD)/invalid-x55-rear-gap.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="bottom_hook"' \
+			-D 'device_rear_gap=9.5' $(X55_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: undersized X55 rear gap was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'X55 rear service gap must remain at least 10 mm' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'x55_rear_gap_guard=pass case=undersized_service_gap'
+
+validate-x55-top-safe-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-x55-top-safe.log; \
+		mesh=$(BUILD)/invalid-x55-top-safe.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="top_hook"' \
+			-D 'top_hook_width=18.0' $(X55_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: overwide X55 top hook was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'X55 top-left hook left its measured safe band' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'x55_top_safe_guard=pass case=hook_entered_top_control_lane'
+
+validate-x55-card-keepout-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-x55-card-keepout.log; \
+		mesh=$(BUILD)/invalid-x55-card-keepout.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="bottom_hook"' \
+			-D 'bottom_hook_width=30.0' $(X55_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: X55 hook blocking dual-TF lane was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -Eq 'X55 bottom-(left|right) hook left its measured safe band|X55 lower hooks entered the 58 mm dual-TF keep-out' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'x55_card_keepout_guard=pass case=hook_blocked_dual_tf_lane'
+
+validate-x55-print-foot-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-x55-print-foot.log; \
+		mesh=$(BUILD)/invalid-x55-print-foot.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="side_hook"' \
+			-D 'hook_spine_width=10.0' $(X55_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: protruding X55 print-foot nub was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'X55 anti-rotation key must not protrude below the broad print face' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'x55_print_foot_guard=pass case=key_below_broad_face'
+
+validate-x55-preview-export: $(BUILD)/powkiddy-x55-carrier.stl \
+	$(CHECKS)/x55-assembly-export.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--equivalent-to $(BUILD)/powkiddy-x55-carrier.stl \
+		$(CHECKS)/x55-assembly-export.stl
+	@echo 'x55_preview_export_guard=pass ghosts=excluded'
+
 validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-rg353v-flat-datum-guard \
@@ -318,7 +436,10 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-rg353v-side-retention-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
-	validate-rg353v-print-foot-guard validate-rg353v-preview-export
+	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
+	validate-x55-owner-profile-guard validate-x55-rear-gap-guard \
+	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
+	validate-x55-print-foot-guard validate-x55-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
@@ -341,6 +462,21 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 		$(BUILD)/anbernic-rg353v-hook-set.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 75 --max-y 90 --max-z 18 \
 		$(BUILD)/anbernic-rg353v-fit-coupon.stl
+	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
+		$(BUILD)/powkiddy-x55-carrier.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 40 --max-y 40 --max-z 18 \
+		--min-bed-contact-area 150 \
+		$(BUILD)/powkiddy-x55-bottom-hook.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 40 --max-y 40 --max-z 18 \
+		--min-bed-contact-area 150 \
+		$(BUILD)/powkiddy-x55-top-hook.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 40 --max-y 40 --max-z 18 \
+		--min-bed-contact-area 150 \
+		$(BUILD)/powkiddy-x55-side-hook.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 100 --max-y 80 --max-z 18 \
+		$(BUILD)/powkiddy-x55-hook-set.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 125 --max-y 90 --max-z 18 \
+		$(BUILD)/powkiddy-x55-fit-coupon.stl
 
 clean:
 	rm -rf $(BUILD)

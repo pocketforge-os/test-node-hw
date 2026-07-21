@@ -8,6 +8,9 @@ The first mechanical family supports both the **TrimUI Smart Pro** and
 The **Anbernic RG353V** profile adds a portrait grip-aware carrier, two
 device-specific hook shapes, and a curved-bottom fit coupon; see
 [`README-anbernic-rg353v.md`](README-anbernic-rg353v.md).
+The landscape **Powkiddy X55** profile preserves the owner-traced curved shell,
+top-edge control gaps, dual-TF card lane, and open short ends; see
+[`README-powkiddy-x55.md`](README-powkiddy-x55.md).
 
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
@@ -81,7 +84,8 @@ make validate
 Generated STLs and PNGs live under `build/`, remain uncommitted, and are
 published as a GitHub Actions artifact on relevant pushes. The main outputs are
 `trimui-smart-pro-s-carrier.stl`, `trimui-smart-pro-carrier.stl`, `j-hook.stl`,
-and `j-hook-set.stl`.
+and `j-hook-set.stl`; each additional device README names its profile-specific
+carrier, hooks, coupon, and arranged set.
 
 Validation parses every repository OpenSCAD source, renders all meshes, proves
 the 247 × 200 mm plate fits the conservative 247 × 207 mm Prusa envelope,
