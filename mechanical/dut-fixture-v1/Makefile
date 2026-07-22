@@ -5,7 +5,7 @@ BUILD := build
 SOURCE := dut-fixture.scad
 
 .PHONY: all lint validate validate-overlap-guard validate-service-guard \
-	validate-preview-export preview split clean
+	validate-preview-export validate-presentation-assets preview split clean
 
 all: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/fit-coupon.stl
 
@@ -20,6 +20,12 @@ $(BUILD):
 
 $(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' -D 'SHOW_COMPONENTS=false' $<
+
+$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_components"' $<
+
+$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/fit-coupon.stl: $(SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
@@ -76,7 +82,14 @@ validate-preview-export: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/previe
 		$(BUILD)/preview-export.stl
 	@echo 'preview_export_guard=pass ghosts=excluded'
 
-validate: lint all split validate-overlap-guard validate-service-guard validate-preview-export
+validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
+	$(BUILD)/pocketforge-dut-fixture-labels.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-components.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-labels.stl
+	@echo 'fixture_presentation_assets=pass components=10 labels=10'
+
+validate: lint all split validate-overlap-guard validate-service-guard \
+	validate-preview-export validate-presentation-assets
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 --allow-rotate $(BUILD)/pocketforge-dut-fixture-v1.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 250 --max-y 210 $(BUILD)/fit-coupon.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 250 --bed-y 210 --allow-rotate $(BUILD)/plate-lower.stl

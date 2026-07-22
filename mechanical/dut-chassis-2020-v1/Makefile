@@ -5,12 +5,16 @@ BUILD := build
 SOURCE := pocketforge-node-chassis.scad
 BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
 FIXTURE_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl
+FIXTURE_COMPONENTS_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-components.stl
+FIXTURE_LABELS_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-labels.stl
 CRADLE_BODY_STL := ../dut-cradle-v1/build/trimui-smart-pro-family-carrier-body.stl
 CRADLE_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-labels.stl
 CRADLE_S_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-s-labels.stl
 CRADLE_HOOKS_STL := ../dut-cradle-v1/build/trimui-smart-pro-family-installed-hooks.stl
 PRESENTATION_IMPORT_DIR := $(BUILD)/imports
 PRESENTATION_FIXTURE_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-v1.stl
+PRESENTATION_FIXTURE_COMPONENTS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-components.stl
+PRESENTATION_FIXTURE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-labels.stl
 PRESENTATION_CRADLE_BODY_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-family-carrier-body.stl
 PRESENTATION_CRADLE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-labels.stl
 PRESENTATION_CRADLE_S_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-labels.stl
@@ -194,6 +198,12 @@ $(BUILD)/print-group-08-gantry-splice-internal-bars.stl: $(SOURCE) lib/pf-2020.s
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
 
+$(FIXTURE_COMPONENTS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-components.stl
+
+$(FIXTURE_LABELS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-labels.stl
+
 $(CRADLE_BODY_STL):
 	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-family-carrier-body.stl
 
@@ -212,6 +222,12 @@ $(PRESENTATION_IMPORT_DIR):
 $(PRESENTATION_FIXTURE_STL): $(FIXTURE_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
+$(PRESENTATION_FIXTURE_COMPONENTS_STL): $(FIXTURE_COMPONENTS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_LABELS_STL): $(FIXTURE_LABELS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
 $(PRESENTATION_CRADLE_BODY_STL): $(CRADLE_BODY_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
@@ -225,6 +241,7 @@ $(PRESENTATION_CRADLE_HOOKS_STL): $(CRADLE_HOOKS_STL) | $(PRESENTATION_IMPORT_DI
 	cp $< $@
 
 presentation-assets: $(PRESENTATION_FIXTURE_STL) \
+	$(PRESENTATION_FIXTURE_COMPONENTS_STL) $(PRESENTATION_FIXTURE_LABELS_STL) \
 	$(PRESENTATION_CRADLE_BODY_STL) $(PRESENTATION_CRADLE_LABELS_STL) \
 	$(PRESENTATION_CRADLE_S_LABELS_STL) $(PRESENTATION_CRADLE_HOOKS_STL)
 
@@ -234,14 +251,16 @@ $(BUILD)/layout-assembly.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		-D 'PLATE_DETAIL="proxy"' $<
 
 $(BUILD)/layout-assembly-mesh.png: $(SOURCE) lib/pf-2020.scad \
-	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_BODY_STL) \
+	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_FIXTURE_COMPONENTS_STL) \
+	$(PRESENTATION_FIXTURE_LABELS_STL) $(PRESENTATION_CRADLE_BODY_STL) \
 	$(PRESENTATION_CRADLE_LABELS_STL) $(PRESENTATION_CRADLE_S_LABELS_STL) \
 	$(PRESENTATION_CRADLE_HOOKS_STL) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
 		--projection=ortho --viewall -D 'PART="presentation"' $<
 
 $(BUILD)/layout-assembly-smart-pro-s.png: $(SOURCE) lib/pf-2020.scad \
-	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_BODY_STL) \
+	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_FIXTURE_COMPONENTS_STL) \
+	$(PRESENTATION_FIXTURE_LABELS_STL) $(PRESENTATION_CRADLE_BODY_STL) \
 	$(PRESENTATION_CRADLE_LABELS_STL) $(PRESENTATION_CRADLE_S_LABELS_STL) \
 	$(PRESENTATION_CRADLE_HOOKS_STL) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \

@@ -7,7 +7,8 @@
  * Export with, for example:
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
- * PART choices: preview, plate, fit_coupon, plate_lower, plate_upper, joiner.
+ * PART choices: preview, plate, presentation_components,
+ * presentation_labels, fit_coupon, plate_lower, plate_upper, joiner.
  */
 
 PART = "preview";
@@ -353,7 +354,7 @@ module service_keepout_preview(origin, size, colour = "Crimson") {
             rounded_prism([size.x, size.y, 0.8], 1.5);
 }
 
-module component_preview() {
+module component_preview(show_service_keepouts = true) {
     envelope(relay_origin, relay_size, 15, "RoyalBlue", 2,
              relay_standoff_height);
     envelope(bpi_origin, bpi_size, 7, "SteelBlue");
@@ -368,11 +369,14 @@ module component_preview() {
             rounded_prism([webcam_keepout.x, webcam_keepout.y, 8], 8);
     envelope(powered_hub_origin, powered_hub_size, 15, "WhiteSmoke", 4);
     envelope(unpowered_hub_origin, unpowered_hub_size, 15, "Black", 4);
-    service_keepout_preview(webcam_below_service_origin, webcam_below_service_size);
-    service_keepout_preview(esp32_usb_service_origin, esp32_usb_service_size,
-                            "DodgerBlue");
-    for (service = hub_service_envelopes)
-        service_keepout_preview(service[1], service[2], "DodgerBlue");
+    if (show_service_keepouts) {
+        service_keepout_preview(webcam_below_service_origin,
+                                webcam_below_service_size);
+        service_keepout_preview(esp32_usb_service_origin,
+                                esp32_usb_service_size, "DodgerBlue");
+        for (service = hub_service_envelopes)
+            service_keepout_preview(service[1], service[2], "DodgerBlue");
+    }
 }
 
 // ---- Calibration coupon ----------------------------------------------------
@@ -731,6 +735,12 @@ for (fastener = joiner_fastener_envelopes)
 
 if (PART == "plate") {
     fixture_plate();
+} else if (PART == "presentation_components") {
+    // Measured populated-harness envelopes only. Service keep-outs remain
+    // analytical editor overlays and are intentionally excluded.
+    component_preview(false);
+} else if (PART == "presentation_labels") {
+    fixture_labels();
 } else if (PART == "fit_coupon") {
     fit_coupon();
 } else if (PART == "plate_lower") {

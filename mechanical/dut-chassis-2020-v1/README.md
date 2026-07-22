@@ -339,12 +339,14 @@ openscad -D 'PART="presentation"' pocketforge-node-chassis.scad
 openscad -D 'PART="presentation"' -D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"' pocketforge-node-chassis.scad
 ```
 
-`make preview` first builds the production fixture, the carriers'
+`make preview` first builds the production fixture, its populated component
+and label presentation layers, the carriers'
 presentation-only body/label splits, and the exact six-hook installed layout
 in their own projects. It then stages the required meshes under
 `build/imports/` and imports them into the chassis assembly.
-`PART="presentation"` shows the exact production board geometry,
-all six accepted J-hooks, the device/camera proxies, and the analytical C270
+`PART="presentation"` shows the exact production board geometry, all ten
+measured harness component envelopes and placement labels, all six accepted
+J-hooks, the device/camera proxies, and the analytical C270
 field-of-view frustum together. The hook mesh is presentation-only and remains
 separate from the printable carrier and hook-set STLs; it cannot accidentally
 turn the serviceable cradle into one fused print. The carrier body and labels
@@ -357,6 +359,8 @@ carrier title and front placard consistent. Select `smart_pro_s` to switch both
 labels and the imported carrier together. The staged presentation assets are:
 
 - `build/imports/pocketforge-dut-fixture-v1.stl`;
+- `build/imports/pocketforge-dut-fixture-components.stl`;
+- `build/imports/pocketforge-dut-fixture-labels.stl`;
 - `build/imports/trimui-smart-pro-family-carrier-body.stl`;
 - `build/imports/trimui-smart-pro-labels.stl`;
 - `build/imports/trimui-smart-pro-s-labels.stl`;

@@ -44,6 +44,10 @@ SHOW_REGISTRATION_GUIDES = true;
 // opens them and remains safe for clean-checkout linting.
 fixture_presentation_mesh =
     "build/imports/pocketforge-dut-fixture-v1.stl";
+fixture_components_presentation_mesh =
+    "build/imports/pocketforge-dut-fixture-components.stl";
+fixture_labels_presentation_mesh =
+    "build/imports/pocketforge-dut-fixture-labels.stl";
 cradle_body_presentation_mesh =
     "build/imports/trimui-smart-pro-family-carrier-body.stl";
 cradle_s_labels_presentation_mesh =
@@ -633,20 +637,35 @@ module gantry_joint_plate_previews() {
                 installed_gantry_joint_plate(fixture_gantry_y, top, right);
 }
 
+module fixture_mesh_at_installed_datum(mesh_path) {
+    translate(fixture_origin)
+        rotate([90, 0, 0])
+            import(mesh_path, convexity = 10);
+}
+
 module fixture_plate_preview(detail = PLATE_DETAIL) {
-    color([0.90, 0.90, 0.86])
-        if (detail == "mesh")
-            translate(fixture_origin)
-                rotate([90, 0, 0])
-                    import(fixture_presentation_mesh,
-                           convexity = 10);
-        else
+    if (detail == "mesh") {
+        color([0.90, 0.90, 0.86])
+            fixture_mesh_at_installed_datum(fixture_presentation_mesh);
+
+        // Presentation-only populated harness geometry is exported separately
+        // from the fixture source. It remains impossible to leak these
+        // component envelopes into the production fixture STL.
+        color([0.16, 0.28, 0.38])
+            fixture_mesh_at_installed_datum(
+                fixture_components_presentation_mesh);
+        color([0.08, 0.48, 0.32])
+            fixture_mesh_at_installed_datum(
+                fixture_labels_presentation_mesh);
+    } else {
+        color([0.90, 0.90, 0.86])
             translate([fixture_origin.x,
                        fixture_origin.y - fixture_plate_size.z,
                        fixture_origin.z])
                 cube([fixture_plate_size.x,
                       fixture_plate_size.z,
                       fixture_plate_size.y]);
+    }
 }
 
 module cradle_mesh_at_installed_datum(mesh_path) {
