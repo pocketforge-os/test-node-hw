@@ -55,7 +55,8 @@ PRINTABLES := \
 	$(BUILD)/print-group-05-device-label.stl \
 	$(BUILD)/print-group-06-m3-nut-bars.stl \
 	$(BUILD)/print-group-07-gantry-splices.stl \
-	$(BUILD)/print-group-08-gantry-splice-internal-bars.stl
+	$(BUILD)/print-group-08-gantry-splice-internal-bars.stl \
+	$(BUILD)/print-group-09-after-splice-overnight.stl
 
 .NOTPARALLEL:
 
@@ -194,6 +195,10 @@ $(BUILD)/print-group-07-gantry-splices.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD
 $(BUILD)/print-group-08-gantry-splice-internal-bars.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="print_group_gantry_splice_bars"' $<
+
+$(BUILD)/print-group-09-after-splice-overnight.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_after_splice_overnight"' $<
 
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
@@ -362,6 +367,11 @@ $(BUILD)/layout-print-group-08.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall \
 		-D 'PART="print_group_gantry_splice_bars"' $<
 
+$(BUILD)/layout-print-group-09.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1200 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_after_splice_overnight"' $<
+
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-assembly-smart-pro-s.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
@@ -381,7 +391,8 @@ preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-print-group-05.png \
 	$(BUILD)/layout-print-group-06.png \
 	$(BUILD)/layout-print-group-07.png \
-	$(BUILD)/layout-print-group-08.png
+	$(BUILD)/layout-print-group-08.png \
+	$(BUILD)/layout-print-group-09.png
 
 $(BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/cutlist.csg \
@@ -556,6 +567,8 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/print-group-07-gantry-splices.stl
 	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 60 --max-z 6 \
 		$(BUILD)/print-group-08-gantry-splice-internal-bars.stl
+	$(PYTHON) $(BOUNDS) --max-x 185 --max-y 190 --max-z 8 \
+		$(BUILD)/print-group-09-after-splice-overnight.stl
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
 	grep -q '^outer_width_rail,4,318.00,1272.00' $(BUILD)/cut-list.csv
 	grep -q '^outer_depth_rail,4,306.00,1224.00' $(BUILD)/cut-list.csv
@@ -564,7 +577,7 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 	grep -q 'External assembled envelope (W × D × H): 358.00 × 346.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 318.00 × 306.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_outputs=34 stock_bars=6'
+	@echo 'chassis_validation=pass printable_outputs=35 stock_bars=6'
 
 clean:
 	rm -rf $(BUILD)
