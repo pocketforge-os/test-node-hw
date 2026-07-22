@@ -1,11 +1,11 @@
 # PocketForge stackable 2020 DUT chassis v1
 
 This project is the mechanical **standard rack** around one PocketForge test
-node. It holds the camera/electronics fixture and DUT carrier on two independent
-three-axis positioning gantries, aligned to one optical axis, inside a stackable
-20 × 20 mm aluminum extrusion chassis.
+node. It holds one movable camera/electronics fixture and one fixed rear DUT
+carrier on a shared optical axis inside a stackable 20 × 20 mm aluminum
+extrusion chassis.
 
-The fleet-standard frame is a compact **358 W × 390 D × 368 H mm external
+The fleet-standard frame is a compact **358 W × 346 D × 368 H mm external
 rectangle**. Rectangular is intentional: the required plate margins and C270
 optical distance differ by axis, while making every axis 400 mm wastes stock.
 The usable payload face is 318 W × 320 H mm. It leaves at least 35 mm of
@@ -18,14 +18,17 @@ The delivered three-way fitting is not a 20 mm corner cube. It caps a vertical
 post and sends two tongues into width/depth rails that butt against that post.
 The owner's physical check found that a 360.00 mm post with a connector at each
 end measures approximately 368 mm outside-to-outside. CAD therefore models the
-actual cap-and-side-butt topology. Finished cuts are 360 mm vertical, 350 mm
-depth, and 318 mm width; the gantry reuses 318 mm crossbars and split 160 mm
-uprights. An exact bounded cut optimizer fits one complete node into seven
+actual cap-and-side-butt topology: the two horizontal rails terminate flush
+against adjacent faces of the vertical post, not against or through each
+other. Finished cuts are 360 mm vertical, 306 mm depth, and 318 mm width; the
+single fixture gantry reuses 318 mm crossbars and split 160 mm uprights. An
+exact bounded cut optimizer fits one complete node into six
 nominal 1 m sticks.
 
-The tightest stock pattern retains only 4.4 mm after three conservative 3.2 mm
-kerfs. Measure at least the four sticks assigned that pattern before cutting;
-if any is short, do not silently shorten a finished rail—revise the cut plan.
+The exact packer avoids the tempting `360 + 318 + 306 mm` near-full-stick
+pattern. Its fullest selected bars retain 36.4 mm after three conservative
+3.2 mm kerfs. Measure every stick before cutting; if one is short, do not
+silently shorten a finished rail—revise the cut plan.
 
 ## Why OpenSCAD works here
 
@@ -54,6 +57,10 @@ coupons override marketplace prose:
 - [BLCCLOY B08C9Q2TGW](https://www.amazon.com/dp/B08C9Q2TGW): eight zinc-alloy
   three-way 2020 end connectors for 6 mm slots, supplied with M4 x 5 mm set
   screws;
+- [HandsOn Technology 20-series three-way connector drawing](https://www.handsontec.com/dataspecs/alum-material/3W%20Corner%20Bracket.pdf):
+  independent dimensional/application reference confirming the same
+  vertical-post plus two side-butting horizontal-rail topology; used as a
+  topology check only, not imported geometry;
 - [BLCCLOY B08D6T9CGN](https://www.amazon.com/dp/B08D6T9CGN): twenty concealed
   26 x 26 x 9.5 mm zinc L-connectors for 6 mm slots, supplied with M5 x 6 mm
   set screws;
@@ -83,14 +90,14 @@ The default `three_way_cap_side_butt_B08C9Q2TGW_measured` topology uses:
 |---|---:|---:|---|
 | Vertical post | 4 | 360 mm | Connector stem; end caps make the outside height about 368 mm |
 | Width rail | 4 | 318 mm | Butts between left/right post side faces |
-| Depth rail | 4 | 350 mm | Butts between front/rear post side faces |
-| Plate-gantry upright half | 8 | 160 mm | Two reinforced halves form each 320 mm upright |
-| Plate-gantry crossbar | 4 | 318 mm | Two height-adjustable bars per gantry |
+| Depth rail | 4 | 306 mm | Butts between front/rear post side faces |
+| Fixture-gantry upright half | 4 | 160 mm | Two reinforced halves form each 320 mm upright |
+| Fixture-gantry crossbar | 2 | 318 mm | Two height-adjustable fixture bars |
 
 Eight BLCCLOY B08C9Q2TGW zinc-alloy three-way connectors and their M4 set
-screws close the perimeter corners. Eight BLCCLOY B08D6T9CGN concealed zinc
-L-connectors and their M5 set screws attach the four gantry crossbars to the
-four gantry uprights.
+screws close the perimeter corners. Four BLCCLOY B08D6T9CGN concealed zinc
+L-connectors and their M5 set screws attach the two fixture crossbars to the
+two gantry uprights.
 Printed 90-degree/three-way outer-frame connectors are intentionally not part
 of the production design: layer adhesion and polymer creep are poor tradeoffs
 when complete DUT nodes may be stacked. The supplied metal corner fittings are
@@ -101,40 +108,54 @@ reinforcement after the first dry assembly. They are not required by the
 baseline and should only be added where they do not obstruct a carrier plate,
 cable, or service path.
 
-### Three-axis plate gantries
+### Movable fixture gantry and fixed rear carrier
 
-Each printed plate mounts to its own complete 2020 gantry: two vertical uprights
-bridge the outer top/bottom depth rails, and two horizontal crossbars bridge
-those uprights. Each upright is two equal 160 mm halves joined at its unloaded
-center; the crossbars remain continuous 318 mm aluminum. Four broad,
-flat keyed ABS plates locate each gantry's upright ends. Every indexing plate
+Only the electronics/webcam fixture mounts to a complete 2020 gantry: two
+vertical uprights bridge the outer top/bottom depth rails, and two horizontal
+crossbars bridge those uprights. Each upright is two equal 160 mm halves joined
+at its unloaded center; the crossbars remain continuous 318 mm aluminum. Four
+broad, flat keyed ABS plates locate the gantry's upright ends. Every indexing plate
 uses two M3 screws, wide washers, and printed end-loaded nut bars holding
 ordinary metal M3 nuts—one fastener in the outer depth rail and one in the
 upright. Perpendicular printed keys engage both slots to keep the joint square
 while tightening. These parts position payload only; the outer aluminum frame
 and metal corner connectors remain the stack load path.
 
-The complete mount adjusts in all three axes:
+The fixture adjusts in all three axes:
 
-- loosen the eight gantry-end M3 fasteners to slide the complete gantry along
+- loosen the eight gantry-end M3 fasteners to slide the gantry along
   the outer depth rails (Y / camera distance);
 - loosen the four concealed zinc L-connectors to slide its two crossbars
   vertically along the uprights (Z);
 - slide the four plate fasteners along the crossbars (X);
 - the existing elongated plate slot absorbs print and assembly tolerance.
 
-The fixture and DUT gantries are independent. Their default centers are
-30 mm and 360 mm from the front respectively, preserving the analytical C270
-framing guard, and either may move from Y=30 through Y=360 as long as their 20 mm
-extrusion envelopes do not intersect. Plate optical planes derive from those
-gantry positions; CAD rejects an out-of-range or overlapping setup.
+The default fixture-gantry center is Y=43.2 mm. The fixture board is mounted on
+its front side, leaving 5 mm between the board and front outer rail. CAD rejects
+an out-of-range gantry or a fixture/front-rail collision.
+
+The DUT carrier does not need a second gantry. Its device-specific source
+already places the screen center on the fleet optical datum, so four printed
+vertical links fasten its existing corner slots directly to the rear outer
+width rails. Two upper links carry the light plate; two lower links prevent
+swing and racking. The rail end has a round M3 datum and the accepted 6.43 mm
+slot key; the carrier end has a 10 mm adjustment capsule. Sliding the four rear
+rail nut bars sets X, while device-specific top/bottom link lengths set Z. The
+default links are 93.5 mm (top) and 110.5 mm (bottom), including 12 mm material
+beyond each hole center. Their 5 mm thickness leaves the carrier rear face 25
+mm ahead of the chassis back—approximately the requested inch of rear cable
+service space.
+
+Future smaller carriers keep this frame and regenerate only those parametric
+link lengths. Once aligned, the carrier remains fixed; routine camera-distance
+changes happen at the fixture gantry.
 
 There is no 50 mm printed cantilever to measure perfectly or flex under the
 plate. Zip ties remain an excellent emergency/service fallback, but are no
 longer the primary mount.
 
 Print `gantry-joint-plate.stl` with its broad 36 × 44 mm face on the bed and
-the two perpendicular slot keys upward; it needs no support. The eight-part
+the two perpendicular slot keys upward; it needs no support. The four-part
 set fits comfortably on the Prusa bed. Start with M3 × 12 mm screws and wide
 washers, then select the exact stocked length after the rail/carrier coupon is
 dry-fitted. Install the horizontal-key end against the outer depth rail and the
@@ -165,9 +186,9 @@ third-party geometry was imported. The reference commercial 20-series part is
 100 × 10 × 5 mm steel with four M5 set screws; our light-duty version is
 deliberately printable and uses replaceable metal M3 nuts.
 
-The joint sits at the upright midpoint, clear of both crossbars and plate mount
-hardware. It is acceptable here because the upright only positions a light DUT
-plate; it is forbidden on any of the twelve outer-frame rails or any stacking
+The joint sits at each fixture upright midpoint, clear of both crossbars and
+plate-mount hardware. It is acceptable here because the upright only positions
+a light fixture plate; it is forbidden on any of the twelve outer-frame rails or any stacking
 load path.
 
 1. Print `gantry-upright-splice-reinforced-test-set.stl` exactly as exported.
@@ -193,7 +214,8 @@ dimensional compensation.
 
 ### Captured M3 end-loaded nut bar—light duty only
 
-The gantries, fixture, cradle, and placard need 26 M3 slot fasteners per
+The fixture gantry, fixture plate, rear-carrier links, and placard need 18 M3
+slot fasteners per
 chassis. The initial twist-in coupon was physically rejected: its miniature
 wedging geometry did not reproduce reliably with the lab's 0.8 mm nozzle. The
 replacement is a 30 mm long, chamfer-ended sliding nut bar with no spring ears
@@ -240,7 +262,7 @@ The owner physically accepted both third-pass candidates on 2026-07-22. The
 wider two-scallop candidate is therefore the production profile: 11.75 mm at
 the bearing face and 6.46 mm at the deep face. It preserves the most material
 while still travelling freely in the delivered rail. A production set
-contains 32 bars: 26 required plus six spares to preload before rail ends are
+contains 24 bars: 18 required plus six spares to preload before rail ends are
 closed. Park spares loosely under a screw/washer or an installed bracket so
 they do not rattle into inaccessible positions.
 These parts are explicitly forbidden for outer-frame joints, stacking
@@ -257,17 +279,16 @@ not insert metal into this open-pocket STL mid-print.
 The fixture's measured webcam center and the carrier's screen center both land
 on `[X=179, Z=192.5]`. The camera is a Logitech C270 HD. Logitech currently lists
 a 55° diagonal FOV for 16:9 capture, which the model conservatively resolves to
-about 48.8° horizontal and 28.6° vertical. At the default 260.1 mm
-lens-to-screen distance, that covers roughly 236.0 × 132.8 mm: approximately
-23.8 mm horizontal and 26.5 mm vertical margin on each edge of the
+about 48.8° horizontal and 28.6° vertical. At the default 256.1 mm
+lens-to-screen distance, that covers roughly 232.4 × 130.7 mm: approximately
+22.0 mm horizontal and 25.5 mm vertical margin on each edge of the
 188.35 × 79.77 mm DUT. The guard requires a full 20 mm margin on every edge,
 not 20 mm total.
 
 The C270 fixture keep-out remains the physically measured 71 x 31.55 mm face
 envelope. Logitech's published 72.91 x 31.91 x 66.64 mm dimensions include its
-fixed mounting clip. Final acceptance is a simple unpowered framing check;
-both payload planes remain independently adjustable through their gantry Y
-parameters.
+fixed mounting clip. Final acceptance is a simple unpowered framing check. The
+carrier plane is fixed; the fixture gantry remains adjustable in Y.
 
 ### Stacking registration—not load-bearing printed feet
 
@@ -302,7 +323,7 @@ one M3 screw/nut at the placard. The default `TrimUI Smart Pro` lettering is
 change only `DEVICE_LABEL` or add a tiny wrapper; the mounting geometry
 remains shared. The sign is fixed to the outer frame and faces the operator
 standing at the camera/front side, looking through the node toward the DUT. It
-does not move when either payload gantry is repositioned.
+does not move when the fixture gantry is repositioned.
 
 ## Build, preview, and validate
 
@@ -354,7 +375,10 @@ Generated files live under `build/` and are not committed:
   Smart Pro S carrier title and front placard selected together;
 - `layout-front.png` — operator/front label and stack-registration view;
 - `layout-stacked.png` — two-frame registration and metal load-path proof;
-- `layout-gantry-joint-plate.png` — eight-part flat gantry interface set;
+- `layout-corner-joint.png` — isolated proof that both horizontal rails butt
+  flush to adjacent vertical-post faces;
+- `layout-gantry-joint-plate.png` — four-part flat fixture-gantry interface set;
+- `layout-rear-carrier-links.png` — two top and two bottom fixed-carrier links;
 - `layout-gantry-splice.png`, `layout-gantry-splice-installed.png`, and
   `layout-gantry-splice-coupon.png` — one complete reinforced test set, a
   translucent installed-joint/load-path view, and the historical six-piece
@@ -368,6 +392,8 @@ Generated files live under `build/` and are not committed:
 - `device-id-placard.stl`;
 - `placard-riser.stl` / `placard-riser-pair.stl`;
 - `plate-spacer.stl` / `plate-spacer-set.stl`;
+- `rear-carrier-link-top.stl` / `rear-carrier-link-bottom.stl` /
+  `rear-carrier-link-fit-pair.stl` / `rear-carrier-link-set.stl`;
 - `gantry-joint-plate.stl` / `gantry-joint-plate-set.stl`;
 - `gantry-upright-splice-shell.stl` /
   `gantry-upright-splice-shell-pair.stl` /
@@ -398,40 +424,40 @@ quantities and in their intended bed orientation:
 | Group | Contents | Why separate |
 |---|---|---|
 | 01 calibration | rail-key coupon + two 30 mm M3 nut bars bracketing dimension F | Physically accepted; retain for a material, nozzle, or extrusion change |
-| 02 gantry hardware | 8 gantry joint plates | Flat keyed payload-gantry interfaces |
-| 03 plate mounts | 8 plate spacers + 2 placard straps + 2 placard spacers | All keyed payload and label mounting interfaces |
+| 02 gantry hardware | 4 gantry joint plates | Flat keyed fixture-gantry interfaces |
+| 03 plate mounts | 4 fixture spacers + 2 top/2 bottom rear-carrier links + 2 placard straps + 2 placard spacers | All keyed payload and label mounting interfaces |
 | 04 stacking guides | 8 registration tabs | Separate safety/stacking hardware inspection |
 | 05 device label | 1 `TrimUI Smart Pro` placard | Allows a different color or a slicer filament change for raised text |
-| 06 M3 nut bars | 32 selected 11.75 / 6.46 mm full-channel nut bars | 26 required light-duty fasteners plus six preloaded spares |
-| 07 gantry splice shells | 8 identical 0.20 mm-clearance external shells | Two outside bridges per upright joint |
-| 08 gantry splice bars | 8 identical 80 mm double-nut internal bars | Two channel reinforcements per upright joint |
+| 06 M3 nut bars | 24 selected 11.75 / 6.46 mm full-channel nut bars | 18 required light-duty fasteners plus six preloaded spares |
+| 07 gantry splice shells | 4 identical 0.20 mm-clearance external shells | Two outside bridges per fixture-upright joint |
+| 08 gantry splice bars | 4 identical 80 mm double-nut internal bars | Two channel reinforcements per fixture-upright joint |
 
 Every production group is support-free as exported and fits the conservative
 247 × 207 mm Prusa printable envelope. Keep Group 05 separate for appearance,
 not because it needs support. Print flat faces on the bed, use ABS and the
 validated 0.8 mm-nozzle profile, and do not enable automatic reorientation.
 
-## Seven-stick stock plan
+## Six-stick stock plan
 
-One node uses exactly seven nominal 1 m sticks while retaining continuous
-outer-frame rails, continuous gantry crossbars, and both fully adjustable
-gantries. The deterministic exact packer proves this assignment:
+One node uses exactly six nominal 1 m sticks while retaining continuous
+outer-frame rails and continuous fixture-gantry crossbars. The deterministic
+exact packer proves this assignment:
 
-- 4 sticks: `350 + 318 + 318 mm`, consuming 995.6 mm each including three
+- 2 sticks: `360 + 360 + 160 mm`, consuming 889.6 mm each including three
   conservative 3.2 mm kerfs;
-- 2 sticks: `360 + 360 + 160 mm`, consuming 889.6 mm each;
-- 1 stick: `160 × 6 mm`, consuming 979.2 mm.
+- 2 sticks: `318 + 318 + 318 mm`, consuming 963.6 mm each;
+- 1 stick: `306 + 306 + 306 mm`, consuming 927.6 mm;
+- 1 stick: `306 + 160 + 160 mm`, consuming 635.6 mm.
 
-The 24 finished pieces total 6664 mm. Kerf allowance is 76.8 mm and aggregate
-remaining stock is 259.2 mm. This is the volume lower bound—six sticks cannot
-contain 6740.8 mm of kerf-inclusive material—and the exact search demonstrates
-that seven is feasible. First-fit bin packing alone is not sufficient for this
-pattern, so `scripts/cutlist.py` searches from the lower bound upward with
-symmetry pruning.
+The 18 finished pieces total 5212 mm. Kerf allowance is 57.6 mm and aggregate
+remaining stock is 730.4 mm. Five sticks cannot contain 5269.6 mm of
+kerf-inclusive material, so six is the volume lower bound as well as a proven
+packing. `scripts/cutlist.py` searches from that lower bound upward with
+symmetry pruning rather than relying on first-fit order.
 
-The four 995.6 mm patterns are intentionally tight. Confirm each assigned
-stick is at least 995.6 mm and that the actual blade kerf does not exceed
-3.2 mm before making those cuts. The checked-in `CUT_LIST.md` is the fabrication
+The fullest 963.6 mm patterns retain 36.4 mm. Confirm every stick's actual
+length and that the blade kerf does not exceed 3.2 mm before making those
+cuts. The checked-in `CUT_LIST.md` is the fabrication
 artifact and OpenSCAD remains the dimensional authority. `build/cut-list.md`
 is regenerated on every build and validation checks it byte-for-byte against
 the committed sheet.
@@ -441,21 +467,24 @@ the committed sheet.
 - 1 front ID placard;
 - 2 placard risers;
 - 2 placard spacers;
-- 8 plate spacers (four per plate);
-- 8 flat keyed gantry indexing plates (four per gantry);
+- 4 fixture-plate spacers;
+- 2 top and 2 bottom fixed rear-carrier links;
+- 4 flat keyed fixture-gantry indexing plates;
 - 1 four-piece reinforced gantry-splice test set; after physical acceptance,
-  8 external shells plus 8 internal double-nut bars form four upright splices;
+  4 external shells plus 4 internal double-nut bars form two upright splices;
 - 8 stacking registration tabs for every chassis that will support another;
 - 1 rail fit coupon before the other printed interfaces;
-- 1 two-piece M3 nut-bar fit coupon, then 32 selected M3 nut bars (26
+- 1 two-piece M3 nut-bar fit coupon, then 24 selected M3 nut bars (18
   required plus six preloaded spares);
 - 8 B08C9Q2TGW zinc three-way corner connectors and their supplied M4 x 5 mm
   set screws;
-- 8 B08D6T9CGN concealed zinc L-connectors and 16 supplied M5 x 6 mm set
-  screws for the four gantry crossbars;
-- 44 M3 machine screws, 44 ordinary M3 nuts, and wide washers: 16 gantry
-  indexing-plate interfaces, 8 payload-plate mounts, 2 placard rail mounts,
-  2 placard-to-strap joints, and 16 reinforced-splice fasteners;
+- 4 B08D6T9CGN concealed zinc L-connectors and 8 supplied M5 x 6 mm set
+  screws for the two fixture crossbars;
+- 38 M3 machine screws, 38 ordinary M3 nuts, and wide washers when all six
+  spare slot bars are parked under hardware: 8 gantry indexing interfaces,
+  4 fixture mounts, 4 carrier-to-rail mounts, 4 carrier-to-link joints,
+  2 placard rail mounts, 2 placard-to-strap joints, 8 reinforced-splice
+  fasteners, and 6 parked spares;
 - 16 supplied metal M5 T-nuts, M5 screws, and washers for the lower stacking
   registration slots, plus up to 8 more in the upper chassis for optional
   positive locks;
@@ -463,11 +492,11 @@ the committed sheet.
   screws/drop-in nuts only if the dry frame needs additional anti-rack support.
 
 One node consumes all eight three-way connectors from one B08C9Q2TGW kit,
-eight concealed L-connectors, and seven one-meter extrusions. The on-hand 16
+four concealed L-connectors, and six one-meter extrusions. The on-hand 16
 three-way connectors, 20 L-connectors, and 20 extrusions support two complete
-nodes, leaving four L-connectors and six full sticks. A third complete node
-would need one additional extrusion, eight more three-way connectors, and four
-more L-connectors.
+nodes, leaving 12 L-connectors and eight full sticks. The stock alone supports
+three six-stick nodes with two full bars spare, but the on-hand three-way
+connectors cap immediate production at two nodes.
 
 ## Current fabrication order
 
@@ -477,11 +506,13 @@ more L-connectors.
 2. Assemble that test around two sacrificial/offcut rail pieces with four M3
    screws, four wide washers, and four ordinary metal nuts. Verify alignment,
    screw access, free internal-bar insertion, and gentle hand-racking resistance.
-3. Groups 02–06 are independent and production-ready. Print Groups 07 and 08
-   only after the reinforced joint passes the physical gate.
-4. Before sawing a complete node, measure the four stock sticks assigned the
-   `350 + 318 + 318 mm` pattern. Each must provide at least 995.6 mm under the
-   conservative accounting. Mark all finished dimensions and waste sides;
+3. Groups 02, 04, 05, and 06 are independent. Group 03 now includes the fixed
+   rear-carrier links; print `rear-carrier-link-fit-pair.stl` and dry-fit its
+   one top/one bottom link before committing a full node. Print Groups 07 and 08 only after the reinforced
+   joint passes the physical gate.
+4. Before sawing a complete node, measure all six stock sticks and witness one
+   cut to confirm the conservative 3.2 mm kerf allowance. The fullest selected
+   pattern consumes 963.6 mm. Mark all finished dimensions and waste sides;
    kerf is removed by the blade, never subtracted from a requested finished
    length.
 5. Follow `CUT_LIST.md` exactly. The already cut 360.00 mm verification piece
@@ -489,8 +520,7 @@ more L-connectors.
 
 ## Measurements needed before final assembly
 
-1. Actual length of each of the four sticks selected for the tight
-   `350 + 318 + 318 mm` pattern.
+1. Actual length of all six selected stock sticks.
 2. Actual saw-blade kerf, when convenient: the widest carbide-tooth width or
    the value printed on the blade, not feed speed. Until then CAD uses a
    conservative 3.2 mm solely for offcut accounting.
@@ -500,8 +530,10 @@ more L-connectors.
    11.75 mm bearing face, and 6.46 mm deep face.
 5. Complete: the one-notch gantry shell was selected, giving 0.20 mm external
    clearance. Remaining gate: test the complete reinforced shell/internal-bar
-   joint before producing sixteen splice parts.
+   joint before producing the eight production splice parts.
 6. Perform one unpowered C270 framing check before the first populated stack.
+7. Dry-fit one top and one bottom rear-carrier link, including wide washers at
+   the carrier slots, before printing the remaining pair.
 
 After those are recorded, dry-assemble one empty frame and obtain explicit
 owner approval before populating or stacking it.

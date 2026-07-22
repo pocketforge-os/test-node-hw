@@ -25,6 +25,10 @@ PRINTABLES := \
 	$(BUILD)/placard-spacer-pair.stl \
 	$(BUILD)/plate-spacer.stl \
 	$(BUILD)/plate-spacer-set.stl \
+	$(BUILD)/rear-carrier-link-top.stl \
+	$(BUILD)/rear-carrier-link-bottom.stl \
+	$(BUILD)/rear-carrier-link-fit-pair.stl \
+	$(BUILD)/rear-carrier-link-set.stl \
 	$(BUILD)/gantry-joint-plate.stl \
 	$(BUILD)/gantry-joint-plate-set.stl \
 	$(BUILD)/gantry-upright-splice-shell.stl \
@@ -85,6 +89,22 @@ $(BUILD)/plate-spacer.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 
 $(BUILD)/plate-spacer-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_spacer_set"' $<
+
+$(BUILD)/rear-carrier-link-top.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="rear_carrier_link_top"' $<
+
+$(BUILD)/rear-carrier-link-bottom.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="rear_carrier_link_bottom"' $<
+
+$(BUILD)/rear-carrier-link-fit-pair.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="rear_carrier_link_fit_pair"' $<
+
+$(BUILD)/rear-carrier-link-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="rear_carrier_link_set"' $<
 
 $(BUILD)/gantry-joint-plate.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="gantry_joint_plate"' $<
@@ -238,6 +258,11 @@ $(BUILD)/layout-stacked.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall -D 'PART="stacked_assembly"' \
 		-D 'PLATE_DETAIL="proxy"' $<
 
+$(BUILD)/layout-corner-joint.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,900 \
+		--projection=ortho --viewall --camera=150,-160,130,25,25,20 \
+		-D 'PART="corner_joint_detail"' $<
+
 $(BUILD)/layout-m3-slide-nut.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
 		--projection=ortho --viewall --camera=18,-24,18,0,0,1 \
@@ -257,6 +282,11 @@ $(BUILD)/layout-gantry-joint-plate.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
 		--projection=ortho --viewall --camera=55,-70,55,42,22,1 \
 		-D 'PART="gantry_joint_plate_set"' $<
+
+$(BUILD)/layout-rear-carrier-links.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
+		--projection=ortho --viewall --camera=75,-120,90,35,0,0 \
+		-D 'PART="rear_carrier_link_set"' $<
 
 $(BUILD)/layout-gantry-splice.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
@@ -316,10 +346,12 @@ $(BUILD)/layout-print-group-08.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-assembly-smart-pro-s.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
+	$(BUILD)/layout-corner-joint.png \
 	$(BUILD)/layout-m3-slide-nut.png \
 	$(BUILD)/layout-m3-slide-nut-coupon.png \
 	$(BUILD)/layout-m3-slide-nut-end.png \
 	$(BUILD)/layout-gantry-joint-plate.png \
+	$(BUILD)/layout-rear-carrier-links.png \
 	$(BUILD)/layout-gantry-splice.png \
 	$(BUILD)/layout-gantry-splice-installed.png \
 	$(BUILD)/layout-gantry-splice-coupon.png \
@@ -368,8 +400,16 @@ validate-fov-guard: | $(BUILD)
 			-D 'camera_diagonal_fov=40' $(SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: narrow camera FOV was not rejected' >&2; exit 1; \
 		fi; \
-	grep -q 'Estimated horizontal FOV is too narrow' $$log; \
-	echo 'camera_fov_guard=pass diagonal_fov=40deg'
+		grep -q 'Estimated horizontal FOV is too narrow' $$log; \
+		depth_log=$(BUILD)/invalid-frame-depth.log; \
+			depth_mesh=$(BUILD)/invalid-frame-depth.stl; \
+			if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$depth_mesh \
+				-D 'PART="placard_spacer"' \
+				-D 'structural_y_length=300' $(SOURCE) >$$depth_log 2>&1; then \
+				echo 'ERROR: undersized optical depth was not rejected' >&2; exit 1; \
+			fi; \
+		grep -q 'Estimated horizontal FOV is too narrow' $$depth_log; \
+		echo 'camera_fov_guard=pass diagonal_fov=40deg rejected_depth=300mm'
 
 validate-nut-carrier-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-nut-carrier.log; \
@@ -415,16 +455,16 @@ validate-gantry-travel-guard: | $(BUILD)
 			echo 'ERROR: out-of-range gantry was not rejected' >&2; exit 1; \
 		fi; \
 	grep -q 'Fixture gantry Y is outside legal travel' $$log; \
-	collision_log=$(BUILD)/invalid-gantry-collision.log; \
-		collision_mesh=$(BUILD)/invalid-gantry-collision.stl; \
-		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$collision_mesh \
-			-D 'PART="gantry_joint_plate"' \
-			-D 'fixture_gantry_y=200' -D 'cradle_gantry_y=210' \
-			$(SOURCE) >$$collision_log 2>&1; then \
-			echo 'ERROR: intersecting gantries were not rejected' >&2; exit 1; \
-		fi; \
-	grep -q 'gantries must not intersect' $$collision_log; \
-	echo 'gantry_guards=pass rejected_y=20mm rejected_overlap=10mm'
+		clearance_log=$(BUILD)/invalid-fixture-clearance.log; \
+			clearance_mesh=$(BUILD)/invalid-fixture-clearance.stl; \
+			if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$clearance_mesh \
+				-D 'PART="gantry_joint_plate"' \
+				-D 'fixture_gantry_y=40' \
+				$(SOURCE) >$$clearance_log 2>&1; then \
+				echo 'ERROR: fixture/front-rail collision was not rejected' >&2; exit 1; \
+			fi; \
+		grep -q 'Fixture board must clear' $$clearance_log; \
+		echo 'gantry_guards=pass rejected_y=20mm rejected_front_clearance=1.8mm'
 
 validate: lint all preview validate-margin-guard validate-fov-guard \
 	validate-nut-carrier-guard validate-gantry-travel-guard \
@@ -443,6 +483,14 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/placard-spacer-pair.stl
 	$(PYTHON) $(BOUNDS) --max-x 120 --max-y 60 --max-z 8 \
 		$(BUILD)/plate-spacer-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 20 --max-y 100 --max-z 8 \
+		$(BUILD)/rear-carrier-link-top.stl
+	$(PYTHON) $(BOUNDS) --max-x 20 --max-y 115 --max-z 8 \
+		$(BUILD)/rear-carrier-link-bottom.stl
+	$(PYTHON) $(BOUNDS) --max-x 45 --max-y 115 --max-z 8 \
+		$(BUILD)/rear-carrier-link-fit-pair.stl
+	$(PYTHON) $(BOUNDS) --max-x 95 --max-y 115 --max-z 8 \
+		$(BUILD)/rear-carrier-link-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 40 --max-y 50 --max-z 8 \
 		$(BUILD)/gantry-joint-plate.stl
 	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 100 --max-z 8 \
@@ -477,7 +525,7 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/print-group-01-calibration.stl
 	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 100 --max-z 8 \
 		$(BUILD)/print-group-02-gantry-hardware.stl
-	$(PYTHON) $(BOUNDS) --max-x 150 --max-y 90 --max-z 8 \
+	$(PYTHON) $(BOUNDS) --max-x 225 --max-y 160 --max-z 8 \
 		$(BUILD)/print-group-03-plate-mounts.stl
 	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 170 --max-z 6 \
 		$(BUILD)/print-group-04-stacking-guides.stl
@@ -491,12 +539,12 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/print-group-08-gantry-splice-internal-bars.stl
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
 	grep -q '^outer_width_rail,4,318.00,1272.00' $(BUILD)/cut-list.csv
-	grep -q '^outer_depth_rail,4,350.00,1400.00' $(BUILD)/cut-list.csv
-	grep -q '^plate_gantry_upright_half,8,160.00,1280.00' $(BUILD)/cut-list.csv
-	grep -q '^plate_gantry_crossbar,4,318.00,1272.00' $(BUILD)/cut-list.csv
-	@test "$$(grep -c ',4,318.00,1272.00,' $(BUILD)/cut-list.csv)" -eq 2
-	grep -q 'Stock bars required: \*\*7\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_outputs=30 stock_bars=7'
+	grep -q '^outer_depth_rail,4,306.00,1224.00' $(BUILD)/cut-list.csv
+	grep -q '^fixture_gantry_upright_half,4,160.00,640.00' $(BUILD)/cut-list.csv
+	grep -q '^fixture_gantry_crossbar,2,318.00,636.00' $(BUILD)/cut-list.csv
+	grep -q 'External assembled envelope (W × D × H): 358.00 × 346.00 × 368.00 mm' $(BUILD)/cut-list.md
+	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
+	@echo 'chassis_validation=pass printable_outputs=34 stock_bars=6'
 
 clean:
 	rm -rf $(BUILD)

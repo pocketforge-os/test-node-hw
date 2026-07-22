@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-ECHO_RE = re.compile(r'^ECHO:\s+"(?P<payload>PF(?:CUT|STOCK)\|.*)"\s*$')
+ECHO_RE = re.compile(r'^ECHO:\s+"(?P<payload>PF(?:CUT|STOCK|FRAME)\|.*)"\s*$')
 
 
 @dataclass(frozen=True)
@@ -41,11 +41,22 @@ class StockBar:
         return self.consumed + cut.length + self.kerf <= self.stock_length + 1e-9
 
 
-def parse_echoes(path: Path) -> tuple[list[tuple[str, int, float, str]], float, float, str]:
+def parse_echoes(
+    path: Path,
+) -> tuple[
+    list[tuple[str, int, float, str]],
+    float,
+    float,
+    str,
+    tuple[float, float, float],
+    tuple[float, float, float],
+]:
     rows: list[tuple[str, int, float, str]] = []
     stock_length = 0.0
     kerf = 0.0
     topology = ""
+    frame_outer = (0.0, 0.0, 0.0)
+    frame_clear = (0.0, 0.0, 0.0)
 
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         match = ECHO_RE.match(raw_line.strip())
@@ -58,12 +69,17 @@ def parse_echoes(path: Path) -> tuple[list[tuple[str, int, float, str]], float, 
             stock_length = float(fields[1])
             kerf = float(fields[2])
             topology = fields[3]
+        elif fields[0] == "PFFRAME" and len(fields) == 7:
+            frame_outer = tuple(float(value) for value in fields[1:4])
+            frame_clear = tuple(float(value) for value in fields[4:7])
 
     if not rows:
         raise SystemExit(f"cutlist=fail reason=no_PFCUT_echoes input={path}")
     if stock_length <= 0 or kerf < 0 or not topology:
         raise SystemExit(f"cutlist=fail reason=invalid_PFSTOCK input={path}")
-    return rows, stock_length, kerf, topology
+    if min(frame_outer) <= 0 or min(frame_clear) <= 0:
+        raise SystemExit(f"cutlist=fail reason=invalid_PFFRAME input={path}")
+    return rows, stock_length, kerf, topology, frame_outer, frame_clear
 
 
 def _first_fit_decreasing(
@@ -151,9 +167,9 @@ def pack(rows: list[tuple[str, int, float, str]], stock_length: float, kerf: flo
                 f"length={cut.length:.2f} stock={stock_length:.2f}"
             )
 
-    # First-fit is a useful upper bound but misses the seven-stick chassis
-    # pattern. Search from the volume lower bound upward so the checked-in cut
-    # list proves the stock minimum instead of depending on heuristic order.
+    # First-fit is only an upper bound. Search from the volume lower bound
+    # upward so the checked-in cut list proves the stock minimum instead of
+    # depending on heuristic order.
     upper = _first_fit_decreasing(cuts, stock_length, kerf)
     lower_count = math.ceil(
         sum(cut.length + kerf for cut in cuts) / stock_length - 1e-12
@@ -180,6 +196,8 @@ def write_markdown(
     stock_length: float,
     kerf: float,
     topology: str,
+    frame_outer: tuple[float, float, float],
+    frame_clear: tuple[float, float, float],
 ) -> None:
     finished_total = sum(quantity * length for _, quantity, length, _ in rows)
     stock_total = len(bars) * stock_length
@@ -190,6 +208,8 @@ def write_markdown(
         "# PocketForge 2020 chassis cut list",
         "",
         f"- Join topology: `{topology}`",
+        f"- External assembled envelope (W × D × H): {frame_outer[0]:.2f} × {frame_outer[1]:.2f} × {frame_outer[2]:.2f} mm",
+        f"- Clear internal envelope (W × D × H): {frame_clear[0]:.2f} × {frame_clear[1]:.2f} × {frame_clear[2]:.2f} mm",
         f"- Stock: {stock_length:.2f} mm bars",
         f"- Conservative kerf allowance: {kerf:.2f} mm per finished piece",
         f"- Stock bars required: **{len(bars)}**",
@@ -197,8 +217,8 @@ def write_markdown(
         f"- Kerf allowance: {kerf_total:.2f} mm",
         f"- Remaining stock/offcuts: {waste_total:.2f} mm",
         "",
-        "Finished lengths are measured aluminum cuts. The delivered three-way connector was physically checked: a 360.00 mm vertical post with caps at both ends measures approximately 368 mm outside-to-outside. "
-        "The assignment below is an exact bounded packing, not first-fit order; retain the listed kerf reserve and mark every finished cut before sawing.",
+        "Finished lengths are measured aluminum cuts. The delivered three-way connector was physically checked: horizontal rails butt flush to adjacent faces of each vertical post, and a 360.00 mm post with caps at both ends measures approximately 368 mm outside-to-outside. "
+        "The assignment below is an exact bounded packing, not first-fit order; retain the listed kerf reserve, measure every stock stick, mark every finished cut before sawing, and witness one saw cut before batch cutting.",
         "",
         "## Finished pieces",
         "",
@@ -227,11 +247,22 @@ def main() -> None:
     parser.add_argument("--markdown", required=True, type=Path)
     args = parser.parse_args()
 
-    rows, stock_length, kerf, topology = parse_echoes(args.input)
+    rows, stock_length, kerf, topology, frame_outer, frame_clear = parse_echoes(
+        args.input
+    )
     bars = pack(rows, stock_length, kerf)
     args.csv.parent.mkdir(parents=True, exist_ok=True)
     write_csv(args.csv, rows)
-    write_markdown(args.markdown, rows, bars, stock_length, kerf, topology)
+    write_markdown(
+        args.markdown,
+        rows,
+        bars,
+        stock_length,
+        kerf,
+        topology,
+        frame_outer,
+        frame_clear,
+    )
     print(
         f"cutlist=pass parts={sum(row[1] for row in rows)} "
         f"stock_bars={len(bars)} stock_length_mm={stock_length:.2f}"

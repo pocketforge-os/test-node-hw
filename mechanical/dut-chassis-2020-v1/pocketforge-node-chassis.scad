@@ -5,11 +5,13 @@
  * The external frame envelope starts at [0, 0, 0].  All dimensions are mm.
  *
  * PART choices:
- *   assembly, presentation, stacked_assembly, placard,
+ *   assembly, presentation, stacked_assembly, corner_joint_detail, placard,
  *   placard_riser, placard_riser_pair,
  *   placard_spacer, placard_spacer_pair,
  *   plate_spacer, plate_spacer_set, registration_tab,
  *   registration_tab_set, gantry_joint_plate, gantry_joint_plate_set,
+ *   rear_carrier_link_top, rear_carrier_link_bottom,
+ *   rear_carrier_link_fit_pair, rear_carrier_link_set,
  *   gantry_splice_shell, gantry_splice_shell_pair,
  *   gantry_splice_shell_set, gantry_splice_internal_bar,
  *   gantry_splice_internal_bar_set, gantry_splice_test_set,
@@ -64,13 +66,17 @@ profile_size = 20.0;
 // 20 mm corner cube. Width/depth rails butt into the sides of the vertical
 // posts. A physically cut 360.00 mm post with one connector at each end
 // measures 368 mm outside-to-outside, so each cap contributes 4 mm beyond the
-// aluminum. The compact fleet standard deliberately uses a rectangular frame:
-// 318 mm width rails retain 35.5 mm around the limiting 247 mm plate, 350 mm
-// depth rails preserve the C270 framing guard, and the accepted 360 mm post is
-// reused unchanged. Four stock sticks yield 350 + 318 + 318 mm with 4.4 mm of
-// reserve after three conservative 3.2 mm kerfs.
+// aluminum. The horizontal rails terminate flush against adjacent faces of
+// each vertical post; they do not overlap one another or pass through a
+// fictitious 20 mm corner cube. The compact fleet standard deliberately uses
+// a rectangular frame: 318 mm width rails retain 35.5 mm around the limiting
+// 247 mm carrier, 306 mm depth rails preserve the C270 framing guard after the
+// rear carrier is fixed to the outer frame, and the accepted 360 mm post is
+// reused unchanged. The exact six-stick packer deliberately distributes the
+// cuts so the shortest nominal remainder is 36.4 mm instead of relying on a
+// risky 360 + 318 + 306 mm near-full-stick pattern.
 structural_x_length = 318.0;
-structural_y_length = 350.0;
+structural_y_length = 306.0;
 structural_z_length = 360.0;
 connector_end_overhang = 4.0;
 frame_outer = [structural_x_length + 2 * profile_size,
@@ -98,16 +104,19 @@ extrusion_slot_deep_width = 6.66;
 extrusion_centre_bore = 4.2; // preview-only 20-series nominal
 
 stock_length = 1000.0;
-// Deliberately wide provisional allowance. The closest stock pattern is
-// 350 + 318 + 318 mm, so validation includes all three cut kerfs and still
-// retains 4.4 mm against a nominal 1 m stick.
+// Deliberately wide provisional allowance. The fullest selected pattern is
+// 318 + 318 + 318 mm, so validation includes all three cut kerfs and retains
+// 36.4 mm against a nominal 1 m stick. Measure actual stock and make a single
+// witnessed test cut before batch cutting.
 cut_kerf = 3.2;
 
-// Two independent internal plate gantries each add two split vertical
-// uprights and two continuous horizontal crossbars. The top/bottom depth rails
-// occupy 20 mm at each end of a 360 mm post, leaving a 320 mm clear upright.
-// Keeping the uprights in the same X planes as the outer depth rails makes the
-// end joints flat; their 160 mm halves are packed into the seven-stick plan.
+// Only the electronics/webcam fixture needs a three-axis gantry. It adds two
+// split vertical uprights and two continuous horizontal crossbars. The DUT
+// carrier is fixed directly to the rear outer width rails with printed links;
+// its device-specific CAD already puts every screen on the shared optical
+// datum. The top/bottom depth rails leave a 320 mm clear upright. Keeping the
+// uprights in the outer depth-rail X planes makes the end joints flat; their
+// 160 mm halves pack into the six-stick plan.
 gantry_crossbar_length = structural_x_length;
 gantry_upright_length = frame_clear.z;
 gantry_upright_segment_count = 2;
@@ -121,8 +130,6 @@ gantry_upright_x = [profile_size / 2,
                     frame_outer.x - profile_size / 2];
 gantry_y_limits = [profile_size + profile_size / 2,
                    frame_outer.y - profile_size - profile_size / 2];
-fixture_gantry_y = gantry_y_limits.x;
-cradle_gantry_y = gantry_y_limits.y;
 
 // ---- Existing plate interfaces and optical registration -----------------
 fixture_plate_size = [200.0, 247.0, 3.2];
@@ -141,19 +148,26 @@ optical_datum_z = gantry_clear_z_min +
                   fixture_webcam_datum.y;
 optical_datum = [frame_outer.x / 2, optical_datum_z]; // [X, Z]
 plate_mount_gap = 5.0;
+fixture_front_service_gap = 5.0;
 
-// Each optical plane follows its gantry Y datum.  The fixture plate sits just
-// behind the rear face of its crossbars; the DUT carrier sits just ahead of
-// the front face of its crossbars.  Moving either entire gantry therefore
-// preserves its plate mount while changing camera-to-DUT distance.
-fixture_plane_y = fixture_gantry_y + profile_size / 2 + plate_mount_gap +
-                  fixture_plate_size.z;
+// Mount the fixture board on the front side of its movable gantry. Its front
+// face retains 5 mm behind the front outer rail, while the C270 body can pass
+// harmlessly between the two widely separated crossbars. The rear carrier is
+// fixed 5 mm ahead of the rear outer width rails by four printed links.
+fixture_gantry_y = profile_size + fixture_front_service_gap +
+                   fixture_plate_size.z + plate_mount_gap +
+                   profile_size / 2;
+rear_carrier_rail_y = frame_outer.y - profile_size / 2;
+
+// Moving the fixture gantry changes camera distance without changing the
+// fixed carrier or its optical registration.
+fixture_plane_y = fixture_gantry_y - profile_size / 2 - plate_mount_gap;
 fixture_origin = [optical_datum.x - fixture_webcam_datum.x,
                   fixture_plane_y,
                   optical_datum.y - fixture_webcam_datum.y];
 
 // The DUT carrier's hooks/device face -Y toward the webcam.
-cradle_plane_y = cradle_gantry_y - profile_size / 2 - plate_mount_gap;
+cradle_plane_y = rear_carrier_rail_y - profile_size / 2 - plate_mount_gap;
 cradle_origin = [optical_datum.x - cradle_screen_datum.x,
                  cradle_plane_y,
                  optical_datum.y - cradle_screen_datum.y];
@@ -161,9 +175,15 @@ cradle_origin = [optical_datum.x - cradle_screen_datum.x,
 fixture_crossbar_z = [fixture_origin.z + fixture_slot_inset.y,
                       fixture_origin.z + fixture_plate_size.y -
                       fixture_slot_inset.y];
-cradle_crossbar_z = [cradle_origin.z + cradle_slot_inset.y,
-                     cradle_origin.z + cradle_plate_size.y -
-                     cradle_slot_inset.y];
+fixture_mount_x = [fixture_origin.x + fixture_slot_inset.x,
+                   fixture_origin.x + fixture_plate_size.x -
+                   fixture_slot_inset.x];
+cradle_mount_x = [cradle_origin.x + cradle_slot_inset.x,
+                  cradle_origin.x + cradle_plate_size.x -
+                  cradle_slot_inset.x];
+cradle_mount_z = [cradle_origin.z + cradle_slot_inset.y,
+                  cradle_origin.z + cradle_plate_size.y -
+                  cradle_slot_inset.y];
 
 // Camera/device preview values.  The mounted C270 keep-out was measured on the
 // fixture; Logitech's full clip envelope is larger and is documented in the
@@ -191,6 +211,10 @@ framing_target = [device_body.x + 2 * framing_margin.x,
                   device_body.y + 2 * framing_margin.y];
 required_hfov = 2 * atan((framing_target.x / 2) / optical_distance);
 required_vfov = 2 * atan((framing_target.y / 2) / optical_distance);
+camera_coverage = [2 * optical_distance * tan(camera_assumed_hfov / 2),
+                   2 * optical_distance * tan(camera_assumed_vfov / 2)];
+camera_edge_margin = [(camera_coverage.x - device_body.x) / 2,
+                      (camera_coverage.y - device_body.y) / 2];
 
 // ---- Printable interface parameters -------------------------------------
 m3_clearance = 3.6;
@@ -198,6 +222,23 @@ m5_clearance = 5.5;
 spacer_size = [18.0, 14.0];
 spacer_corner_radius = 2.0;
 plate_spacer_thickness = plate_mount_gap;
+
+// Four broad-face-down ABS links fix the carrier to the rear outer width
+// rails. Two upper links carry the light plate; two lower links prevent swing
+// and racking. A round, keyed rail hole is the dimensional datum. The carrier
+// end has 10 mm of vertical adjustment and clamps through the carrier's
+// existing corner slot with an ordinary metal M3 nut and wide washers.
+rear_carrier_link_width = 18.0;
+rear_carrier_link_end_margin = 12.0;
+rear_carrier_link_thickness = plate_mount_gap;
+rear_carrier_link_adjustment = 10.0;
+rear_carrier_link_key_length = 12.0;
+rear_carrier_bottom_span = cradle_mount_z.x - outer_rail_z.x;
+rear_carrier_top_span = outer_rail_z.y - cradle_mount_z.y;
+rear_carrier_bottom_length = rear_carrier_bottom_span +
+                             2 * rear_carrier_link_end_margin;
+rear_carrier_top_length = rear_carrier_top_span +
+                          2 * rear_carrier_link_end_margin;
 // Physical ABS coupon result with the lab's 0.8 mm nozzle: 6.43 mm slides
 // cleanly; 6.63 mm is too large and 6.23 mm is the loose snap-in fallback.
 slot_key_clearance = 0.30;
@@ -231,7 +272,7 @@ m3_slide_nut_corner_chamfer = 3.0;
 // bracket the same -0.30 mm process compensation selected by the rail coupon.
 m3_slide_nut_coupon_deep_widths = [6.26, 6.46];
 m3_slide_nut_coupon_copies = 1;
-m3_slide_nut_required_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
+m3_slide_nut_required_count = 18; // 8 gantry + 4 fixture + 4 carrier + 2 placard
 m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
 m3_slide_nut_set_count = m3_slide_nut_required_count +
                          m3_slide_nut_spare_count;
@@ -246,8 +287,9 @@ function m3_slide_nut_width_at_height(
     ((z - m3_slide_nut_flange_height) /
      (m3_slide_nut_height - m3_slide_nut_flange_height));
 
-// Four non-structural gantry uprights are each made from two 160 mm stock-plan
-// segments. One support-free four-piece splice aligns each central butt joint:
+// Two non-structural fixture-gantry uprights are each made from two 160 mm
+// stock-plan segments. One support-free four-piece splice aligns each central
+// butt joint:
 // two broad external shells plus two long, channel-matched internal bars. The
 // owner physically selected the one-notch 0.20 mm external clearance. Each bar
 // captures one metal M3 nut in each rail half, so opposed shell/bar pairs bridge
@@ -263,8 +305,9 @@ gantry_splice_fastener_x = 24.0;
 gantry_splice_internal_bar_length = 80.0;
 gantry_splice_internal_nut_x = [-gantry_splice_fastener_x,
                                  gantry_splice_fastener_x];
-gantry_splice_internal_bar_count = 8; // two opposed bars x four uprights
+gantry_splice_internal_bar_count = 4; // two opposed bars x two uprights
 gantry_splice_internal_bar_columns = 2;
+gantry_splice_shell_count = 4; // two opposed shells x two uprights
 gantry_splice_fit_clearances = [0.20, 0.40, 0.60];
 gantry_splice_fit_copies = 2;
 
@@ -331,17 +374,20 @@ assert(min(cradle_margins) >= minimum_routing_margin,
 assert(fixture_gantry_y >= gantry_y_limits.x &&
        fixture_gantry_y <= gantry_y_limits.y,
        str("Fixture gantry Y is outside legal travel: ", fixture_gantry_y));
-assert(cradle_gantry_y >= gantry_y_limits.x &&
-       cradle_gantry_y <= gantry_y_limits.y,
-       str("Cradle gantry Y is outside legal travel: ", cradle_gantry_y));
-assert(fixture_gantry_y + profile_size <= cradle_gantry_y,
-       "Fixture and cradle gantries must not intersect");
+assert(fixture_plane_y - fixture_plate_size.z - profile_size >=
+       fixture_front_service_gap,
+       "Fixture board must clear the rear face of the front outer rail");
+assert((rear_carrier_rail_y - profile_size / 2) - cradle_plane_y ==
+       plate_mount_gap,
+       "Rear carrier links must bridge the declared rail-to-plate gap");
+assert(frame_outer.y - cradle_plane_y >= 25.0,
+       "Rear carrier must retain approximately one inch of cable service space");
 assert(gantry_upright_segment_count == 2 &&
        2 * gantry_upright_segment_length == gantry_upright_length,
        "Each movable gantry upright must be two equal offcut segments");
 assert(gantry_splice_length < gantry_upright_segment_length,
        "Upright splice must leave exposed aluminum on both segments");
-assert(min([for (z = concat(fixture_crossbar_z, cradle_crossbar_z))
+assert(min([for (z = fixture_crossbar_z)
                 abs(z - gantry_upright_splice_z)]) >=
        gantry_splice_length / 2 + profile_size / 2,
        "Central upright splice must not collide with a plate crossbar");
@@ -349,10 +395,12 @@ assert(min(fixture_crossbar_z) >= gantry_clear_z_min + profile_size / 2 &&
        max(fixture_crossbar_z) <= gantry_clear_z_max - profile_size / 2,
        str("Fixture crossbar Z is outside gantry travel: ",
            fixture_crossbar_z));
-assert(min(cradle_crossbar_z) >= gantry_clear_z_min + profile_size / 2 &&
-       max(cradle_crossbar_z) <= gantry_clear_z_max - profile_size / 2,
-       str("Cradle crossbar Z is outside gantry travel: ",
-           cradle_crossbar_z));
+assert(rear_carrier_bottom_span > rear_carrier_link_adjustment &&
+       rear_carrier_top_span > rear_carrier_link_adjustment,
+       "Rear carrier links need positive spans beyond their adjustment slots");
+assert(rear_carrier_link_key_length > m3_clearance &&
+       slot_key_width > m3_clearance,
+       "Rear carrier rail key must retain printable material around M3");
 assert(optical_distance > 0, "Camera must remain in front of the DUT");
 assert(camera_assumed_hfov >= required_hfov,
        str("Estimated horizontal FOV is too narrow; required ", required_hfov));
@@ -458,27 +506,22 @@ module outer_frame() {
                 extrusion(structural_y_length, "y");
 }
 
-module plate_gantry(y, crossbar_zs) {
+module fixture_gantry() {
     // Uprights share the X planes of the outer depth rails.  This lets one
     // flat keyed plate bridge each T joint while the complete gantry slides
     // anywhere along the depth-rail slots.
     for (x = gantry_upright_x)
         for (segment = [0 : gantry_upright_segment_count - 1])
-            translate([x, y,
+            translate([x, fixture_gantry_y,
                        gantry_clear_z_min +
                        segment * gantry_upright_segment_length])
                 extrusion(gantry_upright_segment_length, "z");
 
     // Concealed metal L-connectors let each crossbar slide vertically on the
     // uprights; plate fasteners then slide horizontally in these crossbars.
-    for (z = crossbar_zs)
-        translate([profile_size, y, z])
+    for (z = fixture_crossbar_z)
+        translate([profile_size, fixture_gantry_y, z])
             extrusion(gantry_crossbar_length, "x");
-}
-
-module plate_gantries() {
-    plate_gantry(fixture_gantry_y, fixture_crossbar_z);
-    plate_gantry(cradle_gantry_y, cradle_crossbar_z);
 }
 
 module three_way_end_connector_proxy(x_right = false,
@@ -558,9 +601,6 @@ module gantry_crossbar_connector_proxies() {
     for (z = fixture_crossbar_z)
         for (right = [false, true])
             gantry_l_connector_proxy(fixture_gantry_y, z, right);
-    for (z = cradle_crossbar_z)
-        for (right = [false, true])
-            gantry_l_connector_proxy(cradle_gantry_y, z, right);
 }
 
 module installed_gantry_joint_plate(y, top = false, right = false) {
@@ -583,10 +623,9 @@ module installed_gantry_joint_plate(y, top = false, right = false) {
 
 module gantry_joint_plate_previews() {
     color([0.94, 0.47, 0.10])
-        for (y = [fixture_gantry_y, cradle_gantry_y])
-            for (top = [false, true])
-                for (right = [false, true])
-                    installed_gantry_joint_plate(y, top, right);
+        for (top = [false, true])
+            for (right = [false, true])
+                installed_gantry_joint_plate(fixture_gantry_y, top, right);
 }
 
 module fixture_plate_preview(detail = PLATE_DETAIL) {
@@ -640,30 +679,42 @@ module cradle_plate_preview(detail = PLATE_DETAIL) {
     }
 }
 
-module installed_plate_spacer(point, rear = false) {
+module installed_fixture_plate_spacer(point) {
     color([0.95, 0.53, 0.12])
         translate([point.x - spacer_size.x / 2,
-                   rear ? cradle_plane_y :
-                          fixture_plane_y - fixture_plate_size.z -
-                          plate_spacer_thickness,
+                   fixture_plane_y,
                    point.y - spacer_size.y / 2])
             cube([spacer_size.x, plate_spacer_thickness, spacer_size.y]);
 }
 
-module plate_mount_previews() {
-    fixture_mount_x = [fixture_origin.x + fixture_slot_inset.x,
-                       fixture_origin.x + fixture_plate_size.x -
-                       fixture_slot_inset.x];
-    cradle_mount_x = [cradle_origin.x + cradle_slot_inset.x,
-                      cradle_origin.x + cradle_plate_size.x -
-                      cradle_slot_inset.x];
+module installed_rear_carrier_link(x, plate_z, rail_z) {
+    span = abs(rail_z - plate_z);
+    center_z = (rail_z + plate_z) / 2;
+    rail_above = rail_z > plate_z;
 
+    color([0.95, 0.53, 0.12])
+        multmatrix(rail_above ? [
+            [1, 0, 0, x],
+            [0, 0, 1, cradle_plane_y],
+            [0, 1, 0, center_z],
+            [0, 0, 0, 1]
+        ] : [
+            [1, 0, 0, x],
+            [0, 0, 1, cradle_plane_y],
+            [0, -1, 0, center_z],
+            [0, 0, 0, 1]
+        ]) rear_carrier_link(span);
+}
+
+module plate_mount_previews() {
     for (x = fixture_mount_x)
         for (z = fixture_crossbar_z)
-            installed_plate_spacer([x, z]);
+            installed_fixture_plate_spacer([x, z]);
+
     for (x = cradle_mount_x)
-        for (z = cradle_crossbar_z)
-            installed_plate_spacer([x, z], true);
+        for (index = [0, 1])
+            installed_rear_carrier_link(x, cradle_mount_z[index],
+                                        outer_rail_z[index]);
 }
 
 module device_and_camera_preview() {
@@ -748,8 +799,69 @@ module plate_spacer() {
 
 module plate_spacer_set() {
     for (row = [0, 1])
-        for (column = [0 : 3])
+        for (column = [0, 1])
             translate([column * 24.0, row * 20.0, 0]) plate_spacer();
+}
+
+// Parametric fixed rear-carrier link. Local -Y is the carrier end; local +Y
+// is the rear-rail end. The rail end carries the same physically validated
+// 6.43 mm registration key used elsewhere. The base and key only get smaller
+// as Z rises, so the exported orientation is support-free.
+module rear_carrier_link(span) {
+    link_length = span + 2 * rear_carrier_link_end_margin;
+    rail_hole_y = span / 2;
+    carrier_hole_y = -span / 2;
+
+    assert(span > rear_carrier_link_adjustment,
+           "Rear carrier link span is too short for its adjustment slot");
+
+    difference() {
+        union() {
+            linear_extrude(height = rear_carrier_link_thickness)
+                pf_rounded_rect_2d([rear_carrier_link_width,
+                                    link_length], 2.5);
+            translate([0, rail_hole_y,
+                       rear_carrier_link_thickness - epsilon])
+                linear_extrude(height = slot_key_height + epsilon)
+                    pf_rounded_rect_2d(
+                        [rear_carrier_link_key_length,
+                         slot_key_width], 1.0);
+        }
+
+        translate([0, rail_hole_y, -epsilon])
+            cylinder(d = m3_clearance,
+                     h = rear_carrier_link_thickness +
+                         slot_key_height + 2 * epsilon,
+                     $fn = 28);
+
+        translate([0, carrier_hole_y, -epsilon])
+            linear_extrude(height = rear_carrier_link_thickness +
+                                    2 * epsilon)
+                rotate(90)
+                    pf_capsule_2d(rear_carrier_link_adjustment,
+                                  m3_clearance);
+    }
+}
+
+module rear_carrier_link_top() {
+    rear_carrier_link(rear_carrier_top_span);
+}
+
+module rear_carrier_link_bottom() {
+    rear_carrier_link(rear_carrier_bottom_span);
+}
+
+module rear_carrier_link_set() {
+    for (copy = [0, 1]) {
+        translate([copy * 24.0, 0, 0]) rear_carrier_link_top();
+        translate([48.0 + copy * 24.0, 0, 0])
+            rear_carrier_link_bottom();
+    }
+}
+
+module rear_carrier_link_fit_pair() {
+    translate([0, 0, 0]) rear_carrier_link_top();
+    translate([24.0, 0, 0]) rear_carrier_link_bottom();
 }
 
 module placard_spacer() {
@@ -819,7 +931,7 @@ module gantry_joint_plate() {
 
 module gantry_joint_plate_set() {
     for (row = [0, 1])
-        for (column = [0 : 3])
+        for (column = [0, 1])
             translate([column * (gantry_joint_plate_size.x + 6.0),
                        row * (gantry_joint_plate_size.y + 6.0), 0])
                 gantry_joint_plate();
@@ -910,9 +1022,9 @@ module gantry_splice_shell_pair() {
 }
 
 module gantry_splice_shell_set() {
-    for (index = [0 : 7])
-        translate([(index % 3) * 82.0,
-                   floor(index / 3) * 49.0, 0])
+    for (index = [0 : gantry_splice_shell_count - 1])
+        translate([(index % 2) * 82.0,
+                   floor(index / 2) * 49.0, 0])
             gantry_splice_shell();
 }
 
@@ -989,10 +1101,9 @@ module installed_gantry_splice_half(x, y, front = true) {
 
 module gantry_splice_previews() {
     color([0.94, 0.47, 0.10])
-        for (y = [fixture_gantry_y, cradle_gantry_y])
-            for (x = gantry_upright_x)
-                for (front = [false, true])
-                    installed_gantry_splice_half(x, y, front);
+        for (x = gantry_upright_x)
+            for (front = [false, true])
+                installed_gantry_splice_half(x, fixture_gantry_y, front);
 }
 
 module registration_tab() {
@@ -1054,7 +1165,7 @@ module placard_assembly_preview() {
     // Flat hanging straps bolt to the front slot at Z=354 and put the placard
     // holes at Z=318.  The complete sign remains beneath the top front rail,
     // faces the operator at the camera/front side, and never moves with
-    // either payload gantry.
+    // the movable fixture gantry.
     color([0.94, 0.47, 0.10])
         for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
                   frame_outer.x / 2 + placard_hole_spacing / 2])
@@ -1252,8 +1363,9 @@ module print_group_gantry_splice_bars() {
 
 module print_group_plate_mounts() {
     plate_spacer_set();
-    translate([110.0, 0, 0]) placard_riser_pair();
-    translate([48.0, 45.0, 0]) placard_spacer_pair();
+    translate([80.0, 0, 0]) placard_riser_pair();
+    translate([45.0, 45.0, 0]) placard_spacer_pair();
+    translate([125.0, 65.0, 0]) rear_carrier_link_set();
 }
 
 module print_group_stacking_guides() {
@@ -1265,24 +1377,27 @@ module print_group_device_label() {
 }
 
 module cutlist_echo() {
+    echo(str("PFFRAME|", frame_outer.x, "|", frame_outer.y, "|",
+             frame_outer.z, "|", frame_clear.x, "|", frame_clear.y, "|",
+             frame_clear.z));
     echo(str("PFCUT|outer_vertical_rail|4|", structural_z_length,
              "|connector stem; measured caps add 4 mm per end"));
     echo(str("PFCUT|outer_width_rail|4|", structural_x_length,
              "|butts between vertical-post side faces"));
     echo(str("PFCUT|outer_depth_rail|4|", structural_y_length,
              "|butts between vertical-post side faces"));
-    echo(str("PFCUT|plate_gantry_upright_half|8|",
+    echo(str("PFCUT|fixture_gantry_upright_half|4|",
              gantry_upright_segment_length,
-             "|two halves plus reinforced splice form each upright"));
-    echo(str("PFCUT|plate_gantry_crossbar|4|", gantry_crossbar_length,
-             "|two height-adjustable crossbars per plate gantry"));
+             "|two halves plus reinforced splice form each fixture upright"));
+    echo(str("PFCUT|fixture_gantry_crossbar|2|", gantry_crossbar_length,
+             "|two height-adjustable fixture crossbars"));
     echo(str("PFSTOCK|", stock_length, "|", cut_kerf,
              "|", join_topology));
 }
 
 module assembly(plate_detail = PLATE_DETAIL) {
     outer_frame();
-    plate_gantries();
+    fixture_gantry();
     if (SHOW_CONNECTOR_PROXIES) connector_proxies();
     if (SHOW_PLATES) {
         fixture_plate_preview(plate_detail);
@@ -1306,6 +1421,23 @@ module stacked_assembly() {
     }
 }
 
+// Presentation-only close-up of the measured three-way corner topology. The
+// vertical post owns the 20 x 20 mm corner footprint. Width and depth rails
+// terminate flush against its two adjacent side faces, exactly as in the
+// owner's assembled-corner photo; they never overlap each other.
+module corner_joint_detail() {
+    detail_length = 110.0;
+
+    translate([profile_size / 2, profile_size / 2,
+               frame_aluminum_z_min])
+        extrusion(detail_length, "z");
+    translate([profile_size, profile_size / 2, outer_rail_z.x])
+        extrusion(detail_length, "x");
+    translate([profile_size / 2, profile_size, outer_rail_z.x])
+        extrusion(detail_length, "y");
+    three_way_end_connector_proxy(false, false, false);
+}
+
 if (PART == "assembly") {
     assembly();
 } else if (PART == "presentation") {
@@ -1315,6 +1447,8 @@ if (PART == "assembly") {
     assembly("mesh");
 } else if (PART == "stacked_assembly") {
     stacked_assembly();
+} else if (PART == "corner_joint_detail") {
+    corner_joint_detail();
 } else if (PART == "placard") {
     device_id_placard();
 } else if (PART == "placard_riser") {
@@ -1329,6 +1463,14 @@ if (PART == "assembly") {
     plate_spacer();
 } else if (PART == "plate_spacer_set") {
     plate_spacer_set();
+} else if (PART == "rear_carrier_link_top") {
+    rear_carrier_link_top();
+} else if (PART == "rear_carrier_link_bottom") {
+    rear_carrier_link_bottom();
+} else if (PART == "rear_carrier_link_fit_pair") {
+    rear_carrier_link_fit_pair();
+} else if (PART == "rear_carrier_link_set") {
+    rear_carrier_link_set();
 } else if (PART == "gantry_joint_plate") {
     gantry_joint_plate();
 } else if (PART == "gantry_joint_plate_set") {
