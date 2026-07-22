@@ -42,13 +42,15 @@ SHOW_REGISTRATION_GUIDES = true;
 // opens them and remains safe for clean-checkout linting.
 fixture_presentation_mesh =
     "build/imports/pocketforge-dut-fixture-v1.stl";
-cradle_s_presentation_mesh =
-    "build/imports/trimui-smart-pro-s-carrier.stl";
-cradle_base_presentation_mesh =
-    "build/imports/trimui-smart-pro-carrier.stl";
-cradle_presentation_mesh = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
-                           cradle_s_presentation_mesh :
-                           cradle_base_presentation_mesh;
+cradle_body_presentation_mesh =
+    "build/imports/trimui-smart-pro-family-carrier-body.stl";
+cradle_s_labels_presentation_mesh =
+    "build/imports/trimui-smart-pro-s-labels.stl";
+cradle_base_labels_presentation_mesh =
+    "build/imports/trimui-smart-pro-labels.stl";
+cradle_labels_presentation_mesh = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
+                                  cradle_s_labels_presentation_mesh :
+                                  cradle_base_labels_presentation_mesh;
 cradle_hooks_presentation_mesh =
     "build/imports/trimui-smart-pro-family-installed-hooks.stl";
 
@@ -612,7 +614,14 @@ module cradle_mesh_at_installed_datum(mesh_path) {
 module cradle_plate_preview(detail = PLATE_DETAIL) {
     if (detail == "mesh") {
         color([0.88, 0.88, 0.84])
-            cradle_mesh_at_installed_datum(cradle_presentation_mesh);
+            cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
+
+        // The physical carrier changes filament at the first raised-label
+        // layer.  Separate touching meshes preserve that exact black material
+        // region without overlaying coincident faces on a unified STL.
+        color([0.02, 0.02, 0.02])
+            cradle_mesh_at_installed_datum(
+                cradle_labels_presentation_mesh);
 
         // The hooks are a distinct presentation-only export from the accepted
         // cradle source. They remain independently printable/serviceable and
