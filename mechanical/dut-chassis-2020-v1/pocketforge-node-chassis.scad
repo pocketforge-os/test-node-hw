@@ -185,16 +185,17 @@ m3_nut_measured_across_flats = 5.36;
 m3_nut_measured_thickness = 2.30;
 m3_nut_pocket_across_flats = 5.60;
 m3_nut_pocket_depth = 2.80;
-m3_slide_nut_length = 60.0;
+m3_slide_nut_length = 30.0;
 m3_slide_nut_bearing_width = 11.85;
 m3_slide_nut_deep_width = 8.90;
 m3_slide_nut_height = 4.40;
 m3_slide_nut_flange_height = 1.20;
 m3_slide_nut_corner_chamfer = 3.0;
-// The middle candidate applies the same -0.30 mm compensation that physically
-// selected the 6.43 mm key for the measured 6.73 mm slot mouth.
-m3_slide_nut_coupon_bearing_widths = [11.55, 11.85, 12.05];
-m3_slide_nut_coupon_copies = 2;
+// Second physical pass: the original 11.85 mm candidate was close but not an
+// accepted fit. One candidate on either side resolves the remaining 0.20 mm
+// interval while using only two shorter bars.
+m3_slide_nut_coupon_bearing_widths = [11.75, 11.95];
+m3_slide_nut_coupon_copies = 1;
 m3_slide_nut_required_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
 m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
 m3_slide_nut_set_count = m3_slide_nut_required_count +
@@ -324,16 +325,16 @@ assert(min(m3_slide_nut_coupon_bearing_widths) > extrusion_slot_opening &&
        max(m3_slide_nut_coupon_bearing_widths) < extrusion_slot_pocket_width,
        "Every end-loaded coupon bearing face must bridge the mouth and fit pocket");
 assert(len(m3_slide_nut_coupon_bearing_widths) *
-       m3_slide_nut_coupon_copies >= 6,
-       "Small ABS fit batches need at least six parts for inter-part cooling");
+       m3_slide_nut_coupon_copies == 2,
+       "Second-pass nut-bar coupon must contain exactly two pieces");
 assert(m3_slide_nut_height <
        extrusion_slot_depth - extrusion_slot_lip_depth,
        "End-loaded carrier must fit behind the measured slot lip");
 assert(m3_slide_nut_flange_height > 0 &&
        m3_slide_nut_flange_height < m3_slide_nut_height,
        "Nut-bar bearing flange must fit inside its total channel depth");
-assert(m3_slide_nut_length >= 40.0,
-       "End-loaded nut bar must remain a large, easy-handling mount point");
+assert(m3_slide_nut_length >= 24.0,
+       "End-loaded carrier must retain useful nut walls and handling length");
 assert(m3_slide_nut_height - m3_nut_pocket_depth >= 1.6,
        "End-loaded carrier needs at least four 0.4 mm floor layers");
 assert(gantry_splice_inner_width > profile_size,
@@ -952,7 +953,7 @@ module rail_fit_coupon() {
             rail_fit_key(widths[index], str(widths[index]));
 }
 
-// Large end-loaded sliding T-nut bar.  This is intentionally a 60 mm handling
+// Large end-loaded sliding T-nut bar.  This is intentionally a 30 mm handling
 // bar, not a commercial-nut-sized nubbin: it nearly fills the delivered slot,
 // cannot rotate, and is easy to position with a loose screw as a handle.  The
 // broad flange bears behind the lips for its first 1.2 mm; above that, a
@@ -1017,8 +1018,8 @@ module m3_slide_nut_carrier(
                      h = m3_nut_pocket_depth + epsilon,
                      $fn = 6);
 
-        // Large end scallops survive a 0.8 mm nozzle.  One/two/three marks
-        // identify 11.55/11.85/12.05 mm bearing widths after parts leave the
+        // Large end scallops survive a 0.8 mm nozzle. One/two marks identify
+        // 11.75/11.95 mm bearing widths after parts leave the
         // bed.
         if (witness_notches > 0)
             for (notch = [0 : witness_notches - 1])
@@ -1033,19 +1034,20 @@ module m3_slide_nut_carrier(
 
 module m3_slide_nut_carrier_set() {
     for (index = [0 : m3_slide_nut_set_count - 1])
-        translate([(index % m3_slide_nut_set_columns) * 62.0,
+        translate([(index % m3_slide_nut_set_columns) *
+                       (m3_slide_nut_length + 2.0),
                    floor(index / m3_slide_nut_set_columns) * 15.0,
                    0])
             m3_slide_nut_carrier();
 }
 
-// Six pieces are intentional: ABS gets enough inter-part cooling time even
-// when the only requested output is a tiny fit test.  Two copies of each width
-// also provide a repeatability check instead of trusting one lucky print.
+// The 30 mm bars have enough layer time for the owner's ABS process, so this
+// second pass needs only one of each bracketing width.
 module m3_slide_nut_fit_coupon() {
     for (index = [0 : len(m3_slide_nut_coupon_bearing_widths) - 1])
         for (copy = [0 : m3_slide_nut_coupon_copies - 1])
-            translate([index * 64.0, copy * 15.0, 0])
+            translate([index * (m3_slide_nut_length + 4.0),
+                       copy * 15.0, 0])
                 m3_slide_nut_carrier(
                     m3_slide_nut_coupon_bearing_widths[index],
                     m3_slide_nut_deep_width,

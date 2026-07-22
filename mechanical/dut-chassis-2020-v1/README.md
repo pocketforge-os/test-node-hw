@@ -173,7 +173,7 @@ dimensional compensation.
 The gantries, fixture, cradle, and placard need 26 M3 slot fasteners per
 chassis. The initial twist-in coupon was physically rejected: its miniature
 wedging geometry did not reproduce reliably with the lab's 0.8 mm nozzle. The
-replacement is a 60 mm long, chamfer-ended sliding nut bar with no spring ears
+replacement is a 30 mm long, chamfer-ended sliding nut bar with no spring ears
 or printed threads. It is deliberately large enough to grab and position,
 cannot rotate in the channel, and spreads clamp load far beyond a commercial
 nut-sized nubbin. Its 1.2 mm-tall bearing flange uses nearly the entire
@@ -193,12 +193,12 @@ the dimensional authority.
 
 Installation:
 
-1. Print `m3-slide-nut-fit-coupon.stl` flat, with the nut pockets upward. It
-   contains six independent parts—two copies each of three widths—so a tiny
-   ABS test gets enough inter-part cooling time and checks repeatability.
-2. One, two, and three large end scallops identify the 11.55, 11.85, and
-   12.05 mm bearing-face widths respectively; identification does not depend
-   on fine embossed text. All three taper to the same 8.9 mm deep face.
+1. Print `m3-slide-nut-fit-coupon.stl` flat, with the nut pockets upward. Its
+   second physical pass contains exactly two independent 30 mm parts—large
+   enough to provide sufficient layer cooling in the lab's ABS process.
+2. One and two large end scallops identify the 11.75 and 11.95 mm
+   bearing-face widths respectively; identification does not depend on fine
+   embossed text. Both taper to the same 8.9 mm deep face.
 3. Pull an ordinary M3 nut into each pocket with an M3 screw and washer, then
    leave the screw threaded one turn as a handle.
 4. With a rail end still open, orient the solid face toward the slot mouth and
@@ -211,8 +211,8 @@ Installation:
    into the exact rail face where it will be used. A bar cannot move between
    the four independent slots after assembly.
 
-The production default is the two-scallop 11.85 mm bearing face pending this
-physical coupon. A production set contains 32 bars: 26 required plus six
+The production default remains 11.85 mm until this bracketing physical coupon
+selects 11.75 or 11.95 mm. A production set contains 32 bars: 26 required plus six
 spares to preload before rail ends are closed. Park spares loosely under a
 screw/washer or an installed bracket so they do not rattle into inaccessible
 positions.
@@ -327,7 +327,7 @@ Generated files live under `build/` and are not committed:
   clamshell pair and the six-piece external-fit coupon;
 - `layout-m3-slide-nut.png`, `layout-m3-slide-nut-end.png`, and
   `layout-m3-slide-nut-coupon.png` — enlarged perspective, end-profile, and
-  six-piece three-width nut-bar views;
+  two-piece bracketing-width nut-bar views;
 - `layout-print-group-01.png` through `layout-print-group-07.png` — the seven
   ready-to-slice production batches;
 - `cut-list.csv` and `cut-list.md` — geometry-derived pieces and 1 m stock plan;
@@ -360,7 +360,7 @@ quantities and in their intended bed orientation:
 
 | Group | Contents | Why separate |
 |---|---|---|
-| 01 calibration | rail-key coupon + six 60 mm M3 nut bars (two each at three widths) | Print and physically select fits before production batches |
+| 01 calibration | rail-key coupon + two 30 mm M3 nut bars bracketing the near-fit width | Print and physically select fits before production batches |
 | 02 gantry hardware | 8 gantry joint plates | Flat keyed payload-gantry interfaces |
 | 03 plate mounts | 8 plate spacers + 2 placard straps + 2 placard spacers | All keyed payload and label mounting interfaces |
 | 04 stacking guides | 8 registration tabs | Separate safety/stacking hardware inspection |
@@ -405,7 +405,7 @@ sheet.
   four upright splices;
 - 8 stacking registration tabs for every chassis that will support another;
 - 1 rail fit coupon before the other printed interfaces;
-- 1 six-piece M3 nut-bar fit coupon, then 32 selected M3 nut bars (26
+- 1 two-piece M3 nut-bar fit coupon, then 32 selected M3 nut bars (26
   required plus six preloaded spares);
 - 8 B08C9Q2TGW zinc three-way corner connectors and their supplied M4 x 5 mm
   set screws;
@@ -435,7 +435,7 @@ connectors, and four more L-connectors.
    conservative 3.2 mm solely for offcut accounting.
 3. Dry-fit one three-way connector and confirm that a 360 mm rail plus two
    connector bodies produces 400 mm outside-to-outside.
-4. Print the six-piece end-loaded nut-bar coupon and record the selected width;
+4. Print the two-piece end-loaded nut-bar coupon and record the selected width;
    the separate rail key is already physically selected at 6.43 mm.
 5. Print the six-piece gantry-clamshell coupon and record the selected external
    clearance before producing the eight full shell halves.

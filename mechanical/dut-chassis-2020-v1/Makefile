@@ -418,13 +418,13 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/stacking-registration-tab-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 40 --max-z 10 \
 		$(BUILD)/rail-fit-coupon.stl
-	$(PYTHON) $(BOUNDS) --max-x 65 --max-y 13 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 35 --max-y 13 --max-z 6 \
 		$(BUILD)/m3-slide-nut-carrier.stl
-	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 125 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 125 --max-z 6 \
 		$(BUILD)/m3-slide-nut-carrier-set.stl
-	$(PYTHON) $(BOUNDS) --max-x 190 --max-y 28 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 70 --max-y 13 --max-z 6 \
 		$(BUILD)/m3-slide-nut-fit-coupon.stl
-	$(PYTHON) $(BOUNDS) --max-x 190 --max-y 65 --max-z 10 \
+	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 50 --max-z 10 \
 		$(BUILD)/print-group-01-calibration.stl
 	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 100 --max-z 8 \
 		$(BUILD)/print-group-02-gantry-hardware.stl
@@ -434,7 +434,7 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/print-group-04-stacking-guides.stl
 	$(PYTHON) $(BOUNDS) --max-x 180 --max-y 60 --max-z 6 \
 		$(BUILD)/print-group-05-device-label.stl
-	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 125 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 125 --max-z 6 \
 		$(BUILD)/print-group-06-m3-nut-bars.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 150 --max-z 14 \
 		$(BUILD)/print-group-07-gantry-splices.stl
