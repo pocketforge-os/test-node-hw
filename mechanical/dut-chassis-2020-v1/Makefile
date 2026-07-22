@@ -247,7 +247,7 @@ validate-nut-carrier-guard: | $(BUILD)
 		mesh=$(BUILD)/invalid-nut-carrier.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
 			-D 'PART="m3_slide_nut"' \
-			-D 'm3_slide_nut_width=12.2' $(SOURCE) >$$log 2>&1; then \
+			-D 'm3_slide_nut_bearing_width=12.2' $(SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: oversized carrier was not rejected' >&2; exit 1; \
 		fi; \
 	grep -q 'fit inside the measured slot pocket' $$log; \
@@ -255,10 +255,18 @@ validate-nut-carrier-guard: | $(BUILD)
 		narrow_mesh=$(BUILD)/invalid-nut-carrier-narrow.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$narrow_mesh \
 			-D 'PART="m3_slide_nut"' \
-			-D 'm3_slide_nut_width=6.7' $(SOURCE) >$$narrow_log 2>&1; then \
+			-D 'm3_slide_nut_bearing_width=6.7' $(SOURCE) >$$narrow_log 2>&1; then \
 			echo 'ERROR: pull-through carrier was not rejected' >&2; exit 1; \
 		fi; \
 	grep -q 'wider than the slot mouth' $$narrow_log; \
+	thin_log=$(BUILD)/invalid-nut-carrier-thin-wall.log; \
+		thin_mesh=$(BUILD)/invalid-nut-carrier-thin-wall.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$thin_mesh \
+			-D 'PART="m3_slide_nut"' \
+			-D 'm3_slide_nut_deep_width=8.7' $(SOURCE) >$$thin_log 2>&1; then \
+			echo 'ERROR: thin-wall carrier was not rejected' >&2; exit 1; \
+		fi; \
+	grep -q 'walls around the metal nut' $$thin_log; \
 	tall_log=$(BUILD)/invalid-nut-carrier-tall.log; \
 		tall_mesh=$(BUILD)/invalid-nut-carrier-tall.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$tall_mesh \
@@ -267,7 +275,7 @@ validate-nut-carrier-guard: | $(BUILD)
 			echo 'ERROR: over-depth carrier was not rejected' >&2; exit 1; \
 		fi; \
 	grep -q 'fit behind the measured slot lip' $$tall_log; \
-	echo 'nut_carrier_guard=pass rejected_widths=6.7,12.2mm rejected_height=4.9mm'
+	echo 'nut_carrier_guard=pass rejected_bearing_widths=6.7,12.2mm rejected_deep_width=8.7mm rejected_height=4.9mm'
 
 validate-gantry-travel-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-gantry-travel.log; \

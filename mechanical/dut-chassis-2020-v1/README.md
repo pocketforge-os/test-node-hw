@@ -142,28 +142,30 @@ dimensional compensation.
 The gantries, fixture, cradle, and placard need 26 M3 slot fasteners per
 chassis. The initial twist-in coupon was physically rejected: its miniature
 wedging geometry did not reproduce reliably with the lab's 0.8 mm nozzle. The
-replacement is an 18 mm long, chamfer-ended slider with no spring ears or
-printed threads. It is intentionally too wide for the 6.73 mm mouth and must
-enter from a cut rail end before the corner connector closes that end.
+replacement is an 18 mm long, chamfer-ended keystone slider with no spring
+ears or printed threads. Its broad bearing face uses nearly the entire
+12.15 mm under-lip channel, then tapers inward toward the extrusion web. It is
+intentionally too wide for the 6.73 mm mouth and must enter from a cut rail end
+before the corner connector closes that end.
 
 The slider reuses the ordinary metal M3 nut already validated in the DUT-hook
 system: owner-measured 5.36 mm across flats by 2.30 mm thick, in the proven
 5.60 × 2.80 mm printed pocket. The metal nut carries the thread. The ABS body
 locates it and spreads light plate/placard clamp load behind the rail opening.
-As a dimensional cross-check, OpenBuilds specifies its commercial V-slot
-drop-in nut as 10 × 6 × 4.4 mm; this design keeps the same 4.4 mm depth, expands
-the rail-axis body to 18 mm, and uses 10 mm only as the center of a width test
-against the delivered 12.15 mm pocket rather than assuming the commercial part
-is interchangeable:
-<https://us.openbuilds.com/drop-in-tee-nuts/>.
+The body is 4.4 mm deep. Its pocket-facing side is a fixed 9.2 mm wide so it
+clears the channel's sloped interior while retaining printable walls around
+the nut. The test varies the under-lip bearing face against the delivered
+12.15 mm pocket; the delivered extrusion, not a nominal commercial T-nut, is
+the dimensional authority.
 
 Installation:
 
 1. Print `m3-slide-nut-fit-coupon.stl` flat, with the nut pockets upward. It
    contains six independent parts—two copies each of three widths—so a tiny
    ABS test gets enough inter-part cooling time and checks repeatability.
-2. One, two, and three large end scallops identify the 9.6, 10.0, and 10.4 mm
-   widths respectively; identification does not depend on fine embossed text.
+2. One, two, and three large end scallops identify the 10.9, 11.3, and 11.7 mm
+   bearing-face widths respectively; identification does not depend on fine
+   embossed text. All three taper to the same 9.2 mm deep face.
 3. Pull an ordinary M3 nut into each pocket with an M3 screw and washer, then
    leave the screw threaded one turn as a handle.
 4. With a rail end still open, orient the solid face toward the slot mouth and
@@ -176,10 +178,11 @@ Installation:
    into the exact rail face where it will be used. A slider cannot move between
    the four independent slots after assembly.
 
-The production default is the two-scallop 10.0 mm body pending this physical
-coupon. A production set contains 32 sliders: 26 required plus six spares to
-preload before rail ends are closed. Park spares loosely under a screw/washer
-or an installed bracket so they do not rattle into inaccessible positions.
+The production default is the two-scallop 11.3 mm bearing face pending this
+physical coupon. A production set contains 32 sliders: 26 required plus six
+spares to preload before rail ends are closed. Park spares loosely under a
+screw/washer or an installed bracket so they do not rattle into inaccessible
+positions.
 These parts are explicitly forbidden for outer-frame joints, stacking
 registration, anti-lift retention, or other safety/structural loads.
 

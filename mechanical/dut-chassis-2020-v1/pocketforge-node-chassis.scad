@@ -159,16 +159,20 @@ slot_key_height = 1.2;
 // 5.6 x 2.8 mm pocket is the already print-validated DUT-hook fit for the
 // owner's measured 5.36 x 2.30 mm nuts.  Unlike the retired twist-in carrier,
 // this body is deliberately too wide to pass through the slot mouth: slide it
-// into the open end of an extrusion before the frame end is assembled.
+// into the open end of an extrusion before the frame end is assembled.  Its
+// broad bearing face nearly fills the measured 12.15 mm under-lip pocket and
+// tapers toward the extrusion web, following the delivered rail's channel
+// instead of inheriting a narrow commercial T-nut envelope.
 m3_nut_measured_across_flats = 5.36;
 m3_nut_measured_thickness = 2.30;
 m3_nut_pocket_across_flats = 5.60;
 m3_nut_pocket_depth = 2.80;
 m3_slide_nut_length = 18.0;
-m3_slide_nut_width = 10.0;
+m3_slide_nut_bearing_width = 11.30;
+m3_slide_nut_deep_width = 9.20;
 m3_slide_nut_height = 4.40;
 m3_slide_nut_corner_chamfer = 1.6;
-m3_slide_nut_coupon_widths = [9.6, 10.0, 10.4];
+m3_slide_nut_coupon_bearing_widths = [10.90, 11.30, 11.70];
 m3_slide_nut_coupon_copies = 2;
 m3_slide_nut_required_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
 m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
@@ -256,14 +260,20 @@ assert(m3_nut_pocket_across_flats >= m3_nut_measured_across_flats,
        "M3 nut pocket must not be smaller than the measured nut");
 assert(m3_nut_pocket_depth >= m3_nut_measured_thickness,
        "M3 nut pocket must not be shallower than the measured nut");
-assert(m3_slide_nut_width > extrusion_slot_opening,
-       "End-loaded carrier must be wider than the slot mouth");
-assert(m3_slide_nut_width < extrusion_slot_pocket_width,
-       "End-loaded carrier must fit inside the measured slot pocket");
-assert(min(m3_slide_nut_coupon_widths) > extrusion_slot_opening &&
-       max(m3_slide_nut_coupon_widths) < extrusion_slot_pocket_width,
-       "Every end-loaded coupon width must bridge the mouth and fit pocket");
-assert(len(m3_slide_nut_coupon_widths) * m3_slide_nut_coupon_copies >= 6,
+assert(m3_slide_nut_bearing_width > extrusion_slot_opening,
+       "End-loaded carrier bearing face must be wider than the slot mouth");
+assert(m3_slide_nut_bearing_width < extrusion_slot_pocket_width,
+       "End-loaded carrier bearing face must fit inside the measured slot pocket");
+assert(m3_slide_nut_deep_width >
+       m3_nut_pocket_across_flats + 2 * 1.6,
+       "End-loaded carrier needs printable deep-face walls around the metal nut");
+assert(m3_slide_nut_deep_width < m3_slide_nut_bearing_width,
+       "End-loaded carrier must taper inward away from its bearing face");
+assert(min(m3_slide_nut_coupon_bearing_widths) > extrusion_slot_opening &&
+       max(m3_slide_nut_coupon_bearing_widths) < extrusion_slot_pocket_width,
+       "Every end-loaded coupon bearing face must bridge the mouth and fit pocket");
+assert(len(m3_slide_nut_coupon_bearing_widths) *
+       m3_slide_nut_coupon_copies >= 6,
        "Small ABS fit batches need at least six parts for inter-part cooling");
 assert(m3_slide_nut_height <
        extrusion_slot_depth - extrusion_slot_lip_depth,
@@ -748,13 +758,14 @@ module rail_fit_coupon() {
 }
 
 // Chunky end-loaded alternative to buying M3 sliding T-nuts.  The broad
-// octagonal footprint has no spring ears, printed threads, or sub-nozzle
-// details.  Its chamfered ends ease insertion from a cut rail end, while its
-// width bridges the 6.73 mm mouth and remains inside the measured 12.15 mm
-// pocket.  Print solid face down and pull an ordinary M3 nut into the upward
-// hex pocket with a screw and washer.  The open pocket faces the rail center.
-// The metal nut carries the thread; ABS only spreads light clamp load.  Never
-// use this part for frame, stacking, or safety loads.
+// keystone has no spring ears, printed threads, or sub-nozzle details.  Its
+// chamfered ends ease insertion from a cut rail end.  The solid, widest face
+// bears behind the lips; the pocket face tapers inward toward the extrusion
+// web so the carrier uses the delivered channel instead of occupying only its
+// center.  Print the solid bearing face down and pull an ordinary M3 nut into
+// the upward hex pocket with a screw and washer.  The open pocket faces the
+// rail center.  The metal nut carries the thread; ABS only spreads light clamp
+// load.  Never use this part for frame, stacking, or safety loads.
 module m3_slide_nut_outline(body_width) {
     length = m3_slide_nut_length;
     chamfer = min(m3_slide_nut_corner_chamfer,
@@ -769,16 +780,27 @@ module m3_slide_nut_outline(body_width) {
              [-length / 2, -body_width / 2 + chamfer]]);
 }
 
-module m3_slide_nut_carrier(body_width = m3_slide_nut_width,
+module m3_slide_nut_carrier(
+                            bearing_width = m3_slide_nut_bearing_width,
+                            deep_width = m3_slide_nut_deep_width,
                             witness_notches = 0) {
-    assert(body_width > extrusion_slot_opening,
-           "Coupon slider must bridge the measured slot mouth");
-    assert(body_width < extrusion_slot_pocket_width,
-           "Coupon slider must fit inside the measured slot pocket");
+    assert(bearing_width > extrusion_slot_opening,
+           "Coupon slider bearing face must bridge the measured slot mouth");
+    assert(bearing_width < extrusion_slot_pocket_width,
+           "Coupon slider bearing face must fit inside the measured slot pocket");
+    assert(deep_width >
+           m3_nut_pocket_across_flats + 2 * 1.6,
+           "Coupon slider needs printable deep-face walls around the nut");
+    assert(deep_width < bearing_width,
+           "Coupon slider must taper inward away from its bearing face");
 
     difference() {
-        linear_extrude(height = m3_slide_nut_height)
-            m3_slide_nut_outline(body_width);
+        // Keep the 18 mm rail-axis length unchanged while tapering only the
+        // channel-width axis.  This prints support-free: the largest face is
+        // on the bed and every subsequent layer steps inward.
+        linear_extrude(height = m3_slide_nut_height,
+                       scale = [1, deep_width / bearing_width])
+            m3_slide_nut_outline(bearing_width);
 
         translate([0, 0, -epsilon])
             cylinder(d = m3_clearance,
@@ -792,7 +814,7 @@ module m3_slide_nut_carrier(body_width = m3_slide_nut_width,
                      $fn = 6);
 
         // Large end scallops survive a 0.8 mm nozzle.  One/two/three marks
-        // identify 9.6/10.0/10.4 mm coupon widths after parts leave the bed.
+        // identify 10.9/11.3/11.7 mm bearing widths after parts leave the bed.
         if (witness_notches > 0)
             for (notch = [0 : witness_notches - 1])
                 translate([m3_slide_nut_length / 2,
@@ -816,11 +838,13 @@ module m3_slide_nut_carrier_set() {
 // when the only requested output is a tiny fit test.  Two copies of each width
 // also provide a repeatability check instead of trusting one lucky print.
 module m3_slide_nut_fit_coupon() {
-    for (index = [0 : len(m3_slide_nut_coupon_widths) - 1])
+    for (index = [0 : len(m3_slide_nut_coupon_bearing_widths) - 1])
         for (copy = [0 : m3_slide_nut_coupon_copies - 1])
             translate([index * 22.0, copy * 14.0, 0])
-                m3_slide_nut_carrier(m3_slide_nut_coupon_widths[index],
-                                     index + 1);
+                m3_slide_nut_carrier(
+                    m3_slide_nut_coupon_bearing_widths[index],
+                    m3_slide_nut_deep_width,
+                    index + 1);
 }
 
 // Ready-to-slice production groups.  Every object is already in its
