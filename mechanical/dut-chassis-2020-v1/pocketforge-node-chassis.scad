@@ -1400,6 +1400,21 @@ module print_group_device_label() {
     device_id_placard();
 }
 
+// Safe unattended batch after the reinforced-splice test starts/finishes:
+// one top/bottom rear-link fit pair, the already accepted production M3 nut
+// bars, and the four independent gantry indexing plates.  Production splice
+// parts are deliberately absent until the assembled test joint passes.
+module print_group_after_splice_overnight() {
+    // Native set bounds become X=0..126, Y~0..87.
+    translate([15.0, 6.0, 0]) m3_slide_nut_carrier_set();
+
+    // Ten millimetres of X separation from the nut-bar set.
+    translate([145.0, 58.0, 0]) rear_carrier_link_fit_pair();
+
+    // Five millimetres of Y separation from the nut-bar set.
+    translate([18.0, 114.0, 0]) gantry_joint_plate_set();
+}
+
 module cutlist_echo() {
     echo(str("PFFRAME|", frame_outer.x, "|", frame_outer.y, "|",
              frame_outer.z, "|", frame_clear.x, "|", frame_clear.y, "|",
@@ -1543,6 +1558,8 @@ if (PART == "assembly") {
     print_group_stacking_guides();
 } else if (PART == "print_group_device_label") {
     print_group_device_label();
+} else if (PART == "print_group_after_splice_overnight") {
+    print_group_after_splice_overnight();
 } else if (PART == "cutlist") {
     cutlist_echo();
     cube([0.1, 0.1, 0.1]);
