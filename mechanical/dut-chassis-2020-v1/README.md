@@ -205,21 +205,23 @@ becoming a stack collapse. Until a loaded physical test establishes a rated
 stack count, use no more than two populated nodes on a stable surface and
 positively restrain the stack against tipping.
 
-### Rear device identification
+### Front device identification
 
-The rear ID system is deliberately modular:
+The front ID system is deliberately modular:
 
 1. one flat, device-specific 166 × 38 mm raised-letter placard;
 2. two reusable flat hanging straps that keep it completely beneath the top
-   rear rail;
-3. two keyed spacers against the rear face of the top-rear 2020 rail.
+   front rail;
+3. two keyed spacers against the operator-facing side of the top-front 2020
+   rail.
 
 Each riser uses one M3 screw/washer and captured-nut carrier at the rail, plus
 one M3 screw/nut at the placard. The default `TrimUI Smart Pro` lettering is
 13.5 mm bold with 1.2 mm relief for the lab's 0.8 mm nozzle. Future devices
 change only `DEVICE_LABEL` or add a tiny wrapper; the mounting geometry
-remains shared. The sign is rear-facing and fixed to the outer frame; it does
-not move when either payload gantry is repositioned.
+remains shared. The sign is fixed to the outer frame and faces the operator
+standing at the camera/front side, looking through the node toward the DUT. It
+does not move when either payload gantry is repositioned.
 
 ## Build, preview, and validate
 
@@ -227,26 +229,38 @@ OpenSCAD 2021.01 or newer is sufficient:
 
 ```sh
 make all       # printable STLs + generated cut list
-make preview   # proxy, imported-plate, and rear assembly views
+make preview   # proxy, imported-plate, front-label, and print-group views
 make validate  # repository lint, meshes, bounds, guards, and cut-list checks
+make refresh-cut-list  # deliberately update checked-in CUT_LIST.md from CAD
+openscad -D 'PART="presentation"' pocketforge-node-chassis.scad
 ```
 
 `make preview` first builds the production fixture/carrier meshes in their
-own projects, then imports them into the chassis assembly. The chassis source
-defaults to lightweight plate envelopes so repository-wide lint never depends
-on generated files.
+own projects, then stages them under `build/imports/` and imports them into the
+chassis assembly. `PART="presentation"` shows those exact production boards,
+the device/camera proxies, and the analytical C270 field-of-view frustum
+together. The cone remains independent of the imported STL so camera geometry
+can evolve without modifying either board.
+
+The normal `PART="assembly"` view intentionally defaults to lightweight plate
+envelopes so repository-wide lint never depends on generated files. Run
+`make preview` once before opening presentation mode. The staged imports are
+also copied into the Desktop package, making that presentation self-contained.
 
 Generated files live under `build/` and are not committed:
 
 - `layout-assembly.png` — fast full-frame view;
-- `layout-assembly-mesh.png` — existing production plates imported in place;
-- `layout-rear.png` — rear label/stack-registration view;
+- `layout-assembly-mesh.png` — exact production fixture/carrier meshes plus
+  device and C270 field-of-view overlays;
+- `layout-front.png` — operator/front label and stack-registration view;
 - `layout-stacked.png` — two-frame registration and metal load-path proof;
 - `layout-gantry-joint-plate.png` — eight-part flat gantry interface set;
 - `layout-m3-twist-nut.png` / `layout-m3-twist-nut-coupon.png` — enlarged
   carrier and three-fit coupon views;
+- `layout-print-group-01.png` through `layout-print-group-05.png` — the five
+  ready-to-slice production batches;
 - `cut-list.csv` and `cut-list.md` — geometry-derived pieces and 1 m stock plan;
-- `rear-id-placard.stl`;
+- `device-id-placard.stl`;
 - `placard-riser.stl` / `placard-riser-pair.stl`;
 - `plate-spacer.stl` / `plate-spacer-set.stl`;
 - `gantry-joint-plate.stl` / `gantry-joint-plate-set.stl`;
@@ -254,7 +268,33 @@ Generated files live under `build/` and are not committed:
 - `stacking-registration-tab.stl` / `stacking-registration-tab-set.stl`;
 - `rail-fit-coupon.stl`;
 - `m3-twist-nut-carrier.stl` / `m3-twist-nut-carrier-set.stl`;
-- `m3-twist-nut-fit-coupon.stl`.
+- `m3-twist-nut-fit-coupon.stl`;
+- `print-group-01-calibration.stl` through
+  `print-group-05-device-label.stl`.
+
+`CUT_LIST.md` is the checked-in fabrication sheet. It is generated from the
+same CAD parameters as `build/cut-list.md`, and `make validate` fails if the
+two drift. This keeps the physical cutting plan reviewable in git while the
+CSV remains a generated machine-readable artifact.
+
+## Print groups and supports
+
+The individual STLs above remain available for one-off replacement parts. For
+a complete chassis, the numbered group STLs are already arranged in supported
+quantities and in their intended bed orientation:
+
+| Group | Contents | Why separate |
+|---|---|---|
+| 01 calibration | rail-key coupon + three-width M3 carrier coupon | Print and physically select fits before production batches |
+| 02 gantry hardware | 8 gantry joint plates + 26 M3 nut carriers | One complete light-duty gantry/plate fastener set |
+| 03 plate mounts | 8 plate spacers + 2 placard straps + 2 placard spacers | All keyed payload and label mounting interfaces |
+| 04 stacking guides | 8 registration tabs | Separate safety/stacking hardware inspection |
+| 05 device label | 1 `TrimUI Smart Pro` placard | Allows a different color or a slicer filament change for raised text |
+
+Every production group is support-free as exported and fits the conservative
+247 × 207 mm Prusa printable envelope. Keep Group 05 separate for appearance,
+not because it needs support. Print flat faces on the bed, use ABS and the
+validated 0.8 mm-nozzle profile, and do not enable automatic reorientation.
 
 ## Provisional stock plan
 
@@ -266,12 +306,13 @@ ten 1 m sticks:
 All twenty finished rails are interchangeable 360 mm cuts. Total finished
 extrusion is 7200 mm. With a deliberately conservative 3.2 mm allowance per
 finished cut, the plan retains about 2736 mm in useful offcuts. The checked-in
-source—not this prose table—is authoritative; `build/cut-list.md` is
-regenerated on every build.
+`CUT_LIST.md` is the fabrication artifact and the OpenSCAD source remains the
+dimensional authority. `build/cut-list.md` is regenerated on every build and
+validation checks it byte-for-byte against the committed sheet.
 
 ## Initial printed/hardware BOM
 
-- 1 rear ID placard;
+- 1 front ID placard;
 - 2 placard risers;
 - 2 placard spacers;
 - 8 plate spacers (four per plate);

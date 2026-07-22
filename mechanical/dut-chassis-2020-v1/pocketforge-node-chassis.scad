@@ -5,12 +5,15 @@
  * The external frame envelope starts at [0, 0, 0].  All dimensions are mm.
  *
  * PART choices:
- *   assembly, stacked_assembly, placard, placard_riser, placard_riser_pair,
+ *   assembly, presentation, stacked_assembly, placard,
+ *   placard_riser, placard_riser_pair,
  *   placard_spacer, placard_spacer_pair,
  *   plate_spacer, plate_spacer_set, registration_tab,
  *   registration_tab_set, gantry_joint_plate, gantry_joint_plate_set,
  *   rail_fit_coupon, m3_twist_nut, m3_twist_nut_set,
- *   m3_twist_nut_coupon, cutlist
+ *   m3_twist_nut_coupon, print_group_calibration,
+ *   print_group_gantry_hardware, print_group_plate_mounts,
+ *   print_group_stacking_guides, print_group_device_label, cutlist
  */
 
 include <lib/pf-2020.scad>;
@@ -24,6 +27,14 @@ SHOW_DEVICE = true;
 SHOW_CAMERA_FRUSTUM = true;
 SHOW_CONNECTOR_PROXIES = true;
 SHOW_REGISTRATION_GUIDES = true;
+
+// `make preview` stages these exact production meshes beside this source so
+// presentation mode is portable with the Desktop export.  Proxy mode never
+// opens them and remains safe for clean-checkout linting.
+fixture_presentation_mesh =
+    "build/imports/pocketforge-dut-fixture-v1.stl";
+cradle_presentation_mesh =
+    "build/imports/trimui-smart-pro-carrier.stl";
 
 $fn = 48;
 epsilon = 0.02;
@@ -257,7 +268,7 @@ assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
        "Gantry joint plate must surround both keyed fastener interfaces");
 assert(placard_center_z + placard_size.y / 2 <
        frame_outer.z - profile_size,
-       "Rear placard must remain completely below the top rear rail");
+       "Front placard must remain completely below the top front rail");
 assert(registration_above_frame > 0 &&
        registration_above_frame < profile_size,
        "Registration guide must engage, but not exceed, one upper post width");
@@ -399,12 +410,12 @@ module gantry_joint_plate_previews() {
                     installed_gantry_joint_plate(y, top, right);
 }
 
-module fixture_plate_preview() {
+module fixture_plate_preview(detail = PLATE_DETAIL) {
     color([0.90, 0.90, 0.86])
-        if (PLATE_DETAIL == "mesh")
+        if (detail == "mesh")
             translate(fixture_origin)
                 rotate([90, 0, 0])
-                    import("../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl",
+                    import(fixture_presentation_mesh,
                            convexity = 10);
         else
             translate([fixture_origin.x,
@@ -415,12 +426,12 @@ module fixture_plate_preview() {
                       fixture_plate_size.y]);
 }
 
-module cradle_plate_preview() {
+module cradle_plate_preview(detail = PLATE_DETAIL) {
     color([0.88, 0.88, 0.84])
-        if (PLATE_DETAIL == "mesh")
+        if (detail == "mesh")
             translate(cradle_origin)
                 rotate([90, 0, 0])
-                    import("../dut-cradle-v1/build/trimui-smart-pro-carrier.stl",
+                    import(cradle_presentation_mesh,
                            convexity = 10);
         else
             translate([cradle_origin.x,
@@ -500,7 +511,7 @@ module placard_text(relief = placard_text_relief) {
                  halign = "center", valign = "center");
 }
 
-module rear_id_placard() {
+module device_id_placard() {
     difference() {
         union() {
             linear_extrude(height = placard_size.z)
@@ -672,36 +683,32 @@ module installed_registration_guides() {
 }
 
 module placard_assembly_preview() {
-    // Flat hanging straps bolt to the rear slot at Z=390 and put the placard
-    // holes at Z=354.  The complete sign remains beneath the top rear rail,
-    // faces outward, and never moves with either payload gantry.
+    // Flat hanging straps bolt to the front slot at Z=390 and put the placard
+    // holes at Z=354.  The complete sign remains beneath the top front rail,
+    // faces the operator at the camera/front side, and never moves with
+    // either payload gantry.
     color([0.94, 0.47, 0.10])
         for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
                   frame_outer.x / 2 + placard_hole_spacing / 2])
             translate([x,
-                       frame_outer.y + placard_spacer_thickness +
-                       placard_riser_size.z,
+                       -placard_spacer_thickness,
                        placard_riser_center_z])
                 rotate([90, 0, 0])
                     rotate([0, 0, 180]) placard_riser();
 
     color([0.16, 0.28, 0.42])
         translate([frame_outer.x / 2,
-                   frame_outer.y + placard_spacer_thickness +
-                   placard_riser_size.z,
+                   -(placard_spacer_thickness + placard_riser_size.z),
                    placard_center_z])
-            rotate([-90, 0, 0])
-                rotate([0, 0, 180]) rear_id_placard();
+            rotate([90, 0, 0]) device_id_placard();
     // Contrasting preview overlay; production remains one material/mesh and
     // can use a slicer filament change at the 3.2 mm text layer if desired.
     %color([0.96, 0.72, 0.12])
         translate([frame_outer.x / 2,
-                   frame_outer.y + placard_spacer_thickness +
-                   placard_riser_size.z + 0.03,
+                   -(placard_spacer_thickness + placard_riser_size.z + 0.03),
                    placard_center_z])
-            rotate([-90, 0, 0])
-                rotate([0, 0, 180])
-                    placard_text(placard_text_relief + 0.03);
+            rotate([90, 0, 0])
+                placard_text(placard_text_relief + 0.03);
 }
 
 module rail_fit_key(width, message) {
@@ -788,6 +795,34 @@ module m3_twist_nut_fit_coupon() {
                                  index + 1);
 }
 
+// Ready-to-slice production groups.  Every object is already in its
+// documented support-free orientation and every group fits the conservative
+// 247 x 207 mm Prusa envelope.  Individual exports remain available for
+// replacement parts and fit-test iteration.
+module print_group_calibration() {
+    rail_fit_coupon();
+    translate([0, 26.0, 0]) m3_twist_nut_fit_coupon();
+}
+
+module print_group_gantry_hardware() {
+    gantry_joint_plate_set();
+    translate([0, 82.0, 0]) m3_twist_nut_carrier_set();
+}
+
+module print_group_plate_mounts() {
+    plate_spacer_set();
+    translate([110.0, 0, 0]) placard_riser_pair();
+    translate([48.0, 45.0, 0]) placard_spacer_pair();
+}
+
+module print_group_stacking_guides() {
+    registration_tab_set();
+}
+
+module print_group_device_label() {
+    device_id_placard();
+}
+
 module cutlist_echo() {
     echo(str("PFCUT|outer_vertical_rail|4|", structural_z_length,
              "|between three-way end connectors"));
@@ -803,13 +838,13 @@ module cutlist_echo() {
              "|", join_topology));
 }
 
-module assembly() {
+module assembly(plate_detail = PLATE_DETAIL) {
     outer_frame();
     plate_gantries();
     if (SHOW_CONNECTOR_PROXIES) connector_proxies();
     if (SHOW_PLATES) {
-        fixture_plate_preview();
-        cradle_plate_preview();
+        fixture_plate_preview(plate_detail);
+        cradle_plate_preview(plate_detail);
         plate_mount_previews();
     }
     if (SHOW_DEVICE) device_and_camera_preview();
@@ -831,10 +866,15 @@ module stacked_assembly() {
 
 if (PART == "assembly") {
     assembly();
+} else if (PART == "presentation") {
+    // Exact production plate meshes plus analytical overlays.  In particular,
+    // the C270 frustum remains a separate, visible CAD datum rather than being
+    // baked into either imported STL.
+    assembly("mesh");
 } else if (PART == "stacked_assembly") {
     stacked_assembly();
 } else if (PART == "placard") {
-    rear_id_placard();
+    device_id_placard();
 } else if (PART == "placard_riser") {
     placard_riser();
 } else if (PART == "placard_riser_pair") {
@@ -863,6 +903,16 @@ if (PART == "assembly") {
     m3_twist_nut_carrier_set();
 } else if (PART == "m3_twist_nut_coupon") {
     m3_twist_nut_fit_coupon();
+} else if (PART == "print_group_calibration") {
+    print_group_calibration();
+} else if (PART == "print_group_gantry_hardware") {
+    print_group_gantry_hardware();
+} else if (PART == "print_group_plate_mounts") {
+    print_group_plate_mounts();
+} else if (PART == "print_group_stacking_guides") {
+    print_group_stacking_guides();
+} else if (PART == "print_group_device_label") {
+    print_group_device_label();
 } else if (PART == "cutlist") {
     cutlist_echo();
     cube([0.1, 0.1, 0.1]);

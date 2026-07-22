@@ -6,9 +6,13 @@ SOURCE := pocketforge-node-chassis.scad
 BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
 FIXTURE_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl
 CRADLE_STL := ../dut-cradle-v1/build/trimui-smart-pro-carrier.stl
+PRESENTATION_IMPORT_DIR := $(BUILD)/imports
+PRESENTATION_FIXTURE_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-v1.stl
+PRESENTATION_CRADLE_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-carrier.stl
+CUT_LIST := CUT_LIST.md
 
 PRINTABLES := \
-	$(BUILD)/rear-id-placard.stl \
+	$(BUILD)/device-id-placard.stl \
 	$(BUILD)/placard-riser.stl \
 	$(BUILD)/placard-riser-pair.stl \
 	$(BUILD)/placard-spacer.stl \
@@ -22,11 +26,18 @@ PRINTABLES := \
 	$(BUILD)/rail-fit-coupon.stl \
 	$(BUILD)/m3-twist-nut-carrier.stl \
 	$(BUILD)/m3-twist-nut-carrier-set.stl \
-	$(BUILD)/m3-twist-nut-fit-coupon.stl
+	$(BUILD)/m3-twist-nut-fit-coupon.stl \
+	$(BUILD)/print-group-01-calibration.stl \
+	$(BUILD)/print-group-02-gantry-hardware.stl \
+	$(BUILD)/print-group-03-plate-mounts.stl \
+	$(BUILD)/print-group-04-stacking-guides.stl \
+	$(BUILD)/print-group-05-device-label.stl
 
 .NOTPARALLEL:
 
-.PHONY: all lint preview cutlist validate validate-margin-guard \
+.PHONY: all lint preview presentation-assets cutlist refresh-cut-list \
+	validate-cut-list-sync \
+	validate validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard clean
 
@@ -38,7 +49,7 @@ $(BUILD):
 lint:
 	cd ../.. && OPENSCAD='$(OPENSCAD)' scripts/lint-openscad.sh
 
-$(BUILD)/rear-id-placard.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+$(BUILD)/device-id-placard.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="placard"' $<
 
 $(BUILD)/placard-riser.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
@@ -84,11 +95,42 @@ $(BUILD)/m3-twist-nut-carrier-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 $(BUILD)/m3-twist-nut-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_twist_nut_coupon"' $<
 
+$(BUILD)/print-group-01-calibration.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_calibration"' $<
+
+$(BUILD)/print-group-02-gantry-hardware.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_gantry_hardware"' $<
+
+$(BUILD)/print-group-03-plate-mounts.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_plate_mounts"' $<
+
+$(BUILD)/print-group-04-stacking-guides.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_stacking_guides"' $<
+
+$(BUILD)/print-group-05-device-label.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_device_label"' $<
+
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
 
 $(CRADLE_STL):
 	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-carrier.stl
+
+$(PRESENTATION_IMPORT_DIR):
+	mkdir -p $@
+
+$(PRESENTATION_FIXTURE_STL): $(FIXTURE_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_CRADLE_STL): $(CRADLE_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+presentation-assets: $(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_STL)
 
 $(BUILD)/layout-assembly.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
@@ -96,14 +138,13 @@ $(BUILD)/layout-assembly.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		-D 'PLATE_DETAIL="proxy"' $<
 
 $(BUILD)/layout-assembly-mesh.png: $(SOURCE) lib/pf-2020.scad \
-	$(FIXTURE_STL) $(CRADLE_STL) | $(BUILD)
+	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_STL) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
-		--projection=ortho --viewall -D 'PART="assembly"' \
-		-D 'PLATE_DETAIL="mesh"' $<
+		--projection=ortho --viewall -D 'PART="presentation"' $<
 
-$(BUILD)/layout-rear.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+$(BUILD)/layout-front.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
-		--projection=ortho --viewall --camera=200,900,220,200,200,220 \
+		--projection=ortho --viewall --camera=200,-500,220,200,200,220 \
 		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
 
 $(BUILD)/layout-stacked.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
@@ -126,11 +167,41 @@ $(BUILD)/layout-gantry-joint-plate.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall --camera=55,-70,55,42,22,1 \
 		-D 'PART="gantry_joint_plate_set"' $<
 
+$(BUILD)/layout-print-group-01.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_calibration"' $<
+
+$(BUILD)/layout-print-group-02.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,900 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_gantry_hardware"' $<
+
+$(BUILD)/layout-print-group-03.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_plate_mounts"' $<
+
+$(BUILD)/layout-print-group-04.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,1200 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_stacking_guides"' $<
+
+$(BUILD)/layout-print-group-05.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,600 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_device_label"' $<
+
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
-	$(BUILD)/layout-rear.png $(BUILD)/layout-stacked.png \
+	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
 	$(BUILD)/layout-m3-twist-nut.png \
 	$(BUILD)/layout-m3-twist-nut-coupon.png \
-	$(BUILD)/layout-gantry-joint-plate.png
+	$(BUILD)/layout-gantry-joint-plate.png \
+	$(BUILD)/layout-print-group-01.png \
+	$(BUILD)/layout-print-group-02.png \
+	$(BUILD)/layout-print-group-03.png \
+	$(BUILD)/layout-print-group-04.png \
+	$(BUILD)/layout-print-group-05.png
 
 $(BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/cutlist.csg \
@@ -141,6 +212,17 @@ $(BUILD)/cut-list.csv $(BUILD)/cut-list.md &: $(BUILD)/cutlist.log scripts/cutli
 		--csv $(BUILD)/cut-list.csv --markdown $(BUILD)/cut-list.md
 
 cutlist: $(BUILD)/cut-list.csv $(BUILD)/cut-list.md
+
+refresh-cut-list: cutlist
+	cp $(BUILD)/cut-list.md $(CUT_LIST)
+
+validate-cut-list-sync: cutlist
+	@cmp -s $(BUILD)/cut-list.md $(CUT_LIST) || { \
+		echo 'ERROR: CUT_LIST.md is stale; run make refresh-cut-list' >&2; \
+		diff -u $(CUT_LIST) $(BUILD)/cut-list.md || true; \
+		exit 1; \
+	}
+	@echo 'cut_list_sync=pass artifact=$(CUT_LIST)'
 
 validate-margin-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-margin.log; mesh=$(BUILD)/invalid-margin.stl; \
@@ -192,9 +274,10 @@ validate-gantry-travel-guard: | $(BUILD)
 	echo 'gantry_guards=pass rejected_y=20mm rejected_overlap=10mm'
 
 validate: lint all preview validate-margin-guard validate-fov-guard \
-	validate-nut-carrier-guard validate-gantry-travel-guard
+	validate-nut-carrier-guard validate-gantry-travel-guard \
+	validate-cut-list-sync
 	$(PYTHON) $(BOUNDS) --max-x 180 --max-y 60 --max-z 6 \
-		$(BUILD)/rear-id-placard.stl
+		$(BUILD)/device-id-placard.stl
 	$(PYTHON) $(BOUNDS) --max-x 30 --max-y 70 --max-z 6 \
 		$(BUILD)/placard-riser.stl
 	$(PYTHON) $(BOUNDS) --max-x 60 --max-y 70 --max-z 6 \
@@ -223,10 +306,20 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/m3-twist-nut-carrier-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 45 --max-y 10 --max-z 6 \
 		$(BUILD)/m3-twist-nut-fit-coupon.stl
+	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 55 --max-z 10 \
+		$(BUILD)/print-group-01-calibration.stl
+	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 135 --max-z 8 \
+		$(BUILD)/print-group-02-gantry-hardware.stl
+	$(PYTHON) $(BOUNDS) --max-x 150 --max-y 90 --max-z 8 \
+		$(BUILD)/print-group-03-plate-mounts.stl
+	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 170 --max-z 6 \
+		$(BUILD)/print-group-04-stacking-guides.stl
+	$(PYTHON) $(BOUNDS) --max-x 180 --max-y 60 --max-z 6 \
+		$(BUILD)/print-group-05-device-label.stl
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
 	@test "$$(grep -c ',4,360.00,1440.00,' $(BUILD)/cut-list.csv)" -eq 5
 	grep -q 'Stock bars required: \*\*10\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_parts=15 stock_bars=10'
+	@echo 'chassis_validation=pass printable_outputs=20 stock_bars=10'
 
 clean:
 	rm -rf $(BUILD)
