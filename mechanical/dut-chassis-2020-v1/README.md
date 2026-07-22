@@ -97,7 +97,7 @@ Each printed plate mounts to its own complete 2020 gantry: two vertical uprights
 bridge the outer top/bottom depth rails, and two horizontal crossbars bridge
 those uprights. Four broad, flat keyed ABS plates locate each gantry's upright
 ends. Every indexing plate uses two M3 screws, wide washers, and printed
-end-loaded sliders holding ordinary metal M3 nuts—one fastener in the outer
+end-loaded nut bars holding ordinary metal M3 nuts—one fastener in the outer
 depth rail and one in the upright. Perpendicular printed keys engage both slots
 to keep the joint square while tightening. These parts position payload only;
 the outer aluminum cube and metal corner connectors remain the stack load path.
@@ -137,22 +137,24 @@ rejected as too large, while 6.23 mm remains a loose snap-in fallback. Reprint
 the rail coupon only after changing material, nozzle, extrusion supplier, or
 dimensional compensation.
 
-### Captured M3 end-loaded nut slider—light duty only
+### Captured M3 end-loaded nut bar—light duty only
 
 The gantries, fixture, cradle, and placard need 26 M3 slot fasteners per
 chassis. The initial twist-in coupon was physically rejected: its miniature
 wedging geometry did not reproduce reliably with the lab's 0.8 mm nozzle. The
-replacement is an 18 mm long, chamfer-ended keystone slider with no spring
-ears or printed threads. Its broad bearing face uses nearly the entire
-12.15 mm under-lip channel, then tapers inward toward the extrusion web. It is
-intentionally too wide for the 6.73 mm mouth and must enter from a cut rail end
-before the corner connector closes that end.
+replacement is a 60 mm long, chamfer-ended sliding nut bar with no spring ears
+or printed threads. It is deliberately large enough to grab and position,
+cannot rotate in the channel, and spreads clamp load far beyond a commercial
+nut-sized nubbin. Its 1.2 mm-tall bearing flange uses nearly the entire
+12.15 mm under-lip channel, then a pronounced keystone tapers inward toward the
+extrusion web. It is intentionally too wide for the 6.73 mm mouth and must
+enter from a cut rail end before the corner connector closes that end.
 
-The slider reuses the ordinary metal M3 nut already validated in the DUT-hook
+The bar reuses the ordinary metal M3 nut already validated in the DUT-hook
 system: owner-measured 5.36 mm across flats by 2.30 mm thick, in the proven
 5.60 × 2.80 mm printed pocket. The metal nut carries the thread. The ABS body
 locates it and spreads light plate/placard clamp load behind the rail opening.
-The body is 4.4 mm deep. Its pocket-facing side is a fixed 9.2 mm wide so it
+The body is 4.4 mm deep. Its pocket-facing side is a fixed 8.9 mm wide so it
 clears the channel's sloped interior while retaining printable walls around
 the nut. The test varies the under-lip bearing face against the delivered
 12.15 mm pocket; the delivered extrusion, not a nominal commercial T-nut, is
@@ -163,9 +165,9 @@ Installation:
 1. Print `m3-slide-nut-fit-coupon.stl` flat, with the nut pockets upward. It
    contains six independent parts—two copies each of three widths—so a tiny
    ABS test gets enough inter-part cooling time and checks repeatability.
-2. One, two, and three large end scallops identify the 10.9, 11.3, and 11.7 mm
-   bearing-face widths respectively; identification does not depend on fine
-   embossed text. All three taper to the same 9.2 mm deep face.
+2. One, two, and three large end scallops identify the 11.55, 11.85, and
+   12.05 mm bearing-face widths respectively; identification does not depend
+   on fine embossed text. All three taper to the same 8.9 mm deep face.
 3. Pull an ordinary M3 nut into each pocket with an M3 screw and washer, then
    leave the screw threaded one turn as a handle.
 4. With a rail end still open, orient the solid face toward the slot mouth and
@@ -174,12 +176,12 @@ Installation:
 5. Select the widest pair that both travel freely along the real rail. Confirm
    that neither can pull outward through the slot mouth, then tighten one under
    a sacrificial washer by hand to verify clamping.
-6. Before installing end connectors, load every required slider plus spares
-   into the exact rail face where it will be used. A slider cannot move between
+6. Before installing end connectors, load every required bar plus spares
+   into the exact rail face where it will be used. A bar cannot move between
    the four independent slots after assembly.
 
-The production default is the two-scallop 11.3 mm bearing face pending this
-physical coupon. A production set contains 32 sliders: 26 required plus six
+The production default is the two-scallop 11.85 mm bearing face pending this
+physical coupon. A production set contains 32 bars: 26 required plus six
 spares to preload before rail ends are closed. Park spares loosely under a
 screw/washer or an installed bracket so they do not rattle into inaccessible
 positions.
@@ -275,9 +277,10 @@ Generated files live under `build/` and are not committed:
 - `layout-front.png` — operator/front label and stack-registration view;
 - `layout-stacked.png` — two-frame registration and metal load-path proof;
 - `layout-gantry-joint-plate.png` — eight-part flat gantry interface set;
-- `layout-m3-slide-nut.png` / `layout-m3-slide-nut-coupon.png` — enlarged
-  slider and six-piece, three-width coupon views;
-- `layout-print-group-01.png` through `layout-print-group-05.png` — the five
+- `layout-m3-slide-nut.png`, `layout-m3-slide-nut-end.png`, and
+  `layout-m3-slide-nut-coupon.png` — enlarged perspective, end-profile, and
+  six-piece three-width nut-bar views;
+- `layout-print-group-01.png` through `layout-print-group-06.png` — the six
   ready-to-slice production batches;
 - `cut-list.csv` and `cut-list.md` — geometry-derived pieces and 1 m stock plan;
 - `device-id-placard.stl`;
@@ -290,7 +293,7 @@ Generated files live under `build/` and are not committed:
 - `m3-slide-nut-carrier.stl` / `m3-slide-nut-carrier-set.stl`;
 - `m3-slide-nut-fit-coupon.stl`;
 - `print-group-01-calibration.stl` through
-  `print-group-05-device-label.stl`.
+  `print-group-06-m3-nut-bars.stl`.
 
 `CUT_LIST.md` is the checked-in fabrication sheet. It is generated from the
 same CAD parameters as `build/cut-list.md`, and `make validate` fails if the
@@ -305,11 +308,12 @@ quantities and in their intended bed orientation:
 
 | Group | Contents | Why separate |
 |---|---|---|
-| 01 calibration | rail-key coupon + six end-loaded M3 sliders (two each at three widths) | Print and physically select fits before production batches |
-| 02 gantry hardware | 8 gantry joint plates + 32 M3 nut sliders | 26 required light-duty fasteners plus six preloaded spares |
+| 01 calibration | rail-key coupon + six 60 mm M3 nut bars (two each at three widths) | Print and physically select fits before production batches |
+| 02 gantry hardware | 8 gantry joint plates | Flat keyed payload-gantry interfaces |
 | 03 plate mounts | 8 plate spacers + 2 placard straps + 2 placard spacers | All keyed payload and label mounting interfaces |
 | 04 stacking guides | 8 registration tabs | Separate safety/stacking hardware inspection |
 | 05 device label | 1 `TrimUI Smart Pro` placard | Allows a different color or a slicer filament change for raised text |
+| 06 M3 nut bars | 32 selected full-channel nut bars | 26 required light-duty fasteners plus six preloaded spares |
 
 Every production group is support-free as exported and fits the conservative
 247 × 207 mm Prusa printable envelope. Keep Group 05 separate for appearance,
@@ -339,7 +343,7 @@ validation checks it byte-for-byte against the committed sheet.
 - 8 flat keyed gantry indexing plates (four per gantry);
 - 8 stacking registration tabs for every chassis that will support another;
 - 1 rail fit coupon before the other printed interfaces;
-- 1 six-piece M3 slide-nut fit coupon, then 32 selected M3 nut sliders (26
+- 1 six-piece M3 nut-bar fit coupon, then 32 selected M3 nut bars (26
   required plus six preloaded spares);
 - 8 B08C9Q2TGW zinc three-way corner connectors and their supplied M4 x 5 mm
   set screws;
@@ -369,7 +373,7 @@ connectors, and four more L-connectors.
    conservative 3.2 mm solely for offcut accounting.
 3. Dry-fit one three-way connector and confirm that a 360 mm rail plus two
    connector bodies produces 400 mm outside-to-outside.
-4. Print the six-piece end-loaded slider coupon and record the selected width;
+4. Print the six-piece end-loaded nut-bar coupon and record the selected width;
    the separate rail key is already physically selected at 6.43 mm.
 5. Perform one unpowered C270 framing check before the first populated stack.
 

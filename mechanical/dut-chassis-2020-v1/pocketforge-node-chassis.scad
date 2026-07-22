@@ -12,7 +12,8 @@
  *   registration_tab_set, gantry_joint_plate, gantry_joint_plate_set,
  *   rail_fit_coupon, m3_slide_nut, m3_slide_nut_set,
  *   m3_slide_nut_coupon, print_group_calibration,
- *   print_group_gantry_hardware, print_group_plate_mounts,
+ *   print_group_gantry_hardware, print_group_nut_bars,
+ *   print_group_plate_mounts,
  *   print_group_stacking_guides, print_group_device_label, cutlist
  */
 
@@ -155,7 +156,7 @@ slot_key_clearance = 0.30;
 slot_key_width = extrusion_slot_opening - slot_key_clearance;
 slot_key_height = 1.2;
 
-// Ordinary metal M3 nut captured inside a chunky, end-loaded ABS slider.  The
+// Ordinary metal M3 nut captured inside a large, end-loaded ABS nut bar.  The
 // 5.6 x 2.8 mm pocket is the already print-validated DUT-hook fit for the
 // owner's measured 5.36 x 2.30 mm nuts.  Unlike the retired twist-in carrier,
 // this body is deliberately too wide to pass through the slot mouth: slide it
@@ -167,18 +168,21 @@ m3_nut_measured_across_flats = 5.36;
 m3_nut_measured_thickness = 2.30;
 m3_nut_pocket_across_flats = 5.60;
 m3_nut_pocket_depth = 2.80;
-m3_slide_nut_length = 18.0;
-m3_slide_nut_bearing_width = 11.30;
-m3_slide_nut_deep_width = 9.20;
+m3_slide_nut_length = 60.0;
+m3_slide_nut_bearing_width = 11.85;
+m3_slide_nut_deep_width = 8.90;
 m3_slide_nut_height = 4.40;
-m3_slide_nut_corner_chamfer = 1.6;
-m3_slide_nut_coupon_bearing_widths = [10.90, 11.30, 11.70];
+m3_slide_nut_flange_height = 1.20;
+m3_slide_nut_corner_chamfer = 3.0;
+// The middle candidate applies the same -0.30 mm compensation that physically
+// selected the 6.43 mm key for the measured 6.73 mm slot mouth.
+m3_slide_nut_coupon_bearing_widths = [11.55, 11.85, 12.05];
 m3_slide_nut_coupon_copies = 2;
 m3_slide_nut_required_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
 m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
 m3_slide_nut_set_count = m3_slide_nut_required_count +
                          m3_slide_nut_spare_count;
-m3_slide_nut_set_columns = 8;
+m3_slide_nut_set_columns = 4;
 
 // One identical flat ABS indexing plate locates every gantry-upright endpoint
 // against an outer depth rail.  Perpendicular rear keys enter the two slots to
@@ -278,9 +282,11 @@ assert(len(m3_slide_nut_coupon_bearing_widths) *
 assert(m3_slide_nut_height <
        extrusion_slot_depth - extrusion_slot_lip_depth,
        "End-loaded carrier must fit behind the measured slot lip");
-assert(m3_slide_nut_length >=
-       m3_nut_pocket_across_flats + 2 * 4.0,
-       "End-loaded carrier needs chunky walls around the metal nut");
+assert(m3_slide_nut_flange_height > 0 &&
+       m3_slide_nut_flange_height < m3_slide_nut_height,
+       "Nut-bar bearing flange must fit inside its total channel depth");
+assert(m3_slide_nut_length >= 40.0,
+       "End-loaded nut bar must remain a large, easy-handling mount point");
 assert(m3_slide_nut_height - m3_nut_pocket_depth >= 1.6,
        "End-loaded carrier needs at least four 0.4 mm floor layers");
 assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
@@ -757,15 +763,16 @@ module rail_fit_coupon() {
             rail_fit_key(widths[index], str(widths[index]));
 }
 
-// Chunky end-loaded alternative to buying M3 sliding T-nuts.  The broad
-// keystone has no spring ears, printed threads, or sub-nozzle details.  Its
-// chamfered ends ease insertion from a cut rail end.  The solid, widest face
-// bears behind the lips; the pocket face tapers inward toward the extrusion
-// web so the carrier uses the delivered channel instead of occupying only its
-// center.  Print the solid bearing face down and pull an ordinary M3 nut into
-// the upward hex pocket with a screw and washer.  The open pocket faces the
-// rail center.  The metal nut carries the thread; ABS only spreads light clamp
-// load.  Never use this part for frame, stacking, or safety loads.
+// Large end-loaded sliding T-nut bar.  This is intentionally a 60 mm handling
+// bar, not a commercial-nut-sized nubbin: it nearly fills the delivered slot,
+// cannot rotate, and is easy to position with a loose screw as a handle.  The
+// broad flange bears behind the lips for its first 1.2 mm; above that, a
+// pronounced keystone tapers toward the extrusion web.  It has no spring ears,
+// printed threads, or sub-nozzle details.  Print the solid bearing face down
+// and pull an ordinary M3 nut into the upward hex pocket with a screw and
+// washer.  The open pocket faces the rail center.  The metal nut carries the
+// thread; ABS only spreads light clamp load.  Never use this part for frame,
+// stacking, or safety loads.
 module m3_slide_nut_outline(body_width) {
     length = m3_slide_nut_length;
     chamfer = min(m3_slide_nut_corner_chamfer,
@@ -795,12 +802,20 @@ module m3_slide_nut_carrier(
            "Coupon slider must taper inward away from its bearing face");
 
     difference() {
-        // Keep the 18 mm rail-axis length unchanged while tapering only the
-        // channel-width axis.  This prints support-free: the largest face is
-        // on the bed and every subsequent layer steps inward.
-        linear_extrude(height = m3_slide_nut_height,
-                       scale = [1, deep_width / bearing_width])
-            m3_slide_nut_outline(bearing_width);
+        union() {
+            // A full-width under-lip flange makes the section obvious and
+            // spreads clamp load.  The body then tapers inward.  Both stages
+            // print support-free because every layer is equal or smaller than
+            // the one below it.
+            linear_extrude(height = m3_slide_nut_flange_height)
+                m3_slide_nut_outline(bearing_width);
+            translate([0, 0, m3_slide_nut_flange_height])
+                linear_extrude(
+                    height = m3_slide_nut_height -
+                             m3_slide_nut_flange_height,
+                    scale = [1, deep_width / bearing_width])
+                    m3_slide_nut_outline(bearing_width);
+        }
 
         translate([0, 0, -epsilon])
             cylinder(d = m3_clearance,
@@ -814,7 +829,8 @@ module m3_slide_nut_carrier(
                      $fn = 6);
 
         // Large end scallops survive a 0.8 mm nozzle.  One/two/three marks
-        // identify 10.9/11.3/11.7 mm bearing widths after parts leave the bed.
+        // identify 11.55/11.85/12.05 mm bearing widths after parts leave the
+        // bed.
         if (witness_notches > 0)
             for (notch = [0 : witness_notches - 1])
                 translate([m3_slide_nut_length / 2,
@@ -828,8 +844,8 @@ module m3_slide_nut_carrier(
 
 module m3_slide_nut_carrier_set() {
     for (index = [0 : m3_slide_nut_set_count - 1])
-        translate([(index % m3_slide_nut_set_columns) * 21.0,
-                   floor(index / m3_slide_nut_set_columns) * 13.0,
+        translate([(index % m3_slide_nut_set_columns) * 62.0,
+                   floor(index / m3_slide_nut_set_columns) * 15.0,
                    0])
             m3_slide_nut_carrier();
 }
@@ -840,7 +856,7 @@ module m3_slide_nut_carrier_set() {
 module m3_slide_nut_fit_coupon() {
     for (index = [0 : len(m3_slide_nut_coupon_bearing_widths) - 1])
         for (copy = [0 : m3_slide_nut_coupon_copies - 1])
-            translate([index * 22.0, copy * 14.0, 0])
+            translate([index * 64.0, copy * 15.0, 0])
                 m3_slide_nut_carrier(
                     m3_slide_nut_coupon_bearing_widths[index],
                     m3_slide_nut_deep_width,
@@ -858,7 +874,10 @@ module print_group_calibration() {
 
 module print_group_gantry_hardware() {
     gantry_joint_plate_set();
-    translate([0, 82.0, 0]) m3_slide_nut_carrier_set();
+}
+
+module print_group_nut_bars() {
+    m3_slide_nut_carrier_set();
 }
 
 module print_group_plate_mounts() {
@@ -959,6 +978,8 @@ if (PART == "assembly") {
     print_group_calibration();
 } else if (PART == "print_group_gantry_hardware") {
     print_group_gantry_hardware();
+} else if (PART == "print_group_nut_bars") {
+    print_group_nut_bars();
 } else if (PART == "print_group_plate_mounts") {
     print_group_plate_mounts();
 } else if (PART == "print_group_stacking_guides") {

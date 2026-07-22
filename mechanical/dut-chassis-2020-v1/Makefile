@@ -31,7 +31,8 @@ PRINTABLES := \
 	$(BUILD)/print-group-02-gantry-hardware.stl \
 	$(BUILD)/print-group-03-plate-mounts.stl \
 	$(BUILD)/print-group-04-stacking-guides.stl \
-	$(BUILD)/print-group-05-device-label.stl
+	$(BUILD)/print-group-05-device-label.stl \
+	$(BUILD)/print-group-06-m3-nut-bars.stl
 
 .NOTPARALLEL:
 
@@ -115,6 +116,10 @@ $(BUILD)/print-group-05-device-label.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="print_group_device_label"' $<
 
+$(BUILD)/print-group-06-m3-nut-bars.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_nut_bars"' $<
+
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
 
@@ -162,6 +167,11 @@ $(BUILD)/layout-m3-slide-nut-coupon.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall --camera=35,-40,25,14,0,1 \
 		-D 'PART="m3_slide_nut_coupon"' $<
 
+$(BUILD)/layout-m3-slide-nut-end.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,800 \
+		--projection=ortho --viewall --camera=80,0,2.2,0,0,2.2 \
+		-D 'PART="m3_slide_nut"' $<
+
 $(BUILD)/layout-gantry-joint-plate.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
 		--projection=ortho --viewall --camera=55,-70,55,42,22,1 \
@@ -192,16 +202,23 @@ $(BUILD)/layout-print-group-05.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall \
 		-D 'PART="print_group_device_label"' $<
 
+$(BUILD)/layout-print-group-06.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,800 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_nut_bars"' $<
+
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
 	$(BUILD)/layout-m3-slide-nut.png \
 	$(BUILD)/layout-m3-slide-nut-coupon.png \
+	$(BUILD)/layout-m3-slide-nut-end.png \
 	$(BUILD)/layout-gantry-joint-plate.png \
 	$(BUILD)/layout-print-group-01.png \
 	$(BUILD)/layout-print-group-02.png \
 	$(BUILD)/layout-print-group-03.png \
 	$(BUILD)/layout-print-group-04.png \
-	$(BUILD)/layout-print-group-05.png
+	$(BUILD)/layout-print-group-05.png \
+	$(BUILD)/layout-print-group-06.png
 
 $(BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/cutlist.csg \
@@ -324,15 +341,15 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/stacking-registration-tab-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 40 --max-z 10 \
 		$(BUILD)/rail-fit-coupon.stl
-	$(PYTHON) $(BOUNDS) --max-x 20 --max-y 12 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 65 --max-y 13 --max-z 6 \
 		$(BUILD)/m3-slide-nut-carrier.stl
-	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 55 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 125 --max-z 6 \
 		$(BUILD)/m3-slide-nut-carrier-set.stl
-	$(PYTHON) $(BOUNDS) --max-x 65 --max-y 26 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 190 --max-y 28 --max-z 6 \
 		$(BUILD)/m3-slide-nut-fit-coupon.stl
-	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 65 --max-z 10 \
+	$(PYTHON) $(BOUNDS) --max-x 190 --max-y 65 --max-z 10 \
 		$(BUILD)/print-group-01-calibration.stl
-	$(PYTHON) $(BOUNDS) --max-x 175 --max-y 155 --max-z 8 \
+	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 100 --max-z 8 \
 		$(BUILD)/print-group-02-gantry-hardware.stl
 	$(PYTHON) $(BOUNDS) --max-x 150 --max-y 90 --max-z 8 \
 		$(BUILD)/print-group-03-plate-mounts.stl
@@ -340,10 +357,12 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/print-group-04-stacking-guides.stl
 	$(PYTHON) $(BOUNDS) --max-x 180 --max-y 60 --max-z 6 \
 		$(BUILD)/print-group-05-device-label.stl
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 125 --max-z 6 \
+		$(BUILD)/print-group-06-m3-nut-bars.stl
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
 	@test "$$(grep -c ',4,360.00,1440.00,' $(BUILD)/cut-list.csv)" -eq 5
 	grep -q 'Stock bars required: \*\*10\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_outputs=20 stock_bars=10'
+	@echo 'chassis_validation=pass printable_outputs=21 stock_bars=10'
 
 clean:
 	rm -rf $(BUILD)
