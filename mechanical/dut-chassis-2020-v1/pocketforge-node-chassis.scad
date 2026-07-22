@@ -84,12 +84,14 @@ frame_outer = [structural_x_length + 2 * profile_size,
                structural_z_length + 2 * connector_end_overhang];
 frame_aluminum_z_min = connector_end_overhang;
 frame_aluminum_z_max = frame_aluminum_z_min + structural_z_length;
-outer_rail_z = [frame_aluminum_z_min + profile_size / 2,
-                frame_aluminum_z_max - profile_size / 2];
+// The horizontal-rail outer faces are flush with the connector-cap planes.
+// They are not inset to the cut ends of the vertical aluminum posts.
+outer_rail_z = [profile_size / 2,
+                frame_outer.z - profile_size / 2];
 frame_clear = [structural_x_length,
                structural_y_length,
-               structural_z_length - 2 * profile_size];
-join_topology = "three_way_cap_side_butt_B08C9Q2TGW_measured";
+               frame_outer.z - 2 * profile_size];
+join_topology = "three_way_cap_flush_side_butt_B08C9Q2TGW_measured";
 
 // SeekLiny B0DY7FKKMT is a nominal 20-series V-slot profile.  These interface
 // dimensions come from the owner's delivered rail, not a generic "2020"
@@ -114,16 +116,16 @@ cut_kerf = 3.2;
 // split vertical uprights and two continuous horizontal crossbars. The DUT
 // carrier is fixed directly to the rear outer width rails with printed links;
 // its device-specific CAD already puts every screen on the shared optical
-// datum. The top/bottom depth rails leave a 320 mm clear upright. Keeping the
-// uprights in the outer depth-rail X planes makes the end joints flat; their
-// 160 mm halves pack into the six-stick plan.
+// datum. The cap-flush top/bottom depth rails leave a 328 mm clear upright.
+// Keeping the uprights in the outer depth-rail X planes makes the end joints
+// flat; their 164 mm halves pack into the six-stick plan.
 gantry_crossbar_length = structural_x_length;
 gantry_upright_length = frame_clear.z;
 gantry_upright_segment_count = 2;
 gantry_upright_segment_length = gantry_upright_length /
                                 gantry_upright_segment_count;
-gantry_clear_z_min = frame_aluminum_z_min + profile_size;
-gantry_clear_z_max = frame_aluminum_z_max - profile_size;
+gantry_clear_z_min = outer_rail_z.x + profile_size / 2;
+gantry_clear_z_max = outer_rail_z.y - profile_size / 2;
 gantry_upright_splice_z = gantry_clear_z_min +
                           gantry_upright_segment_length;
 gantry_upright_x = [profile_size / 2,
@@ -140,7 +142,7 @@ cradle_plate_size = [247.0, 200.0, 3.2];
 cradle_screen_datum = [123.5, 100.0];
 cradle_slot_inset = [19.0, 8.0];
 
-// Center the taller 247 mm fixture plate inside the 320 mm clear height while
+// Center the taller 247 mm fixture plate inside the 328 mm clear height while
 // preserving its measured webcam datum. The carrier then shares that optical
 // axis and retains even more vertical service margin.
 optical_datum_z = gantry_clear_z_min +
@@ -287,7 +289,7 @@ function m3_slide_nut_width_at_height(
     ((z - m3_slide_nut_flange_height) /
      (m3_slide_nut_height - m3_slide_nut_flange_height));
 
-// Two non-structural fixture-gantry uprights are each made from two 160 mm
+// Two non-structural fixture-gantry uprights are each made from two 164 mm
 // stock-plan segments. One support-free four-piece splice aligns each central
 // butt joint:
 // two broad external shells plus two long, channel-matched internal bars. The
@@ -365,6 +367,9 @@ assert(frame_outer == [structural_x_length + 2 * profile_size,
                        structural_z_length +
                            2 * connector_end_overhang],
        "Frame envelope must derive from the measured cap-and-side-butt joint");
+assert(outer_rail_z.x - profile_size / 2 == 0 &&
+       outer_rail_z.y + profile_size / 2 == frame_outer.z,
+       "Horizontal rail outer faces must be flush with both connector caps");
 assert(min(fixture_margins) >= minimum_routing_margin,
        str("Fixture routing margin fell below ", minimum_routing_margin,
            " mm: ", fixture_margins));
@@ -493,8 +498,8 @@ module outer_frame() {
             translate([x, y, frame_aluminum_z_min])
                 extrusion(structural_z_length, "z");
 
-    // Width and depth rails butt into the post side faces. Their outer faces
-    // align with the ends of the vertical aluminum, not the cap overhang.
+    // Width and depth rails butt into the post side faces. Their top/bottom
+    // outer faces align with the connector-cap planes, with zero Z inset.
     for (y = [profile_size / 2, frame_outer.y - profile_size / 2])
         for (z = outer_rail_z)
             translate([profile_size, y, z])

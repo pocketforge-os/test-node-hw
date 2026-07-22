@@ -540,9 +540,10 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
 	grep -q '^outer_width_rail,4,318.00,1272.00' $(BUILD)/cut-list.csv
 	grep -q '^outer_depth_rail,4,306.00,1224.00' $(BUILD)/cut-list.csv
-	grep -q '^fixture_gantry_upright_half,4,160.00,640.00' $(BUILD)/cut-list.csv
+	grep -q '^fixture_gantry_upright_half,4,164.00,656.00' $(BUILD)/cut-list.csv
 	grep -q '^fixture_gantry_crossbar,2,318.00,636.00' $(BUILD)/cut-list.csv
 	grep -q 'External assembled envelope (W × D × H): 358.00 × 346.00 × 368.00 mm' $(BUILD)/cut-list.md
+	grep -q 'Clear internal envelope (W × D × H): 318.00 × 306.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
 	@echo 'chassis_validation=pass printable_outputs=34 stock_bars=6'
 
