@@ -13,13 +13,14 @@ of routing/service margin around both existing printed plates:
 - TrimUI Smart Pro carrier: 247 × 200 mm.
 
 The 400 mm value is a named parameter, not a magic cut dimension. The selected
-three-way end connectors occupy the eight 20 mm corner cubes. Keeping the four
-gantry uprights in the same side planes as the outer depth rails makes every
-perimeter rail, gantry upright, and gantry crossbar the same provisional
-360 mm finished length.
-Do not batch-cut extrusion until one physical connector is dry-fitted. Kerf
-and actual stock length should be recorded for inventory accuracy, but neither
-blocks two 360 mm pieces fitting comfortably within each nominal 1 m stick.
+three-way end connectors occupy the eight 20 mm corner cubes. Every perimeter
+rail and gantry crossbar is a 360 mm finished piece. Each of the four light-duty
+gantry uprights is assembled from two 180 mm halves, allowing every 1 m stick
+to yield two 360 mm pieces plus one upright half instead of stranding a 273 mm
+offcut.
+Do not batch-cut extrusion until one physical connector is dry-fitted. Actual
+stock length and saw kerf must also confirm the complete 360 + 360 + 180 mm
+pattern; the current conservative 3.2 mm kerf still leaves 90.4 mm per stick.
 
 ## Why OpenSCAD works here
 
@@ -74,7 +75,7 @@ The default `three_way_end_corners_B08C9Q2TGW` topology uses:
 | Vertical rail | 4 | 360 mm | Between lower/upper three-way connectors |
 | Width rail | 4 | 360 mm | Between left/right three-way connectors |
 | Depth rail | 4 | 360 mm | Between front/rear three-way connectors |
-| Plate-gantry upright | 4 | 360 mm | Two per independently movable gantry |
+| Plate-gantry upright half | 8 | 180 mm | Two halves form each of four uprights |
 | Plate-gantry crossbar | 4 | 360 mm | Two height-adjustable bars per gantry |
 
 Eight BLCCLOY B08C9Q2TGW zinc-alloy three-way connectors and their M4 set
@@ -95,12 +96,14 @@ cable, or service path.
 
 Each printed plate mounts to its own complete 2020 gantry: two vertical uprights
 bridge the outer top/bottom depth rails, and two horizontal crossbars bridge
-those uprights. Four broad, flat keyed ABS plates locate each gantry's upright
-ends. Every indexing plate uses two M3 screws, wide washers, and printed
-end-loaded nut bars holding ordinary metal M3 nuts—one fastener in the outer
-depth rail and one in the upright. Perpendicular printed keys engage both slots
-to keep the joint square while tightening. These parts position payload only;
-the outer aluminum cube and metal corner connectors remain the stack load path.
+those uprights. Each upright is two equal 180 mm offcut halves joined at its
+unloaded center; the crossbars remain continuous 360 mm aluminum. Four broad,
+flat keyed ABS plates locate each gantry's upright ends. Every indexing plate
+uses two M3 screws, wide washers, and printed end-loaded nut bars holding
+ordinary metal M3 nuts—one fastener in the outer depth rail and one in the
+upright. Perpendicular printed keys engage both slots to keep the joint square
+while tightening. These parts position payload only; the outer aluminum cube
+and metal corner connectors remain the stack load path.
 
 The complete mount adjusts in all three axes:
 
@@ -129,6 +132,34 @@ dry-fitted. Install the horizontal-key end against the outer depth rail and the
 vertical-key end against the gantry upright; rotate the same physical part
 180° for a top joint. Tighten by hand only—the captured metal nut provides the
 thread, while the ABS plate provides alignment and bearing area.
+
+#### Offcut upright clamshell
+
+The center of each gantry upright uses one two-piece external clamshell. Both
+halves are the same support-free print. An 80 mm-long broad face spans the butt
+joint, a validated 6.43 mm key bridges the joint inside the front or rear slot,
+and shallow side wings wrap 8 mm around the extrusion. Opposed halves leave a
+4 mm service gap on both side faces rather than pretending to be a structural
+aluminum sleeve. Four M3 bolts pass through external ears beside the aluminum;
+the extrusion is never drilled and no T-slot fastener carries the splice.
+
+The joint sits at the upright midpoint, clear of both crossbars and plate mount
+hardware. It is acceptable here because the upright only positions a light DUT
+plate; it is forbidden on any of the twelve outer-frame rails or any stacking
+load path.
+
+1. Print `gantry-upright-splice-fit-coupon.stl` broad-face down with no
+   supports. It contains two samples each at 0.20, 0.40, and 0.60 mm external
+   rail clearance, identified by one, two, or three large end scallops.
+2. Select the smallest pair that both slide over the real 20 mm rail without
+   force while their 6.43 mm keys enter the slots. The provisional default is
+   the two-scallop 0.40 mm clearance.
+3. Butt two 180 mm segments together on a flat surface. Place one selected
+   shell on the front and one on the rear with both keys bridging the seam.
+4. Install four M3 × 40 mm screws, wide washers, and ordinary nuts through the
+   external ears. Tighten evenly by hand; do not crush the ABS.
+5. Repeat for all four uprights. The production set is eight identical shell
+   halves, forming four complete clamshells.
 
 The spacer keys use the measured 6.73 mm mouth with 0.30 mm nominal clearance.
 The owner physically selected the resulting 6.43 mm key with the production
@@ -277,23 +308,29 @@ Generated files live under `build/` and are not committed:
 - `layout-front.png` — operator/front label and stack-registration view;
 - `layout-stacked.png` — two-frame registration and metal load-path proof;
 - `layout-gantry-joint-plate.png` — eight-part flat gantry interface set;
+- `layout-gantry-splice.png` and `layout-gantry-splice-coupon.png` — one
+  clamshell pair and the six-piece external-fit coupon;
 - `layout-m3-slide-nut.png`, `layout-m3-slide-nut-end.png`, and
   `layout-m3-slide-nut-coupon.png` — enlarged perspective, end-profile, and
   six-piece three-width nut-bar views;
-- `layout-print-group-01.png` through `layout-print-group-06.png` — the six
+- `layout-print-group-01.png` through `layout-print-group-07.png` — the seven
   ready-to-slice production batches;
 - `cut-list.csv` and `cut-list.md` — geometry-derived pieces and 1 m stock plan;
 - `device-id-placard.stl`;
 - `placard-riser.stl` / `placard-riser-pair.stl`;
 - `plate-spacer.stl` / `plate-spacer-set.stl`;
 - `gantry-joint-plate.stl` / `gantry-joint-plate-set.stl`;
+- `gantry-upright-splice-shell.stl` /
+  `gantry-upright-splice-shell-pair.stl` /
+  `gantry-upright-splice-shell-set.stl`;
+- `gantry-upright-splice-fit-coupon.stl`;
 - `placard-spacer.stl` / `placard-spacer-pair.stl`;
 - `stacking-registration-tab.stl` / `stacking-registration-tab-set.stl`;
 - `rail-fit-coupon.stl`;
 - `m3-slide-nut-carrier.stl` / `m3-slide-nut-carrier-set.stl`;
 - `m3-slide-nut-fit-coupon.stl`;
 - `print-group-01-calibration.stl` through
-  `print-group-06-m3-nut-bars.stl`.
+  `print-group-07-gantry-splices.stl`.
 
 `CUT_LIST.md` is the checked-in fabrication sheet. It is generated from the
 same CAD parameters as `build/cut-list.md`, and `make validate` fails if the
@@ -314,6 +351,7 @@ quantities and in their intended bed orientation:
 | 04 stacking guides | 8 registration tabs | Separate safety/stacking hardware inspection |
 | 05 device label | 1 `TrimUI Smart Pro` placard | Allows a different color or a slicer filament change for raised text |
 | 06 M3 nut bars | 32 selected full-channel nut bars | 26 required light-duty fasteners plus six preloaded spares |
+| 07 gantry splices | 8 identical clamshell halves | Forms four offcut-upright joints after the fit coupon is selected |
 
 Every production group is support-free as exported and fits the conservative
 247 × 207 mm Prusa printable envelope. Keep Group 05 separate for appearance,
@@ -323,16 +361,23 @@ validated 0.8 mm-nozzle profile, and do not enable automatic reorientation.
 ## Provisional stock plan
 
 At 400 mm outside dimensions and the three-way-end topology, one node requires
-ten 1 m sticks:
+eight 1 m sticks:
 
-- ten sticks: two 360 mm pieces each.
+- each stick: two 360 mm pieces plus one 180 mm gantry-upright half.
 
-All twenty finished rails are interchangeable 360 mm cuts. Total finished
-extrusion is 7200 mm. With a deliberately conservative 3.2 mm allowance per
-finished cut, the plan retains about 2736 mm in useful offcuts. The checked-in
-`CUT_LIST.md` is the fabrication artifact and the OpenSCAD source remains the
-dimensional authority. `build/cut-list.md` is regenerated on every build and
-validation checks it byte-for-byte against the committed sheet.
+The sixteen 360 mm pieces supply the twelve outer rails and four continuous
+crossbars; the eight 180 mm pieces supply the four split uprights. Total
+finished extrusion remains 7200 mm. With a deliberately conservative 3.2 mm
+allowance for each of 24 cuts, the plan retains about 723.2 mm across eight
+sticks. This is the material minimum for the current topology: after reserving
+six bars for twelve continuous outer-frame rails, the six resulting 273.6 mm
+offcuts plus one additional 1 m bar contain only about 2641.6 mm before more
+kerfs, less than the gantries' 2880 mm requirement. Seven bars therefore cannot
+preserve both the continuous outer frame and two fully adjustable gantries.
+The checked-in `CUT_LIST.md` is the fabrication artifact and the OpenSCAD
+source remains the dimensional authority. `build/cut-list.md` is regenerated
+on every build and validation checks it byte-for-byte against the committed
+sheet.
 
 ## Initial printed/hardware BOM
 
@@ -341,6 +386,8 @@ validation checks it byte-for-byte against the committed sheet.
 - 2 placard spacers;
 - 8 plate spacers (four per plate);
 - 8 flat keyed gantry indexing plates (four per gantry);
+- 1 six-piece gantry-clamshell fit coupon, then 8 selected shell halves forming
+  four upright splices;
 - 8 stacking registration tabs for every chassis that will support another;
 - 1 rail fit coupon before the other printed interfaces;
 - 1 six-piece M3 nut-bar fit coupon, then 32 selected M3 nut bars (26
@@ -349,9 +396,9 @@ validation checks it byte-for-byte against the committed sheet.
   set screws;
 - 8 B08D6T9CGN concealed zinc L-connectors and 16 supplied M5 x 6 mm set
   screws for the four gantry crossbars;
-- 28 M3 machine screws, 28 ordinary M3 nuts, and wide washers: 16 gantry
+- 44 M3 machine screws, 44 ordinary M3 nuts, and wide washers: 16 gantry
   indexing-plate interfaces, 8 payload-plate mounts, 2 placard rail mounts,
-  and 2 placard-to-strap joints;
+  2 placard-to-strap joints, and 16 clamshell ear fasteners;
 - 16 supplied metal M5 T-nuts, M5 screws, and washers for the lower stacking
   registration slots, plus up to 8 more in the upper chassis for optional
   positive locks;
@@ -361,8 +408,8 @@ validation checks it byte-for-byte against the committed sheet.
 One node consumes all eight three-way connectors from one B08C9Q2TGW kit and
 eight concealed L-connectors. The on-hand 16 three-way connectors, 20 L
 connectors, and 20 one-meter extrusions support exactly two complete nodes,
-leaving four L-connectors spare and no unallocated full-length extrusion. A
-third complete node would need ten more stock extrusions, eight more three-way
+leaving four L-connectors and four full-length extrusions spare. A third
+complete node would need four more stock extrusions, eight more three-way
 connectors, and four more L-connectors.
 
 ## Measurements needed before cutting
@@ -375,7 +422,9 @@ connectors, and four more L-connectors.
    connector bodies produces 400 mm outside-to-outside.
 4. Print the six-piece end-loaded nut-bar coupon and record the selected width;
    the separate rail key is already physically selected at 6.43 mm.
-5. Perform one unpowered C270 framing check before the first populated stack.
+5. Print the six-piece gantry-clamshell coupon and record the selected external
+   clearance before producing the eight full shell halves.
+6. Perform one unpowered C270 framing check before the first populated stack.
 
 After those are recorded, regenerate the cut plan, print the rail coupon, dry
 assemble one empty frame, and obtain explicit owner approval before populating

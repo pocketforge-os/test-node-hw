@@ -21,6 +21,10 @@ PRINTABLES := \
 	$(BUILD)/plate-spacer-set.stl \
 	$(BUILD)/gantry-joint-plate.stl \
 	$(BUILD)/gantry-joint-plate-set.stl \
+	$(BUILD)/gantry-upright-splice-shell.stl \
+	$(BUILD)/gantry-upright-splice-shell-pair.stl \
+	$(BUILD)/gantry-upright-splice-shell-set.stl \
+	$(BUILD)/gantry-upright-splice-fit-coupon.stl \
 	$(BUILD)/stacking-registration-tab.stl \
 	$(BUILD)/stacking-registration-tab-set.stl \
 	$(BUILD)/rail-fit-coupon.stl \
@@ -32,7 +36,8 @@ PRINTABLES := \
 	$(BUILD)/print-group-03-plate-mounts.stl \
 	$(BUILD)/print-group-04-stacking-guides.stl \
 	$(BUILD)/print-group-05-device-label.stl \
-	$(BUILD)/print-group-06-m3-nut-bars.stl
+	$(BUILD)/print-group-06-m3-nut-bars.stl \
+	$(BUILD)/print-group-07-gantry-splices.stl
 
 .NOTPARALLEL:
 
@@ -78,6 +83,22 @@ $(BUILD)/gantry-joint-plate-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="gantry_joint_plate_set"' $<
 
+$(BUILD)/gantry-upright-splice-shell.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_shell"' $<
+
+$(BUILD)/gantry-upright-splice-shell-pair.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_shell_pair"' $<
+
+$(BUILD)/gantry-upright-splice-shell-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_shell_set"' $<
+
+$(BUILD)/gantry-upright-splice-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_coupon"' $<
+
 $(BUILD)/stacking-registration-tab.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="registration_tab"' $<
 
@@ -119,6 +140,10 @@ $(BUILD)/print-group-05-device-label.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 $(BUILD)/print-group-06-m3-nut-bars.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="print_group_nut_bars"' $<
+
+$(BUILD)/print-group-07-gantry-splices.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_gantry_splices"' $<
 
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
@@ -177,6 +202,16 @@ $(BUILD)/layout-gantry-joint-plate.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall --camera=55,-70,55,42,22,1 \
 		-D 'PART="gantry_joint_plate_set"' $<
 
+$(BUILD)/layout-gantry-splice.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
+		--projection=ortho --viewall --camera=110,-100,80,0,0,5 \
+		-D 'PART="gantry_splice_shell_pair"' $<
+
+$(BUILD)/layout-gantry-splice-coupon.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
+		--projection=ortho --viewall \
+		-D 'PART="gantry_splice_coupon"' $<
+
 $(BUILD)/layout-print-group-01.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
 		--projection=ortho --viewall \
@@ -207,18 +242,26 @@ $(BUILD)/layout-print-group-06.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall \
 		-D 'PART="print_group_nut_bars"' $<
 
+$(BUILD)/layout-print-group-07.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_gantry_splices"' $<
+
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
 	$(BUILD)/layout-m3-slide-nut.png \
 	$(BUILD)/layout-m3-slide-nut-coupon.png \
 	$(BUILD)/layout-m3-slide-nut-end.png \
 	$(BUILD)/layout-gantry-joint-plate.png \
+	$(BUILD)/layout-gantry-splice.png \
+	$(BUILD)/layout-gantry-splice-coupon.png \
 	$(BUILD)/layout-print-group-01.png \
 	$(BUILD)/layout-print-group-02.png \
 	$(BUILD)/layout-print-group-03.png \
 	$(BUILD)/layout-print-group-04.png \
 	$(BUILD)/layout-print-group-05.png \
-	$(BUILD)/layout-print-group-06.png
+	$(BUILD)/layout-print-group-06.png \
+	$(BUILD)/layout-print-group-07.png
 
 $(BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/cutlist.csg \
@@ -335,6 +378,14 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/gantry-joint-plate.stl
 	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 100 --max-z 8 \
 		$(BUILD)/gantry-joint-plate-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 85 --max-y 50 --max-z 14 \
+		$(BUILD)/gantry-upright-splice-shell.stl
+	$(PYTHON) $(BOUNDS) --max-x 85 --max-y 100 --max-z 14 \
+		$(BUILD)/gantry-upright-splice-shell-pair.stl
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 150 --max-z 14 \
+		$(BUILD)/gantry-upright-splice-shell-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 90 --max-y 70 --max-z 14 \
+		$(BUILD)/gantry-upright-splice-fit-coupon.stl
 	$(PYTHON) $(BOUNDS) --max-x 30 --max-y 80 --max-z 6 \
 		$(BUILD)/stacking-registration-tab.stl
 	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 170 --max-z 6 \
@@ -359,10 +410,13 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/print-group-05-device-label.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 125 --max-z 6 \
 		$(BUILD)/print-group-06-m3-nut-bars.stl
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 150 --max-z 14 \
+		$(BUILD)/print-group-07-gantry-splices.stl
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
-	@test "$$(grep -c ',4,360.00,1440.00,' $(BUILD)/cut-list.csv)" -eq 5
-	grep -q 'Stock bars required: \*\*10\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_outputs=21 stock_bars=10'
+	grep -q '^plate_gantry_upright_half,8,180.00,1440.00' $(BUILD)/cut-list.csv
+	@test "$$(grep -c ',4,360.00,1440.00,' $(BUILD)/cut-list.csv)" -eq 4
+	grep -q 'Stock bars required: \*\*8\*\*' $(BUILD)/cut-list.md
+	@echo 'chassis_validation=pass printable_outputs=26 stock_bars=8'
 
 clean:
 	rm -rf $(BUILD)

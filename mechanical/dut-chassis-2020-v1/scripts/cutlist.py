@@ -121,7 +121,7 @@ def write_markdown(
         f"- Remaining stock/offcuts: {waste_total:.2f} mm",
         "",
         "Do not batch-cut until one physical three-way connector dry-fit confirms the finished rail length. "
-        "Kerf only affects offcut accounting in this two-pieces-per-bar plan.",
+        "The stock assignment deliberately pairs two 360 mm pieces with one 180 mm gantry-upright half per bar; kerf therefore controls the guaranteed short-piece yield.",
         "",
         "## Finished pieces",
         "",
