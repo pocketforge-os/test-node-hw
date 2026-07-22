@@ -206,6 +206,39 @@ load path.
 5. Confirm the assembled upright remains straight and resists gentle hand
    racking. Only after that physical gate should Groups 07 and 08 be printed.
 
+An experimental alternate test uses one end-loaded 360-degree collar plus the
+same two opposed internal bars. `gantry-upright-splice-full-collar-test-set.stl`
+contains that three-piece joint. The collar reuses the accepted 0.20 mm total
+face clearance, adds internal corner relief and 1.2 mm insertion lead-ins, and
+provides four M3 wall openings aligned to the two internal bars. Slide it onto
+one open rail half before joining the second half; it cannot be installed over
+a closed extrusion end.
+
+The collar's trailing end has two tapered pusher keys in the opposed bar
+channels. Use them as a built-in 40/40 mm centering tool:
+
+1. Orient the pusher-key end toward the interior of the first rail and slide
+   the entire 80 mm collar onto that rail, leaving its other end flush with the
+   future butt seam.
+2. Feed one 80 mm internal bar into each keyed channel from the open seam. Each
+   bar stops when its far end reaches the collar's pusher key, so the bar is
+   fully contained in the first rail instead of disappearing farther inside.
+3. Butt the second rail against the first. Slide the collar 40 mm across the
+   seam. The pusher keys move both bars with it, leaving the collar and bars
+   centered 40 mm into each rail half.
+4. Install the four short M3 screws only after the holes and captured nuts are
+   aligned. Do not drive a screw into the aluminum or use a screw long enough
+   to bottom against the extrusion web.
+
+Print the collar upright on one open end with a brim and no supports. This is
+an intentionally comparative fit/racking test, not an automatic upgrade: a
+closed sleeve printed support-free has its axial bridge across Z-layer bonds,
+whereas the accepted two shells print broad-face down with stronger layer
+orientation. Keep the two-shell design as the production baseline unless the
+full collar both slides freely and performs at least as well under gentle hand
+racking. Two internal bars are sufficient for this light gantry; four-channel
+reinforcement is deferred unless the comparison exposes a real need.
+
 The spacer keys use the measured 6.73 mm mouth with 0.30 mm nominal clearance.
 The owner physically selected the resulting 6.43 mm key with the production
 ABS/0.8 mm-nozzle process: it slides exactly as intended. The 6.63 mm coupon is

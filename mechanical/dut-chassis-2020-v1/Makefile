@@ -41,6 +41,8 @@ PRINTABLES := \
 	$(BUILD)/gantry-upright-splice-internal-bar.stl \
 	$(BUILD)/gantry-upright-splice-internal-bar-set.stl \
 	$(BUILD)/gantry-upright-splice-reinforced-test-set.stl \
+	$(BUILD)/gantry-upright-splice-full-collar.stl \
+	$(BUILD)/gantry-upright-splice-full-collar-test-set.stl \
 	$(BUILD)/gantry-upright-splice-fit-coupon.stl \
 	$(BUILD)/stacking-registration-tab.stl \
 	$(BUILD)/stacking-registration-tab-set.stl \
@@ -141,6 +143,14 @@ $(BUILD)/gantry-upright-splice-internal-bar-set.stl: $(SOURCE) lib/pf-2020.scad 
 $(BUILD)/gantry-upright-splice-reinforced-test-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="gantry_splice_test_set"' $<
+
+$(BUILD)/gantry-upright-splice-full-collar.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_full_collar"' $<
+
+$(BUILD)/gantry-upright-splice-full-collar-test-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_full_collar_test_set"' $<
 
 $(BUILD)/gantry-upright-splice-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
@@ -322,6 +332,16 @@ $(BUILD)/layout-gantry-splice-installed.png: $(SOURCE) lib/pf-2020.scad | $(BUIL
 		--projection=ortho --viewall --camera=145,-135,105,0,0,13 \
 		-D 'PART="gantry_splice_installed_preview"' $<
 
+$(BUILD)/layout-gantry-splice-full-collar-test.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,900 \
+		--projection=ortho --viewall \
+		-D 'PART="gantry_splice_full_collar_test_set"' $<
+
+$(BUILD)/layout-gantry-splice-full-collar-base.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,1000 \
+		--projection=ortho --camera=0,0,-82,0,0,0 \
+		-D 'PART="gantry_splice_full_collar"' $<
+
 $(BUILD)/layout-gantry-splice-coupon.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
 		--projection=ortho --viewall \
@@ -383,6 +403,8 @@ preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-rear-carrier-links.png \
 	$(BUILD)/layout-gantry-splice.png \
 	$(BUILD)/layout-gantry-splice-installed.png \
+	$(BUILD)/layout-gantry-splice-full-collar-test.png \
+	$(BUILD)/layout-gantry-splice-full-collar-base.png \
 	$(BUILD)/layout-gantry-splice-coupon.png \
 	$(BUILD)/layout-print-group-01.png \
 	$(BUILD)/layout-print-group-02.png \
@@ -537,6 +559,10 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/gantry-upright-splice-internal-bar-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 180 --max-y 85 --max-z 14 \
 		$(BUILD)/gantry-upright-splice-reinforced-test-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 35 --max-y 35 --max-z 85 \
+		$(BUILD)/gantry-upright-splice-full-collar.stl
+	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 50 --max-z 85 \
+		$(BUILD)/gantry-upright-splice-full-collar-test-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 90 --max-y 70 --max-z 14 \
 		$(BUILD)/gantry-upright-splice-fit-coupon.stl
 	$(PYTHON) $(BOUNDS) --max-x 30 --max-y 80 --max-z 6 \
@@ -577,7 +603,7 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 	grep -q 'External assembled envelope (W × D × H): 358.00 × 346.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 318.00 × 306.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_outputs=35 stock_bars=6'
+	@echo 'chassis_validation=pass printable_outputs=37 stock_bars=6'
 
 clean:
 	rm -rf $(BUILD)

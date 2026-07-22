@@ -15,6 +15,7 @@
  *   gantry_splice_shell, gantry_splice_shell_pair,
  *   gantry_splice_shell_set, gantry_splice_internal_bar,
  *   gantry_splice_internal_bar_set, gantry_splice_test_set,
+ *   gantry_splice_full_collar, gantry_splice_full_collar_test_set,
  *   gantry_splice_installed_preview,
  *   gantry_splice_coupon,
  *   rail_fit_coupon, m3_slide_nut, m3_slide_nut_set,
@@ -316,6 +317,18 @@ gantry_splice_internal_bar_columns = 2;
 gantry_splice_shell_count = 4; // two opposed shells x two uprights
 gantry_splice_fit_clearances = [0.20, 0.40, 0.60];
 gantry_splice_fit_copies = 2;
+gantry_splice_collar_hole_diameter = 4.2;
+gantry_splice_collar_corner_relief = 2.4;
+gantry_splice_collar_entry_relief = 0.8;
+gantry_splice_collar_entry_depth = 1.2;
+// Two opposed keys at the collar's trailing end act as a moving depth stop.
+// Dimensions are multiples of the lab's 0.8 mm nozzle where practical.  The
+// narrowed 1.6 mm lead-in avoids first-layer elephant-foot binding, while the
+// full 6.43 mm section reuses the physically accepted slot-key fit.
+gantry_splice_collar_pusher_length = 3.2;
+gantry_splice_collar_pusher_depth = 2.4;
+gantry_splice_collar_pusher_lead = 1.6;
+gantry_splice_collar_pusher_tip_inset = 0.8;
 
 // One identical flat ABS indexing plate locates every gantry-upright endpoint
 // against an outer depth rail.  Perpendicular rear keys enter the two slots to
@@ -468,6 +481,23 @@ assert(max([for (x = gantry_splice_internal_nut_x) abs(x)]) +
        "Internal splice nuts need printable end walls");
 assert(len(gantry_splice_fit_clearances) * gantry_splice_fit_copies >= 6,
        "Small ABS splice-fit batches need at least six parts for cooling");
+assert(gantry_splice_collar_hole_diameter >= m3_clearance,
+       "Horizontally printed collar holes must clear M3 hardware");
+assert(gantry_splice_collar_entry_depth > 0 &&
+       gantry_splice_collar_entry_depth < gantry_splice_wall,
+       "Collar entry relief must remain a shallow lead-in");
+assert(gantry_splice_collar_pusher_length >
+       gantry_splice_collar_pusher_lead,
+       "Collar pusher needs a full-width bearing section after its lead-in");
+assert(gantry_splice_collar_pusher_tip_inset > 0 &&
+       gantry_splice_collar_pusher_tip_inset < slot_key_width,
+       "Collar pusher tip inset must leave a positive lead-in width");
+assert(gantry_splice_collar_pusher_depth >
+       extrusion_slot_lip_depth +
+       gantry_splice_external_clearance / 2,
+       "Collar pusher must overlap the internal bar behind the rail lip");
+assert(gantry_splice_collar_pusher_depth < extrusion_slot_depth,
+       "Collar pusher must remain inside the measured rail channel");
 assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
        gantry_joint_plate_size.y >
        2 * gantry_joint_hole_offset + gantry_joint_slot.y,
@@ -1062,6 +1092,135 @@ module gantry_splice_test_set() {
     translate([95.0,  9.0, 0]) gantry_splice_internal_bar();
 }
 
+// Experimental one-piece 360-degree alternative to the two external shells.
+// The collar is end-loaded before the second rail half is joined, and the same
+// two opposed internal double-nut bars provide the metal-threaded clamp points.
+// It reuses the physically accepted 0.20 mm total face clearance. Small corner
+// dogbones prevent rounded printed inside corners from stealing that clearance;
+// shallow enlarged entries tolerate first-layer elephant foot. Two opposed
+// pusher keys at the trailing end enter the same channels as the internal bars:
+// they first stop each bar fully inside rail A, then move the bars with the
+// collar to a centered 40/40 mm seam bridge.
+module gantry_splice_full_collar(
+    clearance = gantry_splice_external_clearance,
+    collar_length = gantry_splice_length
+) {
+    inner_width = profile_size + clearance;
+    outer_width = inner_width + 2 * gantry_splice_wall;
+    entry_width = inner_width + gantry_splice_collar_entry_relief;
+    pusher_tip_width = slot_key_width -
+                       gantry_splice_collar_pusher_tip_inset;
+
+    assert(clearance > 0,
+           "Full splice collar needs positive rail clearance");
+    assert(collar_length > 2 * gantry_splice_wall,
+           "Full splice collar is too short for its wall thickness");
+
+    union() {
+        difference() {
+            translate([-collar_length / 2, -outer_width / 2,
+                       -outer_width / 2])
+                cube([collar_length, outer_width, outer_width]);
+
+            translate([-collar_length / 2 - epsilon,
+                       -inner_width / 2, -inner_width / 2])
+                cube([collar_length + 2 * epsilon,
+                      inner_width, inner_width]);
+
+            // Dogbone the four internal corners along the rail axis.
+            for (side_y = [-1, 1])
+                for (side_z = [-1, 1])
+                    translate([-collar_length / 2 - epsilon,
+                               side_y * inner_width / 2,
+                               side_z * inner_width / 2])
+                        rotate([0, 90, 0])
+                            cylinder(d = gantry_splice_collar_corner_relief,
+                                     h = collar_length + 2 * epsilon,
+                                     $fn = 20);
+
+            // Relief at both open ends eases insertion without loosening the
+            // 77.6 mm central bearing length.
+            translate([-collar_length / 2 - epsilon,
+                       -entry_width / 2, -entry_width / 2])
+                cube([gantry_splice_collar_entry_depth + epsilon,
+                      entry_width, entry_width]);
+            translate([collar_length / 2 -
+                           gantry_splice_collar_entry_depth,
+                       -entry_width / 2, -entry_width / 2])
+                cube([gantry_splice_collar_entry_depth + epsilon,
+                      entry_width, entry_width]);
+
+            // Two aligned bores create four outer-wall openings. Each side
+            // uses its own short M3 screw into the adjacent internal-bar nut;
+            // no screw passes through the aluminum extrusion.
+            for (x = gantry_splice_internal_nut_x)
+                translate([x, 0, -outer_width / 2 - epsilon])
+                    cylinder(d = gantry_splice_collar_hole_diameter,
+                             h = outer_width + 2 * epsilon,
+                             $fn = 12);
+        }
+
+        // Self-indexing pusher keys. The collar prints with this trailing end
+        // on the bed. Each key starts narrow, grows support-free to the
+        // accepted 6.43 mm slot width, and reaches just beyond the rail lip to
+        // contact (but not climb over) its internal bar. Extending outward to
+        // entry_width keeps the keys joined through the insertion relief.
+        for (side_z = [-1, 1])
+            hull() {
+                translate([
+                    -collar_length / 2,
+                    -pusher_tip_width / 2,
+                    side_z > 0 ?
+                        inner_width / 2 -
+                            gantry_splice_collar_pusher_depth :
+                        -entry_width / 2 - epsilon
+                ])
+                    cube([
+                        2 * epsilon,
+                        pusher_tip_width,
+                        gantry_splice_collar_pusher_depth +
+                            gantry_splice_collar_entry_relief / 2 + epsilon
+                    ]);
+
+                translate([
+                    -collar_length / 2 +
+                        gantry_splice_collar_pusher_lead,
+                    -slot_key_width / 2,
+                    side_z > 0 ?
+                        inner_width / 2 -
+                            gantry_splice_collar_pusher_depth :
+                        -entry_width / 2 - epsilon
+                ])
+                    cube([
+                        gantry_splice_collar_pusher_length -
+                            gantry_splice_collar_pusher_lead,
+                        slot_key_width,
+                        gantry_splice_collar_pusher_depth +
+                            gantry_splice_collar_entry_relief / 2 + epsilon
+                    ]);
+            }
+    }
+}
+
+// Stand the closed collar on one open end. This is the only support-free
+// orientation, so use a brim and treat it as a fit/racking experiment: its
+// axial load path crosses Z-layer bonds and is not assumed stronger than the
+// accepted broad-face shells without a physical comparison.
+module gantry_splice_full_collar_print() {
+    outer_width = gantry_splice_inner_width + 2 * gantry_splice_wall;
+    translate([0, 0, gantry_splice_length / 2])
+        rotate([0, -90, 0])
+            gantry_splice_full_collar();
+}
+
+module gantry_splice_full_collar_test_set() {
+    outer_width = gantry_splice_inner_width + 2 * gantry_splice_wall;
+    translate([outer_width / 2, outer_width / 2, 0])
+        gantry_splice_full_collar_print();
+    translate([85.0, 15.0, 0]) gantry_splice_internal_bar();
+    translate([85.0, 33.0, 0]) gantry_splice_internal_bar();
+}
+
 // Cutaway-style visual proof of the assembled load path. The two 60 mm rail
 // fragments are translucent and meet at X=0; both 80 mm bars visibly bridge
 // that seam inside opposite channels while the selected shells bridge it
@@ -1526,6 +1685,10 @@ if (PART == "assembly") {
     gantry_splice_internal_bar_set();
 } else if (PART == "gantry_splice_test_set") {
     gantry_splice_test_set();
+} else if (PART == "gantry_splice_full_collar") {
+    gantry_splice_full_collar_print();
+} else if (PART == "gantry_splice_full_collar_test_set") {
+    gantry_splice_full_collar_test_set();
 } else if (PART == "gantry_splice_installed_preview") {
     gantry_splice_installed_preview();
 } else if (PART == "gantry_splice_coupon") {
