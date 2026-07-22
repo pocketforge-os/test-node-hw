@@ -6,9 +6,13 @@ SOURCE := pocketforge-node-chassis.scad
 BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
 FIXTURE_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl
 CRADLE_STL := ../dut-cradle-v1/build/trimui-smart-pro-carrier.stl
+CRADLE_S_STL := ../dut-cradle-v1/build/trimui-smart-pro-s-carrier.stl
+CRADLE_HOOKS_STL := ../dut-cradle-v1/build/trimui-smart-pro-family-installed-hooks.stl
 PRESENTATION_IMPORT_DIR := $(BUILD)/imports
 PRESENTATION_FIXTURE_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-v1.stl
 PRESENTATION_CRADLE_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-carrier.stl
+PRESENTATION_CRADLE_S_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-carrier.stl
+PRESENTATION_CRADLE_HOOKS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-family-installed-hooks.stl
 CUT_LIST := CUT_LIST.md
 
 PRINTABLES := \
@@ -151,6 +155,12 @@ $(FIXTURE_STL):
 $(CRADLE_STL):
 	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-carrier.stl
 
+$(CRADLE_S_STL):
+	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-s-carrier.stl
+
+$(CRADLE_HOOKS_STL):
+	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-family-installed-hooks.stl
+
 $(PRESENTATION_IMPORT_DIR):
 	mkdir -p $@
 
@@ -160,7 +170,14 @@ $(PRESENTATION_FIXTURE_STL): $(FIXTURE_STL) | $(PRESENTATION_IMPORT_DIR)
 $(PRESENTATION_CRADLE_STL): $(CRADLE_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
-presentation-assets: $(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_STL)
+$(PRESENTATION_CRADLE_S_STL): $(CRADLE_S_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_CRADLE_HOOKS_STL): $(CRADLE_HOOKS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+presentation-assets: $(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_STL) \
+	$(PRESENTATION_CRADLE_S_STL) $(PRESENTATION_CRADLE_HOOKS_STL)
 
 $(BUILD)/layout-assembly.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
@@ -168,9 +185,17 @@ $(BUILD)/layout-assembly.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		-D 'PLATE_DETAIL="proxy"' $<
 
 $(BUILD)/layout-assembly-mesh.png: $(SOURCE) lib/pf-2020.scad \
-	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_STL) | $(BUILD)
+	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_STL) \
+	$(PRESENTATION_CRADLE_S_STL) $(PRESENTATION_CRADLE_HOOKS_STL) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
 		--projection=ortho --viewall -D 'PART="presentation"' $<
+
+$(BUILD)/layout-assembly-smart-pro-s.png: $(SOURCE) lib/pf-2020.scad \
+	$(PRESENTATION_FIXTURE_STL) $(PRESENTATION_CRADLE_STL) \
+	$(PRESENTATION_CRADLE_S_STL) $(PRESENTATION_CRADLE_HOOKS_STL) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --viewall -D 'PART="presentation"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"' $<
 
 $(BUILD)/layout-front.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
@@ -248,6 +273,7 @@ $(BUILD)/layout-print-group-07.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		-D 'PART="print_group_gantry_splices"' $<
 
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
+	$(BUILD)/layout-assembly-smart-pro-s.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
 	$(BUILD)/layout-m3-slide-nut.png \
 	$(BUILD)/layout-m3-slide-nut-coupon.png \

@@ -41,6 +41,11 @@ $(BUILD)/j-hook.stl: $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
 $(BUILD)/j-hook-set.stl: $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="hook_set"' $<
 
+# Presentation-only: six hooks transformed into their accepted installed
+# positions.  This is consumed by the chassis model and is never a print STL.
+$(BUILD)/trimui-smart-pro-family-installed-hooks.stl: $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="installed_hooks"' $<
+
 $(BUILD)/fit-coupon.stl: $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' $<
 
@@ -139,7 +144,8 @@ validate-preview-export: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 		$(CHECKS)/smart-pro-assembly-export.stl
 	@echo 'preview_export_guard=pass models=smart_pro_s,smart_pro ghosts=excluded'
 
-validate: lint all validate-profile-guard validate-rear-gap-guard \
+validate: lint all $(BUILD)/trimui-smart-pro-family-installed-hooks.stl \
+	validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
@@ -152,6 +158,8 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 		$(BUILD)/j-hook-set.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 80 --max-y 80 --max-z 16 \
 		$(BUILD)/fit-coupon.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 220 --max-y 110 --max-z 28 \
+		$(BUILD)/trimui-smart-pro-family-installed-hooks.stl
 
 clean:
 	rm -rf $(BUILD)

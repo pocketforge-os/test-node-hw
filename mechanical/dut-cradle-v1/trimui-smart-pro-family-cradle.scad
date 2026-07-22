@@ -8,9 +8,11 @@
  *   trimui-smart-pro-s-cradle.scad -> "TrimUI Smart Pro S"
  *   trimui-smart-pro-cradle.scad   -> "TrimUI Smart Pro"
  *
- * PART choices: assembly, plate, hook, hook_set, fit_coupon.
+ * PART choices: assembly, plate, hook, hook_set, installed_hooks, fit_coupon.
  * The default assembly shows background-only DUT/hooks; even a manual STL
  * export of that view contains only the printable carrier plate.
+ * `installed_hooks` is a presentation-only export in carrier coordinates. It
+ * deliberately contains no plate or DUT geometry and is never a print group.
  */
 
 include <lib/dut-cradle-library.scad>;
@@ -347,6 +349,15 @@ module safe_contact_window_preview() {
     }
 }
 
+// Presentation-only assembly geometry.  Keeping the six installed hooks in a
+// dedicated export lets higher-level rack/chassis models show the accepted
+// retention system without weakening assembly's preview-ghost export guard or
+// accidentally creating one fused carrier-and-hooks production STL.
+module installed_hooks() {
+    for (pose = clamp_poses)
+        one_hook_installed(pose);
+}
+
 module assembly() {
     carrier_plate();
 
@@ -361,8 +372,7 @@ module assembly() {
         %safe_contact_window_preview();
 
     if (SHOW_HOOKS)
-        for (pose = clamp_poses)
-            %one_hook_installed(pose);
+        %installed_hooks();
 }
 
 if (PART == "assembly") {
@@ -373,6 +383,8 @@ if (PART == "assembly") {
     one_hook_printable();
 } else if (PART == "hook_set") {
     hook_set();
+} else if (PART == "installed_hooks") {
+    installed_hooks();
 } else if (PART == "fit_coupon") {
     fit_coupon();
 } else {

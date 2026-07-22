@@ -286,14 +286,27 @@ make preview   # proxy, imported-plate, front-label, and print-group views
 make validate  # repository lint, meshes, bounds, guards, and cut-list checks
 make refresh-cut-list  # deliberately update checked-in CUT_LIST.md from CAD
 openscad -D 'PART="presentation"' pocketforge-node-chassis.scad
+openscad -D 'PART="presentation"' -D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"' pocketforge-node-chassis.scad
 ```
 
-`make preview` first builds the production fixture/carrier meshes in their
-own projects, then stages them under `build/imports/` and imports them into the
-chassis assembly. `PART="presentation"` shows those exact production boards,
-the device/camera proxies, and the analytical C270 field-of-view frustum
-together. The cone remains independent of the imported STL so camera geometry
-can evolve without modifying either board.
+`make preview` first builds the production fixture, both production carrier
+variants, and the exact six-hook installed layout in their own projects. It
+then stages those meshes under `build/imports/` and imports them into the
+chassis assembly. `PART="presentation"` shows the exact production boards,
+all six accepted J-hooks, the device/camera proxies, and the analytical C270
+field-of-view frustum together. The hook mesh is presentation-only and remains
+separate from the printable carrier and hook-set STLs; it cannot accidentally
+turn the serviceable cradle into one fused print. The cone likewise remains
+independent so camera geometry can evolve without modifying either board.
+
+`EXAMPLE_DEVICE_VARIANT="smart_pro"` is the default and keeps the imported
+carrier title and front placard consistent. Select `smart_pro_s` to switch both
+labels and the imported carrier together. The staged presentation assets are:
+
+- `build/imports/dut-fixture.stl`;
+- `build/imports/trimui-smart-pro-carrier.stl`;
+- `build/imports/trimui-smart-pro-s-carrier.stl`;
+- `build/imports/trimui-smart-pro-family-installed-hooks.stl`.
 
 The normal `PART="assembly"` view intentionally defaults to lightweight plate
 envelopes so repository-wide lint never depends on generated files. Run
@@ -304,7 +317,9 @@ Generated files live under `build/` and are not committed:
 
 - `layout-assembly.png` — fast full-frame view;
 - `layout-assembly-mesh.png` — exact production fixture/carrier meshes plus
-  device and C270 field-of-view overlays;
+  six installed hooks, device, and C270 field-of-view overlays;
+- `layout-assembly-smart-pro-s.png` — the same complete assembly with the
+  Smart Pro S carrier title and front placard selected together;
 - `layout-front.png` — operator/front label and stack-registration view;
 - `layout-stacked.png` — two-frame registration and metal load-path proof;
 - `layout-gantry-joint-plate.png` — eight-part flat gantry interface set;

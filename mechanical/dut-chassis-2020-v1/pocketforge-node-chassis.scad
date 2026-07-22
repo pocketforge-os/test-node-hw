@@ -23,7 +23,9 @@
 include <lib/pf-2020.scad>;
 
 PART = "assembly";
-DEVICE_LABEL = "TrimUI Smart Pro";
+EXAMPLE_DEVICE_VARIANT = "smart_pro"; // smart_pro or smart_pro_s
+DEVICE_LABEL = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
+               "TrimUI Smart Pro S" : "TrimUI Smart Pro";
 PLATE_DETAIL = "proxy";       // proxy or mesh
 EXTRUSION_DETAIL = "slot";    // envelope or slot
 SHOW_PLATES = true;
@@ -37,8 +39,15 @@ SHOW_REGISTRATION_GUIDES = true;
 // opens them and remains safe for clean-checkout linting.
 fixture_presentation_mesh =
     "build/imports/pocketforge-dut-fixture-v1.stl";
-cradle_presentation_mesh =
+cradle_s_presentation_mesh =
+    "build/imports/trimui-smart-pro-s-carrier.stl";
+cradle_base_presentation_mesh =
     "build/imports/trimui-smart-pro-carrier.stl";
+cradle_presentation_mesh = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
+                           cradle_s_presentation_mesh :
+                           cradle_base_presentation_mesh;
+cradle_hooks_presentation_mesh =
+    "build/imports/trimui-smart-pro-family-installed-hooks.stl";
 
 $fn = 48;
 epsilon = 0.02;
@@ -64,15 +73,16 @@ extrusion_web_thickness = 1.20;
 extrusion_centre_bore = 4.2; // preview-only 20-series nominal
 
 stock_length = 1000.0;
-// Deliberately wide provisional allowance.  With only two 360 mm parts per
-// nominal 1 m stick, kerf affects offcut accounting but not plan feasibility.
+// Deliberately wide provisional allowance.  Each nominal 1 m stick must yield
+// 360 + 360 + 180 mm, so validation includes all three cut kerfs.
 cut_kerf = 3.2;
 
 // Eight 20 mm three-way end connectors occupy the outer corners, so all 12
 // perimeter rails terminate between corner blocks.  Two independent internal
-// plate gantries each add two vertical uprights and two horizontal crossbars.
-// Keeping the uprights in the same X planes as the outer depth rails makes the
-// gantry joints flat and leaves every extrusion cut at one common length.
+// plate gantries each add two split vertical uprights and two continuous
+// horizontal crossbars. Keeping the uprights in the same X planes as the outer
+// depth rails makes the end joints flat; their 180 mm halves consume the
+// otherwise stranded remainder after two 360 mm cuts.
 structural_x_length = frame_outer.x - 2 * profile_size;
 structural_y_length = frame_outer.y - 2 * profile_size;
 structural_z_length = frame_outer.z - 2 * profile_size;
@@ -254,6 +264,9 @@ cradle_margins = [cradle_origin.x - inner_min.x,
                   cradle_origin.z - inner_min.y,
                   inner_max.y - (cradle_origin.z + cradle_plate_size.y)];
 
+assert(EXAMPLE_DEVICE_VARIANT == "smart_pro" ||
+       EXAMPLE_DEVICE_VARIANT == "smart_pro_s",
+       str("Unknown example device variant: ", EXAMPLE_DEVICE_VARIANT));
 assert(frame_outer.x == frame_outer.y && frame_outer.y == frame_outer.z,
        "Standard chassis must remain a cube unless the rack class changes");
 assert(min(fixture_margins) >= 50.0,
@@ -500,20 +513,32 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
                       fixture_plate_size.y]);
 }
 
+module cradle_mesh_at_installed_datum(mesh_path) {
+    translate(cradle_origin)
+        rotate([90, 0, 0])
+            import(mesh_path, convexity = 10);
+}
+
 module cradle_plate_preview(detail = PLATE_DETAIL) {
-    color([0.88, 0.88, 0.84])
-        if (detail == "mesh")
-            translate(cradle_origin)
-                rotate([90, 0, 0])
-                    import(cradle_presentation_mesh,
-                           convexity = 10);
-        else
+    if (detail == "mesh") {
+        color([0.88, 0.88, 0.84])
+            cradle_mesh_at_installed_datum(cradle_presentation_mesh);
+
+        // The hooks are a distinct presentation-only export from the accepted
+        // cradle source. They remain independently printable/serviceable and
+        // cannot leak into any chassis or carrier production STL.
+        color([0.94, 0.47, 0.10])
+            cradle_mesh_at_installed_datum(
+                cradle_hooks_presentation_mesh);
+    } else {
+        color([0.88, 0.88, 0.84])
             translate([cradle_origin.x,
                        cradle_origin.y - cradle_plate_size.z,
                        cradle_origin.z])
                 cube([cradle_plate_size.x,
                       cradle_plate_size.z,
                       cradle_plate_size.y]);
+    }
 }
 
 module installed_plate_spacer(point, rear = false) {
@@ -1107,9 +1132,9 @@ module stacked_assembly() {
 if (PART == "assembly") {
     assembly();
 } else if (PART == "presentation") {
-    // Exact production plate meshes plus analytical overlays.  In particular,
-    // the C270 frustum remains a separate, visible CAD datum rather than being
-    // baked into either imported STL.
+    // Exact production plate and accepted installed-hook meshes plus
+    // analytical overlays. In particular, the C270 frustum remains a separate,
+    // visible CAD datum rather than being baked into an imported STL.
     assembly("mesh");
 } else if (PART == "stacked_assembly") {
     stacked_assembly();

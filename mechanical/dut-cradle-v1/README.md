@@ -37,6 +37,7 @@ device outline, service aperture, safe contacts, and optical center may change.
 | `plate` | Carrier plate |
 | `hook` | One J-hook, already laid on its strong printing side |
 | `hook_set` | Six production J-hooks arranged for one print |
+| `installed_hooks` | Presentation-only mesh of all six hooks at their installed carrier coordinates; do not print |
 | `fit_coupon` | Three throat/nut variants plus the production screw-slot/keyway coupon |
 
 There is only one hook implementation and one single-hook export. `hook_set`
@@ -73,7 +74,10 @@ make validate
 Generated STLs and PNGs live under `build/`, remain uncommitted, and are
 published as a GitHub Actions artifact on relevant pushes. The main outputs are
 `trimui-smart-pro-s-carrier.stl`, `trimui-smart-pro-carrier.stl`, `j-hook.stl`,
-and `j-hook-set.stl`.
+and `j-hook-set.stl`. The additional
+`trimui-smart-pro-family-installed-hooks.stl` is a presentation asset consumed
+by the parent chassis model; it is deliberately separate from both production
+carrier exports and must not be sent to a slicer.
 
 Validation parses every repository OpenSCAD source, renders all meshes, proves
 the 247 × 200 mm plate fits the conservative 247 × 207 mm Prusa envelope,
@@ -81,6 +85,8 @@ rejects an undersized hook throat, and proves preview-only geometry cannot leak
 into either carrier export. A family-equivalence guard also exports both plates
 without labels and proves their mechanical meshes are byte-for-byte equivalent
 at the triangle level; the raised title is the only model difference.
+Validation also bounds-checks the presentation-only installed-hook mesh so the
+chassis view cannot silently drift away from the accepted six-hook layout.
 
 ## Hardware and assembly
 
