@@ -8,7 +8,7 @@ extrusion chassis.
 The fleet-standard frame is a compact **358 W × 346 D × 368 H mm external
 rectangle**. Rectangular is intentional: the required plate margins and C270
 optical distance differ by axis, while making every axis 400 mm wastes stock.
-The usable payload face is 318 W × 320 H mm. It leaves at least 35 mm of
+The usable payload face is 318 W × 328 H mm. It leaves at least 35 mm of
 routing/service margin around both existing printed plates:
 
 - electronics/webcam fixture: 200 × 247 mm;
@@ -18,10 +18,11 @@ The delivered three-way fitting is not a 20 mm corner cube. It caps a vertical
 post and sends two tongues into width/depth rails that butt against that post.
 The owner's physical check found that a 360.00 mm post with a connector at each
 end measures approximately 368 mm outside-to-outside. CAD therefore models the
-actual cap-and-side-butt topology: the two horizontal rails terminate flush
+actual cap-flush side-butt topology: the two horizontal rails terminate flush
 against adjacent faces of the vertical post, not against or through each
-other. Finished cuts are 360 mm vertical, 306 mm depth, and 318 mm width; the
-single fixture gantry reuses 318 mm crossbars and split 160 mm uprights. An
+other, and their top/bottom faces share the connector-cap planes with zero
+inset. Finished cuts are 360 mm vertical, 306 mm depth, and 318 mm width; the
+single fixture gantry reuses 318 mm crossbars and split 164 mm uprights. An
 exact bounded cut optimizer fits one complete node into six
 nominal 1 m sticks.
 
@@ -84,14 +85,14 @@ manufacturer's “2020” drawing—control printed fit.
 
 ### Structural frame
 
-The default `three_way_cap_side_butt_B08C9Q2TGW_measured` topology uses:
+The default `three_way_cap_flush_side_butt_B08C9Q2TGW_measured` topology uses:
 
 | Piece | Qty | Finished length | Purpose |
 |---|---:|---:|---|
 | Vertical post | 4 | 360 mm | Connector stem; end caps make the outside height about 368 mm |
 | Width rail | 4 | 318 mm | Butts between left/right post side faces |
 | Depth rail | 4 | 306 mm | Butts between front/rear post side faces |
-| Fixture-gantry upright half | 4 | 160 mm | Two reinforced halves form each 320 mm upright |
+| Fixture-gantry upright half | 4 | 164 mm | Two reinforced halves form each 328 mm upright |
 | Fixture-gantry crossbar | 2 | 318 mm | Two height-adjustable fixture bars |
 
 Eight BLCCLOY B08C9Q2TGW zinc-alloy three-way connectors and their M4 set
@@ -112,7 +113,7 @@ cable, or service path.
 
 Only the electronics/webcam fixture mounts to a complete 2020 gantry: two
 vertical uprights bridge the outer top/bottom depth rails, and two horizontal
-crossbars bridge those uprights. Each upright is two equal 160 mm halves joined
+crossbars bridge those uprights. Each upright is two equal 164 mm halves joined
 at its unloaded center; the crossbars remain continuous 318 mm aluminum. Four
 broad, flat keyed ABS plates locate the gantry's upright ends. Every indexing plate
 uses two M3 screws, wide washers, and printed end-loaded nut bars holding
@@ -141,7 +142,7 @@ width rails. Two upper links carry the light plate; two lower links prevent
 swing and racking. The rail end has a round M3 datum and the accepted 6.43 mm
 slot key; the carrier end has a 10 mm adjustment capsule. Sliding the four rear
 rail nut bars sets X, while device-specific top/bottom link lengths set Z. The
-default links are 93.5 mm (top) and 110.5 mm (bottom), including 12 mm material
+default links are 97.5 mm (top) and 114.5 mm (bottom), including 12 mm material
 beyond each hole center. Their 5 mm thickness leaves the carrier rear face 25
 mm ahead of the chassis back—approximately the requested inch of rear cable
 service space.
@@ -170,7 +171,7 @@ identical external shells and two identical internal channel bars. Every part
 prints on its broad face with no support; there is no tall sleeve whose strength
 depends on Z-layer adhesion.
 
-Each 80 mm external shell spans 40 mm onto both 160 mm rail halves. Its 6.43 mm
+Each 80 mm external shell spans 40 mm onto both 164 mm rail halves. Its 6.43 mm
 key enters the rail mouth and shallow wings wrap 8 mm around the extrusion.
 The owner physically selected the one-notch coupon, corresponding to 0.20 mm
 external clearance. Inside the same front/rear channels, an 80 mm
@@ -195,7 +196,7 @@ load path.
    It contains two shells and two internal bars—one complete upright joint.
 2. Pull four ordinary M3 nuts into the open hex pockets using an M3 screw and
    washer. Do not glue them and do not insert them mid-print.
-3. With both 160 mm rail ends open, slide one internal bar 40 mm into the front
+3. With both 164 mm rail ends open, slide one internal bar 40 mm into the front
    channel and one 40 mm into the rear channel of the first half. Slide the
    second rail half over the exposed 40 mm of both bars until the cut ends butt.
 4. Put an external shell over each reinforced face with its key spanning the
@@ -338,12 +339,14 @@ openscad -D 'PART="presentation"' pocketforge-node-chassis.scad
 openscad -D 'PART="presentation"' -D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"' pocketforge-node-chassis.scad
 ```
 
-`make preview` first builds the production fixture, the carriers'
+`make preview` first builds the production fixture, its populated component
+and label presentation layers, the carriers'
 presentation-only body/label splits, and the exact six-hook installed layout
 in their own projects. It then stages the required meshes under
 `build/imports/` and imports them into the chassis assembly.
-`PART="presentation"` shows the exact production board geometry,
-all six accepted J-hooks, the device/camera proxies, and the analytical C270
+`PART="presentation"` shows the exact production board geometry, all ten
+measured harness component envelopes and placement labels, all six accepted
+J-hooks, the device/camera proxies, and the analytical C270
 field-of-view frustum together. The hook mesh is presentation-only and remains
 separate from the printable carrier and hook-set STLs; it cannot accidentally
 turn the serviceable cradle into one fused print. The carrier body and labels
@@ -356,6 +359,8 @@ carrier title and front placard consistent. Select `smart_pro_s` to switch both
 labels and the imported carrier together. The staged presentation assets are:
 
 - `build/imports/pocketforge-dut-fixture-v1.stl`;
+- `build/imports/pocketforge-dut-fixture-components.stl`;
+- `build/imports/pocketforge-dut-fixture-labels.stl`;
 - `build/imports/trimui-smart-pro-family-carrier-body.stl`;
 - `build/imports/trimui-smart-pro-labels.stl`;
 - `build/imports/trimui-smart-pro-s-labels.stl`;
@@ -443,14 +448,14 @@ One node uses exactly six nominal 1 m sticks while retaining continuous
 outer-frame rails and continuous fixture-gantry crossbars. The deterministic
 exact packer proves this assignment:
 
-- 2 sticks: `360 + 360 + 160 mm`, consuming 889.6 mm each including three
+- 2 sticks: `360 + 360 + 164 mm`, consuming 893.6 mm each including three
   conservative 3.2 mm kerfs;
 - 2 sticks: `318 + 318 + 318 mm`, consuming 963.6 mm each;
 - 1 stick: `306 + 306 + 306 mm`, consuming 927.6 mm;
-- 1 stick: `306 + 160 + 160 mm`, consuming 635.6 mm.
+- 1 stick: `306 + 164 + 164 mm`, consuming 643.6 mm.
 
-The 18 finished pieces total 5212 mm. Kerf allowance is 57.6 mm and aggregate
-remaining stock is 730.4 mm. Five sticks cannot contain 5269.6 mm of
+The 18 finished pieces total 5228 mm. Kerf allowance is 57.6 mm and aggregate
+remaining stock is 714.4 mm. Five sticks cannot contain 5285.6 mm of
 kerf-inclusive material, so six is the volume lower bound as well as a proven
 packing. `scripts/cutlist.py` searches from that lower bound upward with
 symmetry pruning rather than relying on first-fit order.

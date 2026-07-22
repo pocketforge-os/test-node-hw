@@ -217,7 +217,7 @@ def write_markdown(
         f"- Kerf allowance: {kerf_total:.2f} mm",
         f"- Remaining stock/offcuts: {waste_total:.2f} mm",
         "",
-        "Finished lengths are measured aluminum cuts. The delivered three-way connector was physically checked: horizontal rails butt flush to adjacent faces of each vertical post, and a 360.00 mm post with caps at both ends measures approximately 368 mm outside-to-outside. "
+        "Finished lengths are measured aluminum cuts. The delivered three-way connector was physically checked: horizontal rails butt flush to adjacent faces of each vertical post, their top/bottom outer faces are flush with the connector-cap planes, and a 360.00 mm post with caps at both ends measures approximately 368 mm outside-to-outside. "
         "The assignment below is an exact bounded packing, not first-fit order; retain the listed kerf reserve, measure every stock stick, mark every finished cut before sawing, and witness one saw cut before batch cutting.",
         "",
         "## Finished pieces",

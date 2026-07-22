@@ -47,6 +47,12 @@ plate, fit coupon, split fallback, joiner, layout previews, and SHA-256 checksum
 30-day workflow artifact. New OpenSCAD projects join the same process by adding one project entry to
 the workflow matrix.
 
+Two additional presentation-only meshes expose the measured populated harness
+without contaminating the production plate: `pocketforge-dut-fixture-components.stl`
+contains all ten component envelopes (including the under-plate webcam), and
+`pocketforge-dut-fixture-labels.stl` contains their ten placement labels.
+Analytical connector/service keep-outs remain editor-only and are excluded.
+
 No container is required for this: OpenSCAD is a single distro package, the source is portable, and
 the stdlib-only bounds validator removes Python dependency drift. A container would add substantially
 more machinery than determinism here.
