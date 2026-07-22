@@ -62,14 +62,14 @@ join_topology = "three_way_end_corners_B08C9Q2TGW";
 
 // SeekLiny B0DY7FKKMT is a nominal 20-series V-slot profile.  These interface
 // dimensions come from the owner's delivered rail, not a generic "2020"
-// drawing: A=mouth, B=depth, C=widest pocket, D=lip depth, E=web thickness.
-// F=6.66 mm is retained in the measurement record but is not needed by the
-// simplified assembly preview or printed slot hardware.
+// drawing: A=mouth, B=depth, C=widest pocket, D=lip depth, E=web thickness,
+// and F=the narrow channel face at the extrusion web.
 extrusion_slot_opening = 6.73;
 extrusion_slot_depth = 6.48;
 extrusion_slot_pocket_width = 12.15;
 extrusion_slot_lip_depth = 1.66;
 extrusion_web_thickness = 1.20;
+extrusion_slot_deep_width = 6.66;
 extrusion_centre_bore = 4.2; // preview-only 20-series nominal
 
 stock_length = 1000.0;
@@ -186,21 +186,31 @@ m3_nut_measured_thickness = 2.30;
 m3_nut_pocket_across_flats = 5.60;
 m3_nut_pocket_depth = 2.80;
 m3_slide_nut_length = 30.0;
-m3_slide_nut_bearing_width = 11.85;
-m3_slide_nut_deep_width = 8.90;
+m3_slide_nut_bearing_width = 11.75;
+m3_slide_nut_deep_width = 6.36;
 m3_slide_nut_height = 4.40;
-m3_slide_nut_flange_height = 1.20;
+m3_slide_nut_flange_height = 0.40;
 m3_slide_nut_corner_chamfer = 3.0;
-// Second physical pass: the original 11.85 mm candidate was close but not an
-// accepted fit. One candidate on either side resolves the remaining 0.20 mm
-// interval while using only two shorter bars.
-m3_slide_nut_coupon_bearing_widths = [11.75, 11.95];
+// Third physical pass: the 11.75 mm bearing face reaches the under-lip pocket,
+// but the shared 8.90 mm deep face collided with the rail and its delayed
+// taper did not follow the channel.  F measures 6.66 mm; the two candidates
+// bracket the same -0.30 mm process compensation selected by the rail coupon.
+m3_slide_nut_coupon_deep_widths = [6.26, 6.46];
 m3_slide_nut_coupon_copies = 1;
 m3_slide_nut_required_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
 m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
 m3_slide_nut_set_count = m3_slide_nut_required_count +
                          m3_slide_nut_spare_count;
 m3_slide_nut_set_columns = 4;
+
+function m3_slide_nut_width_at_height(
+    z,
+    bearing_width = m3_slide_nut_bearing_width,
+    deep_width = m3_slide_nut_deep_width
+) = z <= m3_slide_nut_flange_height ? bearing_width :
+    bearing_width + (deep_width - bearing_width) *
+    ((z - m3_slide_nut_flange_height) /
+     (m3_slide_nut_height - m3_slide_nut_flange_height));
 
 // Four non-structural gantry uprights are each made from two 180 mm offcut
 // segments.  One support-free two-half clamshell aligns each central butt
@@ -317,16 +327,19 @@ assert(m3_slide_nut_bearing_width > extrusion_slot_opening,
 assert(m3_slide_nut_bearing_width < extrusion_slot_pocket_width,
        "End-loaded carrier bearing face must fit inside the measured slot pocket");
 assert(m3_slide_nut_deep_width >
-       m3_nut_pocket_across_flats + 2 * 1.6,
-       "End-loaded carrier needs printable deep-face walls around the metal nut");
+       m3_nut_pocket_across_flats + 0.5,
+       "Deep face must clear the metal nut across flats");
+assert(m3_slide_nut_deep_width < extrusion_slot_deep_width,
+       "Deep face must clear measured rail dimension F");
 assert(m3_slide_nut_deep_width < m3_slide_nut_bearing_width,
        "End-loaded carrier must taper inward away from its bearing face");
-assert(min(m3_slide_nut_coupon_bearing_widths) > extrusion_slot_opening &&
-       max(m3_slide_nut_coupon_bearing_widths) < extrusion_slot_pocket_width,
-       "Every end-loaded coupon bearing face must bridge the mouth and fit pocket");
-assert(len(m3_slide_nut_coupon_bearing_widths) *
+assert(min(m3_slide_nut_coupon_deep_widths) >
+           m3_nut_pocket_across_flats + 0.5 &&
+       max(m3_slide_nut_coupon_deep_widths) < extrusion_slot_deep_width,
+       "Every coupon deep face must clear both nut and measured rail");
+assert(len(m3_slide_nut_coupon_deep_widths) *
        m3_slide_nut_coupon_copies == 2,
-       "Second-pass nut-bar coupon must contain exactly two pieces");
+       "Third-pass nut-bar coupon must contain exactly two pieces");
 assert(m3_slide_nut_height <
        extrusion_slot_depth - extrusion_slot_lip_depth,
        "End-loaded carrier must fit behind the measured slot lip");
@@ -337,6 +350,10 @@ assert(m3_slide_nut_length >= 24.0,
        "End-loaded carrier must retain useful nut walls and handling length");
 assert(m3_slide_nut_height - m3_nut_pocket_depth >= 1.6,
        "End-loaded carrier needs at least four 0.4 mm floor layers");
+assert(m3_slide_nut_width_at_height(
+           m3_slide_nut_height - m3_nut_pocket_depth) >=
+       m3_nut_pocket_across_flats + 2 * 1.6,
+       "Nut-pocket floor needs two printable side walls");
 assert(gantry_splice_inner_width > profile_size,
        "Splice clamshell needs positive external rail clearance");
 assert(2 * gantry_splice_wing_depth < profile_size,
@@ -956,8 +973,8 @@ module rail_fit_coupon() {
 // Large end-loaded sliding T-nut bar.  This is intentionally a 30 mm handling
 // bar, not a commercial-nut-sized nubbin: it nearly fills the delivered slot,
 // cannot rotate, and is easy to position with a loose screw as a handle.  The
-// broad flange bears behind the lips for its first 1.2 mm; above that, a
-// pronounced keystone tapers toward the extrusion web.  It has no spring ears,
+// bearing face gets one 0.4 mm print layer before a rail-matched keystone
+// tapers toward measured dimension F at the extrusion web. It has no spring ears,
 // printed threads, or sub-nozzle details.  Print the solid bearing face down
 // and pull an ordinary M3 nut into the upward hex pocket with a screw and
 // washer.  The open pocket faces the rail center.  The metal nut carries the
@@ -981,15 +998,27 @@ module m3_slide_nut_carrier(
                             bearing_width = m3_slide_nut_bearing_width,
                             deep_width = m3_slide_nut_deep_width,
                             witness_notches = 0) {
+    pocket_floor_z = m3_slide_nut_height - m3_nut_pocket_depth;
+    pocket_floor_width =
+        pocket_floor_z <= m3_slide_nut_flange_height ? bearing_width :
+        bearing_width + (deep_width - bearing_width) *
+        ((pocket_floor_z - m3_slide_nut_flange_height) /
+         (m3_slide_nut_height - m3_slide_nut_flange_height));
+
     assert(bearing_width > extrusion_slot_opening,
            "Coupon slider bearing face must bridge the measured slot mouth");
     assert(bearing_width < extrusion_slot_pocket_width,
            "Coupon slider bearing face must fit inside the measured slot pocket");
     assert(deep_width >
-           m3_nut_pocket_across_flats + 2 * 1.6,
-           "Coupon slider needs printable deep-face walls around the nut");
+           m3_nut_pocket_across_flats + 0.5,
+           "Coupon deep face must clear the metal nut");
+    assert(deep_width < extrusion_slot_deep_width,
+           "Coupon deep face must clear measured rail dimension F");
     assert(deep_width < bearing_width,
            "Coupon slider must taper inward away from its bearing face");
+    assert(pocket_floor_width >=
+           m3_nut_pocket_across_flats + 2 * 1.6,
+           "Coupon nut-pocket floor needs two printable side walls");
 
     difference() {
         union() {
@@ -1019,7 +1048,7 @@ module m3_slide_nut_carrier(
                      $fn = 6);
 
         // Large end scallops survive a 0.8 mm nozzle. One/two marks identify
-        // 11.75/11.95 mm bearing widths after parts leave the
+        // 6.26/6.46 mm deep-face widths after parts leave the
         // bed.
         if (witness_notches > 0)
             for (notch = [0 : witness_notches - 1])
@@ -1042,15 +1071,15 @@ module m3_slide_nut_carrier_set() {
 }
 
 // The 30 mm bars have enough layer time for the owner's ABS process, so this
-// second pass needs only one of each bracketing width.
+// third pass needs only one of each bracketing deep-face width.
 module m3_slide_nut_fit_coupon() {
-    for (index = [0 : len(m3_slide_nut_coupon_bearing_widths) - 1])
+    for (index = [0 : len(m3_slide_nut_coupon_deep_widths) - 1])
         for (copy = [0 : m3_slide_nut_coupon_copies - 1])
             translate([index * (m3_slide_nut_length + 4.0),
                        copy * 15.0, 0])
                 m3_slide_nut_carrier(
-                    m3_slide_nut_coupon_bearing_widths[index],
-                    m3_slide_nut_deep_width,
+                    m3_slide_nut_bearing_width,
+                    m3_slide_nut_coupon_deep_widths[index],
                     index + 1);
 }
 

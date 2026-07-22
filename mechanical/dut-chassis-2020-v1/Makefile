@@ -345,14 +345,14 @@ validate-nut-carrier-guard: | $(BUILD)
 			echo 'ERROR: pull-through carrier was not rejected' >&2; exit 1; \
 		fi; \
 	grep -q 'wider than the slot mouth' $$narrow_log; \
-	thin_log=$(BUILD)/invalid-nut-carrier-thin-wall.log; \
-		thin_mesh=$(BUILD)/invalid-nut-carrier-thin-wall.stl; \
-		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$thin_mesh \
+	deep_log=$(BUILD)/invalid-nut-carrier-deep-face.log; \
+		deep_mesh=$(BUILD)/invalid-nut-carrier-deep-face.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$deep_mesh \
 			-D 'PART="m3_slide_nut"' \
-			-D 'm3_slide_nut_deep_width=8.7' $(SOURCE) >$$thin_log 2>&1; then \
-			echo 'ERROR: thin-wall carrier was not rejected' >&2; exit 1; \
+			-D 'm3_slide_nut_deep_width=8.7' $(SOURCE) >$$deep_log 2>&1; then \
+			echo 'ERROR: over-wide deep face was not rejected' >&2; exit 1; \
 		fi; \
-	grep -q 'walls around the metal nut' $$thin_log; \
+	grep -q 'clear measured rail dimension F' $$deep_log; \
 	tall_log=$(BUILD)/invalid-nut-carrier-tall.log; \
 		tall_mesh=$(BUILD)/invalid-nut-carrier-tall.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$tall_mesh \
