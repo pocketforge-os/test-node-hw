@@ -23,7 +23,9 @@
  *   print_group_gantry_hardware, print_group_nut_bars,
  *   print_group_plate_mounts,
  *   print_group_stacking_guides, print_group_device_label,
- *   print_group_gantry_splices, print_group_gantry_splice_bars, cutlist
+ *   print_group_gantry_splices, print_group_gantry_splice_bars,
+ *   print_group_after_splice_overnight,
+ *   print_group_independent_completion, cutlist
  */
 
 include <lib/pf-2020.scad>;
@@ -1574,6 +1576,25 @@ module print_group_after_splice_overnight() {
     translate([18.0, 114.0, 0]) gantry_joint_plate_set();
 }
 
+// Remaining first-node hardware that is independent of both outstanding
+// physical gates.  This 17-object bed intentionally excludes duplicate nut
+// bars/indexing plates, the unapproved second rear-link pair, and whichever
+// production splice design the full-collar test selects.
+module print_group_independent_completion() {
+    // Eight stacking guides; native bounds X=0..114, Y=0..150.
+    registration_tab_set();
+
+    // Four fixture-board spacers in the open right-hand strip.
+    translate([133.0, 7.0, 0]) plate_spacer_set();
+
+    // Two placard risers and two placard spacers above the fixture spacers.
+    translate([145.0, 68.0, 0]) placard_riser_pair();
+    translate([145.0, 109.0, 0]) placard_spacer_pair();
+
+    // One front device placard in the open strip above the stacking guides.
+    translate([83.0, 174.0, 0]) device_id_placard();
+}
+
 module cutlist_echo() {
     echo(str("PFFRAME|", frame_outer.x, "|", frame_outer.y, "|",
              frame_outer.z, "|", frame_clear.x, "|", frame_clear.y, "|",
@@ -1723,6 +1744,8 @@ if (PART == "assembly") {
     print_group_device_label();
 } else if (PART == "print_group_after_splice_overnight") {
     print_group_after_splice_overnight();
+} else if (PART == "print_group_independent_completion") {
+    print_group_independent_completion();
 } else if (PART == "cutlist") {
     cutlist_echo();
     cube([0.1, 0.1, 0.1]);
