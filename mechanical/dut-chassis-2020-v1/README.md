@@ -470,6 +470,7 @@ quantities and in their intended bed orientation:
 | 07 gantry splice shells | 4 identical 0.20 mm-clearance external shells | Two outside bridges per fixture-upright joint |
 | 08 gantry splice bars | 4 identical 80 mm double-nut internal bars | Two channel reinforcements per fixture-upright joint |
 | 09 after-splice overnight | rear-carrier top/bottom fit pair + 24 accepted M3 nut bars + 4 gantry indexing plates | One support-free bed of splice-independent work; intentionally excludes production splice parts |
+| 10 independent completion | 8 stacking guides + 4 fixture spacers + 2 placard risers + 2 placard spacers + 1 device placard | Remaining first-node hardware independent of collar and rear-link fit results; no duplicates from Group 09 |
 
 Every production group is support-free as exported and fits the conservative
 247 × 207 mm Prusa printable envelope. Keep Group 05 separate for appearance,
@@ -552,6 +553,11 @@ connectors cap immediate production at two nodes.
    For an unattended run, `print-group-09-after-splice-overnight.stl` safely
    combines that fit pair with Groups 02 and 06; it does not include any
    production splice, stacking, cosmetic-label, or unvalidated link-set parts.
+   After Group 09, `print-group-10-independent-completion.stl` combines the
+   remaining collar-independent first-node hardware: Group 04, Group 05, and
+   the fixture/placard subset of Group 03. Do not separately reprint those
+   groups. The second top/bottom rear-link pair and all production splice
+   parts remain gated by their respective physical fit results.
 4. Before sawing a complete node, measure all six stock sticks and witness one
    cut to confirm the conservative 3.2 mm kerf allowance. The fullest selected
    pattern consumes 963.6 mm. Mark all finished dimensions and waste sides;
