@@ -15,7 +15,7 @@ SMART_PRO_SOURCE := trimui-smart-pro-cradle.scad
 
 .PHONY: all lint validate validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
-	validate-preview-export preview clean
+	validate-preview-export validate-presentation-split preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 	$(BUILD)/trimui-smart-pro-carrier.stl \
@@ -34,6 +34,18 @@ $(BUILD)/trimui-smart-pro-s-carrier.stl: $(SMART_PRO_S_SOURCE) $(FAMILY_SOURCE) 
 $(BUILD)/trimui-smart-pro-carrier.stl: $(SMART_PRO_SOURCE) $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
 		-D 'SHOW_DEVICE=false' -D 'SHOW_HOOKS=false' $<
+
+# Presentation-only material split.  These touching, non-overlapping meshes
+# preserve the slicer's white-to-black layer change in higher-level renders;
+# neither is a replacement for the unified production carrier above.
+$(BUILD)/trimui-smart-pro-family-carrier-body.stl: $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_body"' $<
+
+$(BUILD)/trimui-smart-pro-labels.stl: $(SMART_PRO_SOURCE) $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
+
+$(BUILD)/trimui-smart-pro-s-labels.stl: $(SMART_PRO_S_SOURCE) $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/j-hook.stl: $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="hook"' $<
@@ -144,10 +156,23 @@ validate-preview-export: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 		$(CHECKS)/smart-pro-assembly-export.stl
 	@echo 'preview_export_guard=pass models=smart_pro_s,smart_pro ghosts=excluded'
 
+validate-presentation-split: $(BUILD)/trimui-smart-pro-family-carrier-body.stl \
+	$(BUILD)/trimui-smart-pro-labels.stl \
+	$(BUILD)/trimui-smart-pro-s-labels.stl \
+	$(CHECKS)/smart-pro-unlabelled.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--equivalent-to $(CHECKS)/smart-pro-unlabelled.stl \
+		$(BUILD)/trimui-smart-pro-family-carrier-body.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 247 --max-y 200 --max-z 4.4 \
+		$(BUILD)/trimui-smart-pro-labels.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 247 --max-y 200 --max-z 4.4 \
+		$(BUILD)/trimui-smart-pro-s-labels.stl
+	@echo 'presentation_split_guard=pass body=off-white labels=variant-specific-black boundary_z=3.2mm'
+
 validate: lint all $(BUILD)/trimui-smart-pro-family-installed-hooks.stl \
 	validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
-	validate-preview-export
+	validate-preview-export validate-presentation-split
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \

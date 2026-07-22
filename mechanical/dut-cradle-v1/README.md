@@ -35,6 +35,8 @@ device outline, service aperture, safe contacts, and optical center may change.
 |---|---|
 | `assembly` | Default presentation; exports only the carrier because DUT, safe windows, and installed hooks are background geometry |
 | `plate` | Carrier plate |
+| `presentation_body` | Presentation-only carrier body below the filament-change layer; do not print separately |
+| `presentation_labels` | Presentation-only title, border, and orientation labels for the selected wrapper; do not print separately |
 | `hook` | One J-hook, already laid on its strong printing side |
 | `hook_set` | Six production J-hooks arranged for one print |
 | `installed_hooks` | Presentation-only mesh of all six hooks at their installed carrier coordinates; do not print |
@@ -77,7 +79,10 @@ published as a GitHub Actions artifact on relevant pushes. The main outputs are
 and `j-hook-set.stl`. The additional
 `trimui-smart-pro-family-installed-hooks.stl` is a presentation asset consumed
 by the parent chassis model; it is deliberately separate from both production
-carrier exports and must not be sent to a slicer.
+carrier exports and must not be sent to a slicer. The generated family carrier
+body plus base/S label meshes are likewise presentation-only: together they
+preserve the white-body/black-label material split in imported chassis views,
+while each production carrier remains one unified printable STL.
 
 Validation parses every repository OpenSCAD source, renders all meshes, proves
 the 247 × 200 mm plate fits the conservative 247 × 207 mm Prusa envelope,
@@ -147,5 +152,8 @@ windows if that reading is wrong—nothing in the reusable hook changes.
   layers, and 20–30% gyroid. Use the slicer's preview to verify the 1.2 mm-deep
   anti-rotation channels and 1.2 mm raised labels survive the selected layer
   height.
+- Print the carrier body in white, then change to black at `plate_thickness`
+  (3.2 mm), where the raised title, title-box border, and TOP/BOTTOM markings
+  begin. The OpenSCAD assembly uses this same datum for its material colors.
 - The large central aperture is intentional: it saves material, improves
   airflow, keeps the open PCB/wiring untouched, and permits rear service.
