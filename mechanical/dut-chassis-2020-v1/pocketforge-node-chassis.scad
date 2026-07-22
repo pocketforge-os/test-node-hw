@@ -10,8 +10,8 @@
  *   placard_spacer, placard_spacer_pair,
  *   plate_spacer, plate_spacer_set, registration_tab,
  *   registration_tab_set, gantry_joint_plate, gantry_joint_plate_set,
- *   rail_fit_coupon, m3_twist_nut, m3_twist_nut_set,
- *   m3_twist_nut_coupon, print_group_calibration,
+ *   rail_fit_coupon, m3_slide_nut, m3_slide_nut_set,
+ *   m3_slide_nut_coupon, print_group_calibration,
  *   print_group_gantry_hardware, print_group_plate_mounts,
  *   print_group_stacking_guides, print_group_device_label, cutlist
  */
@@ -149,25 +149,32 @@ m5_clearance = 5.5;
 spacer_size = [18.0, 14.0];
 spacer_corner_radius = 2.0;
 plate_spacer_thickness = plate_mount_gap;
+// Physical ABS coupon result with the lab's 0.8 mm nozzle: 6.43 mm slides
+// cleanly; 6.63 mm is too large and 6.23 mm is the loose snap-in fallback.
 slot_key_clearance = 0.30;
 slot_key_width = extrusion_slot_opening - slot_key_clearance;
 slot_key_height = 1.2;
 
-// Ordinary metal M3 nut captured inside a light-duty ABS twist-in carrier.
-// The 5.6 x 2.8 mm pocket is the already print-validated DUT-hook fit for the
-// owner's measured 5.36 x 2.30 mm nuts.  The carrier passes through the slot
-// lengthwise, then wedges behind the lips as its screw is turned clockwise.
+// Ordinary metal M3 nut captured inside a chunky, end-loaded ABS slider.  The
+// 5.6 x 2.8 mm pocket is the already print-validated DUT-hook fit for the
+// owner's measured 5.36 x 2.30 mm nuts.  Unlike the retired twist-in carrier,
+// this body is deliberately too wide to pass through the slot mouth: slide it
+// into the open end of an extrusion before the frame end is assembled.
 m3_nut_measured_across_flats = 5.36;
 m3_nut_measured_thickness = 2.30;
 m3_nut_pocket_across_flats = 5.60;
 m3_nut_pocket_depth = 2.80;
-m3_twist_nut_length = 10.90;
-m3_twist_nut_width = 6.45;
-m3_twist_nut_height = 4.40;
-m3_twist_nut_radius = 0.65;
-m3_twist_nut_coupon_widths = [6.25, 6.45, 6.60];
-m3_twist_nut_set_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
-m3_twist_nut_set_columns = 9;
+m3_slide_nut_length = 18.0;
+m3_slide_nut_width = 10.0;
+m3_slide_nut_height = 4.40;
+m3_slide_nut_corner_chamfer = 1.6;
+m3_slide_nut_coupon_widths = [9.6, 10.0, 10.4];
+m3_slide_nut_coupon_copies = 2;
+m3_slide_nut_required_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
+m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
+m3_slide_nut_set_count = m3_slide_nut_required_count +
+                         m3_slide_nut_spare_count;
+m3_slide_nut_set_columns = 8;
 
 // One identical flat ABS indexing plate locates every gantry-upright endpoint
 // against an outer depth rail.  Perpendicular rear keys enter the two slots to
@@ -249,19 +256,23 @@ assert(m3_nut_pocket_across_flats >= m3_nut_measured_across_flats,
        "M3 nut pocket must not be smaller than the measured nut");
 assert(m3_nut_pocket_depth >= m3_nut_measured_thickness,
        "M3 nut pocket must not be shallower than the measured nut");
-assert(m3_twist_nut_width < extrusion_slot_opening,
-       "Twist-in carrier must pass through the measured slot mouth");
-assert(m3_twist_nut_length > extrusion_slot_opening &&
-       m3_twist_nut_length < extrusion_slot_pocket_width,
-       "Twist-in carrier must bridge the mouth but fit the slot pocket");
-assert(m3_twist_nut_height <
+assert(m3_slide_nut_width > extrusion_slot_opening,
+       "End-loaded carrier must be wider than the slot mouth");
+assert(m3_slide_nut_width < extrusion_slot_pocket_width,
+       "End-loaded carrier must fit inside the measured slot pocket");
+assert(min(m3_slide_nut_coupon_widths) > extrusion_slot_opening &&
+       max(m3_slide_nut_coupon_widths) < extrusion_slot_pocket_width,
+       "Every end-loaded coupon width must bridge the mouth and fit pocket");
+assert(len(m3_slide_nut_coupon_widths) * m3_slide_nut_coupon_copies >= 6,
+       "Small ABS fit batches need at least six parts for inter-part cooling");
+assert(m3_slide_nut_height <
        extrusion_slot_depth - extrusion_slot_lip_depth,
-       "Twist-in carrier must fit behind the measured slot lip");
-assert(sqrt(pow(m3_twist_nut_length, 2) +
-            pow(m3_twist_nut_width, 2)) > extrusion_slot_pocket_width,
-       "Twist-in carrier diagonal must wedge before it can free-spin");
-assert(m3_twist_nut_height - m3_nut_pocket_depth >= 1.6,
-       "Twist-in carrier needs at least four 0.4 mm floor layers");
+       "End-loaded carrier must fit behind the measured slot lip");
+assert(m3_slide_nut_length >=
+       m3_nut_pocket_across_flats + 2 * 4.0,
+       "End-loaded carrier needs chunky walls around the metal nut");
+assert(m3_slide_nut_height - m3_nut_pocket_depth >= 1.6,
+       "End-loaded carrier needs at least four 0.4 mm floor layers");
 assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
        gantry_joint_plate_size.y >
        2 * gantry_joint_hole_offset + gantry_joint_slot.y,
@@ -736,63 +747,80 @@ module rail_fit_coupon() {
             rail_fit_key(widths[index], str(widths[index]));
 }
 
-// Light-duty, post-assembly alternative to buying M3 roll-in T-nuts.  Print
-// with the solid outer face on the bed and press the ordinary M3 nut into the
-// upward-facing hex pocket.  Pre-thread the screw one turn, then install with
-// the solid face toward the slot opening and the nut pocket toward the rail's
-// center. Insert the 6.45 mm side through the mouth parallel to the rail and
-// turn clockwise until the body wedges.
-// The metal nut carries the thread; the ABS body is only an anti-rotation and
-// bearing carrier.  Never use this part for frame, stacking, or safety loads.
-module m3_twist_nut_carrier(body_width = m3_twist_nut_width,
+// Chunky end-loaded alternative to buying M3 sliding T-nuts.  The broad
+// octagonal footprint has no spring ears, printed threads, or sub-nozzle
+// details.  Its chamfered ends ease insertion from a cut rail end, while its
+// width bridges the 6.73 mm mouth and remains inside the measured 12.15 mm
+// pocket.  Print solid face down and pull an ordinary M3 nut into the upward
+// hex pocket with a screw and washer.  The open pocket faces the rail center.
+// The metal nut carries the thread; ABS only spreads light clamp load.  Never
+// use this part for frame, stacking, or safety loads.
+module m3_slide_nut_outline(body_width) {
+    length = m3_slide_nut_length;
+    chamfer = min(m3_slide_nut_corner_chamfer,
+                  min(length, body_width) / 3);
+    polygon([[-length / 2 + chamfer, -body_width / 2],
+             [ length / 2 - chamfer, -body_width / 2],
+             [ length / 2, -body_width / 2 + chamfer],
+             [ length / 2,  body_width / 2 - chamfer],
+             [ length / 2 - chamfer,  body_width / 2],
+             [-length / 2 + chamfer,  body_width / 2],
+             [-length / 2,  body_width / 2 - chamfer],
+             [-length / 2, -body_width / 2 + chamfer]]);
+}
+
+module m3_slide_nut_carrier(body_width = m3_slide_nut_width,
                             witness_notches = 0) {
-    assert(body_width < extrusion_slot_opening,
-           "Coupon carrier must pass through the slot mouth");
-    assert(sqrt(pow(m3_twist_nut_length, 2) + pow(body_width, 2)) >
-           extrusion_slot_pocket_width,
-           "Coupon carrier must wedge in the slot pocket");
+    assert(body_width > extrusion_slot_opening,
+           "Coupon slider must bridge the measured slot mouth");
+    assert(body_width < extrusion_slot_pocket_width,
+           "Coupon slider must fit inside the measured slot pocket");
 
     difference() {
-        linear_extrude(height = m3_twist_nut_height)
-            pf_rounded_rect_2d([m3_twist_nut_length, body_width],
-                               m3_twist_nut_radius);
+        linear_extrude(height = m3_slide_nut_height)
+            m3_slide_nut_outline(body_width);
 
         translate([0, 0, -epsilon])
             cylinder(d = m3_clearance,
-                     h = m3_twist_nut_height + 2 * epsilon,
+                     h = m3_slide_nut_height + 2 * epsilon,
                      $fn = 28);
 
         translate([0, 0,
-                   m3_twist_nut_height - m3_nut_pocket_depth])
+                   m3_slide_nut_height - m3_nut_pocket_depth])
             cylinder(d = m3_nut_pocket_across_flats / cos(30),
                      h = m3_nut_pocket_depth + epsilon,
                      $fn = 6);
 
-        // One, two, or three edge notches identify coupon widths without
-        // depending on tiny text surviving the lab's 0.8 mm nozzle.
+        // Large end scallops survive a 0.8 mm nozzle.  One/two/three marks
+        // identify 9.6/10.0/10.4 mm coupon widths after parts leave the bed.
         if (witness_notches > 0)
             for (notch = [0 : witness_notches - 1])
-                translate([m3_twist_nut_length / 2 - 0.6,
-                           -1.6 + notch * 1.6,
-                           m3_twist_nut_height - 0.8])
-                    rotate([0, 90, 0])
-                        cylinder(d = 1.2, h = 1.2, $fn = 16);
+                translate([m3_slide_nut_length / 2,
+                           (notch - (witness_notches - 1) / 2) * 2.4,
+                           -epsilon])
+                    cylinder(d = 2.0,
+                             h = m3_slide_nut_height + 2 * epsilon,
+                             $fn = 20);
     }
 }
 
-module m3_twist_nut_carrier_set() {
-    for (index = [0 : m3_twist_nut_set_count - 1])
-        translate([(index % m3_twist_nut_set_columns) * 14.0,
-                   floor(index / m3_twist_nut_set_columns) * 10.0,
+module m3_slide_nut_carrier_set() {
+    for (index = [0 : m3_slide_nut_set_count - 1])
+        translate([(index % m3_slide_nut_set_columns) * 21.0,
+                   floor(index / m3_slide_nut_set_columns) * 13.0,
                    0])
-            m3_twist_nut_carrier();
+            m3_slide_nut_carrier();
 }
 
-module m3_twist_nut_fit_coupon() {
-    for (index = [0 : len(m3_twist_nut_coupon_widths) - 1])
-        translate([index * 14.0, 0, 0])
-            m3_twist_nut_carrier(m3_twist_nut_coupon_widths[index],
-                                 index + 1);
+// Six pieces are intentional: ABS gets enough inter-part cooling time even
+// when the only requested output is a tiny fit test.  Two copies of each width
+// also provide a repeatability check instead of trusting one lucky print.
+module m3_slide_nut_fit_coupon() {
+    for (index = [0 : len(m3_slide_nut_coupon_widths) - 1])
+        for (copy = [0 : m3_slide_nut_coupon_copies - 1])
+            translate([index * 22.0, copy * 14.0, 0])
+                m3_slide_nut_carrier(m3_slide_nut_coupon_widths[index],
+                                     index + 1);
 }
 
 // Ready-to-slice production groups.  Every object is already in its
@@ -801,12 +829,12 @@ module m3_twist_nut_fit_coupon() {
 // replacement parts and fit-test iteration.
 module print_group_calibration() {
     rail_fit_coupon();
-    translate([0, 26.0, 0]) m3_twist_nut_fit_coupon();
+    translate([0, 30.0, 0]) m3_slide_nut_fit_coupon();
 }
 
 module print_group_gantry_hardware() {
     gantry_joint_plate_set();
-    translate([0, 82.0, 0]) m3_twist_nut_carrier_set();
+    translate([0, 82.0, 0]) m3_slide_nut_carrier_set();
 }
 
 module print_group_plate_mounts() {
@@ -897,12 +925,12 @@ if (PART == "assembly") {
     registration_tab_set();
 } else if (PART == "rail_fit_coupon") {
     rail_fit_coupon();
-} else if (PART == "m3_twist_nut") {
-    m3_twist_nut_carrier();
-} else if (PART == "m3_twist_nut_set") {
-    m3_twist_nut_carrier_set();
-} else if (PART == "m3_twist_nut_coupon") {
-    m3_twist_nut_fit_coupon();
+} else if (PART == "m3_slide_nut") {
+    m3_slide_nut_carrier();
+} else if (PART == "m3_slide_nut_set") {
+    m3_slide_nut_carrier_set();
+} else if (PART == "m3_slide_nut_coupon") {
+    m3_slide_nut_fit_coupon();
 } else if (PART == "print_group_calibration") {
     print_group_calibration();
 } else if (PART == "print_group_gantry_hardware") {

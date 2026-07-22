@@ -24,9 +24,9 @@ PRINTABLES := \
 	$(BUILD)/stacking-registration-tab.stl \
 	$(BUILD)/stacking-registration-tab-set.stl \
 	$(BUILD)/rail-fit-coupon.stl \
-	$(BUILD)/m3-twist-nut-carrier.stl \
-	$(BUILD)/m3-twist-nut-carrier-set.stl \
-	$(BUILD)/m3-twist-nut-fit-coupon.stl \
+	$(BUILD)/m3-slide-nut-carrier.stl \
+	$(BUILD)/m3-slide-nut-carrier-set.stl \
+	$(BUILD)/m3-slide-nut-fit-coupon.stl \
 	$(BUILD)/print-group-01-calibration.stl \
 	$(BUILD)/print-group-02-gantry-hardware.stl \
 	$(BUILD)/print-group-03-plate-mounts.stl \
@@ -86,14 +86,14 @@ $(BUILD)/stacking-registration-tab-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD
 $(BUILD)/rail-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="rail_fit_coupon"' $<
 
-$(BUILD)/m3-twist-nut-carrier.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_twist_nut"' $<
+$(BUILD)/m3-slide-nut-carrier.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_slide_nut"' $<
 
-$(BUILD)/m3-twist-nut-carrier-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_twist_nut_set"' $<
+$(BUILD)/m3-slide-nut-carrier-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_slide_nut_set"' $<
 
-$(BUILD)/m3-twist-nut-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_twist_nut_coupon"' $<
+$(BUILD)/m3-slide-nut-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_slide_nut_coupon"' $<
 
 $(BUILD)/print-group-01-calibration.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
@@ -152,15 +152,15 @@ $(BUILD)/layout-stacked.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall -D 'PART="stacked_assembly"' \
 		-D 'PLATE_DETAIL="proxy"' $<
 
-$(BUILD)/layout-m3-twist-nut.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+$(BUILD)/layout-m3-slide-nut.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
 		--projection=ortho --viewall --camera=18,-24,18,0,0,1 \
-		-D 'PART="m3_twist_nut"' $<
+		-D 'PART="m3_slide_nut"' $<
 
-$(BUILD)/layout-m3-twist-nut-coupon.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+$(BUILD)/layout-m3-slide-nut-coupon.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,700 \
 		--projection=ortho --viewall --camera=35,-40,25,14,0,1 \
-		-D 'PART="m3_twist_nut_coupon"' $<
+		-D 'PART="m3_slide_nut_coupon"' $<
 
 $(BUILD)/layout-gantry-joint-plate.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
@@ -194,8 +194,8 @@ $(BUILD)/layout-print-group-05.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
-	$(BUILD)/layout-m3-twist-nut.png \
-	$(BUILD)/layout-m3-twist-nut-coupon.png \
+	$(BUILD)/layout-m3-slide-nut.png \
+	$(BUILD)/layout-m3-slide-nut-coupon.png \
 	$(BUILD)/layout-gantry-joint-plate.png \
 	$(BUILD)/layout-print-group-01.png \
 	$(BUILD)/layout-print-group-02.png \
@@ -246,12 +246,28 @@ validate-nut-carrier-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-nut-carrier.log; \
 		mesh=$(BUILD)/invalid-nut-carrier.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
-			-D 'PART="m3_twist_nut"' \
-			-D 'm3_twist_nut_width=6.8' $(SOURCE) >$$log 2>&1; then \
+			-D 'PART="m3_slide_nut"' \
+			-D 'm3_slide_nut_width=12.2' $(SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: oversized carrier was not rejected' >&2; exit 1; \
 		fi; \
-	grep -q 'pass through the measured slot mouth' $$log; \
-	echo 'nut_carrier_guard=pass rejected_width=6.8mm'
+	grep -q 'fit inside the measured slot pocket' $$log; \
+	narrow_log=$(BUILD)/invalid-nut-carrier-narrow.log; \
+		narrow_mesh=$(BUILD)/invalid-nut-carrier-narrow.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$narrow_mesh \
+			-D 'PART="m3_slide_nut"' \
+			-D 'm3_slide_nut_width=6.7' $(SOURCE) >$$narrow_log 2>&1; then \
+			echo 'ERROR: pull-through carrier was not rejected' >&2; exit 1; \
+		fi; \
+	grep -q 'wider than the slot mouth' $$narrow_log; \
+	tall_log=$(BUILD)/invalid-nut-carrier-tall.log; \
+		tall_mesh=$(BUILD)/invalid-nut-carrier-tall.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$tall_mesh \
+			-D 'PART="m3_slide_nut"' \
+			-D 'm3_slide_nut_height=4.9' $(SOURCE) >$$tall_log 2>&1; then \
+			echo 'ERROR: over-depth carrier was not rejected' >&2; exit 1; \
+		fi; \
+	grep -q 'fit behind the measured slot lip' $$tall_log; \
+	echo 'nut_carrier_guard=pass rejected_widths=6.7,12.2mm rejected_height=4.9mm'
 
 validate-gantry-travel-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-gantry-travel.log; \
@@ -300,15 +316,15 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/stacking-registration-tab-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 40 --max-z 10 \
 		$(BUILD)/rail-fit-coupon.stl
-	$(PYTHON) $(BOUNDS) --max-x 15 --max-y 10 --max-z 6 \
-		$(BUILD)/m3-twist-nut-carrier.stl
-	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 30 --max-z 6 \
-		$(BUILD)/m3-twist-nut-carrier-set.stl
-	$(PYTHON) $(BOUNDS) --max-x 45 --max-y 10 --max-z 6 \
-		$(BUILD)/m3-twist-nut-fit-coupon.stl
-	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 55 --max-z 10 \
+	$(PYTHON) $(BOUNDS) --max-x 20 --max-y 12 --max-z 6 \
+		$(BUILD)/m3-slide-nut-carrier.stl
+	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 55 --max-z 6 \
+		$(BUILD)/m3-slide-nut-carrier-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 65 --max-y 26 --max-z 6 \
+		$(BUILD)/m3-slide-nut-fit-coupon.stl
+	$(PYTHON) $(BOUNDS) --max-x 80 --max-y 65 --max-z 10 \
 		$(BUILD)/print-group-01-calibration.stl
-	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 135 --max-z 8 \
+	$(PYTHON) $(BOUNDS) --max-x 175 --max-y 155 --max-z 8 \
 		$(BUILD)/print-group-02-gantry-hardware.stl
 	$(PYTHON) $(BOUNDS) --max-x 150 --max-y 90 --max-z 8 \
 		$(BUILD)/print-group-03-plate-mounts.stl

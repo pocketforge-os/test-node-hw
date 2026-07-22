@@ -97,7 +97,7 @@ Each printed plate mounts to its own complete 2020 gantry: two vertical uprights
 bridge the outer top/bottom depth rails, and two horizontal crossbars bridge
 those uprights. Four broad, flat keyed ABS plates locate each gantry's upright
 ends. Every indexing plate uses two M3 screws, wide washers, and printed
-twist-in carriers holding ordinary metal M3 nuts—one fastener in the outer
+end-loaded sliders holding ordinary metal M3 nuts—one fastener in the outer
 depth rail and one in the upright. Perpendicular printed keys engage both slots
 to keep the joint square while tightening. These parts position payload only;
 the outer aluminum cube and metal corner connectors remain the stack load path.
@@ -131,46 +131,63 @@ vertical-key end against the gantry upright; rotate the same physical part
 thread, while the ABS plate provides alignment and bearing area.
 
 The spacer keys use the measured 6.73 mm mouth with 0.30 mm nominal clearance.
-Print the rail coupon before the full spacer set because extrusion, ABS
-shrinkage, and the 0.8 mm nozzle all affect the resulting fit.
+The owner physically selected the resulting 6.43 mm key with the production
+ABS/0.8 mm-nozzle process: it slides exactly as intended. The 6.63 mm coupon is
+rejected as too large, while 6.23 mm remains a loose snap-in fallback. Reprint
+the rail coupon only after changing material, nozzle, extrusion supplier, or
+dimensional compensation.
 
-### Captured M3 twist-in nut carrier—light duty only
+### Captured M3 end-loaded nut slider—light duty only
 
 The gantries, fixture, cradle, and placard need 26 M3 slot fasteners per
-chassis. The printable carrier reuses the ordinary metal M3 nut already
-validated in the
-DUT-hook system: owner-measured 5.36 mm across flats by 2.30 mm thick, in the
-proven 5.60 x 2.80 mm printed pocket. The metal nut carries the thread. The ABS
-body locates it and spreads light plate/placard clamp load behind the rail
-opening.
+chassis. The initial twist-in coupon was physically rejected: its miniature
+wedging geometry did not reproduce reliably with the lab's 0.8 mm nozzle. The
+replacement is an 18 mm long, chamfer-ended slider with no spring ears or
+printed threads. It is intentionally too wide for the 6.73 mm mouth and must
+enter from a cut rail end before the corner connector closes that end.
+
+The slider reuses the ordinary metal M3 nut already validated in the DUT-hook
+system: owner-measured 5.36 mm across flats by 2.30 mm thick, in the proven
+5.60 × 2.80 mm printed pocket. The metal nut carries the thread. The ABS body
+locates it and spreads light plate/placard clamp load behind the rail opening.
+As a dimensional cross-check, OpenBuilds specifies its commercial V-slot
+drop-in nut as 10 × 6 × 4.4 mm; this design keeps the same 4.4 mm depth, expands
+the rail-axis body to 18 mm, and uses 10 mm only as the center of a width test
+against the delivered 12.15 mm pocket rather than assuming the commercial part
+is interchangeable:
+<https://us.openbuilds.com/drop-in-tee-nuts/>.
 
 Installation:
 
-1. Print `m3-twist-nut-fit-coupon.stl` flat, with the nut pockets upward.
-2. Press an ordinary M3 nut into each pocket and pre-thread an M3 screw by one
-   turn as a handle.
-3. Turn it so the solid face points outward toward the plate and the open nut
-   pocket points inward toward the center of the extrusion. This lets the
-   metal nut pull against the carrier's four-layer floor when tightened.
-4. Insert the carrier's narrow side through the rail opening with its long
-   direction parallel to the rail.
-5. Turn the screw clockwise until the carrier wedges; do not force it through
-   the opening or use a powered driver.
-6. Select the widest carrier that inserts and turns freely. One, two, and
-   three edge notches identify 6.25, 6.45, and 6.60 mm bodies respectively.
+1. Print `m3-slide-nut-fit-coupon.stl` flat, with the nut pockets upward. It
+   contains six independent parts—two copies each of three widths—so a tiny
+   ABS test gets enough inter-part cooling time and checks repeatability.
+2. One, two, and three large end scallops identify the 9.6, 10.0, and 10.4 mm
+   widths respectively; identification does not depend on fine embossed text.
+3. Pull an ordinary M3 nut into each pocket with an M3 screw and washer, then
+   leave the screw threaded one turn as a handle.
+4. With a rail end still open, orient the solid face toward the slot mouth and
+   the open nut pocket toward the extrusion center. Slide each sample along the
+   pocket; never hammer or force it.
+5. Select the widest pair that both travel freely along the real rail. Confirm
+   that neither can pull outward through the slot mouth, then tighten one under
+   a sacrificial washer by hand to verify clamping.
+6. Before installing end connectors, load every required slider plus spares
+   into the exact rail face where it will be used. A slider cannot move between
+   the four independent slots after assembly.
 
-The production default is the two-notch 6.45 mm body. A set STL contains 26
-carriers: 16 for the eight gantry indexing plates, eight for the two payload
-plates, and two for the placard rail mounts. These parts are explicitly
-forbidden for outer-frame joints, stacking registration, anti-lift retention,
-or other safety/structural loads.
+The production default is the two-scallop 10.0 mm body pending this physical
+coupon. A production set contains 32 sliders: 26 required plus six spares to
+preload before rail ends are closed. Park spares loosely under a screw/washer
+or an installed bracket so they do not rattle into inaccessible positions.
+These parts are explicitly forbidden for outer-frame joints, stacking
+registration, anti-lift retention, or other safety/structural loads.
 
-A slicer pause could embed each metal nut and close a printed roof above it,
-but that is intentionally not the v1 production route: a 26-part set would
-require 26 correctly oriented insertions during one pause and would make a bad
-nut difficult to replace. The open 5.60 mm pocket retains the already proven
-bolt-and-washer pull-in fit. Any later embedded-nut variant should use its own
-slightly wider coupon-calibrated pocket rather than weakening this known fit.
+The initial version keeps the hex pocket open and pressure-fits the nut because
+that interface is already print-proven and a damaged nut remains replaceable.
+A future pause-and-encapsulate variant is possible, but it needs a separately
+calibrated, slightly wider nut cavity and a documented slicer pause layer; do
+not insert metal into this open-pocket STL mid-print.
 
 ### Optical stack
 
@@ -255,8 +272,8 @@ Generated files live under `build/` and are not committed:
 - `layout-front.png` — operator/front label and stack-registration view;
 - `layout-stacked.png` — two-frame registration and metal load-path proof;
 - `layout-gantry-joint-plate.png` — eight-part flat gantry interface set;
-- `layout-m3-twist-nut.png` / `layout-m3-twist-nut-coupon.png` — enlarged
-  carrier and three-fit coupon views;
+- `layout-m3-slide-nut.png` / `layout-m3-slide-nut-coupon.png` — enlarged
+  slider and six-piece, three-width coupon views;
 - `layout-print-group-01.png` through `layout-print-group-05.png` — the five
   ready-to-slice production batches;
 - `cut-list.csv` and `cut-list.md` — geometry-derived pieces and 1 m stock plan;
@@ -267,8 +284,8 @@ Generated files live under `build/` and are not committed:
 - `placard-spacer.stl` / `placard-spacer-pair.stl`;
 - `stacking-registration-tab.stl` / `stacking-registration-tab-set.stl`;
 - `rail-fit-coupon.stl`;
-- `m3-twist-nut-carrier.stl` / `m3-twist-nut-carrier-set.stl`;
-- `m3-twist-nut-fit-coupon.stl`;
+- `m3-slide-nut-carrier.stl` / `m3-slide-nut-carrier-set.stl`;
+- `m3-slide-nut-fit-coupon.stl`;
 - `print-group-01-calibration.stl` through
   `print-group-05-device-label.stl`.
 
@@ -285,8 +302,8 @@ quantities and in their intended bed orientation:
 
 | Group | Contents | Why separate |
 |---|---|---|
-| 01 calibration | rail-key coupon + three-width M3 carrier coupon | Print and physically select fits before production batches |
-| 02 gantry hardware | 8 gantry joint plates + 26 M3 nut carriers | One complete light-duty gantry/plate fastener set |
+| 01 calibration | rail-key coupon + six end-loaded M3 sliders (two each at three widths) | Print and physically select fits before production batches |
+| 02 gantry hardware | 8 gantry joint plates + 32 M3 nut sliders | 26 required light-duty fasteners plus six preloaded spares |
 | 03 plate mounts | 8 plate spacers + 2 placard straps + 2 placard spacers | All keyed payload and label mounting interfaces |
 | 04 stacking guides | 8 registration tabs | Separate safety/stacking hardware inspection |
 | 05 device label | 1 `TrimUI Smart Pro` placard | Allows a different color or a slicer filament change for raised text |
@@ -319,7 +336,8 @@ validation checks it byte-for-byte against the committed sheet.
 - 8 flat keyed gantry indexing plates (four per gantry);
 - 8 stacking registration tabs for every chassis that will support another;
 - 1 rail fit coupon before the other printed interfaces;
-- 1 M3 twist-nut fit coupon, then 26 selected M3 twist-nut carriers;
+- 1 six-piece M3 slide-nut fit coupon, then 32 selected M3 nut sliders (26
+  required plus six preloaded spares);
 - 8 B08C9Q2TGW zinc three-way corner connectors and their supplied M4 x 5 mm
   set screws;
 - 8 B08D6T9CGN concealed zinc L-connectors and 16 supplied M5 x 6 mm set
@@ -348,7 +366,8 @@ connectors, and four more L-connectors.
    conservative 3.2 mm solely for offcut accounting.
 3. Dry-fit one three-way connector and confirm that a 360 mm rail plus two
    connector bodies produces 400 mm outside-to-outside.
-4. Print both rail-interface coupons and record the selected key/carrier.
+4. Print the six-piece end-loaded slider coupon and record the selected width;
+   the separate rail key is already physically selected at 6.43 mm.
 5. Perform one unpowered C270 framing check before the first populated stack.
 
 After those are recorded, regenerate the cut plan, print the rail coupon, dry
