@@ -214,11 +214,13 @@ Installation:
    into the exact rail face where it will be used. A bar cannot move between
    the four independent slots after assembly.
 
-The provisional production profile is 11.75 mm at the bearing face and
-6.36 mm at the deep face until this bracketing physical coupon selects 6.26 or
-6.46 mm. A production set contains 32 bars: 26 required plus six spares to
-preload before rail ends are closed. Park spares loosely under a screw/washer
-or an installed bracket so they do not rattle into inaccessible positions.
+The owner physically accepted both third-pass candidates on 2026-07-22. The
+wider two-scallop candidate is therefore the production profile: 11.75 mm at
+the bearing face and 6.46 mm at the deep face. It preserves the most material
+while still travelling freely in the delivered rail. A production set
+contains 32 bars: 26 required plus six spares to preload before rail ends are
+closed. Park spares loosely under a screw/washer or an installed bracket so
+they do not rattle into inaccessible positions.
 These parts are explicitly forbidden for outer-frame joints, stacking
 registration, anti-lift retention, or other safety/structural loads.
 
@@ -363,12 +365,12 @@ quantities and in their intended bed orientation:
 
 | Group | Contents | Why separate |
 |---|---|---|
-| 01 calibration | rail-key coupon + two 30 mm M3 nut bars bracketing dimension F | Print and physically select fits before production batches |
+| 01 calibration | rail-key coupon + two 30 mm M3 nut bars bracketing dimension F | Physically accepted; retain for a material, nozzle, or extrusion change |
 | 02 gantry hardware | 8 gantry joint plates | Flat keyed payload-gantry interfaces |
 | 03 plate mounts | 8 plate spacers + 2 placard straps + 2 placard spacers | All keyed payload and label mounting interfaces |
 | 04 stacking guides | 8 registration tabs | Separate safety/stacking hardware inspection |
 | 05 device label | 1 `TrimUI Smart Pro` placard | Allows a different color or a slicer filament change for raised text |
-| 06 M3 nut bars | 32 selected full-channel nut bars | 26 required light-duty fasteners plus six preloaded spares |
+| 06 M3 nut bars | 32 selected 11.75 / 6.46 mm full-channel nut bars | 26 required light-duty fasteners plus six preloaded spares |
 | 07 gantry splices | 8 identical clamshell halves | Forms four offcut-upright joints after the fit coupon is selected |
 
 Every production group is support-free as exported and fits the conservative
@@ -430,16 +432,35 @@ leaving four L-connectors and four full-length extrusions spare. A third
 complete node would need four more stock extrusions, eight more three-way
 connectors, and four more L-connectors.
 
-## Measurements needed before cutting
+## Current fabrication order
+
+1. Print `gantry-upright-splice-fit-coupon.stl` broad-face down, without
+   supports. Select the smallest clearance whose two matching shells both fit
+   the delivered rail without force. This is the final unresolved printed
+   rail-interface coupon.
+2. Group 06 is now production-ready and may run immediately after the coupon:
+   it contains 32 physically selected 11.75 / 6.46 mm M3 nut bars. Groups
+   02–05 are also independent of the splice result. Do not print Group 07 until
+   the splice coupon selects its external clearance.
+3. At the saw, make exactly one 360.00 mm finished verification rail. Fit a
+   three-way connector to each end and measure outside-to-outside. Do not
+   batch-cut unless that assembly is 400.00 mm within the chosen workshop
+   tolerance.
+4. After the connector-length check passes, follow `CUT_LIST.md`: each of eight
+   1 m bars yields 360 + 360 + 180 mm finished pieces. Mark the waste side of
+   every line; the 3.20 mm kerf value is conservative stock accounting, not an
+   amount to subtract from a finished dimension.
+
+## Measurements needed before final assembly
 
 1. Actual length of one nominal 1000 mm stick.
 2. Actual saw-blade kerf, when convenient: the widest carbide-tooth width or
    the value printed on the blade, not feed speed. Until then CAD uses a
    conservative 3.2 mm solely for offcut accounting.
-3. Dry-fit one three-way connector and confirm that a 360 mm rail plus two
+3. Dry-fit two three-way connectors and confirm that a 360 mm rail plus two
    connector bodies produces 400 mm outside-to-outside.
-4. Print the two-piece end-loaded nut-bar coupon and record the selected width;
-   the separate rail key is already physically selected at 6.43 mm.
+4. The rail key and end-loaded nut bar are physically selected: 6.43 mm key,
+   11.75 mm bearing face, and 6.46 mm deep face.
 5. Print the six-piece gantry-clamshell coupon and record the selected external
    clearance before producing the eight full shell halves.
 6. Perform one unpowered C270 framing check before the first populated stack.

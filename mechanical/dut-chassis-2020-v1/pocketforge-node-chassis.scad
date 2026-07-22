@@ -187,7 +187,10 @@ m3_nut_pocket_across_flats = 5.60;
 m3_nut_pocket_depth = 2.80;
 m3_slide_nut_length = 30.0;
 m3_slide_nut_bearing_width = 11.75;
-m3_slide_nut_deep_width = 6.36;
+// Owner physically accepted both pass-3 bars on 2026-07-22. The wider,
+// two-scallop 6.46 mm candidate is the production profile because it retains
+// the most bearing material while still travelling freely in the real rail.
+m3_slide_nut_deep_width = 6.46;
 m3_slide_nut_height = 4.40;
 m3_slide_nut_flange_height = 0.40;
 m3_slide_nut_corner_chamfer = 3.0;
