@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import math
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -65,6 +66,76 @@ def parse_echoes(path: Path) -> tuple[list[tuple[str, int, float, str]], float, 
     return rows, stock_length, kerf, topology
 
 
+def _first_fit_decreasing(
+    cuts: list[Cut], stock_length: float, kerf: float
+) -> list[StockBar]:
+    """Return a fast, deterministic upper bound for exact packing."""
+    bars: list[StockBar] = []
+    for cut in cuts:
+        destination = next((bar for bar in bars if bar.fits(cut)), None)
+        if destination is None:
+            destination = StockBar(len(bars) + 1, stock_length, kerf)
+            bars.append(destination)
+        destination.cuts.append(cut)
+    return bars
+
+
+def _pack_into_count(
+    cuts: list[Cut], stock_length: float, kerf: float, count: int
+) -> list[StockBar] | None:
+    """Find an exact packing into ``count`` bars with symmetry pruning."""
+    bars = [StockBar(number + 1, stock_length, kerf) for number in range(count)]
+    consumed = [0.0] * count
+    item_sizes = [cut.length + kerf for cut in cuts]
+    remaining_sizes = [0.0] * (len(cuts) + 1)
+    for index in range(len(cuts) - 1, -1, -1):
+        remaining_sizes[index] = remaining_sizes[index + 1] + item_sizes[index]
+
+    failed_states: set[tuple[int, tuple[float, ...]]] = set()
+
+    def search(index: int) -> bool:
+        if index == len(cuts):
+            return True
+        remaining_capacity = sum(stock_length - value for value in consumed)
+        if remaining_sizes[index] > remaining_capacity + 1e-9:
+            return False
+
+        canonical_fill = tuple(
+            sorted((round(value, 6) for value in consumed), reverse=True)
+        )
+        state = (index, canonical_fill)
+        if state in failed_states:
+            return False
+
+        cut = cuts[index]
+        item_size = item_sizes[index]
+        seen_consumed: set[float] = set()
+        for bar_index in range(count):
+            current = round(consumed[bar_index], 6)
+            if current in seen_consumed:
+                continue
+            seen_consumed.add(current)
+            if consumed[bar_index] + item_size > stock_length + 1e-9:
+                continue
+
+            bars[bar_index].cuts.append(cut)
+            consumed[bar_index] += item_size
+            if search(index + 1):
+                return True
+            consumed[bar_index] -= item_size
+            bars[bar_index].cuts.pop()
+
+            # Every empty bar is equivalent; trying a second one only repeats
+            # the same state under another stock-bar number.
+            if current == 0.0:
+                break
+
+        failed_states.add(state)
+        return False
+
+    return bars if search(0) else None
+
+
 def pack(rows: list[tuple[str, int, float, str]], stock_length: float, kerf: float) -> list[StockBar]:
     cuts = [
         Cut(name, length, note, ordinal)
@@ -73,19 +144,25 @@ def pack(rows: list[tuple[str, int, float, str]], stock_length: float, kerf: flo
     ]
     cuts.sort(key=lambda cut: (-cut.length, cut.name, cut.ordinal))
 
-    bars: list[StockBar] = []
     for cut in cuts:
         if cut.length + kerf > stock_length + 1e-9:
             raise SystemExit(
                 f"cutlist=fail reason=piece_exceeds_stock piece={cut.name} "
                 f"length={cut.length:.2f} stock={stock_length:.2f}"
             )
-        destination = next((bar for bar in bars if bar.fits(cut)), None)
-        if destination is None:
-            destination = StockBar(len(bars) + 1, stock_length, kerf)
-            bars.append(destination)
-        destination.cuts.append(cut)
-    return bars
+
+    # First-fit is a useful upper bound but misses the seven-stick chassis
+    # pattern. Search from the volume lower bound upward so the checked-in cut
+    # list proves the stock minimum instead of depending on heuristic order.
+    upper = _first_fit_decreasing(cuts, stock_length, kerf)
+    lower_count = math.ceil(
+        sum(cut.length + kerf for cut in cuts) / stock_length - 1e-12
+    )
+    for count in range(lower_count, len(upper) + 1):
+        exact = _pack_into_count(cuts, stock_length, kerf, count)
+        if exact is not None:
+            return exact
+    return upper
 
 
 def write_csv(path: Path, rows: list[tuple[str, int, float, str]]) -> None:
@@ -120,8 +197,8 @@ def write_markdown(
         f"- Kerf allowance: {kerf_total:.2f} mm",
         f"- Remaining stock/offcuts: {waste_total:.2f} mm",
         "",
-        "Do not batch-cut until one physical three-way connector dry-fit confirms the finished rail length. "
-        "The stock assignment deliberately pairs two 360 mm pieces with one 180 mm gantry-upright half per bar; kerf therefore controls the guaranteed short-piece yield.",
+        "Finished lengths are measured aluminum cuts. The delivered three-way connector was physically checked: a 360.00 mm vertical post with caps at both ends measures approximately 368 mm outside-to-outside. "
+        "The assignment below is an exact bounded packing, not first-fit order; retain the listed kerf reserve and mark every finished cut before sawing.",
         "",
         "## Finished pieces",
         "",

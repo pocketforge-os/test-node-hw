@@ -28,6 +28,9 @@ PRINTABLES := \
 	$(BUILD)/gantry-upright-splice-shell.stl \
 	$(BUILD)/gantry-upright-splice-shell-pair.stl \
 	$(BUILD)/gantry-upright-splice-shell-set.stl \
+	$(BUILD)/gantry-upright-splice-internal-bar.stl \
+	$(BUILD)/gantry-upright-splice-internal-bar-set.stl \
+	$(BUILD)/gantry-upright-splice-reinforced-test-set.stl \
 	$(BUILD)/gantry-upright-splice-fit-coupon.stl \
 	$(BUILD)/stacking-registration-tab.stl \
 	$(BUILD)/stacking-registration-tab-set.stl \
@@ -41,7 +44,8 @@ PRINTABLES := \
 	$(BUILD)/print-group-04-stacking-guides.stl \
 	$(BUILD)/print-group-05-device-label.stl \
 	$(BUILD)/print-group-06-m3-nut-bars.stl \
-	$(BUILD)/print-group-07-gantry-splices.stl
+	$(BUILD)/print-group-07-gantry-splices.stl \
+	$(BUILD)/print-group-08-gantry-splice-internal-bars.stl
 
 .NOTPARALLEL:
 
@@ -99,6 +103,18 @@ $(BUILD)/gantry-upright-splice-shell-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUI
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="gantry_splice_shell_set"' $<
 
+$(BUILD)/gantry-upright-splice-internal-bar.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_internal_bar"' $<
+
+$(BUILD)/gantry-upright-splice-internal-bar-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_internal_bar_set"' $<
+
+$(BUILD)/gantry-upright-splice-reinforced-test-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_splice_test_set"' $<
+
 $(BUILD)/gantry-upright-splice-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="gantry_splice_coupon"' $<
@@ -148,6 +164,10 @@ $(BUILD)/print-group-06-m3-nut-bars.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 $(BUILD)/print-group-07-gantry-splices.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
 		-D 'PART="print_group_gantry_splices"' $<
+
+$(BUILD)/print-group-08-gantry-splice-internal-bars.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="print_group_gantry_splice_bars"' $<
 
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
@@ -229,8 +249,13 @@ $(BUILD)/layout-gantry-joint-plate.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 
 $(BUILD)/layout-gantry-splice.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
-		--projection=ortho --viewall --camera=110,-100,80,0,0,5 \
-		-D 'PART="gantry_splice_shell_pair"' $<
+		--projection=ortho --viewall --camera=140,-135,90,35,0,3 \
+		-D 'PART="gantry_splice_test_set"' $<
+
+$(BUILD)/layout-gantry-splice-installed.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
+		--projection=ortho --viewall --camera=145,-135,105,0,0,13 \
+		-D 'PART="gantry_splice_installed_preview"' $<
 
 $(BUILD)/layout-gantry-splice-coupon.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
@@ -272,6 +297,11 @@ $(BUILD)/layout-print-group-07.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall \
 		-D 'PART="print_group_gantry_splices"' $<
 
+$(BUILD)/layout-print-group-08.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,800 \
+		--projection=ortho --viewall \
+		-D 'PART="print_group_gantry_splice_bars"' $<
+
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-assembly-smart-pro-s.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
@@ -280,6 +310,7 @@ preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-m3-slide-nut-end.png \
 	$(BUILD)/layout-gantry-joint-plate.png \
 	$(BUILD)/layout-gantry-splice.png \
+	$(BUILD)/layout-gantry-splice-installed.png \
 	$(BUILD)/layout-gantry-splice-coupon.png \
 	$(BUILD)/layout-print-group-01.png \
 	$(BUILD)/layout-print-group-02.png \
@@ -287,7 +318,8 @@ preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-print-group-04.png \
 	$(BUILD)/layout-print-group-05.png \
 	$(BUILD)/layout-print-group-06.png \
-	$(BUILD)/layout-print-group-07.png
+	$(BUILD)/layout-print-group-07.png \
+	$(BUILD)/layout-print-group-08.png
 
 $(BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/cutlist.csg \
@@ -313,11 +345,11 @@ validate-cut-list-sync: cutlist
 validate-margin-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-margin.log; mesh=$(BUILD)/invalid-margin.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="placard_spacer"' \
-			-D 'frame_outer=[380,380,380]' $(SOURCE) >$$log 2>&1; then \
+			-D 'structural_x_length=316' $(SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: undersized routing margin was not rejected' >&2; exit 1; \
 		fi; \
-	grep -q 'routing margin fell below 50 mm' $$log; \
-	echo 'routing_margin_guard=pass frame=380mm'
+	grep -q 'routing margin fell below 35 mm' $$log; \
+	echo 'routing_margin_guard=pass rejected_structural_x=316mm'
 
 validate-fov-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-fov.log; mesh=$(BUILD)/invalid-fov.stl; \
@@ -410,6 +442,12 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/gantry-upright-splice-shell-pair.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 150 --max-z 14 \
 		$(BUILD)/gantry-upright-splice-shell-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 85 --max-y 13 --max-z 6 \
+		$(BUILD)/gantry-upright-splice-internal-bar.stl
+	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 60 --max-z 6 \
+		$(BUILD)/gantry-upright-splice-internal-bar-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 180 --max-y 85 --max-z 14 \
+		$(BUILD)/gantry-upright-splice-reinforced-test-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 90 --max-y 70 --max-z 14 \
 		$(BUILD)/gantry-upright-splice-fit-coupon.stl
 	$(PYTHON) $(BOUNDS) --max-x 30 --max-y 80 --max-z 6 \
@@ -438,11 +476,16 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/print-group-06-m3-nut-bars.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 150 --max-z 14 \
 		$(BUILD)/print-group-07-gantry-splices.stl
+	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 60 --max-z 6 \
+		$(BUILD)/print-group-08-gantry-splice-internal-bars.stl
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
-	grep -q '^plate_gantry_upright_half,8,180.00,1440.00' $(BUILD)/cut-list.csv
-	@test "$$(grep -c ',4,360.00,1440.00,' $(BUILD)/cut-list.csv)" -eq 4
-	grep -q 'Stock bars required: \*\*8\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_outputs=26 stock_bars=8'
+	grep -q '^outer_width_rail,4,318.00,1272.00' $(BUILD)/cut-list.csv
+	grep -q '^outer_depth_rail,4,350.00,1400.00' $(BUILD)/cut-list.csv
+	grep -q '^plate_gantry_upright_half,8,160.00,1280.00' $(BUILD)/cut-list.csv
+	grep -q '^plate_gantry_crossbar,4,318.00,1272.00' $(BUILD)/cut-list.csv
+	@test "$$(grep -c ',4,318.00,1272.00,' $(BUILD)/cut-list.csv)" -eq 2
+	grep -q 'Stock bars required: \*\*7\*\*' $(BUILD)/cut-list.md
+	@echo 'chassis_validation=pass printable_outputs=30 stock_bars=7'
 
 clean:
 	rm -rf $(BUILD)
