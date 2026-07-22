@@ -8,8 +8,9 @@
  *   assembly, stacked_assembly, placard, placard_riser, placard_riser_pair,
  *   placard_spacer, placard_spacer_pair,
  *   plate_spacer, plate_spacer_set, registration_tab,
- *   registration_tab_set, rail_fit_coupon, m3_twist_nut,
- *   m3_twist_nut_set, m3_twist_nut_coupon, cutlist
+ *   registration_tab_set, gantry_joint_plate, gantry_joint_plate_set,
+ *   rail_fit_coupon, m3_twist_nut, m3_twist_nut_set,
+ *   m3_twist_nut_coupon, cutlist
  */
 
 include <lib/pf-2020.scad>;
@@ -53,13 +54,21 @@ stock_length = 1000.0;
 cut_kerf = 3.2;
 
 // Eight 20 mm three-way end connectors occupy the outer corners, so all 12
-// perimeter rails terminate between corner blocks.  Four movable face
-// crossbars use concealed 26 x 26 mm zinc L-connectors at their ends.
+// perimeter rails terminate between corner blocks.  Two independent internal
+// plate gantries each add two vertical uprights and two horizontal crossbars.
+// Keeping the uprights in the same X planes as the outer depth rails makes the
+// gantry joints flat and leaves every extrusion cut at one common length.
 structural_x_length = frame_outer.x - 2 * profile_size;
 structural_y_length = frame_outer.y - 2 * profile_size;
 structural_z_length = frame_outer.z - 2 * profile_size;
-front_crossbar_y = profile_size + profile_size / 2;
-rear_crossbar_y = frame_outer.y - profile_size - profile_size / 2;
+gantry_upright_length = structural_z_length;
+gantry_crossbar_length = structural_x_length;
+gantry_upright_x = [profile_size / 2,
+                    frame_outer.x - profile_size / 2];
+gantry_y_limits = [profile_size + profile_size / 2,
+                   frame_outer.y - profile_size - profile_size / 2];
+fixture_gantry_y = gantry_y_limits.x;
+cradle_gantry_y = gantry_y_limits.y;
 
 // ---- Existing plate interfaces and optical registration -----------------
 fixture_plate_size = [200.0, 247.0, 3.2];
@@ -73,17 +82,18 @@ cradle_slot_inset = [19.0, 8.0];
 optical_datum = [frame_outer.x / 2, 202.0]; // [X, Z]
 plate_mount_gap = 5.0;
 
-// fixture_plane_y is the plate's rear/base face.  The component face points
-// toward -Y and stays 5 mm behind the inner face of the front crossbars.
-fixture_plane_y = 2 * profile_size + plate_mount_gap +
+// Each optical plane follows its gantry Y datum.  The fixture plate sits just
+// behind the rear face of its crossbars; the DUT carrier sits just ahead of
+// the front face of its crossbars.  Moving either entire gantry therefore
+// preserves its plate mount while changing camera-to-DUT distance.
+fixture_plane_y = fixture_gantry_y + profile_size / 2 + plate_mount_gap +
                   fixture_plate_size.z;
 fixture_origin = [optical_datum.x - fixture_webcam_datum.x,
                   fixture_plane_y,
                   optical_datum.y - fixture_webcam_datum.y];
 
-// The DUT carrier's base face sits 5 mm in front of the rear crossbars.  Its
-// hooks/device face -Y toward the webcam.
-cradle_plane_y = frame_outer.y - 2 * profile_size - plate_mount_gap;
+// The DUT carrier's hooks/device face -Y toward the webcam.
+cradle_plane_y = cradle_gantry_y - profile_size / 2 - plate_mount_gap;
 cradle_origin = [optical_datum.x - cradle_screen_datum.x,
                  cradle_plane_y,
                  optical_datum.y - cradle_screen_datum.y];
@@ -145,7 +155,20 @@ m3_twist_nut_width = 6.45;
 m3_twist_nut_height = 4.40;
 m3_twist_nut_radius = 0.65;
 m3_twist_nut_coupon_widths = [6.25, 6.45, 6.60];
-m3_twist_nut_set_count = 10; // 8 plate mounts + 2 placard rail mounts
+m3_twist_nut_set_count = 26; // 16 gantry + 8 plate + 2 placard interfaces
+m3_twist_nut_set_columns = 9;
+
+// One identical flat ABS indexing plate locates every gantry-upright endpoint
+// against an outer depth rail.  Perpendicular rear keys enter the two slots to
+// square the joint; ordinary M3 screws and captured metal nuts provide clamp
+// force.  These light-duty plates position payload gantries only and never
+// enter the outer-frame or stacking load path.
+gantry_joint_plate_size = [36.0, 44.0, 4.8];
+gantry_joint_corner_radius = 3.0;
+gantry_joint_hole_offset = 10.0;
+gantry_joint_slot = [8.0, m3_clearance];
+gantry_joint_key_length = 18.0;
+gantry_joint_key_height = slot_key_height;
 
 placard_size = [166.0, 38.0, 3.2];
 placard_corner_radius = 4.0;
@@ -156,6 +179,10 @@ placard_spacer_thickness = 3.0;
 placard_riser_size = [18.0, 58.0, 4.0];
 placard_riser_hole_offset = 18.0;
 placard_riser_slot = [10.0, m3_clearance];
+placard_rail_mount_z = frame_outer.z - profile_size / 2;
+placard_center_z = placard_rail_mount_z -
+                   2 * placard_riser_hole_offset;
+placard_riser_center_z = (placard_rail_mount_z + placard_center_z) / 2;
 
 registration_tab_size = [24.0, 72.0, 4.0];
 registration_above_frame = 12.0;
@@ -182,6 +209,24 @@ assert(min(fixture_margins) >= 50.0,
        str("Fixture routing margin fell below 50 mm: ", fixture_margins));
 assert(min(cradle_margins) >= 50.0,
        str("Cradle routing margin fell below 50 mm: ", cradle_margins));
+assert(fixture_gantry_y >= gantry_y_limits.x &&
+       fixture_gantry_y <= gantry_y_limits.y,
+       str("Fixture gantry Y is outside legal travel: ", fixture_gantry_y));
+assert(cradle_gantry_y >= gantry_y_limits.x &&
+       cradle_gantry_y <= gantry_y_limits.y,
+       str("Cradle gantry Y is outside legal travel: ", cradle_gantry_y));
+assert(fixture_gantry_y + profile_size <= cradle_gantry_y,
+       "Fixture and cradle gantries must not intersect");
+assert(min(fixture_crossbar_z) >= profile_size + profile_size / 2 &&
+       max(fixture_crossbar_z) <= frame_outer.z -
+                                  profile_size - profile_size / 2,
+       str("Fixture crossbar Z is outside gantry travel: ",
+           fixture_crossbar_z));
+assert(min(cradle_crossbar_z) >= profile_size + profile_size / 2 &&
+       max(cradle_crossbar_z) <= frame_outer.z -
+                                 profile_size - profile_size / 2,
+       str("Cradle crossbar Z is outside gantry travel: ",
+           cradle_crossbar_z));
 assert(optical_distance > 0, "Camera must remain in front of the DUT");
 assert(camera_assumed_hfov >= required_hfov,
        str("Estimated horizontal FOV is too narrow; required ", required_hfov));
@@ -206,6 +251,13 @@ assert(sqrt(pow(m3_twist_nut_length, 2) +
        "Twist-in carrier diagonal must wedge before it can free-spin");
 assert(m3_twist_nut_height - m3_nut_pocket_depth >= 1.6,
        "Twist-in carrier needs at least four 0.4 mm floor layers");
+assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
+       gantry_joint_plate_size.y >
+       2 * gantry_joint_hole_offset + gantry_joint_slot.y,
+       "Gantry joint plate must surround both keyed fastener interfaces");
+assert(placard_center_z + placard_size.y / 2 <
+       frame_outer.z - profile_size,
+       "Rear placard must remain completely below the top rear rail");
 assert(registration_above_frame > 0 &&
        registration_above_frame < profile_size,
        "Registration guide must engage, but not exceed, one upper post width");
@@ -244,13 +296,24 @@ module outer_frame() {
                 extrusion(structural_y_length, "y");
 }
 
-module plate_crossbars() {
-    for (z = fixture_crossbar_z)
-        translate([profile_size, front_crossbar_y, z])
-            extrusion(structural_x_length, "x");
-    for (z = cradle_crossbar_z)
-        translate([profile_size, rear_crossbar_y, z])
-            extrusion(structural_x_length, "x");
+module plate_gantry(y, crossbar_zs) {
+    // Uprights share the X planes of the outer depth rails.  This lets one
+    // flat keyed plate bridge each T joint while the complete gantry slides
+    // anywhere along the depth-rail slots.
+    for (x = gantry_upright_x)
+        translate([x, y, profile_size])
+            extrusion(gantry_upright_length, "z");
+
+    // Concealed metal L-connectors let each crossbar slide vertically on the
+    // uprights; plate fasteners then slide horizontally in these crossbars.
+    for (z = crossbar_zs)
+        translate([profile_size, y, z])
+            extrusion(gantry_crossbar_length, "x");
+}
+
+module plate_gantries() {
+    plate_gantry(fixture_gantry_y, fixture_crossbar_z);
+    plate_gantry(cradle_gantry_y, cradle_crossbar_z);
 }
 
 module three_way_end_connector_proxy(position) {
@@ -260,7 +323,7 @@ module three_way_end_connector_proxy(position) {
         translate(position) cube([profile_size, profile_size, profile_size]);
 }
 
-module inside_l_connector_proxy(y, z, right = false) {
+module gantry_l_connector_proxy(y, z, right = false) {
     // BLCCLOY B08D6T9CGN: concealed zinc 26 x 26 x 9.5 mm L connector.
     connector_length = 26.0;
     connector_width = 9.5;
@@ -290,7 +353,8 @@ module inside_l_connector_proxy(y, z, right = false) {
 
 module connector_proxies() {
     outer_corner_connector_proxies();
-    crossbar_connector_proxies();
+    gantry_crossbar_connector_proxies();
+    gantry_joint_plate_previews();
 }
 
 module outer_corner_connector_proxies() {
@@ -300,13 +364,39 @@ module outer_corner_connector_proxies() {
                 three_way_end_connector_proxy([x, y, z]);
 }
 
-module crossbar_connector_proxies() {
+module gantry_crossbar_connector_proxies() {
     for (z = fixture_crossbar_z)
         for (right = [false, true])
-            inside_l_connector_proxy(front_crossbar_y, z, right);
+            gantry_l_connector_proxy(fixture_gantry_y, z, right);
     for (z = cradle_crossbar_z)
         for (right = [false, true])
-            inside_l_connector_proxy(rear_crossbar_y, z, right);
+            gantry_l_connector_proxy(cradle_gantry_y, z, right);
+}
+
+module installed_gantry_joint_plate(y, top = false, right = false) {
+    joint_z = top ? frame_outer.z - profile_size : profile_size;
+    keyed_depth = gantry_joint_plate_size.z + gantry_joint_key_height;
+    face_x = right ? frame_outer.x - profile_size : profile_size;
+
+    // Local X -> world Y, local Y -> world Z.  The top instance reverses
+    // local Y so the horizontal key always enters the outer depth rail and
+    // the vertical key always enters the gantry upright.  Local +Z points
+    // toward the aluminum, leaving the broad plate in the clear interior.
+    multmatrix([
+        [0, 0, right ? 1 : -1,
+         right ? face_x - keyed_depth : face_x + keyed_depth],
+        [1, 0, 0, y],
+        [0, top ? -1 : 1, 0, joint_z],
+        [0, 0, 0, 1]
+    ]) gantry_joint_plate();
+}
+
+module gantry_joint_plate_previews() {
+    color([0.94, 0.47, 0.10])
+        for (y = [fixture_gantry_y, cradle_gantry_y])
+            for (top = [false, true])
+                for (right = [false, true])
+                    installed_gantry_joint_plate(y, top, right);
 }
 
 module fixture_plate_preview() {
@@ -483,6 +573,49 @@ module placard_riser_pair() {
     translate([ 12, 0, 0]) placard_riser();
 }
 
+module gantry_joint_plate() {
+    total_depth = gantry_joint_plate_size.z + gantry_joint_key_height;
+
+    difference() {
+        union() {
+            linear_extrude(height = gantry_joint_plate_size.z)
+                pf_rounded_rect_2d([gantry_joint_plate_size.x,
+                                    gantry_joint_plate_size.y],
+                                   gantry_joint_corner_radius);
+
+            // Horizontal key locates the outer depth-rail slot.
+            translate([0, -gantry_joint_hole_offset,
+                       gantry_joint_plate_size.z])
+                linear_extrude(height = gantry_joint_key_height)
+                    pf_rounded_rect_2d([gantry_joint_key_length,
+                                        slot_key_width], 1.0);
+
+            // Perpendicular key locates the gantry-upright slot and prevents
+            // the two-screw joint from racking while it is tightened.
+            translate([0, gantry_joint_hole_offset,
+                       gantry_joint_plate_size.z])
+                linear_extrude(height = gantry_joint_key_height)
+                    pf_rounded_rect_2d([slot_key_width,
+                                        gantry_joint_key_length], 1.0);
+        }
+
+        for (y = [-gantry_joint_hole_offset,
+                   gantry_joint_hole_offset])
+            translate([0, y, -epsilon])
+                linear_extrude(height = total_depth + 2 * epsilon)
+                    pf_capsule_2d(gantry_joint_slot.x,
+                                  gantry_joint_slot.y);
+    }
+}
+
+module gantry_joint_plate_set() {
+    for (row = [0, 1])
+        for (column = [0 : 3])
+            translate([column * (gantry_joint_plate_size.x + 6.0),
+                       row * (gantry_joint_plate_size.y + 6.0), 0])
+                gantry_joint_plate();
+}
+
 module registration_tab() {
     difference() {
         linear_extrude(height = registration_tab_size.z)
@@ -539,22 +672,24 @@ module installed_registration_guides() {
 }
 
 module placard_assembly_preview() {
-    // Flat risers bolt to the rear slot at Z=390 and put the placard holes at
-    // Z=426.  Local +Z becomes rearward +Y in both installed parts.
+    // Flat hanging straps bolt to the rear slot at Z=390 and put the placard
+    // holes at Z=354.  The complete sign remains beneath the top rear rail,
+    // faces outward, and never moves with either payload gantry.
     color([0.94, 0.47, 0.10])
         for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
                   frame_outer.x / 2 + placard_hole_spacing / 2])
             translate([x,
                        frame_outer.y + placard_spacer_thickness +
                        placard_riser_size.z,
-                       frame_outer.z + 8.0])
-                rotate([90, 0, 0]) placard_riser();
+                       placard_riser_center_z])
+                rotate([90, 0, 0])
+                    rotate([0, 0, 180]) placard_riser();
 
     color([0.16, 0.28, 0.42])
         translate([frame_outer.x / 2,
                    frame_outer.y + placard_spacer_thickness +
                    placard_riser_size.z,
-                   frame_outer.z + 26.0])
+                   placard_center_z])
             rotate([-90, 0, 0])
                 rotate([0, 0, 180]) rear_id_placard();
     // Contrasting preview overlay; production remains one material/mesh and
@@ -563,7 +698,7 @@ module placard_assembly_preview() {
         translate([frame_outer.x / 2,
                    frame_outer.y + placard_spacer_thickness +
                    placard_riser_size.z + 0.03,
-                   frame_outer.z + 26.0])
+                   placard_center_z])
             rotate([-90, 0, 0])
                 rotate([0, 0, 180])
                     placard_text(placard_text_relief + 0.03);
@@ -640,8 +775,8 @@ module m3_twist_nut_carrier(body_width = m3_twist_nut_width,
 
 module m3_twist_nut_carrier_set() {
     for (index = [0 : m3_twist_nut_set_count - 1])
-        translate([(index % 5) * 14.0,
-                   floor(index / 5) * 10.0,
+        translate([(index % m3_twist_nut_set_columns) * 14.0,
+                   floor(index / m3_twist_nut_set_columns) * 10.0,
                    0])
             m3_twist_nut_carrier();
 }
@@ -660,15 +795,17 @@ module cutlist_echo() {
              "|between three-way end connectors"));
     echo(str("PFCUT|outer_depth_rail|4|", structural_y_length,
              "|between three-way end connectors"));
-    echo(str("PFCUT|plate_crossbar|4|", structural_x_length,
-             "|movable front/rear plate rail"));
+    echo(str("PFCUT|plate_gantry_upright|4|", gantry_upright_length,
+             "|two uprights per independently movable plate gantry"));
+    echo(str("PFCUT|plate_gantry_crossbar|4|", gantry_crossbar_length,
+             "|two height-adjustable crossbars per plate gantry"));
     echo(str("PFSTOCK|", stock_length, "|", cut_kerf,
              "|", join_topology));
 }
 
 module assembly() {
     outer_frame();
-    plate_crossbars();
+    plate_gantries();
     if (SHOW_CONNECTOR_PROXIES) connector_proxies();
     if (SHOW_PLATES) {
         fixture_plate_preview();
@@ -710,6 +847,10 @@ if (PART == "assembly") {
     plate_spacer();
 } else if (PART == "plate_spacer_set") {
     plate_spacer_set();
+} else if (PART == "gantry_joint_plate") {
+    gantry_joint_plate();
+} else if (PART == "gantry_joint_plate_set") {
+    gantry_joint_plate_set();
 } else if (PART == "registration_tab") {
     registration_tab();
 } else if (PART == "registration_tab_set") {

@@ -15,6 +15,8 @@ PRINTABLES := \
 	$(BUILD)/placard-spacer-pair.stl \
 	$(BUILD)/plate-spacer.stl \
 	$(BUILD)/plate-spacer-set.stl \
+	$(BUILD)/gantry-joint-plate.stl \
+	$(BUILD)/gantry-joint-plate-set.stl \
 	$(BUILD)/stacking-registration-tab.stl \
 	$(BUILD)/stacking-registration-tab-set.stl \
 	$(BUILD)/rail-fit-coupon.stl \
@@ -25,7 +27,8 @@ PRINTABLES := \
 .NOTPARALLEL:
 
 .PHONY: all lint preview cutlist validate validate-margin-guard \
-	validate-fov-guard validate-nut-carrier-guard clean
+	validate-fov-guard validate-nut-carrier-guard \
+	validate-gantry-travel-guard clean
 
 all: $(PRINTABLES) cutlist
 
@@ -55,6 +58,13 @@ $(BUILD)/plate-spacer.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 
 $(BUILD)/plate-spacer-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_spacer_set"' $<
+
+$(BUILD)/gantry-joint-plate.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="gantry_joint_plate"' $<
+
+$(BUILD)/gantry-joint-plate-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="gantry_joint_plate_set"' $<
 
 $(BUILD)/stacking-registration-tab.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="registration_tab"' $<
@@ -111,10 +121,16 @@ $(BUILD)/layout-m3-twist-nut-coupon.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 		--projection=ortho --viewall --camera=35,-40,25,14,0,1 \
 		-D 'PART="m3_twist_nut_coupon"' $<
 
+$(BUILD)/layout-gantry-joint-plate.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
+		--projection=ortho --viewall --camera=55,-70,55,42,22,1 \
+		-D 'PART="gantry_joint_plate_set"' $<
+
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-rear.png $(BUILD)/layout-stacked.png \
 	$(BUILD)/layout-m3-twist-nut.png \
-	$(BUILD)/layout-m3-twist-nut-coupon.png
+	$(BUILD)/layout-m3-twist-nut-coupon.png \
+	$(BUILD)/layout-gantry-joint-plate.png
 
 $(BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/cutlist.csg \
@@ -155,8 +171,28 @@ validate-nut-carrier-guard: | $(BUILD)
 	grep -q 'pass through the measured slot mouth' $$log; \
 	echo 'nut_carrier_guard=pass rejected_width=6.8mm'
 
+validate-gantry-travel-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-gantry-travel.log; \
+		mesh=$(BUILD)/invalid-gantry-travel.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="gantry_joint_plate"' \
+			-D 'fixture_gantry_y=20' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: out-of-range gantry was not rejected' >&2; exit 1; \
+		fi; \
+	grep -q 'Fixture gantry Y is outside legal travel' $$log; \
+	collision_log=$(BUILD)/invalid-gantry-collision.log; \
+		collision_mesh=$(BUILD)/invalid-gantry-collision.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$collision_mesh \
+			-D 'PART="gantry_joint_plate"' \
+			-D 'fixture_gantry_y=200' -D 'cradle_gantry_y=210' \
+			$(SOURCE) >$$collision_log 2>&1; then \
+			echo 'ERROR: intersecting gantries were not rejected' >&2; exit 1; \
+		fi; \
+	grep -q 'gantries must not intersect' $$collision_log; \
+	echo 'gantry_guards=pass rejected_y=20mm rejected_overlap=10mm'
+
 validate: lint all preview validate-margin-guard validate-fov-guard \
-	validate-nut-carrier-guard
+	validate-nut-carrier-guard validate-gantry-travel-guard
 	$(PYTHON) $(BOUNDS) --max-x 180 --max-y 60 --max-z 6 \
 		$(BUILD)/rear-id-placard.stl
 	$(PYTHON) $(BOUNDS) --max-x 30 --max-y 70 --max-z 6 \
@@ -171,6 +207,10 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/placard-spacer-pair.stl
 	$(PYTHON) $(BOUNDS) --max-x 120 --max-y 60 --max-z 8 \
 		$(BUILD)/plate-spacer-set.stl
+	$(PYTHON) $(BOUNDS) --max-x 40 --max-y 50 --max-z 8 \
+		$(BUILD)/gantry-joint-plate.stl
+	$(PYTHON) $(BOUNDS) --max-x 170 --max-y 100 --max-z 8 \
+		$(BUILD)/gantry-joint-plate-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 30 --max-y 80 --max-z 6 \
 		$(BUILD)/stacking-registration-tab.stl
 	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 170 --max-z 6 \
@@ -179,14 +219,14 @@ validate: lint all preview validate-margin-guard validate-fov-guard \
 		$(BUILD)/rail-fit-coupon.stl
 	$(PYTHON) $(BOUNDS) --max-x 15 --max-y 10 --max-z 6 \
 		$(BUILD)/m3-twist-nut-carrier.stl
-	$(PYTHON) $(BOUNDS) --max-x 70 --max-y 20 --max-z 6 \
+	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 30 --max-z 6 \
 		$(BUILD)/m3-twist-nut-carrier-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 45 --max-y 10 --max-z 6 \
 		$(BUILD)/m3-twist-nut-fit-coupon.stl
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
-	@test "$$(grep -c ',4,360.00,1440.00,' $(BUILD)/cut-list.csv)" -eq 4
-	grep -q 'Stock bars required: \*\*8\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass printable_parts=13 stock_bars=8'
+	@test "$$(grep -c ',4,360.00,1440.00,' $(BUILD)/cut-list.csv)" -eq 5
+	grep -q 'Stock bars required: \*\*10\*\*' $(BUILD)/cut-list.md
+	@echo 'chassis_validation=pass printable_parts=15 stock_bars=10'
 
 clean:
 	rm -rf $(BUILD)

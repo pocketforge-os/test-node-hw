@@ -1,9 +1,9 @@
 # PocketForge stackable 2020 DUT chassis v1
 
 This project is the mechanical **standard rack** around one PocketForge test
-node. It holds the camera/electronics fixture at the front and the DUT carrier
-at the rear, on a shared optical axis, inside a stackable 20 × 20 mm aluminum
-extrusion chassis.
+node. It holds the camera/electronics fixture and DUT carrier on two independent
+three-axis positioning gantries, aligned to one optical axis, inside a stackable
+20 × 20 mm aluminum extrusion chassis.
 
 The initial frame is a true **400 × 400 × 400 mm external cube**. With 20 mm
 posts, each face has a 360 × 360 mm clear opening. That leaves at least 50 mm
@@ -13,8 +13,10 @@ of routing/service margin around both existing printed plates:
 - TrimUI Smart Pro carrier: 247 × 200 mm.
 
 The 400 mm value is a named parameter, not a magic cut dimension. The selected
-three-way end connectors occupy the eight 20 mm corner cubes, making every
-perimeter rail and plate crossbar the same provisional 360 mm finished length.
+three-way end connectors occupy the eight 20 mm corner cubes. Keeping the four
+gantry uprights in the same side planes as the outer depth rails makes every
+perimeter rail, gantry upright, and gantry crossbar the same provisional
+360 mm finished length.
 Do not batch-cut extrusion until one physical connector is dry-fitted. Kerf
 and actual stock length should be recorded for inventory accuracy, but neither
 blocks two 360 mm pieces fitting comfortably within each nominal 1 m stick.
@@ -72,11 +74,13 @@ The default `three_way_end_corners_B08C9Q2TGW` topology uses:
 | Vertical rail | 4 | 360 mm | Between lower/upper three-way connectors |
 | Width rail | 4 | 360 mm | Between left/right three-way connectors |
 | Depth rail | 4 | 360 mm | Between front/rear three-way connectors |
-| Plate crossbar | 4 | 360 mm | Two front and two rear |
+| Plate-gantry upright | 4 | 360 mm | Two per independently movable gantry |
+| Plate-gantry crossbar | 4 | 360 mm | Two height-adjustable bars per gantry |
 
-Eight BLCCLOY B08C9Q2TGW zinc-alloy three-way connectors close the perimeter
-corners. Eight BLCCLOY B08D6T9CGN concealed zinc L-connectors attach the four
-plate crossbars. Their supplied M4/M5 set screws carry the structural load.
+Eight BLCCLOY B08C9Q2TGW zinc-alloy three-way connectors and their M4 set
+screws close the perimeter corners. Eight BLCCLOY B08D6T9CGN concealed zinc
+L-connectors and their M5 set screws attach the four gantry crossbars to the
+four gantry uprights.
 Printed 90-degree/three-way frame connectors are intentionally not part of the
 production design: layer adhesion and polymer creep are poor tradeoffs when
 complete DUT nodes may be stacked. If useful later, we can add a printable
@@ -87,23 +91,44 @@ reinforcement after the first dry assembly. They are not required by the
 baseline and should only be added where they do not obstruct a carrier plate,
 cable, or service path.
 
-### Plate mounting without custom-length adapters
+### Three-axis plate gantries
 
-Each printed plate mounts to two horizontal crossbars. The bars meet the front
-or rear corner posts and can move vertically before their metal brackets are
-tightened. Four M3 screws, wide washers, printed twist-in nut carriers with
-ordinary metal M3 nuts, and keyed 5 mm spacers pass through the existing
-top/bottom corner slots.
+Each printed plate mounts to its own complete 2020 gantry: two vertical uprights
+bridge the outer top/bottom depth rails, and two horizontal crossbars bridge
+those uprights. Four broad, flat keyed ABS plates locate each gantry's upright
+ends. Every indexing plate uses two M3 screws, wide washers, and printed
+twist-in carriers holding ordinary metal M3 nuts—one fastener in the outer
+depth rail and one in the upright. Perpendicular printed keys engage both slots
+to keep the joint square while tightening. These parts position payload only;
+the outer aluminum cube and metal corner connectors remain the stack load path.
 
-This gives adjustment in both axes:
+The complete mount adjusts in all three axes:
 
-- the T-nut slides along the 2020 crossbar;
-- the crossbar slides vertically along the corner posts during setup;
+- loosen the eight gantry-end M3 fasteners to slide the complete gantry along
+  the outer depth rails (Y / camera distance);
+- loosen the four concealed zinc L-connectors to slide its two crossbars
+  vertically along the uprights (Z);
+- slide the four plate fasteners along the crossbars (X);
 - the existing elongated plate slot absorbs print and assembly tolerance.
+
+The fixture and DUT gantries are independent. Their default centers are
+30 mm and 370 mm from the front respectively, preserving the validated C270
+framing, and either may move from Y=30 through Y=370 as long as their 20 mm
+extrusion envelopes do not intersect. Plate optical planes derive from those
+gantry positions; CAD rejects an out-of-range or overlapping setup.
 
 There is no 50 mm printed cantilever to measure perfectly or flex under the
 plate. Zip ties remain an excellent emergency/service fallback, but are no
 longer the primary mount.
+
+Print `gantry-joint-plate.stl` with its broad 36 × 44 mm face on the bed and
+the two perpendicular slot keys upward; it needs no support. The eight-part
+set fits comfortably on the Prusa bed. Start with M3 × 12 mm screws and wide
+washers, then select the exact stocked length after the rail/carrier coupon is
+dry-fitted. Install the horizontal-key end against the outer depth rail and the
+vertical-key end against the gantry upright; rotate the same physical part
+180° for a top joint. Tighten by hand only—the captured metal nut provides the
+thread, while the ABS plate provides alignment and bearing area.
 
 The spacer keys use the measured 6.73 mm mouth with 0.30 mm nominal clearance.
 Print the rail coupon before the full spacer set because extrusion, ABS
@@ -111,8 +136,9 @@ shrinkage, and the 0.8 mm nozzle all affect the resulting fit.
 
 ### Captured M3 twist-in nut carrier—light duty only
 
-The fixture, cradle, and placard need ten M3 slot fasteners per chassis. The
-printable carrier reuses the ordinary metal M3 nut already validated in the
+The gantries, fixture, cradle, and placard need 26 M3 slot fasteners per
+chassis. The printable carrier reuses the ordinary metal M3 nut already
+validated in the
 DUT-hook system: owner-measured 5.36 mm across flats by 2.30 mm thick, in the
 proven 5.60 x 2.80 mm printed pocket. The metal nut carries the thread. The ABS
 body locates it and spreads light plate/placard clamp load behind the rail
@@ -133,10 +159,18 @@ Installation:
 6. Select the widest carrier that inserts and turns freely. One, two, and
    three edge notches identify 6.25, 6.45, and 6.60 mm bodies respectively.
 
-The production default is the two-notch 6.45 mm body. A set STL contains ten
-carriers: eight for the two plates and two for the placard rail mounts. These
-parts are explicitly forbidden for frame joints, stacking registration,
-anti-lift retention, or other safety/structural loads.
+The production default is the two-notch 6.45 mm body. A set STL contains 26
+carriers: 16 for the eight gantry indexing plates, eight for the two payload
+plates, and two for the placard rail mounts. These parts are explicitly
+forbidden for outer-frame joints, stacking registration, anti-lift retention,
+or other safety/structural loads.
+
+A slicer pause could embed each metal nut and close a printed roof above it,
+but that is intentionally not the v1 production route: a 26-part set would
+require 26 correctly oriented insertions during one pause and would make a bad
+nut difficult to replace. The open 5.60 mm pocket retains the already proven
+bolt-and-washer pull-in fit. Any later embedded-nut variant should use its own
+slightly wider coupon-calibrated pocket rather than weakening this known fit.
 
 ### Optical stack
 
@@ -151,7 +185,8 @@ full 20 mm margin on each edge, not 20 mm total.
 The C270 fixture keep-out remains the physically measured 71 x 31.55 mm face
 envelope. Logitech's published 72.91 x 31.91 x 66.64 mm dimensions include its
 fixed mounting clip. Final acceptance is a simple unpowered framing check;
-front and rear plate planes remain adjustable parameters.
+both payload planes remain independently adjustable through their gantry Y
+parameters.
 
 ### Stacking registration—not load-bearing printed feet
 
@@ -175,14 +210,16 @@ positively restrain the stack against tipping.
 The rear ID system is deliberately modular:
 
 1. one flat, device-specific 166 × 38 mm raised-letter placard;
-2. two reusable flat riser straps that lift it completely above the top rail;
+2. two reusable flat hanging straps that keep it completely beneath the top
+   rear rail;
 3. two keyed spacers against the rear face of the top-rear 2020 rail.
 
 Each riser uses one M3 screw/washer and captured-nut carrier at the rail, plus
 one M3 screw/nut at the placard. The default `TrimUI Smart Pro` lettering is
 13.5 mm bold with 1.2 mm relief for the lab's 0.8 mm nozzle. Future devices
 change only `DEVICE_LABEL` or add a tiny wrapper; the mounting geometry
-remains shared.
+remains shared. The sign is rear-facing and fixed to the outer frame; it does
+not move when either payload gantry is repositioned.
 
 ## Build, preview, and validate
 
@@ -205,12 +242,14 @@ Generated files live under `build/` and are not committed:
 - `layout-assembly-mesh.png` — existing production plates imported in place;
 - `layout-rear.png` — rear label/stack-registration view;
 - `layout-stacked.png` — two-frame registration and metal load-path proof;
+- `layout-gantry-joint-plate.png` — eight-part flat gantry interface set;
 - `layout-m3-twist-nut.png` / `layout-m3-twist-nut-coupon.png` — enlarged
   carrier and three-fit coupon views;
 - `cut-list.csv` and `cut-list.md` — geometry-derived pieces and 1 m stock plan;
 - `rear-id-placard.stl`;
 - `placard-riser.stl` / `placard-riser-pair.stl`;
 - `plate-spacer.stl` / `plate-spacer-set.stl`;
+- `gantry-joint-plate.stl` / `gantry-joint-plate-set.stl`;
 - `placard-spacer.stl` / `placard-spacer-pair.stl`;
 - `stacking-registration-tab.stl` / `stacking-registration-tab-set.stl`;
 - `rail-fit-coupon.stl`;
@@ -220,15 +259,15 @@ Generated files live under `build/` and are not committed:
 ## Provisional stock plan
 
 At 400 mm outside dimensions and the three-way-end topology, one node requires
-eight 1 m sticks:
+ten 1 m sticks:
 
-- eight sticks: two 360 mm pieces each.
+- ten sticks: two 360 mm pieces each.
 
-All sixteen finished rails are interchangeable 360 mm cuts. Total finished
-extrusion is 5760 mm. With a deliberately conservative 3.2 mm allowance per
-finished cut, the plan retains about 2188.8 mm in useful offcuts. The checked-in
-source—not this prose table—is authoritative; `build/cut-list.md` is regenerated
-on every build.
+All twenty finished rails are interchangeable 360 mm cuts. Total finished
+extrusion is 7200 mm. With a deliberately conservative 3.2 mm allowance per
+finished cut, the plan retains about 2736 mm in useful offcuts. The checked-in
+source—not this prose table—is authoritative; `build/cut-list.md` is
+regenerated on every build.
 
 ## Initial printed/hardware BOM
 
@@ -236,15 +275,17 @@ on every build.
 - 2 placard risers;
 - 2 placard spacers;
 - 8 plate spacers (four per plate);
+- 8 flat keyed gantry indexing plates (four per gantry);
 - 8 stacking registration tabs for every chassis that will support another;
 - 1 rail fit coupon before the other printed interfaces;
-- 1 M3 twist-nut fit coupon, then 10 selected M3 twist-nut carriers;
+- 1 M3 twist-nut fit coupon, then 26 selected M3 twist-nut carriers;
 - 8 B08C9Q2TGW zinc three-way corner connectors and their supplied M4 x 5 mm
   set screws;
 - 8 B08D6T9CGN concealed zinc L-connectors and 16 supplied M5 x 6 mm set
-  screws for the four crossbars;
-- 12 M3 machine screws, 12 ordinary M3 nuts, and wide washers: 8 plate mounts,
-  2 placard rail mounts, and 2 placard-to-riser joints;
+  screws for the four gantry crossbars;
+- 28 M3 machine screws, 28 ordinary M3 nuts, and wide washers: 16 gantry
+  indexing-plate interfaces, 8 payload-plate mounts, 2 placard rail mounts,
+  and 2 placard-to-strap joints;
 - 16 supplied metal M5 T-nuts, M5 screws, and washers for the lower stacking
   registration slots, plus up to 8 more in the upper chassis for optional
   positive locks;
@@ -253,9 +294,10 @@ on every build.
 
 One node consumes all eight three-way connectors from one B08C9Q2TGW kit and
 eight concealed L-connectors. The on-hand 16 three-way connectors, 20 L
-connectors, and 20 one-meter extrusions support two complete nodes, leaving
-four L-connectors and four stock extrusions. A third complete node would still
-need eight more stock extrusions and eight more three-way connectors.
+connectors, and 20 one-meter extrusions support exactly two complete nodes,
+leaving four L-connectors spare and no unallocated full-length extrusion. A
+third complete node would need ten more stock extrusions, eight more three-way
+connectors, and four more L-connectors.
 
 ## Measurements needed before cutting
 
