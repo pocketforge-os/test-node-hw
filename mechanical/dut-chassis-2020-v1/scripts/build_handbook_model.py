@@ -30,8 +30,8 @@ LAYER_MATERIALS = {
     "webcam": ("Webcam", "#1f394d", 0.0, 0.48, 1.0),
     "power-strip": ("Power strip", "#ecece7", 0.0, 0.62, 1.0),
     "placard-holder": ("Placard holder", "#17364f", 0.0, 0.48, 1.0),
-    "placard-insert": ("Placard insert", "#d7a40b", 0.05, 0.42, 1.0),
-    "placard-labels": ("Placard labels", "#17191c", 0.0, 0.55, 1.0),
+    "placard-insert": ("White nameplate body", "#f5f5ed", 0.0, 0.48, 1.0),
+    "placard-labels": ("Black raised labels", "#050505", 0.0, 0.48, 1.0),
     "camera-frustum": ("Camera field of view", "#51bfd4", 0.0, 0.30, 0.18),
 }
 
@@ -147,6 +147,25 @@ def main() -> None:
             "round-trip semantic layer count mismatch: "
             f"{len(round_trip.geometry)} != {len(LAYER_MATERIALS)}"
         )
+    round_trip_materials = {
+        geometry.visual.material.name: list(
+            geometry.visual.material.baseColorFactor
+        )
+        for geometry in round_trip.geometry.values()
+    }
+    expected_nameplate_materials = {
+        "White nameplate body": rgba("#f5f5ed", 1.0),
+        "Black raised labels": rgba("#050505", 1.0),
+    }
+    actual_nameplate_materials = {
+        name: round_trip_materials.get(name)
+        for name in expected_nameplate_materials
+    }
+    if actual_nameplate_materials != expected_nameplate_materials:
+        raise ValueError(
+            "round-trip nameplate material contract changed: "
+            f"{actual_nameplate_materials!r}"
+        )
 
     provenance = {
         "schema": 1,
@@ -167,6 +186,7 @@ def main() -> None:
     print(
         "handbook_model=pass "
         f"layers={len(LAYER_MATERIALS)} "
+        f"nameplate_materials={','.join(sorted(expected_nameplate_materials))!r} "
         f"sha256={provenance['model_sha256']} "
         f"dirty={str(dirty).lower()}"
     )
