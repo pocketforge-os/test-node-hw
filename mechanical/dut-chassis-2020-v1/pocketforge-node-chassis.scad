@@ -860,32 +860,49 @@ module three_way_end_connector_proxy(x_right = false,
     }
 }
 
-module gantry_l_connector_proxy(y, z, right = false) {
+module gantry_l_connector_proxy_shape(down = false) {
     // BLCCLOY B08D6T9CGN: concealed zinc 26 x 26 x 9.5 mm L connector.
     connector_length = 26.0;
     connector_width = 9.5;
     connector_thickness = 3.0;
+
+    color([0.10, 0.10, 0.11]) {
+        translate([0, 0, -connector_width / 2])
+            cube([connector_length, connector_thickness,
+                  connector_width]);
+        translate([-connector_width, 0,
+                   down ? -connector_length + connector_width / 2 :
+                          -connector_width / 2])
+            cube([connector_width, connector_thickness,
+                  connector_length]);
+    }
+
+    // Presentation-only screw heads make the adjustment face and its access
+    // direction readable in the handbook. The production connector remains
+    // represented by the catalog dimensions above.
+    color([0.72, 0.74, 0.77])
+        for (position = [
+            [connector_length / 2, -0.2, 0],
+            [-connector_width / 2, -0.2,
+             (down ? -1 : 1) *
+             (connector_length - connector_width) / 2]
+        ])
+            translate(position)
+                rotate([90, 0, 0])
+                    cylinder(h = 0.8, d = 4.0, $fn = 24);
+}
+
+module gantry_l_connector_proxy(y, z, right = false, down = false) {
     x_origin = right ? frame_outer.x - profile_size : profile_size;
 
-    color([0.10, 0.10, 0.11])
-        translate([x_origin, y - profile_size / 2 - connector_thickness,
-                   z - connector_width / 2])
-            if (right)
-                mirror([1, 0, 0])
-                    union() {
-                        cube([connector_length, connector_thickness,
-                              connector_width]);
-                        cube([connector_width, connector_thickness,
-                              connector_length]);
-                    }
-            else
-                union() {
-                    cube([connector_length, connector_thickness,
-                          connector_width]);
-                    translate([-connector_width, 0, 0])
-                        cube([connector_width, connector_thickness,
-                              connector_length]);
-                }
+    translate([x_origin,
+               y - profile_size / 2 - 3.0,
+               z])
+        if (right)
+            mirror([1, 0, 0])
+                gantry_l_connector_proxy_shape(down);
+        else
+            gantry_l_connector_proxy_shape(down);
 }
 
 module connector_proxies() {
@@ -905,7 +922,9 @@ module outer_corner_connector_proxies(top_values = [false, true]) {
 module gantry_crossbar_connector_proxies() {
     for (z = fixture_crossbar_z)
         for (right = [false, true])
-            gantry_l_connector_proxy(fixture_gantry_y, z, right);
+            gantry_l_connector_proxy(
+                fixture_gantry_y, z, right,
+                z == fixture_crossbar_z.y);
 }
 
 module installed_gantry_joint_plate(y, top = false, right = false) {
@@ -2456,6 +2475,37 @@ module guide_preload_marker(position, axis = "x",
                           marker_height + 1.0, 5.0], center = true);
 }
 
+// Persistent Step 5 state for the camera-frame rails. Keeping this inventory
+// in one module prevents the loaded bars from disappearing when the four
+// separated rails become the assembled Step 6 rectangle. A caller may pass
+// exploded crossbar heights while preserving every bar's rail-relative X
+// position and the two blue service-spare roles.
+module guide_camera_frame_preload_markers(
+    crossbar_z = fixture_crossbar_z
+) {
+    face_offset = profile_size / 2 + 3.0;
+    upright_marker_z = [gantry_clear_z_min + 104.0,
+                        gantry_clear_z_min + 224.0];
+
+    for (x = gantry_upright_x)
+        for (z = upright_marker_z)
+            guide_preload_marker(
+                [x == gantry_upright_x.x ?
+                     x + face_offset : x - face_offset,
+                 fixture_gantry_y, z], "z");
+
+    for (z = crossbar_z)
+        for (x = fixture_mount_x)
+            guide_preload_marker(
+                [x, fixture_gantry_y - face_offset, z], "x");
+    guide_preload_marker(
+        [45.0, fixture_gantry_y - face_offset,
+         crossbar_z.y], "x", guide_new_tint, true);
+    guide_preload_marker(
+        [frame_outer.x - 45.0, fixture_gantry_y - face_offset,
+         crossbar_z.x], "x", guide_new_tint, true);
+}
+
 // A ready-to-load short bar viewed from the screw/washer side. Both roles use
 // the same orange production carrier, seated metal nut, M3 screw, and wide
 // washer. The blue strip is presentation geometry for the removable tape
@@ -2598,25 +2648,7 @@ module guide_preload_markers() {
                 guide_new_tint, true);
         }
 
-    // Two active bars on the interior face of each gantry upright.
-    for (x = gantry_upright_x)
-        for (z = fixture_crossbar_z)
-            guide_preload_marker(
-                [x == left_x ? x + face_offset : x - face_offset,
-                 fixture_gantry_y, z], "z");
-
-    // Two active fixture-plate bars per crossbar plus one blue-tagged
-    // replacement on the operator-facing side of each crossbar.
-    for (z = fixture_crossbar_z)
-        for (x = fixture_mount_x)
-            guide_preload_marker(
-                [x, fixture_gantry_y - face_offset, z], "x");
-    guide_preload_marker(
-        [45.0, fixture_gantry_y - face_offset,
-         fixture_crossbar_z.y], "x", guide_new_tint, true);
-    guide_preload_marker(
-        [frame_outer.x - 45.0, fixture_gantry_y - face_offset,
-         fixture_crossbar_z.x], "x", guide_new_tint, true);
+    guide_camera_frame_preload_markers();
 }
 
 // Handbook overview: ghosted rails reveal the conceptual short-bar inventory.
@@ -2771,9 +2803,6 @@ module guide_label_xz(label_text, position, size = 8.0,
 // loaded face. The crossbars sit beyond the upright ends so none of the four
 // upright markers can disappear behind an intersecting rail.
 module guide_preload_camera_frame() {
-    face_offset = profile_size / 2 + 3.0;
-    upright_marker_z = [gantry_clear_z_min + 104.0,
-                        gantry_clear_z_min + 224.0];
     lower_crossbar_z = gantry_clear_z_min - 58.0;
     upper_crossbar_z = gantry_clear_z_max + 58.0;
 
@@ -2791,23 +2820,8 @@ module guide_preload_camera_frame() {
         extrusion(gantry_crossbar_length, "x",
                   [0.70, 0.72, 0.75, 0.52]);
 
-    for (x = gantry_upright_x)
-        for (z = upright_marker_z)
-            guide_preload_marker(
-                [x == gantry_upright_x.x ?
-                     x + face_offset : x - face_offset,
-                 fixture_gantry_y, z], "z");
-
-    for (z = [lower_crossbar_z, upper_crossbar_z])
-        for (x = fixture_mount_x)
-            guide_preload_marker(
-                [x, fixture_gantry_y - face_offset, z], "x");
-    guide_preload_marker(
-        [45.0, fixture_gantry_y - face_offset,
-         upper_crossbar_z], "x", guide_new_tint, true);
-    guide_preload_marker(
-        [frame_outer.x - 45.0, fixture_gantry_y - face_offset,
-         lower_crossbar_z], "x", guide_new_tint, true);
+    guide_camera_frame_preload_markers(
+        [lower_crossbar_z, upper_crossbar_z]);
 
     guide_label_xz("GANTRY-CROSS-U  /  3 ORANGE / BLUE TAPE ON 1",
                    [frame_outer.x / 2, fixture_gantry_y - 18.0,
@@ -2846,6 +2860,7 @@ module guide_step_02_build_gantry() {
     gantry_crossbar_connector_proxies();
     gantry_joint_plate_previews();
     gantry_splice_previews();
+    guide_camera_frame_preload_markers();
 }
 
 module guide_step_03_open_frame() {
@@ -2926,17 +2941,30 @@ module guide_step_08_complete() {
 // scenes expose the hidden interface, motion, or measurement that a completed
 // overview cannot communicate.
 
-// One lower-left gantry corner.  The translucent extrusion exposes the
-// concealed metal L connector that joins a crossbar to an upright.
+// One upper-left gantry corner. The translucent extrusion exposes the
+// concealed metal L connector pointing down, with its two adjustment screws
+// accessible from below. Three nearby markers keep the already-loaded Step 5
+// bars visible in this focused view.
 module guide_detail_02_crossbar_corner() {
-    crossbar_z = fixture_crossbar_z.x;
+    crossbar_z = fixture_crossbar_z.y;
+    face_offset = profile_size / 2 + 3.0;
     translate([0, 0, -crossbar_z]) {
         translate([gantry_upright_x.x, fixture_gantry_y,
-                   gantry_clear_z_min])
+                   crossbar_z - 120.0])
             extrusion(120.0, "z", [0.66, 0.69, 0.72, 0.42]);
         translate([profile_size, fixture_gantry_y, crossbar_z])
             extrusion(130.0, "x", [0.66, 0.69, 0.72, 0.42]);
-        gantry_l_connector_proxy(fixture_gantry_y, crossbar_z, false);
+        gantry_l_connector_proxy(
+            fixture_gantry_y, crossbar_z, false, true);
+        guide_preload_marker(
+            [gantry_upright_x.x + face_offset, fixture_gantry_y,
+             gantry_clear_z_min + 224.0], "z");
+        guide_preload_marker(
+            [fixture_mount_x.x, fixture_gantry_y - face_offset,
+             crossbar_z], "x");
+        guide_preload_marker(
+            [45.0, fixture_gantry_y - face_offset,
+             crossbar_z], "x", guide_new_tint, true);
     }
 }
 
