@@ -1,0 +1,189 @@
+name: Refresh handbook CAD pin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mechanical/**"
+      - ".github/workflows/handbook-cad-refresh.yml"
+      - "scripts/pf-secret"
+  workflow_dispatch: {}
+
+# Only a protected-main run can satisfy the AWS role's OIDC subject condition.
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: handbook-cad-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the trusted source revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Assume the main-only handbook refresh role
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
+        with:
+          role-to-assume: arn:aws:iam::611492472006:role/pf-ci-handbook-refresh
+          aws-region: us-east-1
+
+      - name: Read the GitHub App credential through pf-secret
+        id: app-credential
+        env:
+          PF_SECRET_BACKEND: aws-secrets
+        run: |
+          set -euo pipefail
+          meta="$(scripts/pf-secret get github/agent-app-meta)"
+          app_id="$(jq -er '.app_id | tostring' <<<"${meta}")"
+          private_key="$(scripts/pf-secret get github/agent-app-key)"
+
+          while IFS= read -r line; do
+            echo "::add-mask::${line}"
+          done <<<"${private_key}"
+
+          delimiter="PF_KEY_$(openssl rand -hex 16)"
+          {
+            echo "app-id=${app_id}"
+            echo "private-key<<${delimiter}"
+            printf '%s\n' "${private_key}"
+            echo "${delimiter}"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Mint a repository-scoped GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ steps.app-credential.outputs.app-id }}
+          private-key: ${{ steps.app-credential.outputs.private-key }}
+          owner: pocketforge-os
+          repositories: |
+            test-node-hw
+            handbook
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Advance the handbook gitlink and open or update its PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          [[ "${TARGET_SHA}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "Invalid source commit: ${TARGET_SHA}" >&2
+            exit 1
+          }
+          upstream_sha="$(
+            gh api "repos/${SOURCE_REPOSITORY}/commits/main" --jq '.sha'
+          )"
+          [[ "${TARGET_SHA}" == "${upstream_sha}" ]] || {
+            echo "Source main advanced; the newer run will perform the refresh." >&2
+            echo "target=${TARGET_SHA} upstream=${upstream_sha}" >&2
+            exit 0
+          }
+
+          gh auth setup-git
+          gh repo clone pocketforge-os/handbook handbook -- --recurse-submodules
+          cd handbook
+
+          git -C cad/test-node-hw fetch --quiet origin main
+          git -C cad/test-node-hw cat-file -e "${TARGET_SHA}^{commit}"
+          git -C cad/test-node-hw merge-base --is-ancestor \
+            "${TARGET_SHA}" origin/main
+
+          pinned_sha="$(git rev-parse HEAD:cad/test-node-hw)"
+          if git -C cad/test-node-hw merge-base --is-ancestor \
+            "${TARGET_SHA}" "${pinned_sha}" 2>/dev/null; then
+            echo "Handbook already pins ${pinned_sha}, which contains ${TARGET_SHA}."
+            exit 0
+          fi
+
+          branch="automation/cad-refresh"
+          git checkout -B "${branch}" origin/main
+          git update-index \
+            --add --cacheinfo "160000,${TARGET_SHA},cad/test-node-hw"
+
+          changed_files="$(git diff --cached --name-only)"
+          [[ "${changed_files}" == "cad/test-node-hw" ]] || {
+            echo "Refusing a non-CAD-only handbook update:" >&2
+            printf '%s\n' "${changed_files}" >&2
+            exit 1
+          }
+
+          git config user.name "pocketforge-agent[bot]"
+          git config user.email \
+            "299760760+pocketforge-agent[bot]@users.noreply.github.com"
+          git commit -m "docs: refresh test-node CAD to ${TARGET_SHA:0:12}"
+
+          remote_head="$(
+            git ls-remote --heads origin "refs/heads/${branch}" |
+              awk '{print $1}'
+          )"
+          if [[ -n "${remote_head}" ]]; then
+            git push \
+              --force-with-lease="refs/heads/${branch}:${remote_head}" \
+              origin "HEAD:refs/heads/${branch}"
+          else
+            git push origin "HEAD:refs/heads/${branch}"
+          fi
+
+          source_pr="$(
+            gh api \
+              -H "Accept: application/vnd.github+json" \
+              "repos/${SOURCE_REPOSITORY}/commits/${TARGET_SHA}/pulls" \
+              --jq 'map(select(.base.ref == "main")) | .[0].html_url // ""'
+          )"
+          if [[ -z "${source_pr}" ]]; then
+            source_pr="https://github.com/${SOURCE_REPOSITORY}/commit/${TARGET_SHA}"
+          fi
+
+          body_file="$(mktemp)"
+          {
+            printf '%s\n\n' '## Summary'
+            printf '%s\n\n' \
+              "Automated CAD dependency refresh: advance the exact test-node-hw gitlink to \`${TARGET_SHA}\` immediately after its merge to \`main\`."
+            printf '%s\n\n' '## Test plan'
+            printf '%s\n\n' \
+              "- [x] Trusted source-main automation verified that the only changed path is \`cad/test-node-hw\`, and the pinned commit is the current \`pocketforge-os/test-node-hw\` \`main\` commit."
+            printf '%s\n\n' '## Related PRs'
+            printf '%s\n' "${source_pr}"
+          } >"${body_file}"
+
+          pr_number="$(
+            gh pr list \
+              --repo pocketforge-os/handbook \
+              --head "${branch}" \
+              --base main \
+              --state open \
+              --json number \
+              --jq '.[0].number // ""'
+          )"
+          if [[ -n "${pr_number}" ]]; then
+            gh pr edit "${pr_number}" \
+              --repo pocketforge-os/handbook \
+              --title "docs: refresh test-node CAD" \
+              --body-file "${body_file}"
+          else
+            gh pr create \
+              --repo pocketforge-os/handbook \
+              --head "${branch}" \
+              --base main \
+              --title "docs: refresh test-node CAD" \
+              --body-file "${body_file}"
+          fi
