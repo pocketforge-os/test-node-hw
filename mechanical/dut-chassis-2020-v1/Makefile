@@ -428,7 +428,7 @@ $(GUIDE_BUILD)/step-08-complete.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
 $(GUIDE_BUILD)/preload-channel-bar.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,820 \
 		--projection=ortho \
-		--camera=-70,-75,55,33,0,10 \
+		--camera=-70,-40,48,33,0,10 \
 		-D 'PART="guide_preload_channel_bar"' $<
 
 $(GUIDE_BUILD)/preload-map.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)

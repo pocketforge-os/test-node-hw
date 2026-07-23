@@ -763,7 +763,11 @@ module extrusion(length, axis, tint = [0.72, 0.74, 0.77]) {
     color(tint)
         pf_2020_extrusion(length, axis, profile_size,
                           EXTRUSION_DETAIL, extrusion_slot_opening,
-                          extrusion_slot_depth, extrusion_centre_bore);
+                          extrusion_slot_depth, extrusion_centre_bore,
+                          extrusion_slot_pocket_width,
+                          extrusion_slot_lip_depth,
+                          extrusion_slot_deep_width,
+                          extrusion_web_thickness);
 }
 
 module outer_frame_bottom(tint = [0.72, 0.74, 0.77]) {
@@ -2302,7 +2306,11 @@ module guide_preload_channel_bar() {
     bar_bearing_z = profile_size - 0.4;
 
     translate([rail_start_x, 0, rail_center_z])
-        extrusion(rail_length, "x", guide_complete_tint);
+        extrusion(rail_length, "x", [0.82, 0.84, 0.87]);
+    // A slightly darker cut face separates the real cross-section from the
+    // long satin-anodized surfaces without changing any rail geometry.
+    translate([rail_start_x - 0.08, 0, rail_center_z])
+        extrusion(0.28, "x", [0.66, 0.69, 0.73]);
 
     translate([bar_center_x, 0, bar_bearing_z])
         rotate([180, 0, 0])
