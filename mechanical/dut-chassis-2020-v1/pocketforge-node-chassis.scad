@@ -38,7 +38,10 @@
  *   guide_step_03_open_frame, guide_step_04_install_gantry,
  *   guide_step_05_close_frame, guide_step_06_mount_carrier,
  *   guide_step_07_mount_fixture, guide_step_08_complete,
+ *   guide_captive_nut_install, guide_captive_nut_count,
  *   guide_preload_channel_bar, guide_preload_map,
+ *   guide_preload_width_rails, guide_preload_depth_rails,
+ *   guide_preload_camera_frame,
  *   guide_layer_aluminum, guide_layer_connectors,
  *   guide_layer_printed_hardware, guide_layer_fixture_plate,
  *   guide_layer_fixture_components, guide_layer_fixture_labels,
@@ -2219,6 +2222,37 @@ guide_complete_tint = [0.66, 0.69, 0.72];
 guide_new_tint = [0.96, 0.43, 0.08];
 guide_spare_tint = [0.12, 0.52, 0.78];
 guide_metal_tint = [0.38, 0.40, 0.43];
+guide_check_tint = [0.10, 0.58, 0.36];
+
+module guide_m3_nut(position = [0, 0, 0]) {
+    color(guide_metal_tint)
+        translate(position)
+            cylinder(
+                d = m3_nut_measured_across_flats / cos(30),
+                h = m3_nut_measured_thickness,
+                $fn = 6
+            );
+}
+
+module guide_m3_washer(position = [0, 0, 0]) {
+    color([0.72, 0.74, 0.77])
+        translate(position)
+            difference() {
+                cylinder(d = 9.0, h = 1.0, $fn = 36);
+                translate([0, 0, -epsilon])
+                    cylinder(d = m3_clearance,
+                             h = 1.0 + 2 * epsilon, $fn = 28);
+            }
+}
+
+module guide_m3_screw(position = [0, 0, 0], shaft_length = 18.0) {
+    color([0.58, 0.61, 0.64])
+        translate(position) {
+            cylinder(d = 3.0, h = shaft_length, $fn = 28);
+            translate([0, 0, -3.0])
+                cylinder(d = 6.0, h = 3.0, $fn = 32);
+        }
+}
 
 // A loaded production short bar shown in its rail-installation orientation.
 // The printed bar's broad bearing face is up, toward the slot mouth; the open
@@ -2226,14 +2260,16 @@ guide_metal_tint = [0.38, 0.40, 0.43];
 module guide_loaded_short_bar() {
     color(guide_new_tint)
         m3_slide_nut_carrier();
-    color(guide_metal_tint)
-        translate([0, 0,
-                   m3_slide_nut_height - m3_nut_measured_thickness])
-            cylinder(
-                d = m3_nut_measured_across_flats / cos(30),
-                h = m3_nut_measured_thickness,
-                $fn = 6
-            );
+    guide_m3_nut(
+        [0, 0, m3_slide_nut_height - m3_nut_measured_thickness]);
+}
+
+module guide_loaded_splice_bar() {
+    color(guide_new_tint)
+        gantry_splice_full_collar_internal_bar();
+    for (x = gantry_splice_collar_internal_nut_x)
+        guide_m3_nut(
+            [x, 0, m3_slide_nut_height - m3_nut_measured_thickness]);
 }
 
 module guide_arrow_x(start_x, length, z) {
@@ -2289,6 +2325,67 @@ module guide_segment(start, finish, diameter = 2.5,
             translate(start) sphere(d = diameter, $fn = 20);
             translate(finish) sphere(d = diameter, $fn = 20);
         }
+}
+
+// Bench preparation close-up. The left-hand short bar shows the removable
+// screw and washer pulling one ordinary M3 nut into its open hex pocket. The
+// right-hand bar is the required finished state: nut seated, screw removed.
+// This is explanatory presentation geometry only.
+module guide_captive_nut_install() {
+    exploded_x = -48.0;
+    ready_x = 48.0;
+
+    color(guide_new_tint)
+        translate([exploded_x, 0, 0])
+            m3_slide_nut_carrier();
+    guide_m3_nut([exploded_x, 0, 11.0]);
+    guide_m3_washer([exploded_x, 0, -5.0]);
+    guide_m3_screw([exploded_x, 0, -12.0], 21.0);
+    guide_axis_arrow([exploded_x + 18.0, 0, -9.0],
+                     "z", 1, 25.0);
+
+    translate([ready_x, 0, 0])
+        guide_loaded_short_bar();
+    guide_segment([ready_x + 22.0, -5.0, 6.0],
+                  [ready_x + 28.0, -5.0, 0.0],
+                  3.2, guide_check_tint);
+    guide_segment([ready_x + 28.0, -5.0, 0.0],
+                  [ready_x + 40.0, -5.0, 14.0],
+                  3.2, guide_check_tint);
+}
+
+// Visual inventory gate after every Batch 01 nut is installed. Repeating the
+// actual parts, instead of relying only on "x 28" prose, lets a novice count
+// rows and immediately see that short bars receive one nut while splice bars
+// receive two.
+module guide_captive_nut_count() {
+    short_columns = 7;
+    short_pitch = [36.0, 16.0];
+    short_origin = [0.0, 0.0, 0.0];
+    splice_origin = [295.0, 8.0, 0.0];
+
+    for (index = [0 : m3_slide_nut_set_count - 1])
+        translate([
+            short_origin.x + (index % short_columns) * short_pitch.x,
+            short_origin.y + floor(index / short_columns) * short_pitch.y,
+            0
+        ]) guide_loaded_short_bar();
+
+    guide_label("28 SHORT BARS  /  1 NUT EACH",
+                [108.0, -20.0, 0.0], 9.0);
+
+    for (index = [0 : gantry_splice_internal_bar_count - 1])
+        translate([
+            splice_origin.x + (index % 2) * 86.0,
+            splice_origin.y + floor(index / 2) * 24.0,
+            0
+        ]) guide_loaded_splice_bar();
+
+    guide_label("4 LONG SPLICE BARS  /  2 NUTS EACH",
+                [338.0, -20.0, 0.0], 9.0);
+    guide_label("36 METAL M3 NUTS TOTAL",
+                [205.0, 82.0, 0.0], 11.0, [0, 0, 0],
+                guide_check_tint);
 }
 
 // Handbook close-up: the exact short bar and captured M3 nut are aligned with
@@ -2407,6 +2504,191 @@ module guide_preload_map() {
     outer_frame([0.70, 0.72, 0.75, 0.42]);
     fixture_gantry([0.70, 0.72, 0.75, 0.42]);
     guide_preload_markers();
+}
+
+module guide_plan_rail_x(panel_x, y, label_text, face_direction,
+                         marker_offsets) {
+    translate([panel_x, y, 0])
+        extrusion(structural_x_length, "x",
+                  [0.70, 0.72, 0.75, 0.52]);
+
+    for (offset = marker_offsets)
+        guide_preload_marker([
+            panel_x + offset,
+            y + face_direction * (profile_size / 2 + 3.0),
+            profile_size / 2
+        ], "x");
+
+    guide_label(label_text,
+                [panel_x + structural_x_length / 2,
+                 y - face_direction * 27.0,
+                 profile_size + 1.0], 8.5);
+}
+
+// Exact four-rail width preload. Each orange marker touches the long face
+// whose groove receives the bar. The lower and upper pairs are separated so
+// the unusual outward-facing WIDTH-O-U preload cannot hide behind another
+// rail in a whole-frame projection.
+module guide_preload_width_rails() {
+    lower_x = 0.0;
+    upper_x = structural_x_length + 92.0;
+    operator_y = -48.0;
+    device_y = 48.0;
+    width_o_l_offsets =
+        [for (x = [82.0, 126.0, frame_outer.x - 126.0,
+                   frame_outer.x - 82.0]) x - profile_size];
+    width_o_u_offsets =
+        [for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
+                   frame_outer.x / 2 + placard_hole_spacing / 2])
+            x - profile_size];
+    width_d_offsets =
+        [for (x = cradle_mount_x) x - profile_size];
+
+    guide_plan_rail_x(lower_x, operator_y,
+                      "WIDTH-O-L  /  4", 1, width_o_l_offsets);
+    guide_plan_rail_x(lower_x, device_y,
+                      "WIDTH-D-L  /  2", -1, width_d_offsets);
+    guide_label("LOWER PAIR", [lower_x + structural_x_length / 2,
+                               134.0, profile_size + 1.0], 11.0);
+    guide_label("OPERATOR", [lower_x + structural_x_length / 2,
+                             -88.0, profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("DEVICE / WALL", [lower_x + structural_x_length / 2,
+                                  108.0, profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+
+    guide_plan_rail_x(upper_x, operator_y,
+                      "WIDTH-O-U  /  2", -1, width_o_u_offsets);
+    guide_plan_rail_x(upper_x, device_y,
+                      "WIDTH-D-U  /  2", -1, width_d_offsets);
+    guide_label("UPPER PAIR", [upper_x + structural_x_length / 2,
+                               134.0, profile_size + 1.0], 11.0);
+    guide_label("OPERATOR", [upper_x + structural_x_length / 2,
+                             -88.0, profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("DEVICE / WALL", [upper_x + structural_x_length / 2,
+                                  108.0, profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+}
+
+module guide_plan_rail_y(panel_x, x, label_text,
+                         face_direction) {
+    rail_start_y = 0.0;
+    active_offset = fixture_gantry_y - profile_size;
+    spare_offset = frame_outer.y - 46.0 - profile_size;
+    face_x = panel_x + x +
+             face_direction * (profile_size / 2 + 3.0);
+
+    translate([panel_x + x, rail_start_y, 0])
+        extrusion(structural_y_length, "y",
+                  [0.70, 0.72, 0.75, 0.52]);
+    guide_preload_marker(
+        [face_x, active_offset, profile_size / 2], "y");
+    guide_preload_marker(
+        [face_x, spare_offset, profile_size / 2], "y",
+        guide_spare_tint);
+    guide_label(label_text,
+                [panel_x + x, -28.0, profile_size + 1.0], 7.5);
+}
+
+// Exact depth-rail preload. Blue service bars are deliberately shown near the
+// future device-side ends; orange bars remain loose near the camera-frame
+// joint. Left and right rails mirror one another into their inside grooves.
+module guide_preload_depth_rails() {
+    lower_x = 0.0;
+    upper_x = 250.0;
+    left_x = 0.0;
+    right_x = 120.0;
+    panel_center_x = (left_x + right_x) / 2;
+
+    guide_plan_rail_y(lower_x, left_x, "DEPTH-L-L", 1);
+    guide_plan_rail_y(lower_x, right_x, "DEPTH-R-L", -1);
+    guide_label("LOWER PAIR  /  EACH: 1 ORANGE + 1 BLUE",
+                [lower_x + panel_center_x, structural_y_length + 54.0,
+                 profile_size + 1.0], 8.0);
+    guide_label("OPERATOR", [lower_x + panel_center_x, -50.0,
+                             profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("DEVICE / WALL", [lower_x + panel_center_x,
+                                  structural_y_length + 80.0,
+                                  profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+
+    guide_plan_rail_y(upper_x, left_x, "DEPTH-L-U", 1);
+    guide_plan_rail_y(upper_x, right_x, "DEPTH-R-U", -1);
+    guide_label("UPPER PAIR  /  EACH: 1 ORANGE + 1 BLUE",
+                [upper_x + panel_center_x, structural_y_length + 54.0,
+                 profile_size + 1.0], 8.0);
+    guide_label("OPERATOR", [upper_x + panel_center_x, -50.0,
+                             profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("DEVICE / WALL", [upper_x + panel_center_x,
+                                  structural_y_length + 80.0,
+                                  profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+}
+
+module guide_label_xz(label_text, position, size = 8.0,
+                      tint = [0.12, 0.16, 0.20]) {
+    guide_label(label_text, position, size, [90, 0, 0], tint);
+}
+
+// Front/operator view of the four separated camera-frame rails before the
+// L-connectors close their ends. Every active and service bar is drawn on its
+// loaded face. The crossbars sit beyond the upright ends so none of the four
+// upright markers can disappear behind an intersecting rail.
+module guide_preload_camera_frame() {
+    face_offset = profile_size / 2 + 3.0;
+    upright_bottom = 0.0;
+    upright_marker_z = [104.0, 224.0];
+    lower_crossbar_z = -58.0;
+    upper_crossbar_z = gantry_upright_length + 58.0;
+
+    for (x = gantry_upright_x)
+        translate([x, fixture_gantry_y, upright_bottom])
+            extrusion(gantry_upright_length, "z",
+                      [0.70, 0.72, 0.75, 0.52]);
+    translate([profile_size, fixture_gantry_y, lower_crossbar_z])
+        extrusion(gantry_crossbar_length, "x",
+                  [0.70, 0.72, 0.75, 0.52]);
+    translate([profile_size, fixture_gantry_y, upper_crossbar_z])
+        extrusion(gantry_crossbar_length, "x",
+                  [0.70, 0.72, 0.75, 0.52]);
+
+    for (x = gantry_upright_x)
+        for (z = upright_marker_z)
+            guide_preload_marker(
+                [x == gantry_upright_x.x ?
+                     x + face_offset : x - face_offset,
+                 fixture_gantry_y, z], "z");
+
+    for (z = [lower_crossbar_z, upper_crossbar_z])
+        for (x = fixture_mount_x)
+            guide_preload_marker(
+                [x, fixture_gantry_y - face_offset, z], "x");
+    guide_preload_marker(
+        [45.0, fixture_gantry_y - face_offset,
+         upper_crossbar_z], "x", guide_spare_tint);
+    guide_preload_marker(
+        [frame_outer.x - 45.0, fixture_gantry_y - face_offset,
+         lower_crossbar_z], "x", guide_spare_tint);
+
+    guide_label_xz("GANTRY-CROSS-U  /  2 ORANGE + 1 BLUE",
+                   [frame_outer.x / 2, fixture_gantry_y - 18.0,
+                    upper_crossbar_z + 34.0], 8.0);
+    guide_label_xz("GANTRY-CROSS-L  /  2 ORANGE + 1 BLUE",
+                   [frame_outer.x / 2, fixture_gantry_y - 18.0,
+                    lower_crossbar_z - 34.0], 8.0);
+    guide_label_xz("LEFT UPRIGHT  /  2",
+                   [gantry_upright_x.x - 32.0, fixture_gantry_y - 18.0,
+                    gantry_upright_length / 2], 7.5);
+    guide_label_xz("RIGHT UPRIGHT  /  2",
+                   [gantry_upright_x.y + 32.0, fixture_gantry_y - 18.0,
+                    gantry_upright_length / 2], 7.5);
+    guide_label_xz("OPERATOR VIEW  /  10 BARS TOTAL",
+                   [frame_outer.x / 2, fixture_gantry_y - 18.0,
+                    upper_crossbar_z + 78.0], 10.0,
+                   guide_spare_tint);
 }
 
 module guide_uprights(tint = guide_new_tint) {
@@ -3037,10 +3319,20 @@ if (PART == "assembly") {
     guide_step_07_mount_fixture();
 } else if (PART == "guide_step_08_complete") {
     guide_step_08_complete();
+} else if (PART == "guide_captive_nut_install") {
+    guide_captive_nut_install();
+} else if (PART == "guide_captive_nut_count") {
+    guide_captive_nut_count();
 } else if (PART == "guide_preload_channel_bar") {
     guide_preload_channel_bar();
 } else if (PART == "guide_preload_map") {
     guide_preload_map();
+} else if (PART == "guide_preload_width_rails") {
+    guide_preload_width_rails();
+} else if (PART == "guide_preload_depth_rails") {
+    guide_preload_depth_rails();
+} else if (PART == "guide_preload_camera_frame") {
+    guide_preload_camera_frame();
 } else if (PART == "guide_detail_02_crossbar_corner") {
     guide_detail_02_crossbar_corner();
 } else if (PART == "guide_detail_03_lower_frame_layout") {
