@@ -93,8 +93,13 @@ REPLACEMENT_PARTS := \
 
 GUIDE_STEPS := \
 	$(GUIDE_BUILD)/hero.png \
+	$(GUIDE_BUILD)/prep-captive-nut.png \
+	$(GUIDE_BUILD)/prep-captive-nut-count.png \
 	$(GUIDE_BUILD)/preload-channel-bar.png \
 	$(GUIDE_BUILD)/preload-map.png \
+	$(GUIDE_BUILD)/preload-width-rails.png \
+	$(GUIDE_BUILD)/preload-depth-rails.png \
+	$(GUIDE_BUILD)/preload-camera-frame.png \
 	$(GUIDE_BUILD)/step-01-splice-uprights.png \
 	$(GUIDE_BUILD)/step-02-build-gantry.png \
 	$(GUIDE_BUILD)/step-03-open-frame.png \
@@ -425,6 +430,16 @@ $(GUIDE_BUILD)/step-08-complete.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $(GUIDE_IMAGE) \
 		-D 'PART="guide_step_08_complete"' $<
 
+$(GUIDE_BUILD)/prep-captive-nut.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,600 \
+		--projection=ortho --camera=120,-135,95,0,0,0 \
+		-D 'PART="guide_captive_nut_install"' $<
+
+$(GUIDE_BUILD)/prep-captive-nut-count.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,620 \
+		--projection=ortho --camera=205,30,675,205,30,0 \
+		-D 'PART="guide_captive_nut_count"' $<
+
 $(GUIDE_BUILD)/preload-channel-bar.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,820 \
 		--projection=ortho \
@@ -436,6 +451,22 @@ $(GUIDE_BUILD)/preload-map.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 		--projection=ortho --viewall \
 		--camera=520,-560,480,173,179,184 \
 		-D 'PART="guide_preload_map"' $<
+
+$(GUIDE_BUILD)/preload-width-rails.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,700 \
+		--projection=ortho --camera=352,20,850,352,20,0 \
+		-D 'PART="guide_preload_width_rails"' $<
+
+$(GUIDE_BUILD)/preload-depth-rails.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,1200 \
+		--projection=ortho --viewall --camera=185,175,1000,185,175,0 \
+		-D 'PART="guide_preload_depth_rails"' $<
+
+$(GUIDE_BUILD)/preload-camera-frame.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1450,1200 \
+		--projection=ortho --viewall \
+		--camera=173,-600,184,173,75,184 \
+		-D 'PART="guide_preload_camera_frame"' $<
 
 $(GUIDE_BUILD)/detail-01-splice-xray.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,820 \
@@ -812,7 +843,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass production_batches=6 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=17'
+	@echo 'chassis_validation=pass production_batches=6 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=22'
 
 clean:
 	rm -rf $(BUILD)
