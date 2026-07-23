@@ -4,6 +4,7 @@ PYTHON ?= python3
 BUILD := build
 GUIDE_BUILD := $(BUILD)/handbook
 GUIDE_LAYER_BUILD := $(GUIDE_BUILD)/layers
+GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
 GUIDE_MODEL_BUILD := $(GUIDE_BUILD)/model
 SOURCE := pocketforge-node-chassis.scad
 BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
@@ -57,7 +58,8 @@ PRODUCTION_BATCHES := \
 	$(BUILD)/production-batch-02-splice-collars.stl \
 	$(BUILD)/production-batch-03-movable-mounts.stl \
 	$(BUILD)/production-batch-04-frame-hardware.stl \
-	$(BUILD)/production-batch-05-identification.stl
+	$(BUILD)/production-batch-05-placard-holder.stl \
+	$(BUILD)/production-batch-06-device-nameplate.stl
 
 CALIBRATION := $(BUILD)/production-batch-00-calibration.stl
 
@@ -123,7 +125,8 @@ GUIDE_BATCH_PREVIEWS := \
 	$(GUIDE_BUILD)/batch-02-splice-collars.png \
 	$(GUIDE_BUILD)/batch-03-movable-mounts.png \
 	$(GUIDE_BUILD)/batch-04-frame-hardware.png \
-	$(GUIDE_BUILD)/batch-05-identification.png
+	$(GUIDE_BUILD)/batch-05-placard-holder.png \
+	$(GUIDE_BUILD)/batch-06-device-nameplate.png
 
 GUIDE_BATCH_MODELS := \
 	$(GUIDE_BUILD)/batch-00-calibration.glb \
@@ -131,7 +134,8 @@ GUIDE_BATCH_MODELS := \
 	$(GUIDE_BUILD)/batch-02-splice-collars.glb \
 	$(GUIDE_BUILD)/batch-03-movable-mounts.glb \
 	$(GUIDE_BUILD)/batch-04-frame-hardware.glb \
-	$(GUIDE_BUILD)/batch-05-identification.glb
+	$(GUIDE_BUILD)/batch-05-placard-holder.glb \
+	$(GUIDE_BUILD)/batch-06-device-nameplate.glb
 
 GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/aluminum.stl \
@@ -174,7 +178,8 @@ calibration: $(CALIBRATION)
 
 replacements: $(REPLACEMENT_PARTS)
 
-$(BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) $(GUIDE_MODEL_BUILD) $(PRESENTATION_IMPORT_DIR):
+$(BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) $(GUIDE_BATCH_LAYER_BUILD) \
+$(GUIDE_MODEL_BUILD) $(PRESENTATION_IMPORT_DIR):
 	mkdir -p $@
 
 lint:
@@ -273,8 +278,11 @@ $(BUILD)/production-batch-03-movable-mounts.stl: $(SOURCE) lib/pf-2020.scad | $(
 $(BUILD)/production-batch-04-frame-hardware.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_04_frame_hardware"' $<
 
-$(BUILD)/production-batch-05-identification.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_05_identification"' $<
+$(BUILD)/production-batch-05-placard-holder.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_05_placard_holder"' $<
+
+$(BUILD)/production-batch-06-device-nameplate.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_06_device_nameplate"' $<
 
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
@@ -524,11 +532,17 @@ $(GUIDE_BUILD)/batch-04-frame-hardware.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
 		--projection=ortho --viewall -D 'PART="production_batch_04_frame_hardware"' $<
 
-$(GUIDE_BUILD)/batch-05-identification.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+$(GUIDE_BUILD)/batch-05-placard-holder.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,700 \
 		--projection=ortho --viewall \
-		--camera=115,-70,320,115,49,0 \
-		-D 'PART="production_batch_05_identification"' $<
+		--camera=115,-70,320,115,22,0 \
+		-D 'PART="production_batch_05_placard_holder"' $<
+
+$(GUIDE_BUILD)/batch-06-device-nameplate.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,700 \
+		--projection=ortho --viewall \
+		--camera=109,-70,320,109,22,0 \
+		-D 'PART="production_batch_06_device_nameplate_preview"' $<
 
 $(GUIDE_BUILD)/batch-00-calibration.glb: $(CALIBRATION) \
 		$(GUIDE_BATCH_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) | $(GUIDE_BUILD)
@@ -559,11 +573,30 @@ $(GUIDE_BUILD)/batch-04-frame-hardware.glb: \
 	$(PYTHON) $(GUIDE_BATCH_MODEL_SCRIPT) \
 		--input $< --output $@ --name "Batch 04 frame hardware"
 
-$(GUIDE_BUILD)/batch-05-identification.glb: \
-		$(BUILD)/production-batch-05-identification.stl \
+$(GUIDE_BUILD)/batch-05-placard-holder.glb: \
+		$(BUILD)/production-batch-05-placard-holder.stl \
 		$(GUIDE_BATCH_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) | $(GUIDE_BUILD)
 	$(PYTHON) $(GUIDE_BATCH_MODEL_SCRIPT) \
-		--input $< --output $@ --name "Batch 05 identification"
+		--input $< --output $@ --name "Batch 05 placard holder"
+
+$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-body.stl: \
+		$(SOURCE) lib/pf-2020.scad | $(GUIDE_BATCH_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="production_batch_06_device_nameplate_body"' $<
+
+$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-labels.stl: \
+		$(SOURCE) lib/pf-2020.scad | $(GUIDE_BATCH_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'PART="production_batch_06_device_nameplate_labels"' $<
+
+$(GUIDE_BUILD)/batch-06-device-nameplate.glb: \
+		$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-body.stl \
+		$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-labels.stl \
+		$(GUIDE_BATCH_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) | $(GUIDE_BUILD)
+	$(PYTHON) $(GUIDE_BATCH_MODEL_SCRIPT) \
+		--layer "$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-body.stl::White nameplate body::#f5f5ed" \
+		--layer "$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-labels.stl::Black raised labels::#050505" \
+		--output $@ --name "Batch 06 device nameplate"
 
 $(GUIDE_LAYER_BUILD)/aluminum.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_aluminum"' $<
@@ -760,8 +793,10 @@ validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES)
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 30 \
 		$(BUILD)/production-batch-04-frame-hardware.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 8 \
-		$(BUILD)/production-batch-05-identification.stl
-	@echo 'production_batches=pass count=5 optional_calibration=pass'
+		$(BUILD)/production-batch-05-placard-holder.stl
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 8 \
+		$(BUILD)/production-batch-06-device-nameplate.stl
+	@echo 'production_batches=pass count=6 optional_calibration=pass'
 
 validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
@@ -777,7 +812,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass production_batches=5 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=17'
+	@echo 'chassis_validation=pass production_batches=6 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=17'
 
 clean:
 	rm -rf $(BUILD)
