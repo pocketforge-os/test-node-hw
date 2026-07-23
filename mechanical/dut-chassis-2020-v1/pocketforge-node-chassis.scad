@@ -2647,15 +2647,18 @@ module guide_label_xz(label_text, position, size = 8.0,
 // upright markers can disappear behind an intersecting rail.
 module guide_preload_camera_frame() {
     face_offset = profile_size / 2 + 3.0;
-    upright_bottom = 0.0;
-    upright_marker_z = [104.0, 224.0];
-    lower_crossbar_z = -58.0;
-    upper_crossbar_z = gantry_upright_length + 58.0;
+    upright_marker_z = [gantry_clear_z_min + 104.0,
+                        gantry_clear_z_min + 224.0];
+    lower_crossbar_z = gantry_clear_z_min - 58.0;
+    upper_crossbar_z = gantry_clear_z_max + 58.0;
 
-    for (x = gantry_upright_x)
-        translate([x, fixture_gantry_y, upright_bottom])
-            extrusion(gantry_upright_length, "z",
-                      [0.70, 0.72, 0.75, 0.52]);
+    // Reuse the completed Step 4 parts rather than redrawing each upright as
+    // one uninterrupted rail. The two 164 mm halves and centered orange
+    // full-wrap collar are the visual handoff that tells a bench builder
+    // which just-finished assembly receives these four short nut bars.
+    guide_uprights([0.70, 0.72, 0.75, 0.52]);
+    gantry_splice_previews();
+
     translate([profile_size, fixture_gantry_y, lower_crossbar_z])
         extrusion(gantry_crossbar_length, "x",
                   [0.70, 0.72, 0.75, 0.52]);
@@ -2687,12 +2690,12 @@ module guide_preload_camera_frame() {
     guide_label_xz("GANTRY-CROSS-L  /  2 ORANGE + 1 BLUE",
                    [frame_outer.x / 2, fixture_gantry_y - 18.0,
                     lower_crossbar_z - 34.0], 8.0);
-    guide_label_xz("LEFT UPRIGHT  /  2",
-                   [gantry_upright_x.x - 32.0, fixture_gantry_y - 18.0,
-                    gantry_upright_length / 2], 7.5);
-    guide_label_xz("RIGHT UPRIGHT  /  2",
-                   [gantry_upright_x.y + 32.0, fixture_gantry_y - 18.0,
-                    gantry_upright_length / 2], 7.5);
+    guide_label_xz("STEP 4 SPLICED UPRIGHTS",
+                   [frame_outer.x / 2, fixture_gantry_y - 18.0,
+                    gantry_upright_splice_z + 18.0], 7.0);
+    guide_label_xz("EACH: 2 ORANGE BARS",
+                   [frame_outer.x / 2, fixture_gantry_y - 18.0,
+                    gantry_upright_splice_z - 18.0], 7.0);
     guide_label_xz("OPERATOR VIEW  /  10 BARS TOTAL",
                    [frame_outer.x / 2, fixture_gantry_y - 18.0,
                     upper_crossbar_z + 78.0], 10.0,
