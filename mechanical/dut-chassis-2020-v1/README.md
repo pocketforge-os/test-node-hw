@@ -189,10 +189,11 @@ preventing stale CAD visuals from being published.
 The static scene set includes one completed-state render for each major
 assembly section plus focused panels for hidden splice hardware, concealed
 gantry connectors, captive-nut preparation, exact per-rail preload counts,
-rail orientation, corner topology, assembly motion, positioning datums,
-carrier-link selection, fixture spacing, optical orientation, and final frame
-hardware. Keep those panels derived from the production modules rather than
-redrawing their geometry independently.
+the physical identity and lifecycle of parked replacement bars, rail
+orientation, corner topology, assembly motion, positioning datums, carrier-link
+selection, fixture spacing, optical orientation, and final frame hardware.
+Keep those panels derived from the production modules rather than redrawing
+their geometry independently.
 
 ## Assembly documentation
 
