@@ -149,6 +149,9 @@ The presentation imports the authoritative fixture/carrier STLs from their
 sibling CAD projects. The TrimUI Smart Pro visual model is fetched from a
 pinned platform commit and verified by SHA-256. Production STL exports never
 contain presentation-only device geometry or camera-frustum overlays.
+The semantic model and static previews split the gold placard insert from its
+dark raised device-name labels at `placard_insert_thickness`, representing the
+optional filament change while the production placard remains one fused STL.
 
 ## Build and validate
 
