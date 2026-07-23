@@ -1,32 +1,37 @@
 # test-node-hw
 
-Open-hardware KiCad sources for the **PocketForge per-device test-node board** (Track D, bead `tsp-bcx.12`).
+Open-hardware mechanical sources for the **PocketForge per-device test-node fixtures** — the
+3D-printable chassis, DUT cradles, and fixture plates that hold a handheld device under test at a
+repeatable optical datum in front of a per-node camera + electronics harness. Each fixture supports
+the BPI-per-DUT test-node topology (one node per device under test), running 24/7 across the lab
+fleet.
 
-One PCB, one SKU, one per device under test: an **ESP32-S3** node + an **LTC3649 programmable "virtual
-battery"** (2.5–4.4 V, ~3 A, DAC-set) + an **integrated microSD mux** (hands-free host↔device SD swap) +
-a **12 V LED-strip switch** + a **FEL/USB-boot strap** + the **standard
-Micro-Fit / JST-GH / SD-flex** interface. It permanently replaces the battery in a handheld and gives a
-host full remote control, running 24/7 for years across a ~40-node fleet. (Cold-device power-on is done
-by cutting/restoring the emulated cell + the device VBUS — a VBUS low→high edge boots the SoC; there is
-no power-button actuator, that design is permanently abandoned — `tsp-bcx.24`.)
-
-Design intent: **2-layer, ~60 × 90 mm, JLCPCB-assembled, open hardware** (OSHW gear on the silk; repo goes
-public at release).
-
-## → PCB designer: start at [`docs/00-IAN-START-HERE.md`](docs/00-IAN-START-HERE.md)
+> **Scope note (2026-07-23):** this repo now holds **mechanical CAD only**. The earlier custom
+> test-node PCB effort (the `tsp-bcx.12` / infra-201 battery-emulator board — LTC3649 virtual
+> battery, ESP32-S3, integrated SD mux) has been retired in favor of the DUT-based approach, so the
+> KiCad project, part libraries, and electronics design docs were removed. They remain recoverable
+> in git history if ever needed.
 
 ## Layout
-- `docs/` — the full design brief, net list, BOM, the **layout-critical grounding/sense reference**, and
-  the safety envelope.
-- `kicad/` — the KiCad 9 project. `test-node-placement-template.kicad_sch` is a placement head-start
-  (parts placed, power rails attached, signal wiring to be drawn).
-- `lib/` — symbols/footprints for the specialized parts.
-- `mechanical/` — parametric 3D-printable fixture plates for current lab harnesses.
 
-## Status
-Pre-fab. Schematic + placement in progress; **PCB order gated** on the Fri 2026-07-03 EE review + the
-`tsp-bcx.9` bench current measurement. Full rationale: PocketForge `mission-control`
-`.planning/infra/infra-201-test-node-battery-emulator-board.md`.
+- `mechanical/dut-chassis-2020-v1/` — the stackable 20 × 20 mm aluminum-extrusion **standard rack**
+  around one test node (movable camera/electronics fixture + fixed rear DUT carrier on a shared
+  optical axis).
+- `mechanical/dut-cradle-v1/` — the parametric **DUT cradle** (camera-facing device carrier) that
+  fixes a handheld at a repeatable optical datum without loading its controls or display. Supports
+  the TrimUI Smart Pro and Smart Pro S.
+- `mechanical/dut-fixture-v1/` — the parametric **DUT fixture plate** (electronics mounting tray)
+  sized for a Prusa i3 MK3S, carrying the current harness.
+- `scripts/` — OpenSCAD lint/CI helpers.
+
+Each `mechanical/*` project carries its own README with print instructions, parameters, and a
+`Makefile` to render STLs.
+
+## Building
+
+OpenSCAD renders and meshes are generated from source (`mechanical/**/*.stl` is gitignored); run the
+per-project `Makefile`. CI lints every `.scad` and publishes rendered artifacts on PRs.
 
 ## License
-TBD (open-hardware — recommend CERN-OHL-S/W or TAPR OHL; to be set before the repo goes public).
+
+TBD (open-hardware — recommend CERN-OHL-S/W or TAPR OHL).
