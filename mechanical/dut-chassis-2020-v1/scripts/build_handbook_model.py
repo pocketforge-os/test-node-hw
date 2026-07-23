@@ -31,6 +31,7 @@ LAYER_MATERIALS = {
     "power-strip": ("Power strip", "#ecece7", 0.0, 0.62, 1.0),
     "placard-holder": ("Placard holder", "#17364f", 0.0, 0.48, 1.0),
     "placard-insert": ("Placard insert", "#d7a40b", 0.05, 0.42, 1.0),
+    "placard-labels": ("Placard labels", "#17191c", 0.0, 0.55, 1.0),
     "camera-frustum": ("Camera field of view", "#51bfd4", 0.0, 0.30, 0.18),
 }
 

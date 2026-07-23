@@ -416,6 +416,11 @@ placard_insert_body_center_x = placard_holder_end_stop / 2;
 placard_insert_tab_size = [12.0, 12.0];
 placard_insert_tab_overlap = 2.0;
 placard_insert_pull_hole_diameter = 4.0;
+placard_holder_color = [0.16, 0.28, 0.42];
+placard_insert_color = [0.96, 0.72, 0.12];
+// Match the rear carrier's dark raised-label treatment. The printable insert
+// remains one fused mesh; this split exists only at presentation boundaries.
+placard_label_color = [0.02, 0.02, 0.02];
 placard_spacer_thickness = 3.0;
 placard_riser_size = [18.0, 58.0, 4.0];
 placard_riser_hole_offset = 18.0;
@@ -1255,11 +1260,10 @@ module placard_slide_fit_coupon() {
 }
 
 module placard_system_detail_preview() {
-    color([0.16, 0.28, 0.42]) placard_holder();
+    color(placard_holder_color) placard_holder();
     // Shown partially withdrawn to make the permanent/changeable split clear.
-    color([0.96, 0.72, 0.12])
-        translate([28.0, 0, placard_holder_base_thickness])
-            placard_insert();
+    translate([28.0, 0, placard_holder_base_thickness])
+        placard_insert_material_preview();
 }
 
 // Coarse half-round edge marks identify otherwise similar fit coupons after
@@ -1940,21 +1944,32 @@ module placard_risers_preview() {
 }
 
 module placard_holder_preview() {
-    color([0.16, 0.28, 0.42])
+    color(placard_holder_color)
         translate([frame_outer.x / 2,
                    -(placard_spacer_thickness + placard_riser_size.z),
                    placard_center_z])
             rotate([90, 0, 0]) placard_holder();
 }
 
+// Presentation-only material split at the real slicer filament-change plane.
+// Production continues to call placard_insert(), which fuses these solids.
+module placard_insert_material_preview() {
+    color(placard_insert_color) placard_insert_blank();
+    color(placard_label_color) placard_text();
+}
+
+module placard_insert_at_installed_datum(x_offset = 0) {
+    translate([frame_outer.x / 2 + x_offset,
+               -(placard_spacer_thickness + placard_riser_size.z +
+                 placard_holder_base_thickness),
+               placard_center_z])
+        rotate([90, 0, 0])
+            children();
+}
+
 module placard_insert_preview() {
-    color([0.96, 0.72, 0.12])
-        translate([frame_outer.x / 2,
-                   -(placard_spacer_thickness + placard_riser_size.z +
-                     placard_holder_base_thickness),
-                   placard_center_z])
-            rotate([90, 0, 0])
-                placard_insert();
+    placard_insert_at_installed_datum()
+        placard_insert_material_preview();
 }
 
 module placard_assembly_preview() {
@@ -2664,13 +2679,8 @@ module guide_detail_08_placard() {
         extrusion(structural_x_length, "x", guide_complete_tint);
     placard_risers_preview();
     placard_holder_preview();
-    color([0.96, 0.72, 0.12])
-        translate([frame_outer.x / 2 + insert_offset,
-                   -(placard_spacer_thickness + placard_riser_size.z +
-                     placard_holder_base_thickness),
-                   placard_center_z])
-            rotate([90, 0, 0])
-                placard_insert();
+    placard_insert_at_installed_datum(insert_offset)
+        placard_insert_material_preview();
     guide_axis_arrow(
         [frame_outer.x / 2 + placard_size.x / 2 + 84.0,
          -(placard_spacer_thickness + placard_riser_size.z + 12.0),
@@ -2816,7 +2826,13 @@ module guide_layer_placard_holder() {
 }
 
 module guide_layer_placard_insert() {
-    placard_insert_preview();
+    placard_insert_at_installed_datum()
+        placard_insert_blank();
+}
+
+module guide_layer_placard_labels() {
+    placard_insert_at_installed_datum()
+        placard_text();
 }
 
 module guide_layer_camera_frustum() {
@@ -3055,6 +3071,8 @@ if (PART == "assembly") {
     guide_layer_placard_holder();
 } else if (PART == "guide_layer_placard_insert") {
     guide_layer_placard_insert();
+} else if (PART == "guide_layer_placard_labels") {
+    guide_layer_placard_labels();
 } else if (PART == "guide_layer_camera_frustum") {
     guide_layer_camera_frustum();
 } else if (PART == "cutlist") {

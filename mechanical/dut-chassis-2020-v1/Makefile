@@ -150,6 +150,7 @@ GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/power-strip.stl \
 	$(GUIDE_LAYER_BUILD)/placard-holder.stl \
 	$(GUIDE_LAYER_BUILD)/placard-insert.stl \
+	$(GUIDE_LAYER_BUILD)/placard-labels.stl \
 	$(GUIDE_LAYER_BUILD)/camera-frustum.stl
 
 GUIDE_CAMERA := --projection=ortho --camera=560,-650,470,173,179,184
@@ -611,6 +612,9 @@ $(GUIDE_LAYER_BUILD)/placard-holder.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LA
 
 $(GUIDE_LAYER_BUILD)/placard-insert.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_placard_insert"' $<
+
+$(GUIDE_LAYER_BUILD)/placard-labels.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_placard_labels"' $<
 
 $(GUIDE_LAYER_BUILD)/camera-frustum.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_camera_frustum"' $<
