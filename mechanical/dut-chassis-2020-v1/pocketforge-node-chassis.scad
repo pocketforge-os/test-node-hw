@@ -29,7 +29,11 @@
  *   production_batch_02_splice_collars,
  *   production_batch_03_movable_mounts,
  *   production_batch_04_frame_hardware,
- *   production_batch_05_identification,
+ *   production_batch_05_placard_holder,
+ *   production_batch_06_device_nameplate,
+ *   production_batch_06_device_nameplate_body,
+ *   production_batch_06_device_nameplate_labels,
+ *   production_batch_06_device_nameplate_preview,
  *   guide_step_01_splice_uprights, guide_step_02_build_gantry,
  *   guide_step_03_open_frame, guide_step_04_install_gantry,
  *   guide_step_05_close_frame, guide_step_06_mount_carrier,
@@ -417,7 +421,7 @@ placard_insert_tab_size = [12.0, 12.0];
 placard_insert_tab_overlap = 2.0;
 placard_insert_pull_hole_diameter = 4.0;
 placard_holder_color = [0.16, 0.28, 0.42];
-placard_insert_color = [0.96, 0.72, 0.12];
+placard_insert_color = [0.96, 0.96, 0.93];
 // Match the rear carrier's dark raised-label treatment. The printable insert
 // remains one fused mesh; this split exists only at presentation boundaries.
 placard_label_color = [0.02, 0.02, 0.02];
@@ -2178,16 +2182,32 @@ module production_batch_04_frame_hardware() {
     translate([130.0, 112.0, 0]) power_strip_mount_block_pair();
 }
 
-// Reusable fleet-width holder plus the device-specific slide-in cartridge.
-// A filament change may be scheduled at placard_insert_thickness when a
-// contrasting raised label is wanted; ironing is cosmetic and optional.
-module production_batch_05_identification() {
+// The reusable fleet-width holder is an ordinary one-color print. Keeping it
+// off the nameplate bed lets that device-specific part own its filament swap.
+module production_batch_05_placard_holder() {
     translate([115.0, 22.0, 0]) placard_holder();
-    // Keep a generous visual and slicer-selection gap between the two long,
-    // similarly shaped parts. The previous 6.5 mm gap was mechanically valid
-    // but made an oblique preview look like the insert was stacked on the
-    // holder.
-    translate([109.0, 80.0, 0]) device_id_placard();
+}
+
+// The device-specific slide-in cartridge is the only object on this bed.
+// Print the fused production mesh in white, then change to black at
+// placard_insert_thickness for the raised device name.
+module production_batch_06_device_nameplate() {
+    translate([109.0, 22.0, 0]) device_id_placard();
+}
+
+module production_batch_06_device_nameplate_body() {
+    translate([109.0, 22.0, 0]) placard_insert_blank();
+}
+
+module production_batch_06_device_nameplate_labels() {
+    translate([109.0, 22.0, 0]) placard_text();
+}
+
+module production_batch_06_device_nameplate_preview() {
+    color(placard_insert_color)
+        production_batch_06_device_nameplate_body();
+    color(placard_label_color)
+        production_batch_06_device_nameplate_labels();
 }
 
 // ---- Handbook scenes and semantic web-model layers ----------------------
@@ -2991,8 +3011,16 @@ if (PART == "assembly") {
     production_batch_03_movable_mounts();
 } else if (PART == "production_batch_04_frame_hardware") {
     production_batch_04_frame_hardware();
-} else if (PART == "production_batch_05_identification") {
-    production_batch_05_identification();
+} else if (PART == "production_batch_05_placard_holder") {
+    production_batch_05_placard_holder();
+} else if (PART == "production_batch_06_device_nameplate") {
+    production_batch_06_device_nameplate();
+} else if (PART == "production_batch_06_device_nameplate_body") {
+    production_batch_06_device_nameplate_body();
+} else if (PART == "production_batch_06_device_nameplate_labels") {
+    production_batch_06_device_nameplate_labels();
+} else if (PART == "production_batch_06_device_nameplate_preview") {
+    production_batch_06_device_nameplate_preview();
 } else if (PART == "guide_step_01_splice_uprights") {
     guide_step_01_splice_uprights();
 } else if (PART == "guide_step_02_build_gantry") {

@@ -76,7 +76,8 @@ New chassis builds use these stable outputs:
 | 02 | `production-batch-02-splice-collars.stl` | Two full-wrap gantry collars | Print upright as exported |
 | 03 | `production-batch-03-movable-mounts.stl` | Gantry plates, fixture spacers, carrier links | None |
 | 04 | `production-batch-04-frame-hardware.stl` | Registration tabs, placard mounts, power-strip blocks | None |
-| 05 | `production-batch-05-identification.stl` | Reusable holder and device-name insert | Optional cosmetic ironing/filament change |
+| 05 | `production-batch-05-placard-holder.stl` | Reusable placard holder | None |
+| 06 | `production-batch-06-device-nameplate.stl` | Device-name plate only | Print white; change to black at 2.4 mm |
 
 All exported geometry is already in a support-free orientation and fits the
 conservative 247 × 207 mm Prusa printable envelope. The accepted process is
@@ -140,8 +141,8 @@ They are for the light fixture gantry only.
 - `lib/pf-2020.scad`: self-contained measured extrusion visualization.
 - `scripts/cutlist.py`: deterministic cut-list and stock assignment.
 - `scripts/build_handbook_model.py`: semantic GLB assembly for the handbook.
-- `scripts/build_handbook_batch_model.py`: one-to-one canonical-bed STL to
-  interactive GLB conversion for the handbook print pages.
+- `scripts/build_handbook_batch_model.py`: canonical-bed STL conversion plus
+  named multi-material layers for interactive handbook print previews.
 - `scripts/handbook-model-requirements.txt`: pinned mesh-builder dependencies.
 - `Makefile`: the supported export and validation interface.
 
@@ -149,9 +150,10 @@ The presentation imports the authoritative fixture/carrier STLs from their
 sibling CAD projects. The TrimUI Smart Pro visual model is fetched from a
 pinned platform commit and verified by SHA-256. Production STL exports never
 contain presentation-only device geometry or camera-frustum overlays.
-The semantic model and static previews split the gold placard insert from its
-dark raised device-name labels at `placard_insert_thickness`, representing the
-optional filament change while the production placard remains one fused STL.
+The semantic model and static previews split the white placard insert from its
+black raised device-name labels at `placard_insert_thickness`. The production
+nameplate remains one fused STL on its own bed: print white through 2.4 mm,
+then change to black for the raised text.
 
 ## Build and validate
 
@@ -170,7 +172,7 @@ That command:
   and
 - verifies the pinned device model.
 
-Generate the handbook's static scenes, six interactive print beds, and
+Generate the handbook's static scenes, seven interactive print beds, and
 semantic full-chassis model:
 
 ```sh
