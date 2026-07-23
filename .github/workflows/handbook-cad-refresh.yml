@@ -175,10 +175,13 @@ jobs:
               --jq '.[0].number // ""'
           )"
           if [[ -n "${pr_number}" ]]; then
-            gh pr edit "${pr_number}" \
-              --repo pocketforge-os/handbook \
-              --title "docs: refresh test-node CAD" \
-              --body-file "${body_file}"
+            jq -n \
+              --arg title "docs: refresh test-node CAD" \
+              --rawfile body "${body_file}" \
+              '{title: $title, body: $body}' |
+              gh api --method PATCH \
+                "repos/pocketforge-os/handbook/pulls/${pr_number}" \
+                --input -
           else
             gh pr create \
               --repo pocketforge-os/handbook \
