@@ -13,7 +13,7 @@
  * The default assembly shows background-only DUT/hooks; even a manual STL
  * export of that view contains only the printable carrier plate.
  * `installed_hooks` is a presentation-only export in carrier coordinates. It
- * deliberately contains no plate or DUT geometry and is never a print group.
+ * deliberately contains no plate or DUT geometry and is never a print bed.
  */
 
 include <lib/dut-cradle-library.scad>;
