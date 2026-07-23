@@ -49,7 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           meta="$(scripts/pf-secret get github/agent-app-meta)"
-          app_id="$(jq -er '.app_id | tostring' <<<"${meta}")"
+          client_id="$(jq -er '.client_id' <<<"${meta}")"
           private_key="$(scripts/pf-secret get github/agent-app-key)"
 
           while IFS= read -r line; do
@@ -58,7 +58,7 @@ jobs:
 
           delimiter="PF_KEY_$(openssl rand -hex 16)"
           {
-            echo "app-id=${app_id}"
+            echo "client-id=${client_id}"
             echo "private-key<<${delimiter}"
             printf '%s\n' "${private_key}"
             echo "${delimiter}"
@@ -68,7 +68,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          app-id: ${{ steps.app-credential.outputs.app-id }}
+          client-id: ${{ steps.app-credential.outputs.client-id }}
           private-key: ${{ steps.app-credential.outputs.private-key }}
           owner: pocketforge-os
           repositories: |
