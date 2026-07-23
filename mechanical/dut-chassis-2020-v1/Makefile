@@ -98,6 +98,7 @@ GUIDE_STEPS := \
 	$(GUIDE_BUILD)/preload-channel-bar.png \
 	$(GUIDE_BUILD)/preload-map.png \
 	$(GUIDE_BUILD)/preload-width-rails.png \
+	$(GUIDE_BUILD)/preload-parked-replacement.png \
 	$(GUIDE_BUILD)/preload-depth-rails.png \
 	$(GUIDE_BUILD)/preload-camera-frame.png \
 	$(GUIDE_BUILD)/step-01-splice-uprights.png \
@@ -456,6 +457,11 @@ $(GUIDE_BUILD)/preload-width-rails.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUI
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,700 \
 		--projection=ortho --camera=352,20,850,352,20,0 \
 		-D 'PART="guide_preload_width_rails"' $<
+
+$(GUIDE_BUILD)/preload-parked-replacement.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,850 \
+		--projection=ortho --camera=210,70,1600,210,70,0 \
+		-D 'PART="guide_parked_replacement_explained"' $<
 
 $(GUIDE_BUILD)/preload-depth-rails.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,1200 \
@@ -843,7 +849,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass production_batches=6 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=22'
+	@echo 'chassis_validation=pass production_batches=6 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=23'
 
 clean:
 	rm -rf $(BUILD)

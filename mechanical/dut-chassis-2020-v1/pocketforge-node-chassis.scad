@@ -40,7 +40,8 @@
  *   guide_step_07_mount_fixture, guide_step_08_complete,
  *   guide_captive_nut_install, guide_captive_nut_count,
  *   guide_preload_channel_bar, guide_preload_map,
- *   guide_preload_width_rails, guide_preload_depth_rails,
+ *   guide_preload_width_rails, guide_parked_replacement_explained,
+ *   guide_preload_depth_rails,
  *   guide_preload_camera_frame,
  *   guide_layer_aluminum, guide_layer_connectors,
  *   guide_layer_printed_hardware, guide_layer_fixture_plate,
@@ -2149,7 +2150,7 @@ module production_batch_00_calibration() {
 
 // All rail-channel interfaces share one ironing-enabled bed. Twenty-eight
 // 30 mm M3 nut bars cover 22 active locations plus six deliberately parked
-// service spares. Four 76.8 mm double-nut bars reinforce the two gantry
+// replacements. Four 76.8 mm double-nut bars reinforce the two gantry
 // upright splices. Print every broad bearing face on the bed.
 module production_batch_01_ironed_interfaces() {
     for (index = [0 : m3_slide_nut_set_count - 1])
@@ -2422,7 +2423,8 @@ module guide_preload_channel_bar() {
 // follows the host rail. They sit just outside the slot mouth so the hidden
 // captive-bar inventory remains visible in a static handbook render.
 module guide_preload_marker(position, axis = "x",
-                            tint = guide_new_tint) {
+                            tint = guide_new_tint,
+                            blue_tape = false) {
     marker_length = 24.0;
     marker_width = 5.0;
     marker_height = 8.0;
@@ -2437,6 +2439,119 @@ module guide_preload_marker(position, axis = "x",
             else
                 cube([marker_width, marker_height, marker_length],
                      center = true);
+
+    // A blue band identifies a parked replacement while leaving the orange
+    // carrier visible. It represents removable tape, never a blue print.
+    if (blue_tape)
+        color(guide_spare_tint)
+            translate(position)
+                if (axis == "x")
+                    cube([5.0, marker_width + 1.0,
+                          marker_height + 1.0], center = true);
+                else if (axis == "y")
+                    cube([marker_width + 1.0, 5.0,
+                          marker_height + 1.0], center = true);
+                else
+                    cube([marker_width + 1.0,
+                          marker_height + 1.0, 5.0], center = true);
+}
+
+// A ready-to-load short bar viewed from the screw/washer side. Both roles use
+// the same orange production carrier, seated metal nut, M3 screw, and wide
+// washer. The blue strip is presentation geometry for the removable tape
+// placed across only the parked replacement's screw head.
+module guide_short_bar_with_handle(blue_tape = false) {
+    guide_loaded_short_bar();
+
+    guide_m3_washer([0, 0, m3_slide_nut_height + 0.4]);
+    color([0.58, 0.61, 0.64])
+        translate([0, 0, m3_slide_nut_height + 1.4])
+            difference() {
+                cylinder(d = 6.0, h = 2.6, $fn = 32);
+                translate([0, 0, 1.5])
+                    cylinder(d = 2.5, h = 1.2 + epsilon, $fn = 6);
+            }
+
+    if (blue_tape)
+        color(guide_spare_tint)
+            translate([-5.5, -1.4, m3_slide_nut_height + 4.2])
+                cube([11.0, 2.8, 0.7]);
+}
+
+// Novice-facing explanation of the six parked replacements. The upper pair
+// makes the physical identity explicit: both pieces remain orange, and blue
+// is removable tape on the screw head rather than a different printed part.
+// The lower rail explains the lifecycle: park the tagged bar now because the
+// cut ends will close, then loosen and slide it only if a future repair or
+// added light-duty mount needs another M3 thread.
+module guide_parked_replacement_explained_content() {
+    active_x = 105.0;
+    spare_x = 315.0;
+    role_y = 118.0;
+    rail_x = 55.0;
+    rail_y = 4.0;
+    rail_length = 310.0;
+    active_rail_x = 120.0;
+    spare_rail_x = 330.0;
+
+    guide_label("BOTH ARE THE SAME BATCH 01 SHORT NUT BAR",
+                [210.0, 178.0, 0.0], 11.0);
+
+    translate([active_x, role_y, 0])
+        scale([2.2, 2.2, 2.2])
+            guide_short_bar_with_handle(false);
+    guide_label("NO TAPE", [active_x, 148.0, 0.0], 9.0,
+                [0, 0, 0], guide_new_tint);
+    guide_label("USE LATER IN THIS BUILD", [active_x, 87.0, 0.0], 8.0);
+
+    translate([spare_x, role_y, 0])
+        scale([2.2, 2.2, 2.2])
+            guide_short_bar_with_handle(true);
+    guide_label("BLUE TAPE ON SCREW", [spare_x, 148.0, 0.0], 9.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("PARKED REPLACEMENT", [spare_x, 87.0, 0.0], 8.0);
+
+    guide_label("SAME ORANGE BAR + M3 NUT + SCREW + WASHER",
+                [210.0, 68.0, 0.0], 8.0, [0, 0, 0],
+                guide_check_tint);
+
+    translate([rail_x, rail_y, profile_size / 2])
+        extrusion(rail_length, "x", [0.72, 0.74, 0.77, 0.48]);
+
+    guide_preload_marker(
+        [active_rail_x, rail_y - profile_size / 2 - 3.0,
+         profile_size / 2], "x", guide_new_tint);
+    guide_preload_marker(
+        [spare_rail_x, rail_y - profile_size / 2 - 3.0,
+         profile_size / 2], "x", guide_new_tint);
+    color(guide_spare_tint)
+        translate([spare_rail_x, rail_y - profile_size / 2 - 3.0,
+                   profile_size / 2 + 4.5])
+            cube([10.0, 7.0, 1.0], center = true);
+
+    guide_label("USE-NOW BAR", [active_rail_x, -30.0, 0.0], 7.5,
+                [0, 0, 0], guide_new_tint);
+    guide_label("PARK HERE NOW", [spare_rail_x, -30.0, 0.0], 7.5,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("OPERATOR END", [rail_x, 28.0, 0.0], 7.5,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("DEVICE / WALL END",
+                [rail_x + rail_length, 28.0, 0.0], 7.5,
+                [0, 0, 0], guide_spare_tint);
+
+    guide_axis_arrow([spare_rail_x - 6.0, rail_y + 39.0,
+                      profile_size + 3.0],
+                     "x", -1, 92.0);
+    guide_label("ONLY IF NEEDED LATER: LOOSEN + SLIDE",
+                [265.0, 58.0, 0.0], 7.5, [0, 0, 0],
+                guide_spare_tint);
+}
+
+module guide_parked_replacement_explained() {
+    translate([210.0, 70.0, 0.0])
+        scale([1.7, 1.7, 1.7])
+            translate([-210.0, -70.0, 0.0])
+                guide_parked_replacement_explained_content();
 }
 
 module guide_preload_markers() {
@@ -2471,7 +2586,7 @@ module guide_preload_markers() {
     }
 
     // Four depth rails: one active gantry-joint bar near the fixture gantry
-    // plus one blue service spare parked near the device-side end.
+    // plus one blue-tagged replacement parked near the device-side end.
     for (x = [left_x, right_x])
         for (z = [lower_z, upper_z]) {
             interior_x = x == left_x ? x + face_offset :
@@ -2480,7 +2595,7 @@ module guide_preload_markers() {
                 [interior_x, fixture_gantry_y, z], "y");
             guide_preload_marker(
                 [interior_x, spare_depth_y, z], "y",
-                guide_spare_tint);
+                guide_new_tint, true);
         }
 
     // Two active bars on the interior face of each gantry upright.
@@ -2490,24 +2605,25 @@ module guide_preload_markers() {
                 [x == left_x ? x + face_offset : x - face_offset,
                  fixture_gantry_y, z], "z");
 
-    // Two active fixture-plate bars per crossbar plus one blue service spare
-    // on the operator-facing side of each crossbar.
+    // Two active fixture-plate bars per crossbar plus one blue-tagged
+    // replacement on the operator-facing side of each crossbar.
     for (z = fixture_crossbar_z)
         for (x = fixture_mount_x)
             guide_preload_marker(
                 [x, fixture_gantry_y - face_offset, z], "x");
     guide_preload_marker(
         [45.0, fixture_gantry_y - face_offset,
-         fixture_crossbar_z.y], "x", guide_spare_tint);
+         fixture_crossbar_z.y], "x", guide_new_tint, true);
     guide_preload_marker(
         [frame_outer.x - 45.0, fixture_gantry_y - face_offset,
-         fixture_crossbar_z.x], "x", guide_spare_tint);
+         fixture_crossbar_z.x], "x", guide_new_tint, true);
 }
 
 // Handbook overview: ghosted rails reveal the conceptual short-bar inventory.
-// Orange markers are used by an installed mount; blue markers are parked
-// replacements. Marker positions are intentionally visible outside each slot
-// mouth rather than falsely claiming that captive parts sit outside the rail.
+// Every marker remains orange because every carrier is the same printed part;
+// a blue band identifies a parked replacement. Marker positions are
+// intentionally visible outside each slot mouth rather than falsely claiming
+// that captive parts sit outside the rail.
 module guide_preload_map() {
     outer_frame([0.70, 0.72, 0.75, 0.42]);
     fixture_gantry([0.70, 0.72, 0.75, 0.42]);
@@ -2594,14 +2710,15 @@ module guide_plan_rail_y(panel_x, x, label_text,
         [face_x, active_offset, profile_size / 2], "y");
     guide_preload_marker(
         [face_x, spare_offset, profile_size / 2], "y",
-        guide_spare_tint);
+        guide_new_tint, true);
     guide_label(label_text,
                 [panel_x + x, -28.0, profile_size + 1.0], 7.5);
 }
 
-// Exact depth-rail preload. Blue service bars are deliberately shown near the
-// future device-side ends; orange bars remain loose near the camera-frame
-// joint. Left and right rails mirror one another into their inside grooves.
+// Exact depth-rail preload. Blue tape marks the otherwise identical orange
+// replacements near the future device-side ends; untagged bars remain loose
+// near the camera-frame joint. Left and right rails mirror one another into
+// their inside grooves.
 module guide_preload_depth_rails() {
     lower_x = 0.0;
     upper_x = 250.0;
@@ -2611,9 +2728,13 @@ module guide_preload_depth_rails() {
 
     guide_plan_rail_y(lower_x, left_x, "DEPTH-L-L", 1);
     guide_plan_rail_y(lower_x, right_x, "DEPTH-R-L", -1);
-    guide_label("LOWER PAIR  /  EACH: 1 ORANGE + 1 BLUE",
+    guide_label("LOWER PAIR  /  2 ORANGE BARS PER RAIL",
                 [lower_x + panel_center_x, structural_y_length + 54.0,
-                 profile_size + 1.0], 8.0);
+                 profile_size + 1.0], 7.0);
+    guide_label("BLUE TAPE ON 1 = PARKED REPLACEMENT",
+                [lower_x + panel_center_x, structural_y_length + 36.0,
+                 profile_size + 1.0], 6.5, [0, 0, 0],
+                guide_spare_tint);
     guide_label("OPERATOR", [lower_x + panel_center_x, -50.0,
                              profile_size + 1.0], 8.0,
                 [0, 0, 0], guide_spare_tint);
@@ -2624,9 +2745,13 @@ module guide_preload_depth_rails() {
 
     guide_plan_rail_y(upper_x, left_x, "DEPTH-L-U", 1);
     guide_plan_rail_y(upper_x, right_x, "DEPTH-R-U", -1);
-    guide_label("UPPER PAIR  /  EACH: 1 ORANGE + 1 BLUE",
+    guide_label("UPPER PAIR  /  2 ORANGE BARS PER RAIL",
                 [upper_x + panel_center_x, structural_y_length + 54.0,
-                 profile_size + 1.0], 8.0);
+                 profile_size + 1.0], 7.0);
+    guide_label("BLUE TAPE ON 1 = PARKED REPLACEMENT",
+                [upper_x + panel_center_x, structural_y_length + 36.0,
+                 profile_size + 1.0], 6.5, [0, 0, 0],
+                guide_spare_tint);
     guide_label("OPERATOR", [upper_x + panel_center_x, -50.0,
                              profile_size + 1.0], 8.0,
                 [0, 0, 0], guide_spare_tint);
@@ -2679,15 +2804,15 @@ module guide_preload_camera_frame() {
                 [x, fixture_gantry_y - face_offset, z], "x");
     guide_preload_marker(
         [45.0, fixture_gantry_y - face_offset,
-         upper_crossbar_z], "x", guide_spare_tint);
+         upper_crossbar_z], "x", guide_new_tint, true);
     guide_preload_marker(
         [frame_outer.x - 45.0, fixture_gantry_y - face_offset,
-         lower_crossbar_z], "x", guide_spare_tint);
+         lower_crossbar_z], "x", guide_new_tint, true);
 
-    guide_label_xz("GANTRY-CROSS-U  /  2 ORANGE + 1 BLUE",
+    guide_label_xz("GANTRY-CROSS-U  /  3 ORANGE / BLUE TAPE ON 1",
                    [frame_outer.x / 2, fixture_gantry_y - 18.0,
                     upper_crossbar_z + 34.0], 8.0);
-    guide_label_xz("GANTRY-CROSS-L  /  2 ORANGE + 1 BLUE",
+    guide_label_xz("GANTRY-CROSS-L  /  3 ORANGE / BLUE TAPE ON 1",
                    [frame_outer.x / 2, fixture_gantry_y - 18.0,
                     lower_crossbar_z - 34.0], 8.0);
     guide_label_xz("STEP 4 SPLICED UPRIGHTS",
@@ -3340,6 +3465,8 @@ if (PART == "assembly") {
     guide_preload_map();
 } else if (PART == "guide_preload_width_rails") {
     guide_preload_width_rails();
+} else if (PART == "guide_parked_replacement_explained") {
+    guide_parked_replacement_explained();
 } else if (PART == "guide_preload_depth_rails") {
     guide_preload_depth_rails();
 } else if (PART == "guide_preload_camera_frame") {
