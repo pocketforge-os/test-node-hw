@@ -1,31 +1,49 @@
 /*
- * PocketForge standard 2020 DUT-node chassis.
+ * PocketForge standard 2020 test-node chassis.
  *
  * Coordinates: X left-to-right, Y camera-to-DUT (front-to-rear), Z upward.
  * The external frame envelope starts at [0, 0, 0].  All dimensions are mm.
  *
  * PART choices:
  *   assembly, presentation, stacked_assembly, corner_joint_detail, placard,
+ *   placard_holder, placard_insert, placard_slide_fit_coupon,
+ *   placard_system_preview,
+ *   power_strip_mount_block, power_strip_mount_block_pair,
+ *   power_strip_fit_coupon_set, power_strip_system_preview,
+ *   ironing_test_coupon, ironing_test_coupon_set,
  *   placard_riser, placard_riser_pair,
  *   placard_spacer, placard_spacer_pair,
  *   plate_spacer, plate_spacer_set, registration_tab,
  *   registration_tab_set, gantry_joint_plate, gantry_joint_plate_set,
  *   rear_carrier_link_top, rear_carrier_link_bottom,
  *   rear_carrier_link_fit_pair, rear_carrier_link_set,
- *   gantry_splice_shell, gantry_splice_shell_pair,
- *   gantry_splice_shell_set, gantry_splice_internal_bar,
- *   gantry_splice_internal_bar_set, gantry_splice_test_set,
- *   gantry_splice_full_collar, gantry_splice_full_collar_test_set,
+ *   gantry_splice_internal_bar,
+ *   gantry_splice_full_collar,
+ *   gantry_splice_full_collar_internal_bar,
+ *   gantry_splice_full_collar_internal_bar_pair,
  *   gantry_splice_installed_preview,
- *   gantry_splice_coupon,
  *   rail_fit_coupon, m3_slide_nut, m3_slide_nut_set,
- *   m3_slide_nut_coupon, print_group_calibration,
- *   print_group_gantry_hardware, print_group_nut_bars,
- *   print_group_plate_mounts,
- *   print_group_stacking_guides, print_group_device_label,
- *   print_group_gantry_splices, print_group_gantry_splice_bars,
- *   print_group_after_splice_overnight,
- *   print_group_independent_completion, cutlist
+ *   m3_slide_nut_coupon,
+ *   production_batch_00_calibration,
+ *   production_batch_01_ironed_interfaces,
+ *   production_batch_02_splice_collars,
+ *   production_batch_03_movable_mounts,
+ *   production_batch_04_frame_hardware,
+ *   production_batch_05_identification,
+ *   guide_step_01_splice_uprights, guide_step_02_build_gantry,
+ *   guide_step_03_open_frame, guide_step_04_install_gantry,
+ *   guide_step_05_close_frame, guide_step_06_mount_carrier,
+ *   guide_step_07_mount_fixture, guide_step_08_complete,
+ *   guide_preload_channel_bar, guide_preload_map,
+ *   guide_layer_aluminum, guide_layer_connectors,
+ *   guide_layer_printed_hardware, guide_layer_fixture_plate,
+ *   guide_layer_fixture_components, guide_layer_fixture_labels,
+ *   guide_layer_carrier_body, guide_layer_carrier_labels,
+ *   guide_layer_carrier_hooks, guide_layer_device_shell,
+ *   guide_layer_device_controls, guide_layer_device_screen,
+ *   guide_layer_webcam, guide_layer_power_strip,
+ *   guide_layer_placard_holder, guide_layer_placard_insert,
+ *   guide_layer_camera_frustum, cutlist
  */
 
 include <lib/pf-2020.scad>;
@@ -41,6 +59,7 @@ SHOW_DEVICE = true;
 SHOW_CAMERA_FRUSTUM = true;
 SHOW_CONNECTOR_PROXIES = true;
 SHOW_REGISTRATION_GUIDES = true;
+SHOW_POWER_STRIP = true;
 
 // `make preview` stages these exact production meshes beside this source so
 // presentation mode is portable with the Desktop export.  Proxy mode never
@@ -62,6 +81,12 @@ cradle_labels_presentation_mesh = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
                                   cradle_base_labels_presentation_mesh;
 cradle_hooks_presentation_mesh =
     "build/imports/trimui-smart-pro-family-installed-hooks.stl";
+device_shell_presentation_mesh =
+    "build/imports/trimui-smart-pro-device-shell.stl";
+device_controls_presentation_mesh =
+    "build/imports/trimui-smart-pro-device-controls.stl";
+device_screen_presentation_mesh =
+    "build/imports/trimui-smart-pro-device-screen.stl";
 
 $fn = 48;
 epsilon = 0.02;
@@ -76,14 +101,13 @@ profile_size = 20.0;
 // aluminum. The horizontal rails terminate flush against adjacent faces of
 // each vertical post; they do not overlap one another or pass through a
 // fictitious 20 mm corner cube. The compact fleet standard deliberately uses
-// a rectangular frame: 318 mm width rails retain 35.5 mm around the limiting
-// 247 mm carrier, 306 mm depth rails preserve the C270 framing guard after the
-// rear carrier is fixed to the outer frame, and the accepted 360 mm post is
-// reused unchanged. The exact six-stick packer deliberately distributes the
-// cuts so the shortest nominal remainder is 36.4 mm instead of relying on a
-// risky 360 + 318 + 306 mm near-full-stick pattern.
-structural_x_length = 318.0;
-structural_y_length = 306.0;
+// a rectangular frame: the already-cut 306 mm rails become width rails and
+// retain 29.5 mm on each side of the limiting 247 mm carrier; the already-cut
+// 318 mm rails become depth rails, adding camera/cable space. The accepted
+// 360 mm posts are reused unchanged. Only the two fixture crossbars are
+// trimmed from their already-cut 318 mm length to the derived 306 mm width.
+structural_x_length = 306.0;
+structural_y_length = 318.0;
 structural_z_length = 360.0;
 connector_end_overhang = 4.0;
 frame_outer = [structural_x_length + 2 * profile_size,
@@ -113,10 +137,9 @@ extrusion_slot_deep_width = 6.66;
 extrusion_centre_bore = 4.2; // preview-only 20-series nominal
 
 stock_length = 1000.0;
-// Deliberately wide provisional allowance. The fullest selected pattern is
-// 318 + 318 + 318 mm, so validation includes all three cut kerfs and retains
-// 36.4 mm against a nominal 1 m stick. Measure actual stock and make a single
-// witnessed test cut before batch cutting.
+// Deliberately wide provisional allowance. It is retained for reproducible
+// future-node stock planning even though node 1 reuses already-finished rails
+// and needs only two 12 mm crossbar trim cuts.
 cut_kerf = 3.2;
 
 // Only the electronics/webcam fixture needs a three-axis gantry. It adds two
@@ -157,16 +180,22 @@ optical_datum_z = gantry_clear_z_min +
                   fixture_webcam_datum.y;
 optical_datum = [frame_outer.x / 2, optical_datum_z]; // [X, Z]
 plate_mount_gap = 5.0;
-fixture_front_service_gap = 5.0;
 
-// Mount the fixture board on the front side of its movable gantry. Its front
-// face retains 5 mm behind the front outer rail, while the C270 body can pass
-// harmlessly between the two widely separated crossbars. The rear carrier is
-// fixed 5 mm ahead of the rear outer width rails by four printed links.
-fixture_gantry_y = profile_size + fixture_front_service_gap +
-                   fixture_plate_size.z + plate_mount_gap +
-                   profile_size / 2;
+// Direction contract—do not translate "front/back" into coordinates:
+//   Y=0             = human/operator-side outer frame plane
+//   increasing Y    = toward the DUT and wall
+//   Y=frame_outer.y = wall-side outer frame plane
+//
+// The electronics/webcam gantry is intentionally advanced 45 mm wallward from
+// its legal human-side stop. This leaves a real service bay between the
+// operator-side rail and the populated board while retaining the complete DUT
+// plus more than 10 mm on every edge in the conservative C270 model. The
+// movable gantry remains the camera-distance adjustment; the DUT carrier stays
+// fixed to the wall-side frame.
+fixture_default_gantry_y = 75.0;
+fixture_gantry_y = fixture_default_gantry_y;
 rear_carrier_rail_y = frame_outer.y - profile_size / 2;
+rear_carrier_service_gap = profile_size + plate_mount_gap;
 
 // Moving the fixture gantry changes camera distance without changing the
 // fixed carrier or its optical registration.
@@ -174,9 +203,12 @@ fixture_plane_y = fixture_gantry_y - profile_size / 2 - plate_mount_gap;
 fixture_origin = [optical_datum.x - fixture_webcam_datum.x,
                   fixture_plane_y,
                   optical_datum.y - fixture_webcam_datum.y];
+human_side_inner_face_y = profile_size;
+fixture_human_service_depth =
+    fixture_plane_y - fixture_plate_size.z - human_side_inner_face_y;
 
-// The DUT carrier's hooks/device face -Y toward the webcam.
-cradle_plane_y = rear_carrier_rail_y - profile_size / 2 - plate_mount_gap;
+// The DUT carrier's hooks/device face -Y toward the webcam and human side.
+cradle_plane_y = frame_outer.y - rear_carrier_service_gap;
 cradle_origin = [optical_datum.x - cradle_screen_datum.x,
                  cradle_plane_y,
                  optical_datum.y - cradle_screen_datum.y];
@@ -215,7 +247,10 @@ device_body = [188.35, 79.77, 10.7];
 device_rear_gap = 11.0;
 device_screen_y = cradle_plane_y - device_rear_gap - device_body.z;
 optical_distance = device_screen_y - camera_lens_y;
-framing_margin = [20.0, 20.0];
+// Only the complete device body is a hard framing requirement. Carrier
+// orientation labels may crop. Ten millimetres is the asserted minimum on
+// every edge; the derived default coverage remains larger in both axes.
+framing_margin = [10.0, 10.0];
 framing_target = [device_body.x + 2 * framing_margin.x,
                   device_body.y + 2 * framing_margin.y];
 required_hfov = 2 * atan((framing_target.x / 2) / optical_distance);
@@ -232,14 +267,15 @@ spacer_size = [18.0, 14.0];
 spacer_corner_radius = 2.0;
 plate_spacer_thickness = plate_mount_gap;
 
-// Four broad-face-down ABS links fix the carrier to the rear outer width
+// Four broad-face-down ABS links fix the carrier to the wall-side outer width
 // rails. Two upper links carry the light plate; two lower links prevent swing
 // and racking. A round, keyed rail hole is the dimensional datum. The carrier
 // end has 10 mm of vertical adjustment and clamps through the carrier's
 // existing corner slot with an ordinary metal M3 nut and wide washers.
 rear_carrier_link_width = 18.0;
 rear_carrier_link_end_margin = 12.0;
-rear_carrier_link_thickness = plate_mount_gap;
+rear_carrier_link_thickness =
+    (rear_carrier_rail_y - profile_size / 2) - cradle_plane_y;
 rear_carrier_link_adjustment = 10.0;
 rear_carrier_link_key_length = 12.0;
 rear_carrier_bottom_span = cradle_mount_z.x - outer_rail_z.x;
@@ -281,7 +317,7 @@ m3_slide_nut_corner_chamfer = 3.0;
 // bracket the same -0.30 mm process compensation selected by the rail coupon.
 m3_slide_nut_coupon_deep_widths = [6.26, 6.46];
 m3_slide_nut_coupon_copies = 1;
-m3_slide_nut_required_count = 18; // 8 gantry + 4 fixture + 4 carrier + 2 placard
+m3_slide_nut_required_count = 22; // +4 operator power-strip block fasteners
 m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
 m3_slide_nut_set_count = m3_slide_nut_required_count +
                          m3_slide_nut_spare_count;
@@ -297,16 +333,14 @@ function m3_slide_nut_width_at_height(
      (m3_slide_nut_height - m3_slide_nut_flange_height));
 
 // Two non-structural fixture-gantry uprights are each made from two 164 mm
-// stock-plan segments. One support-free four-piece splice aligns each central
-// butt joint:
-// two broad external shells plus two long, channel-matched internal bars. The
-// owner physically selected the one-notch 0.20 mm external clearance. Each bar
-// captures one metal M3 nut in each rail half, so opposed shell/bar pairs bridge
-// both the outside and inside without drilling aluminum or printing a tall
-// closed sleeve.
+// stock-plan segments. One accepted full-wrap collar plus two long,
+// channel-matched internal bars aligns each central butt joint. The owner
+// physically validated the 0.20 mm collar clearance, self-indexing pusher, and
+// corrected asymmetric bars. Each bar captures one metal M3 nut in each rail
+// half, so the collar and opposed internal bars bridge the joint without
+// drilling aluminum.
 gantry_splice_length = 80.0;
 gantry_splice_wall = 4.8;
-gantry_splice_wing_depth = 8.0;
 gantry_splice_external_clearance = 0.20;
 gantry_splice_inner_width = profile_size +
                              gantry_splice_external_clearance;
@@ -315,10 +349,6 @@ gantry_splice_internal_bar_length = 80.0;
 gantry_splice_internal_nut_x = [-gantry_splice_fastener_x,
                                  gantry_splice_fastener_x];
 gantry_splice_internal_bar_count = 4; // two opposed bars x two uprights
-gantry_splice_internal_bar_columns = 2;
-gantry_splice_shell_count = 4; // two opposed shells x two uprights
-gantry_splice_fit_clearances = [0.20, 0.40, 0.60];
-gantry_splice_fit_copies = 2;
 gantry_splice_collar_hole_diameter = 4.2;
 gantry_splice_collar_corner_relief = 2.4;
 gantry_splice_collar_entry_relief = 0.8;
@@ -331,6 +361,18 @@ gantry_splice_collar_pusher_length = 3.2;
 gantry_splice_collar_pusher_depth = 2.4;
 gantry_splice_collar_pusher_lead = 1.6;
 gantry_splice_collar_pusher_tip_inset = 0.8;
+// The pusher occupies the first 3.2 mm of the collar/rail span. A regular
+// 80 mm bar therefore protrudes 3.2 mm into the rail butt joint and its holes
+// cannot align. The collar-specific bar removes exactly that material from
+// its pusher end while retaining the collar's established +/-24 mm hole
+// datums. Its geometric center consequently sits 1.6 mm toward rail B.
+gantry_splice_collar_internal_bar_length =
+    gantry_splice_internal_bar_length - gantry_splice_collar_pusher_length;
+gantry_splice_collar_internal_bar_center_offset =
+    gantry_splice_collar_pusher_length / 2;
+gantry_splice_collar_internal_nut_x =
+    [for (x = gantry_splice_internal_nut_x)
+        x - gantry_splice_collar_internal_bar_center_offset];
 
 // One identical flat ABS indexing plate locates every gantry-upright endpoint
 // against an outer depth rail.  Perpendicular rear keys enter the two slots to
@@ -344,11 +386,36 @@ gantry_joint_slot = [8.0, m3_clearance];
 gantry_joint_key_length = 18.0;
 gantry_joint_key_height = slot_key_height;
 
-placard_size = [166.0, 38.0, 3.2];
+// Reusable fleet ID system. A 230 mm holder is the largest clean standard that
+// fits the conservative 247 mm Prusa X envelope. Only the cartridge changes with
+// the DUT. Long labels shrink deterministically; ordinary names retain the
+// coarse-nozzle-proven 13.5 mm text instead of being stretched to fill space.
+placard_size = [230.0, 38.0, 7.0];
 placard_corner_radius = 4.0;
-placard_hole_spacing = 140.0;
-placard_text_size = 13.5;
+placard_hole_spacing = 190.0;
+placard_text_nominal_size = 13.5;
+placard_text_minimum_size = 8.5;
+placard_text_horizontal_margin = 10.0;
+placard_text_width_factor = 0.78;
 placard_text_relief = 1.2;
+placard_holder_base_thickness = 3.2;
+placard_holder_rail_height = 3.8;
+placard_holder_rail_lower_inner = 15.0;
+placard_holder_rail_upper_inner = 13.2;
+placard_holder_end_stop = 3.2;
+placard_holder_rail_end_inset = placard_corner_radius;
+placard_mount_countersink_diameter = 7.0;
+placard_mount_countersink_depth = 2.2;
+placard_insert_thickness = 2.4;
+placard_insert_base_width = 29.0;
+placard_insert_top_width = 25.6;
+placard_insert_body_length = placard_size.x -
+                             2 * placard_holder_rail_end_inset -
+                             placard_holder_end_stop - 0.4;
+placard_insert_body_center_x = placard_holder_end_stop / 2;
+placard_insert_tab_size = [12.0, 12.0];
+placard_insert_tab_overlap = 2.0;
+placard_insert_pull_hole_diameter = 4.0;
 placard_spacer_thickness = 3.0;
 placard_riser_size = [18.0, 58.0, 4.0];
 placard_riser_hole_offset = 18.0;
@@ -358,6 +425,90 @@ placard_center_z = placard_rail_mount_z -
                    2 * placard_riser_hole_offset;
 placard_riser_center_z = (placard_rail_mount_z + placard_center_z) / 2;
 
+// ---- Inboard human-side lower-cross-rail power-strip interface -----------
+// The strip lies horizontally across the INSIDE face of the lower human-side
+// width rail. Its long axis follows X, its measured 48.5 mm short axis stays
+// below the fixture board, and its preview-only enclosure depth projects +Y
+// into the service bay. This is deliberately not attached to either side post.
+//
+// Two independently sliding blocks avoid treating the unmeasured long-axis
+// keyhole pitch as authoritative. Each block accepts two of the strip's four
+// supplied mounting screws at the measured symmetric 27.6 mm transverse pitch.
+power_strip_body_size = [204.27, 32.0, 48.5]; // X, provisional Y depth, Z
+power_strip_body_depth_is_preview_only = true;
+power_strip_cable_keepout = [36.0, 36.0, 14.0];
+power_strip_bottom_z = 0.0;
+power_strip_inside_rail_face_y = profile_size;
+power_strip_center_x = frame_outer.x / 2;
+power_strip_left_x = power_strip_center_x - power_strip_body_size.x / 2;
+power_strip_right_x = power_strip_center_x + power_strip_body_size.x / 2;
+power_strip_keyhole_bore = 3.3;
+power_strip_keyhole_head = 5.5;
+power_strip_small_hole_diameter = 3.4;
+// Owner measured 31 mm from the far outside edges of the two 3.4 mm holes.
+power_strip_small_hole_centres = 31.0 - power_strip_small_hole_diameter;
+// This is a drill-start guide, not a final thread-size promise. Start with the
+// printed 2 mm pilot and enlarge only if the supplied screw's root diameter or
+// insertion torque requires it. The 23 mm blind depth leaves 3 mm of ABS
+// between the screw and the extrusion.
+power_strip_screw_pilot_diameter = 2.0;
+power_strip_screw_pilot_depth = 23.0;
+power_strip_screw_pilot_entry_diameter = 3.2;
+power_strip_screw_pilot_entry_depth = 1.2;
+// Local block X becomes installed world Z; local Y becomes world X. Retaining
+// the 54 x 40 x 26 mm printed envelope therefore yields a 40 mm wide,
+// 54 mm tall block on the human-side lower cross rail.
+power_strip_mount_plate_size = [54.0, 40.0, 26.0];
+power_strip_mount_face_y =
+    power_strip_inside_rail_face_y + power_strip_mount_plate_size.z;
+power_strip_body_front_y =
+    power_strip_mount_face_y + power_strip_body_size.y;
+power_strip_mount_block_center_z = power_strip_mount_plate_size.x / 2;
+// The rail slot center is Z=10. The strip's transverse hole pair is centered
+// on its measured 48.5 mm body, not on the slightly taller 54 mm ABS block.
+power_strip_rail_center_offset =
+    profile_size / 2 - power_strip_mount_block_center_z;
+power_strip_screw_row_center_offset =
+    power_strip_body_size.z / 2 - power_strip_mount_block_center_z;
+power_strip_rail_hole_pitch = 24.0;
+power_strip_rail_countersink_diameter = 6.4;
+power_strip_rail_countersink_depth = 1.8;
+power_strip_end_keyhole_inset = 12.0; // assembly-preview only; blocks slide
+power_strip_block_x = [power_strip_left_x + power_strip_end_keyhole_inset,
+                       power_strip_right_x - power_strip_end_keyhole_inset];
+power_strip_pilot_coupon_diameters = [1.6, 1.8, 2.0];
+power_strip_coupon_base_thickness = 8.0;
+power_strip_pilot_coupon_depth = 6.0;
+power_strip_pilot_coupon_size = [18.0, 18.0];
+power_strip_coupon_corner_radius = 2.0;
+power_strip_coupon_witness_diameter = 3.2;
+power_strip_coupon_witness_pitch = 4.0;
+// Preview-only representation of one of the strip's supplied screws.
+power_strip_supplied_screw_shank_diameter =
+    min(3.0, power_strip_keyhole_bore - 0.3);
+power_strip_coupon_stud_head_diameter = power_strip_keyhole_head - 0.3;
+power_strip_coupon_stud_head_height = 2.4;
+power_strip_supplied_screw_head_gap = 1.6;
+
+function placard_fitted_text_size(label_text) =
+    min(placard_text_nominal_size,
+        (placard_insert_body_length -
+         2 * placard_text_horizontal_margin) /
+        (max(1, len(label_text)) * placard_text_width_factor));
+
+// Broad, uninterrupted top surfaces for slicer ironing calibration. Six
+// disconnected coupons keep a small ABS job thermally well behaved and may be
+// split into objects for per-object slicer overrides. Semicircular edge marks
+// identify coupons 1..6 without changing the surface being evaluated.
+ironing_coupon_size = [45.0, 30.0, 3.2];
+ironing_coupon_corner_radius = 3.0;
+ironing_coupon_notch_diameter = 3.2;
+ironing_coupon_notch_pitch = 4.0;
+ironing_coupon_columns = 3;
+ironing_coupon_rows = 2;
+ironing_coupon_gap = [10.0, 10.0];
+ironing_coupon_count = ironing_coupon_columns * ironing_coupon_rows;
+
 registration_tab_size = [24.0, 72.0, 4.0];
 registration_above_frame = 12.0;
 registration_lower_slot = [9.0, m5_clearance];
@@ -365,7 +516,9 @@ registration_lower_hole_y = [12.0, 28.0];
 registration_upper_lock_y = 66.0;
 
 // ---- Derived-fit guards --------------------------------------------------
-minimum_routing_margin = 35.0;
+// The axis swap intentionally accepts 29.5 mm on each side of the widest
+// 247 mm carrier so every finished outer-frame rail can be reused.
+minimum_routing_margin = 29.0;
 inner_min = [profile_size, gantry_clear_z_min];
 inner_max = [frame_outer.x - profile_size,
              gantry_clear_z_max];
@@ -398,14 +551,18 @@ assert(min(cradle_margins) >= minimum_routing_margin,
 assert(fixture_gantry_y >= gantry_y_limits.x &&
        fixture_gantry_y <= gantry_y_limits.y,
        str("Fixture gantry Y is outside legal travel: ", fixture_gantry_y));
-assert(fixture_plane_y - fixture_plate_size.z - profile_size >=
-       fixture_front_service_gap,
-       "Fixture board must clear the rear face of the front outer rail");
+assert(fixture_plane_y - fixture_plate_size.z >= 0,
+       "Fixture board must not project beyond the human-side frame plane");
+assert(fixture_human_service_depth >= 30.0,
+       str("Fixture board must leave at least 30 mm of human-side service bay; ",
+           "actual ", fixture_human_service_depth, " mm"));
 assert((rear_carrier_rail_y - profile_size / 2) - cradle_plane_y ==
-       plate_mount_gap,
-       "Rear carrier links must bridge the declared rail-to-plate gap");
-assert(frame_outer.y - cradle_plane_y >= 25.0,
-       "Rear carrier must retain approximately one inch of cable service space");
+       rear_carrier_link_thickness,
+       "Rear carrier links must bridge the derived rail-to-plate depth");
+assert(frame_outer.y - cradle_plane_y == rear_carrier_service_gap,
+       "Rear carrier must retain the declared wall-side mounting offset");
+assert(rear_carrier_link_thickness >= plate_mount_gap,
+       "Wall-mounted rear carrier still needs a positive rail bridge");
 assert(gantry_upright_segment_count == 2 &&
        2 * gantry_upright_segment_length == gantry_upright_length,
        "Each movable gantry upright must be two equal offcut segments");
@@ -469,20 +626,16 @@ assert(m3_slide_nut_width_at_height(
        m3_nut_pocket_across_flats + 2 * 1.6,
        "Nut-pocket floor needs two printable side walls");
 assert(gantry_splice_inner_width > profile_size,
-       "Splice clamshell needs positive external rail clearance");
-assert(2 * gantry_splice_wing_depth < profile_size,
-       "Opposed splice-shell wings need a service gap");
+       "Splice collar needs positive external rail clearance");
 assert(gantry_splice_fastener_x + m3_clearance / 2 <
        gantry_splice_length / 2,
-       "Splice fasteners must remain inside the shell length");
+       "Splice fasteners must remain inside the collar length");
 assert(gantry_splice_internal_bar_length == gantry_splice_length,
-       "Internal splice bar and external shell must bridge the same seam");
+       "Base internal splice bar and collar must bridge the same seam");
 assert(max([for (x = gantry_splice_internal_nut_x) abs(x)]) +
            m3_nut_pocket_across_flats / 2 <
        gantry_splice_internal_bar_length / 2,
        "Internal splice nuts need printable end walls");
-assert(len(gantry_splice_fit_clearances) * gantry_splice_fit_copies >= 6,
-       "Small ABS splice-fit batches need at least six parts for cooling");
 assert(gantry_splice_collar_hole_diameter >= m3_clearance,
        "Horizontally printed collar holes must clear M3 hardware");
 assert(gantry_splice_collar_entry_depth > 0 &&
@@ -500,6 +653,16 @@ assert(gantry_splice_collar_pusher_depth >
        "Collar pusher must overlap the internal bar behind the rail lip");
 assert(gantry_splice_collar_pusher_depth < extrusion_slot_depth,
        "Collar pusher must remain inside the measured rail channel");
+assert(abs(gantry_splice_collar_internal_bar_length +
+           gantry_splice_collar_pusher_length - gantry_splice_length) <
+           epsilon,
+       "Collar pusher plus shortened bar must exactly fill one rail half");
+assert(max([for (index = [0 :
+                          len(gantry_splice_internal_nut_x) - 1])
+                abs(gantry_splice_collar_internal_nut_x[index] +
+                    gantry_splice_collar_internal_bar_center_offset -
+                    gantry_splice_internal_nut_x[index])]) < epsilon,
+       "Shortened collar-bar nuts must remain aligned to collar holes");
 assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
        gantry_joint_plate_size.y >
        2 * gantry_joint_hole_offset + gantry_joint_slot.y,
@@ -507,6 +670,74 @@ assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
 assert(placard_center_z + placard_size.y / 2 <
        outer_rail_z.y - profile_size / 2,
        "Front placard must remain completely below the top front rail");
+assert(placard_size.z == placard_holder_base_thickness +
+                          placard_holder_rail_height,
+       "Placard holder envelope must equal its base plus rail height");
+assert(placard_insert_base_width <
+           2 * placard_holder_rail_lower_inner &&
+       placard_insert_top_width <
+           2 * placard_holder_rail_upper_inner,
+       "Placard cartridge needs positive dovetail sliding clearance");
+assert(placard_insert_thickness < placard_holder_rail_height,
+       "Placard cartridge must fit beneath the retaining rails");
+assert(placard_insert_body_length > placard_hole_spacing,
+       "Placard cartridge must span both hidden holder fasteners");
+assert(placard_fitted_text_size(DEVICE_LABEL) >=
+           placard_text_minimum_size,
+       "Device label is too long for the fleet placard at minimum text size");
+assert(placard_size.x <= 247.0,
+       "Fleet placard holder must fit the conservative Prusa X envelope");
+assert(max(power_strip_pilot_coupon_diameters) <
+           power_strip_small_hole_diameter,
+       "Power-strip pilot variants must remain below the supplied screw path");
+assert(power_strip_coupon_stud_head_diameter < power_strip_keyhole_head,
+       "Power-strip preview screw head must fit the measured keyhole opening");
+assert(power_strip_screw_pilot_depth <
+           power_strip_mount_plate_size.z,
+       "Power-strip screw pilots must stop before the aluminum extrusion");
+assert(power_strip_screw_pilot_depth +
+           2.0 <= power_strip_mount_plate_size.z,
+       "Power-strip screw pilots need at least 2 mm of closed ABS floor");
+assert(power_strip_screw_pilot_entry_depth <
+           power_strip_screw_pilot_depth,
+       "Power-strip pilot entry chamfer must remain inside the pilot");
+assert(abs(power_strip_screw_row_center_offset) +
+           power_strip_small_hole_centres / 2 +
+           power_strip_screw_pilot_entry_diameter / 2 <
+           power_strip_mount_plate_size.x / 2,
+       "Power-strip supplied-screw pilots need printable side walls");
+assert(abs(power_strip_rail_center_offset) +
+           power_strip_rail_countersink_diameter / 2 <
+           power_strip_mount_plate_size.x / 2,
+       "Power-strip rail countersinks need printable side walls");
+assert(power_strip_rail_hole_pitch / 2 +
+           power_strip_rail_countersink_diameter / 2 <
+           power_strip_mount_plate_size.y / 2,
+       "Power-strip rail countersinks need printable end walls");
+assert(sqrt(pow(power_strip_rail_center_offset -
+                    (power_strip_screw_row_center_offset -
+                     power_strip_small_hole_centres / 2), 2) +
+            pow(power_strip_rail_hole_pitch / 2, 2)) >
+           power_strip_rail_countersink_diameter / 2 +
+           power_strip_screw_pilot_entry_diameter / 2 + 2.0,
+       "Power-strip rail and supplied-screw holes need a 2 mm ABS web");
+assert(power_strip_left_x >= profile_size &&
+       power_strip_right_x <= frame_outer.x - profile_size,
+       "Power strip must fit between the human-side corner posts");
+assert(power_strip_bottom_z >= 0 &&
+       power_strip_bottom_z + power_strip_body_size.z + 5.0 <=
+           fixture_origin.z,
+       "Lower-rail power strip needs 5 mm vertical clearance below fixture");
+assert(power_strip_inside_rail_face_y >= profile_size &&
+       power_strip_body_front_y <= frame_outer.y - profile_size,
+       "Power-strip envelope must remain inside the front/rear frame faces");
+assert(2 * len(power_strip_pilot_coupon_diameters) >= 6,
+       "Small ABS power-strip fit bed needs at least six cooling objects");
+assert(ironing_coupon_count >= 6,
+       "Small ABS ironing batches need at least six coupons for cooling");
+assert((ironing_coupon_count - 1) * ironing_coupon_notch_pitch <
+           ironing_coupon_size.y - 2 * ironing_coupon_corner_radius,
+       "Ironing coupon edge marks must remain clear of rounded corners");
 assert(registration_above_frame > 0 &&
        registration_above_frame < profile_size,
        "Registration guide must engage, but not exceed, one upper post width");
@@ -519,35 +750,51 @@ assert(registration_guide_bottom + max(registration_lower_hole_y) <
 assert(registration_guide_bottom + registration_upper_lock_y > frame_outer.z,
        "Registration upper lock must land in the stacked frame");
 
-module extrusion(length, axis) {
-    color([0.72, 0.74, 0.77])
+module extrusion(length, axis, tint = [0.72, 0.74, 0.77]) {
+    color(tint)
         pf_2020_extrusion(length, axis, profile_size,
                           EXTRUSION_DETAIL, extrusion_slot_opening,
                           extrusion_slot_depth, extrusion_centre_bore);
 }
 
-module outer_frame() {
+module outer_frame_bottom(tint = [0.72, 0.74, 0.77]) {
+    for (y = [profile_size / 2, frame_outer.y - profile_size / 2])
+        translate([profile_size, y, outer_rail_z.x])
+            extrusion(structural_x_length, "x", tint);
+
+    for (x = [profile_size / 2, frame_outer.x - profile_size / 2])
+        translate([x, profile_size, outer_rail_z.x])
+            extrusion(structural_y_length, "y", tint);
+}
+
+module outer_frame_posts(tint = [0.72, 0.74, 0.77]) {
     // The vertical posts are the stems of the delivered three-way joints.
     // Connector caps add 4 mm beyond each aluminum end.
     for (x = [profile_size / 2, frame_outer.x - profile_size / 2])
         for (y = [profile_size / 2, frame_outer.y - profile_size / 2])
             translate([x, y, frame_aluminum_z_min])
-                extrusion(structural_z_length, "z");
-
-    // Width and depth rails butt into the post side faces. Their top/bottom
-    // outer faces align with the connector-cap planes, with zero Z inset.
-    for (y = [profile_size / 2, frame_outer.y - profile_size / 2])
-        for (z = outer_rail_z)
-            translate([profile_size, y, z])
-                extrusion(structural_x_length, "x");
-
-    for (x = [profile_size / 2, frame_outer.x - profile_size / 2])
-        for (z = outer_rail_z)
-            translate([x, profile_size, z])
-                extrusion(structural_y_length, "y");
+                extrusion(structural_z_length, "z", tint);
 }
 
-module fixture_gantry() {
+module outer_frame_top(tint = [0.72, 0.74, 0.77]) {
+    for (y = [profile_size / 2, frame_outer.y - profile_size / 2])
+        translate([profile_size, y, outer_rail_z.y])
+            extrusion(structural_x_length, "x", tint);
+
+    for (x = [profile_size / 2, frame_outer.x - profile_size / 2])
+        translate([x, profile_size, outer_rail_z.y])
+            extrusion(structural_y_length, "y", tint);
+}
+
+module outer_frame(tint = [0.72, 0.74, 0.77]) {
+    // Width and depth rails butt into the post side faces. Their top/bottom
+    // outer faces align with the connector-cap planes, with zero Z inset.
+    outer_frame_bottom(tint);
+    outer_frame_posts(tint);
+    outer_frame_top(tint);
+}
+
+module fixture_gantry(tint = [0.72, 0.74, 0.77]) {
     // Uprights share the X planes of the outer depth rails.  This lets one
     // flat keyed plate bridge each T joint while the complete gantry slides
     // anywhere along the depth-rail slots.
@@ -556,13 +803,13 @@ module fixture_gantry() {
             translate([x, fixture_gantry_y,
                        gantry_clear_z_min +
                        segment * gantry_upright_segment_length])
-                extrusion(gantry_upright_segment_length, "z");
+                extrusion(gantry_upright_segment_length, "z", tint);
 
     // Concealed metal L-connectors let each crossbar slide vertically on the
     // uprights; plate fasteners then slide horizontally in these crossbars.
     for (z = fixture_crossbar_z)
         translate([profile_size, fixture_gantry_y, z])
-            extrusion(gantry_crossbar_length, "x");
+            extrusion(gantry_crossbar_length, "x", tint);
 }
 
 module three_way_end_connector_proxy(x_right = false,
@@ -631,10 +878,10 @@ module connector_proxies() {
     gantry_splice_previews();
 }
 
-module outer_corner_connector_proxies() {
+module outer_corner_connector_proxies(top_values = [false, true]) {
     for (x_right = [false, true])
         for (y_rear = [false, true])
-            for (top = [false, true])
+            for (top = top_values)
                 three_way_end_connector_proxy(x_right, y_rear, top);
 }
 
@@ -773,15 +1020,36 @@ module plate_mount_previews() {
                                         outer_rail_z[index]);
 }
 
-module device_and_camera_preview() {
-    // Device front plane is the optical target; its rear faces the carrier.
-    color([0.08, 0.09, 0.10, 0.88])
-        translate([optical_datum.x - device_body.x / 2,
-                   device_screen_y,
-                   optical_datum.y - device_body.y / 2])
-            cube([device_body.x, device_body.z, device_body.y]);
+module device_preview(detail = PLATE_DETAIL) {
+    // The canonical platform model and the carrier use the same local axes:
+    // X left/right, Y bottom/top, Z rear/front. Its rear is held 11 mm ahead
+    // of the carrier datum, which keeps the detailed screen/front surface on
+    // the same analytical optical plane used by the FOV guard.
+    if (detail == "mesh") {
+        color([0.15, 0.16, 0.17, 0.98])
+            device_model_mesh_at_installed_datum(
+                device_shell_presentation_mesh);
+        color([0.025, 0.03, 0.035, 1.0])
+            device_model_mesh_at_installed_datum(
+                device_controls_presentation_mesh, 0.03);
+        color([0.015, 0.10, 0.15, 1.0])
+            device_model_mesh_at_installed_datum(
+                device_screen_presentation_mesh, 0.06);
+    } else {
+        // Lightweight envelope keeps lint and ordinary assembly preview free
+        // of generated presentation assets.
+        color([0.08, 0.09, 0.10, 0.88])
+            translate([optical_datum.x - device_body.x / 2,
+                       device_screen_y,
+                       optical_datum.y - device_body.y / 2])
+                cube([device_body.x, device_body.z, device_body.y]);
+    }
 
-    // Webcam body is intentionally only an envelope pending model/FOV ID.
+}
+
+module webcam_preview() {
+    // Webcam body is intentionally an installed keep-out envelope; its lens
+    // datum and FOV are the authoritative interfaces for this chassis.
     color([0.10, 0.10, 0.11, 0.9])
         translate([optical_datum.x - camera_installed_keepout.x / 2,
                    fixture_plane_y,
@@ -792,44 +1060,415 @@ module device_and_camera_preview() {
             rotate([-90, 0, 0]) cylinder(d = 12, h = 5);
 }
 
-module camera_frustum_preview() {
+module device_and_camera_preview(detail = PLATE_DETAIL) {
+    device_preview(detail);
+    webcam_preview();
+}
+
+module device_model_mesh_at_installed_datum(mesh_path,
+                                             front_offset = 0) {
+    translate(cradle_origin)
+        rotate([90, 0, 0])
+            translate([
+                (cradle_plate_size.x - device_body.x) / 2,
+                (cradle_plate_size.y - device_body.y) / 2,
+                device_rear_gap + front_offset
+            ])
+                import(mesh_path, convexity = 10);
+}
+
+module camera_frustum_geometry() {
     lens = [optical_datum.x, camera_lens_y, optical_datum.y];
     target_y = device_screen_y - 0.2;
     coverage_half_width = optical_distance * tan(camera_assumed_hfov / 2);
     coverage_half_height = optical_distance * tan(camera_assumed_vfov / 2);
-    %color([0.18, 0.72, 0.92, 0.18])
-        hull() {
-            translate(lens) sphere(d = 2.0, $fn = 16);
-            for (x = [-coverage_half_width, coverage_half_width])
-                for (z = [-coverage_half_height, coverage_half_height])
-                    translate([optical_datum.x + x, target_y,
-                               optical_datum.y + z])
-                        sphere(d = 1.0, $fn = 12);
-        }
+    hull() {
+        translate(lens) sphere(d = 2.0, $fn = 16);
+        for (x = [-coverage_half_width, coverage_half_width])
+            for (z = [-coverage_half_height, coverage_half_height])
+                translate([optical_datum.x + x, target_y,
+                           optical_datum.y + z])
+                    sphere(d = 1.0, $fn = 12);
+    }
 }
 
-module placard_text(relief = placard_text_relief) {
-    translate([0, 0, placard_size.z])
+module camera_frustum_preview() {
+    %color([0.18, 0.72, 0.92, 0.18])
+        camera_frustum_geometry();
+}
+
+module placard_text(relief = placard_text_relief,
+                    label_text = DEVICE_LABEL,
+                    center_x = placard_insert_body_center_x) {
+    fitted_size = placard_fitted_text_size(label_text);
+    assert(fitted_size >= placard_text_minimum_size,
+           str("Placard label does not fit at the ",
+               placard_text_minimum_size, " mm fleet minimum: ",
+               label_text));
+    translate([center_x, 0, placard_insert_thickness])
         linear_extrude(height = relief)
-            text(DEVICE_LABEL, size = placard_text_size,
+            text(label_text, size = fitted_size,
                  font = "Liberation Sans:style=Bold",
                  halign = "center", valign = "center");
 }
 
-module device_id_placard() {
+// One support-free retaining rail. The inner face grows inward gradually as
+// Z rises, producing a coarse-nozzle-friendly dovetail without support.
+module placard_holder_rail(side = 1, holder_length = placard_size.x) {
+    rail_left = -holder_length / 2 + placard_holder_rail_end_inset;
+    rail_right = holder_length / 2 - placard_holder_rail_end_inset;
+    rail_length = rail_right - rail_left;
+    outer_y = placard_size.y / 2;
+    lower_y = side > 0 ? placard_holder_rail_lower_inner : -outer_y;
+    upper_y = side > 0 ? placard_holder_rail_upper_inner : -outer_y;
+    lower_width = outer_y - placard_holder_rail_lower_inner;
+    upper_width = outer_y - placard_holder_rail_upper_inner;
+
+    hull() {
+        translate([rail_left, lower_y,
+                   placard_holder_base_thickness])
+            cube([rail_length, lower_width, 0.4]);
+        translate([rail_left, upper_y,
+                   placard_size.z - 0.8])
+            cube([rail_length, upper_width, 0.8]);
+    }
+}
+
+module placard_holder(holder_length = placard_size.x,
+                      with_mount_holes = true) {
+    rail_left = -holder_length / 2 + placard_holder_rail_end_inset;
+
     difference() {
         union() {
-            linear_extrude(height = placard_size.z)
-                pf_rounded_rect_2d([placard_size.x, placard_size.y],
+            linear_extrude(height = placard_holder_base_thickness)
+                pf_rounded_rect_2d([holder_length, placard_size.y],
                                    placard_corner_radius);
-            placard_text();
+
+            placard_holder_rail(-1, holder_length);
+            placard_holder_rail(1, holder_length);
+
+            // Closed left end; the right side stays open for cartridge swaps.
+            translate([rail_left, -placard_holder_rail_lower_inner,
+                       placard_holder_base_thickness])
+                cube([placard_holder_end_stop,
+                      2 * placard_holder_rail_lower_inner,
+                      placard_holder_rail_height]);
         }
-        for (x = [-placard_hole_spacing / 2,
-                   placard_hole_spacing / 2])
-            translate([x, 0, -epsilon])
+
+        if (with_mount_holes)
+            for (x = [-placard_hole_spacing / 2,
+                       placard_hole_spacing / 2]) {
+                translate([x, 0, -epsilon])
+                    cylinder(d = m3_clearance,
+                             h = placard_holder_base_thickness +
+                                 2 * epsilon,
+                             $fn = 28);
+                translate([x, 0,
+                           placard_holder_base_thickness -
+                           placard_mount_countersink_depth])
+                    cylinder(d1 = m3_clearance,
+                             d2 = placard_mount_countersink_diameter,
+                             h = placard_mount_countersink_depth + epsilon,
+                             $fn = 32);
+            }
+    }
+}
+
+module placard_insert_blank(
+    body_length = placard_insert_body_length,
+    body_center_x = placard_insert_body_center_x,
+    with_pull_tab = true) {
+    body_right = body_center_x + body_length / 2;
+    tab_center_x = body_right + placard_insert_tab_size.x / 2 -
+                   placard_insert_tab_overlap;
+
+    difference() {
+        union() {
+            hull() {
+                translate([body_center_x, 0, 0])
+                    linear_extrude(height = 0.4)
+                        pf_rounded_rect_2d(
+                            [body_length, placard_insert_base_width], 2.0);
+                translate([body_center_x, 0,
+                           placard_insert_thickness - 0.4])
+                    linear_extrude(height = 0.4)
+                        pf_rounded_rect_2d(
+                            [body_length, placard_insert_top_width], 1.6);
+            }
+
+            if (with_pull_tab)
+                hull() {
+                    translate([tab_center_x, 0, 0])
+                        linear_extrude(height = 0.4)
+                            pf_rounded_rect_2d(placard_insert_tab_size, 2.0);
+                    translate([tab_center_x, 0,
+                               placard_insert_thickness - 0.4])
+                        linear_extrude(height = 0.4)
+                            pf_rounded_rect_2d(
+                                [placard_insert_tab_size.x - 1.0,
+                                 placard_insert_tab_size.y - 1.0], 1.6);
+                }
+        }
+
+        if (with_pull_tab)
+            translate([tab_center_x + 1.0, 0, -epsilon])
+                cylinder(d = placard_insert_pull_hole_diameter,
+                         h = placard_insert_thickness + 2 * epsilon,
+                         $fn = 24);
+    }
+}
+
+module placard_insert(label_text = DEVICE_LABEL,
+                      body_length = placard_insert_body_length,
+                      body_center_x = placard_insert_body_center_x,
+                      with_pull_tab = true,
+                      with_text = true) {
+    union() {
+        placard_insert_blank(body_length, body_center_x, with_pull_tab);
+        if (with_text)
+            placard_text(placard_text_relief, label_text, body_center_x);
+    }
+}
+
+// Backward-compatible name for the device-specific printable piece.
+module device_id_placard() {
+    placard_insert();
+}
+
+// Short coupon for validating the dovetail clearance before printing the
+// permanent fleet-standard holder. Both pieces are broad-face-down and
+// support-free.
+module placard_slide_fit_coupon() {
+    coupon_holder_length = 45.0;
+    coupon_rail_left = -coupon_holder_length / 2 +
+                       placard_holder_rail_end_inset;
+    coupon_body_left = coupon_rail_left + placard_holder_end_stop + 0.4;
+    coupon_body_right = coupon_holder_length / 2 -
+                        placard_holder_rail_end_inset;
+    coupon_body_length = coupon_body_right - coupon_body_left;
+    coupon_body_center = (coupon_body_left + coupon_body_right) / 2;
+
+    placard_holder(coupon_holder_length, false);
+    translate([0, 55.0, 0])
+        placard_insert("FIT", coupon_body_length,
+                       coupon_body_center, true, true);
+}
+
+module placard_system_detail_preview() {
+    color([0.16, 0.28, 0.42]) placard_holder();
+    // Shown partially withdrawn to make the permanent/changeable split clear.
+    color([0.96, 0.72, 0.12])
+        translate([28.0, 0, placard_holder_base_thickness])
+            placard_insert();
+}
+
+// Coarse half-round edge marks identify otherwise similar fit coupons after
+// they leave the print bed. They are deliberately much larger than a 0.8 mm
+// extrusion line and never disturb the feature under test.
+module power_strip_coupon_witnesses(size, height, count) {
+    for (index = [0 : count - 1])
+        translate([size.x / 2,
+                   (index - (count - 1) / 2) *
+                       power_strip_coupon_witness_pitch,
+                   -epsilon])
+            cylinder(d = power_strip_coupon_witness_diameter,
+                     h = height + 2 * epsilon,
+                     $fn = 24);
+}
+
+// Optional direct-drive test block. Its blind hole uses the same print
+// direction as the production screw pilots. Two copies of each diameter keep
+// the small ABS batch thermally stable; production remains a drill-start
+// guide and does not require this coupon.
+module power_strip_pilot_fit_coupon(pilot_diameter,
+                                    witness_notches = 1) {
+    difference() {
+        linear_extrude(height = power_strip_coupon_base_thickness)
+            pf_rounded_rect_2d(power_strip_pilot_coupon_size,
+                               power_strip_coupon_corner_radius);
+
+        translate([0, 0,
+                   power_strip_coupon_base_thickness -
+                       power_strip_pilot_coupon_depth])
+            cylinder(d = pilot_diameter,
+                     h = power_strip_pilot_coupon_depth + epsilon,
+                     $fn = 24);
+        power_strip_coupon_witnesses(power_strip_pilot_coupon_size,
+                                     power_strip_coupon_base_thickness,
+                                     witness_notches);
+    }
+}
+
+// Six disconnected support-free objects: two rows each repeat the
+// 1.6/1.8/2.0 mm screw-pilot choices. Printing this set is optional if the
+// production 2 mm holes will be used only as drill centers.
+module power_strip_fit_coupon_set() {
+    coupon_pitch = power_strip_pilot_coupon_size.x + 8.0;
+    for (row = [0, 1])
+        for (index = [0 : len(power_strip_pilot_coupon_diameters) - 1])
+            translate([
+                power_strip_pilot_coupon_size.x / 2 +
+                    index * coupon_pitch,
+                power_strip_pilot_coupon_size.y / 2 +
+                    row * coupon_pitch,
+                0
+            ])
+                power_strip_pilot_fit_coupon(
+                    power_strip_pilot_coupon_diameters[index], index + 1);
+}
+
+// One substantial end block: two countersunk M3 holes clamp it to preloaded
+// rail nut bars. The second measured pair receives two of the strip's supplied
+// wall-mount screws. Those are 2 mm blind drill-start pilots—not printed
+// threads—and stop 3 mm before the aluminum. Both blocks are identical and
+// print broad-face down without support.
+module power_strip_mount_block() {
+    difference() {
+        linear_extrude(height = power_strip_mount_plate_size.z)
+            pf_rounded_rect_2d([power_strip_mount_plate_size.x,
+                                power_strip_mount_plate_size.y], 3.0);
+
+        for (y = [-power_strip_rail_hole_pitch / 2,
+                   power_strip_rail_hole_pitch / 2]) {
+            translate([power_strip_rail_center_offset, y, -epsilon])
                 cylinder(d = m3_clearance,
-                         h = placard_size.z +
-                             placard_text_relief + 2 * epsilon);
+                         h = power_strip_mount_plate_size.z + 2 * epsilon,
+                         $fn = 28);
+            translate([power_strip_rail_center_offset, y,
+                       power_strip_mount_plate_size.z -
+                           power_strip_rail_countersink_depth])
+                cylinder(d1 = m3_clearance,
+                         d2 = power_strip_rail_countersink_diameter,
+                         h = power_strip_rail_countersink_depth + epsilon,
+                         $fn = 32);
+        }
+
+        for (x = [power_strip_screw_row_center_offset -
+                       power_strip_small_hole_centres / 2,
+                   power_strip_screw_row_center_offset +
+                       power_strip_small_hole_centres / 2]) {
+            translate([x, 0,
+                       power_strip_mount_plate_size.z -
+                           power_strip_screw_pilot_depth])
+                cylinder(d = power_strip_screw_pilot_diameter,
+                         h = power_strip_screw_pilot_depth + epsilon,
+                         $fn = 24);
+            translate([x, 0,
+                       power_strip_mount_plate_size.z -
+                           power_strip_screw_pilot_entry_depth])
+                cylinder(d1 = power_strip_screw_pilot_diameter,
+                         d2 = power_strip_screw_pilot_entry_diameter,
+                         h = power_strip_screw_pilot_entry_depth + epsilon,
+                         $fn = 28);
+        }
+    }
+}
+
+module power_strip_mount_block_pair() {
+    translate([power_strip_mount_plate_size.x / 2,
+               power_strip_mount_plate_size.y / 2, 0])
+        power_strip_mount_block();
+    translate([1.5 * power_strip_mount_plate_size.x + 8.0,
+               power_strip_mount_plate_size.y / 2, 0])
+        power_strip_mount_block();
+}
+
+module installed_power_strip_bracket(bracket_x) {
+    // Local X -> world Z, local Y -> world X, local Z -> world Y. The block's
+    // two rail holes therefore follow the lower cross-rail slot in X, while
+    // the supplied-screw pilots reproduce the strip's transverse Z spacing.
+    multmatrix([
+        [0, 1, 0, bracket_x],
+        [0, 0, 1, power_strip_inside_rail_face_y],
+        [1, 0, 0, power_strip_mount_block_center_z],
+        [0, 0, 0, 1]
+    ]) {
+            color([0.95, 0.53, 0.12]) power_strip_mount_block();
+
+            // Presentation-only supplied screw heads. The printable block
+            // contains only blind drill-start pilots.
+            color([0.58, 0.60, 0.63])
+                for (x = [power_strip_screw_row_center_offset -
+                               power_strip_small_hole_centres / 2,
+                           power_strip_screw_row_center_offset +
+                               power_strip_small_hole_centres / 2])
+                    translate([x, 0,
+                               power_strip_mount_plate_size.z]) {
+                    cylinder(d = power_strip_supplied_screw_shank_diameter,
+                             h = power_strip_supplied_screw_head_gap,
+                             $fn = 28);
+                    translate([0, 0, power_strip_supplied_screw_head_gap])
+                        cylinder(d = power_strip_coupon_stud_head_diameter,
+                                 h = power_strip_coupon_stud_head_height,
+                                 $fn = 32);
+                }
+        }
+}
+
+module power_strip_mounts_preview() {
+    for (bracket_x = power_strip_block_x)
+        installed_power_strip_bracket(bracket_x);
+}
+
+module power_strip_body_preview() {
+    // The measured X/Z envelope is authoritative. Y depth remains a clearly
+    // documented preview proxy until a side-profile measurement is needed.
+    // Its back hangs on the two lower-rail blocks at
+    // power_strip_mount_face_y; the complete proxy projects inward (+Y).
+    color([0.91, 0.91, 0.88, 0.96])
+        translate([power_strip_left_x,
+                   power_strip_mount_face_y,
+                   power_strip_bottom_z])
+            cube(power_strip_body_size);
+
+    // Fixed cable exits the left short end. This keep-out remains completely
+    // inside the frame and clear of the fixture board.
+    %color([0.92, 0.20, 0.16, 0.28])
+        translate([power_strip_left_x - power_strip_cable_keepout.x,
+                   power_strip_mount_face_y,
+                   power_strip_bottom_z +
+                       (power_strip_body_size.z -
+                        power_strip_cable_keepout.z) / 2])
+            cube(power_strip_cable_keepout);
+}
+
+module power_strip_system_preview() {
+    power_strip_mounts_preview();
+    power_strip_body_preview();
+}
+
+module ironing_test_coupon(witness_notches = 1) {
+    difference() {
+        linear_extrude(height = ironing_coupon_size.z)
+            pf_rounded_rect_2d([ironing_coupon_size.x,
+                                ironing_coupon_size.y],
+                               ironing_coupon_corner_radius);
+
+        // Put all identifiers on one short edge. The cylinder centers sit on
+        // that edge, leaving clean half-round scallops and a broad top face.
+        for (index = [0 : witness_notches - 1])
+            translate([ironing_coupon_size.x / 2,
+                       (index - (witness_notches - 1) / 2) *
+                           ironing_coupon_notch_pitch,
+                       -epsilon])
+                cylinder(d = ironing_coupon_notch_diameter,
+                         h = ironing_coupon_size.z + 2 * epsilon,
+                         $fn = 24);
+    }
+}
+
+module ironing_test_coupon_set() {
+    for (index = [0 : ironing_coupon_count - 1]) {
+        column = index % ironing_coupon_columns;
+        row = floor(index / ironing_coupon_columns);
+        translate([ironing_coupon_size.x / 2 +
+                       column * (ironing_coupon_size.x +
+                                 ironing_coupon_gap.x),
+                   ironing_coupon_size.y / 2 +
+                       row * (ironing_coupon_size.y +
+                              ironing_coupon_gap.y),
+                   0])
+            ironing_test_coupon(index + 1);
     }
 }
 
@@ -993,111 +1632,43 @@ module gantry_joint_plate_set() {
                 gantry_joint_plate();
 }
 
-// One half of a support-free external clamshell for the central butt joint in
-// a gantry upright. Two identical halves oppose each other on the rail. Each
-// has two M3 clearance holes that pull against a channel-matched internal bar;
-// one metal nut lands in each rail segment. The shallow rail key and side
-// wings align the seam while the inside/outside bridges resist bending.
-module gantry_splice_shell(clearance = gantry_splice_external_clearance,
-                           shell_length = gantry_splice_length,
-                           with_fastener_holes = true,
-                           witness_notches = 0) {
-    inner_width = profile_size + clearance;
-    outer_width = inner_width + 2 * gantry_splice_wall;
-
-    assert(clearance > 0,
-           "Gantry splice shell needs positive rail clearance");
-    assert(shell_length > 2 * gantry_splice_wall,
-           "Gantry splice shell is too short for its wall thickness");
-
-    difference() {
-        union() {
-            translate([-shell_length / 2, -outer_width / 2, 0])
-                cube([shell_length, outer_width, gantry_splice_wall]);
-
-            for (side = [-1, 1])
-                translate([-shell_length / 2,
-                           side * (inner_width / 2 +
-                                   gantry_splice_wall / 2) -
-                           gantry_splice_wall / 2,
-                           gantry_splice_wall])
-                    cube([shell_length, gantry_splice_wall,
-                          gantry_splice_wing_depth]);
-
-            translate([0, 0, gantry_splice_wall])
-                linear_extrude(height = slot_key_height)
-                    pf_rounded_rect_2d(
-                        [shell_length - 2 * gantry_splice_wall,
-                         slot_key_width], 1.0);
-        }
-
-        if (with_fastener_holes)
-            for (x = gantry_splice_internal_nut_x)
-                translate([x, 0, -epsilon])
-                    cylinder(d = m3_clearance,
-                             h = gantry_splice_wall + slot_key_height +
-                                 2 * epsilon,
-                             $fn = 28);
-
-        if (witness_notches > 0)
-            for (notch = [0 : witness_notches - 1])
-                translate([shell_length / 2,
-                           (notch - (witness_notches - 1) / 2) * 3.0,
-                           -epsilon])
-                    cylinder(d = 2.4,
-                             h = gantry_splice_wall + 2 * epsilon,
-                             $fn = 20);
-    }
-}
-
 // A long version of the physically accepted 11.75 / 6.46 mm M3 nut bar.
 // It slides halfway into the first open rail, the second rail slides over its
 // exposed half, and its two metal nuts land on opposite sides of the seam.
 // Print the broad bearing face down exactly like the accepted 30 mm bars.
-module gantry_splice_internal_bar() {
+module gantry_splice_internal_bar(
+    bar_length = gantry_splice_internal_bar_length,
+    nut_positions = gantry_splice_internal_nut_x,
+    witness_notches = 0
+) {
     m3_slide_nut_carrier(
         m3_slide_nut_bearing_width,
         m3_slide_nut_deep_width,
-        0,
-        gantry_splice_internal_bar_length,
-        gantry_splice_internal_nut_x);
+        witness_notches,
+        bar_length,
+        nut_positions);
 }
 
-module gantry_splice_internal_bar_set() {
-    for (index = [0 : gantry_splice_internal_bar_count - 1])
-        translate([(index % gantry_splice_internal_bar_columns) *
-                       (gantry_splice_internal_bar_length + 4.0),
-                   floor(index / gantry_splice_internal_bar_columns) *
-                       15.0, 0])
-            gantry_splice_internal_bar();
+// The full-wrap collar's self-indexing foot consumes 3.2 mm at the trailing
+// end. This asymmetric double-nut bar stops against that foot, ends exactly at
+// the open rail seam, then tracks the collar holes as both slide into place.
+module gantry_splice_full_collar_internal_bar() {
+    gantry_splice_internal_bar(
+        gantry_splice_collar_internal_bar_length,
+        gantry_splice_collar_internal_nut_x,
+        1);
 }
 
-module gantry_splice_shell_pair() {
-    translate([0, -25.0, 0]) gantry_splice_shell();
-    translate([0,  25.0, 0]) gantry_splice_shell();
+module gantry_splice_full_collar_internal_bar_pair() {
+    for (row = [0, 1])
+        translate([0, row * 18.0, 0])
+            gantry_splice_full_collar_internal_bar();
 }
 
-module gantry_splice_shell_set() {
-    for (index = [0 : gantry_splice_shell_count - 1])
-        translate([(index % 2) * 82.0,
-                   floor(index / 2) * 49.0, 0])
-            gantry_splice_shell();
-}
-
-// One complete physical-validation joint: two opposed external shells and two
-// internal double-nut bars. All four pieces lie broad-face down; no supports
-// and no vertically printed sleeve are required.
-module gantry_splice_test_set() {
-    translate([0, -25.0, 0]) gantry_splice_shell();
-    translate([0,  25.0, 0]) gantry_splice_shell();
-    translate([95.0, -9.0, 0]) gantry_splice_internal_bar();
-    translate([95.0,  9.0, 0]) gantry_splice_internal_bar();
-}
-
-// Experimental one-piece 360-degree alternative to the two external shells.
-// The collar is end-loaded before the second rail half is joined, and the same
-// two opposed internal double-nut bars provide the metal-threaded clamp points.
-// It reuses the physically accepted 0.20 mm total face clearance. Small corner
+// The accepted one-piece, 360-degree splice collar is end-loaded before the
+// second rail half is joined. Two opposed internal double-nut bars provide the
+// metal-threaded clamp points. It uses the physically validated 0.20 mm total
+// face clearance. Small corner
 // dogbones prevent rounded printed inside corners from stealing that clearance;
 // shallow enlarged entries tolerate first-layer elephant foot. Two opposed
 // pusher keys at the trailing end enter the same channels as the internal bars:
@@ -1204,10 +1775,10 @@ module gantry_splice_full_collar(
     }
 }
 
-// Stand the closed collar on one open end. This is the only support-free
-// orientation, so use a brim and treat it as a fit/racking experiment: its
-// axial load path crosses Z-layer bonds and is not assumed stronger than the
-// accepted broad-face shells without a physical comparison.
+// Stand the accepted collar on its indexed open end. This is its support-free
+// production orientation. The lab's validated ABS process needs no brim.
+// The collar is restricted to the light fixture gantry; it is never an
+// outer-frame or stacking load-path part.
 module gantry_splice_full_collar_print() {
     outer_width = gantry_splice_inner_width + 2 * gantry_splice_wall;
     translate([0, 0, gantry_splice_length / 2])
@@ -1215,80 +1786,88 @@ module gantry_splice_full_collar_print() {
             gantry_splice_full_collar();
 }
 
-module gantry_splice_full_collar_test_set() {
-    outer_width = gantry_splice_inner_width + 2 * gantry_splice_wall;
-    translate([outer_width / 2, outer_width / 2, 0])
-        gantry_splice_full_collar_print();
-    translate([85.0, 15.0, 0]) gantry_splice_internal_bar();
-    translate([85.0, 33.0, 0]) gantry_splice_internal_bar();
-}
-
-// Cutaway-style visual proof of the assembled load path. The two 60 mm rail
-// fragments are translucent and meet at X=0; both 80 mm bars visibly bridge
-// that seam inside opposite channels while the selected shells bridge it
-// outside. This is a presentation part only and must never be exported for
-// printing.
+// Cutaway-style visual proof of the selected assembled load path. The two
+// 60 mm rail fragments are translucent and meet at X=0; both corrected
+// 76.8 mm bars visibly bridge that seam inside opposite channels while the
+// accepted full-wrap collar bridges it outside. This is presentation-only.
 module gantry_splice_installed_preview() {
     demo_rail_half = 60.0;
     rail_center_z = gantry_splice_wall + profile_size / 2;
     internal_bar_z = gantry_splice_wall + extrusion_slot_lip_depth;
+    collar_outer_width = gantry_splice_inner_width +
+                         2 * gantry_splice_wall;
+    cutaway_y_min = -collar_outer_width / 2 - epsilon;
+    cutaway_y_size = collar_outer_width / 2 + 2 * epsilon;
 
-    color([0.12, 0.38, 0.70, 0.42]) {
-        gantry_splice_shell();
-        translate([0, 0, 2 * rail_center_z])
-            mirror([0, 0, 1]) gantry_splice_shell();
-    }
+    // Remove the camera-facing half of both the collar and aluminum. This is
+    // a literal section view, not alpha-only x-ray trickery, so the opposed
+    // orange bars remain unmistakable in static handbook renders.
+    color([0.12, 0.38, 0.70, 0.82])
+        difference() {
+            translate([0, 0, rail_center_z])
+                gantry_splice_full_collar();
+            translate([-gantry_splice_length / 2 - epsilon,
+                       cutaway_y_min, -epsilon])
+                cube([gantry_splice_length + 2 * epsilon,
+                      cutaway_y_size,
+                      2 * rail_center_z + 2 * epsilon]);
+        }
 
-    color([0.68, 0.71, 0.75, 0.20]) {
-        translate([-demo_rail_half, 0, rail_center_z])
-            extrusion(demo_rail_half, "x");
-        translate([0, 0, rail_center_z])
-            extrusion(demo_rail_half, "x");
+    color([0.68, 0.71, 0.75, 0.52]) {
+        difference() {
+            translate([-demo_rail_half, 0, rail_center_z])
+                extrusion(demo_rail_half, "x");
+            translate([-demo_rail_half - epsilon,
+                       -profile_size / 2 - epsilon,
+                       rail_center_z - profile_size / 2 - epsilon])
+                cube([demo_rail_half + 2 * epsilon,
+                      profile_size / 2 + 2 * epsilon,
+                      profile_size + 2 * epsilon]);
+        }
+        difference() {
+            translate([0, 0, rail_center_z])
+                extrusion(demo_rail_half, "x");
+            translate([-epsilon,
+                       -profile_size / 2 - epsilon,
+                       rail_center_z - profile_size / 2 - epsilon])
+                cube([demo_rail_half + 2 * epsilon,
+                      profile_size / 2 + 2 * epsilon,
+                      profile_size + 2 * epsilon]);
+        }
     }
 
     // Draw the internal bars last as an X-ray overlay so their hidden seam
     // bridge remains legible in the generated OpenCSG preview.
-    #color([0.96, 0.52, 0.08]) {
-        translate([0, 0, internal_bar_z])
-            gantry_splice_internal_bar();
+    color([0.96, 0.40, 0.04]) {
+        translate([gantry_splice_collar_internal_bar_center_offset,
+                   0, internal_bar_z])
+            gantry_splice_full_collar_internal_bar();
         translate([0, 0, 2 * rail_center_z])
             mirror([0, 0, 1])
-                translate([0, 0, internal_bar_z])
-                    gantry_splice_internal_bar();
+                translate([
+                    gantry_splice_collar_internal_bar_center_offset,
+                    0, internal_bar_z])
+                    gantry_splice_full_collar_internal_bar();
     }
 
 }
 
-// Six short U sections calibrated the external 2020 face width. The owner's
-// one-notch 0.20 mm sample fit perfectly and now controls production.
-module gantry_splice_fit_coupon() {
-    for (index = [0 : len(gantry_splice_fit_clearances) - 1])
-        for (copy = [0 : gantry_splice_fit_copies - 1])
-            translate([index * 30.0, copy * 35.0, 0])
-                gantry_splice_shell(
-                    gantry_splice_fit_clearances[index],
-                    25.0, false, index + 1);
-}
-
-module installed_gantry_splice_half(x, y, front = true) {
-    multmatrix(front ? [
+module installed_gantry_splice_collar(x, y) {
+    // Local X follows the upright's world Z axis; local Y/Z become its X/Y
+    // cross-section. One accepted full-wrap collar replaces the obsolete pair
+    // of external U-shells at each upright seam.
+    multmatrix([
         [0, 1, 0, x],
-        [0, 0, 1, y - profile_size / 2 - gantry_splice_wall],
+        [0, 0, 1, y],
         [1, 0, 0, gantry_upright_splice_z],
         [0, 0, 0, 1]
-    ] : [
-        [0, 1, 0, x],
-        [0, 0, -1, y + profile_size / 2 + gantry_splice_wall],
-        [1, 0, 0, gantry_upright_splice_z],
-        [0, 0, 0, 1]
-    ]) gantry_splice_shell();
+    ]) gantry_splice_full_collar();
 }
 
 module gantry_splice_previews() {
     color([0.94, 0.47, 0.10])
         for (x = gantry_upright_x)
-            for (front = [false, true])
-                installed_gantry_splice_half(x, fixture_gantry_y, front);
+            installed_gantry_splice_collar(x, fixture_gantry_y);
 }
 
 module registration_tab() {
@@ -1346,11 +1925,10 @@ module installed_registration_guides() {
             }
 }
 
-module placard_assembly_preview() {
-    // Flat hanging straps bolt to the front slot at Z=354 and put the placard
-    // holes at Z=318.  The complete sign remains beneath the top front rail,
-    // faces the operator at the camera/front side, and never moves with
-    // the movable fixture gantry.
+module placard_risers_preview() {
+    // Flat hanging straps bolt to the front slot at Z=354 and put the reusable
+    // holder at Z=318. The holder remains beneath the top front rail and never
+    // moves with the fixture gantry; only its labeled cartridge slides out.
     color([0.94, 0.47, 0.10])
         for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
                   frame_outer.x / 2 + placard_hole_spacing / 2])
@@ -1359,20 +1937,30 @@ module placard_assembly_preview() {
                        placard_riser_center_z])
                 rotate([90, 0, 0])
                     rotate([0, 0, 180]) placard_riser();
+}
 
+module placard_holder_preview() {
     color([0.16, 0.28, 0.42])
         translate([frame_outer.x / 2,
                    -(placard_spacer_thickness + placard_riser_size.z),
                    placard_center_z])
-            rotate([90, 0, 0]) device_id_placard();
-    // Contrasting preview overlay; production remains one material/mesh and
-    // can use a slicer filament change at the 3.2 mm text layer if desired.
-    %color([0.96, 0.72, 0.12])
+            rotate([90, 0, 0]) placard_holder();
+}
+
+module placard_insert_preview() {
+    color([0.96, 0.72, 0.12])
         translate([frame_outer.x / 2,
-                   -(placard_spacer_thickness + placard_riser_size.z + 0.03),
+                   -(placard_spacer_thickness + placard_riser_size.z +
+                     placard_holder_base_thickness),
                    placard_center_z])
             rotate([90, 0, 0])
-                placard_text(placard_text_relief + 0.03);
+                placard_insert();
+}
+
+module placard_assembly_preview() {
+    placard_risers_preview();
+    placard_holder_preview();
+    placard_insert_preview();
 }
 
 module rail_fit_key(width, message) {
@@ -1521,78 +2109,718 @@ module m3_slide_nut_fit_coupon() {
                     index + 1);
 }
 
-// Ready-to-slice production groups.  Every object is already in its
-// documented support-free orientation and every group fits the conservative
-// 247 x 207 mm Prusa envelope.  Individual exports remain available for
-// replacement parts and fit-test iteration.
-module print_group_calibration() {
-    rail_fit_coupon();
-    translate([0, 30.0, 0]) m3_slide_nut_fit_coupon();
+// Canonical production beds. Every object is already in its documented
+// support-free orientation and every bed fits the conservative 247 x 207 mm
+// Prusa envelope. Individual exports remain available for replacement parts.
+//
+// Batch 00 is optional after any printer, nozzle, material, slicer, or rail
+// supplier change. It is not part of a repeat build on the accepted process.
+module production_batch_00_calibration() {
+    translate([36.0, 18.0, 0]) rail_fit_coupon();
+    translate([34.0, 50.0, 0]) m3_slide_nut_fit_coupon();
+    translate([132.0, 46.0, 0]) placard_slide_fit_coupon();
 }
 
-module print_group_gantry_hardware() {
-    gantry_joint_plate_set();
+// All rail-channel interfaces share one ironing-enabled bed. Twenty-eight
+// 30 mm M3 nut bars cover 22 active locations plus six deliberately parked
+// service spares. Four 76.8 mm double-nut bars reinforce the two gantry
+// upright splices. Print every broad bearing face on the bed.
+module production_batch_01_ironed_interfaces() {
+    for (index = [0 : m3_slide_nut_set_count - 1])
+        translate([17.0 + (index % 7) * 34.0,
+                   8.0 + floor(index / 7) * 15.0, 0])
+            m3_slide_nut_carrier();
+
+    for (index = [0 : gantry_splice_internal_bar_count - 1])
+        translate([40.0 + (index % 2) * 84.0,
+                   74.0 + floor(index / 2) * 18.0, 0])
+            gantry_splice_full_collar_internal_bar();
 }
 
-module print_group_nut_bars() {
-    m3_slide_nut_carrier_set();
+// Two accepted full-wrap collars. They stand on their indexed open end and
+// need neither support nor a brim on the physically validated ABS process.
+module production_batch_02_splice_collars() {
+    for (index = [0, 1])
+        translate([20.0 + index * 50.0, 20.0, 0])
+            gantry_splice_full_collar_print();
 }
 
-module print_group_gantry_splices() {
-    gantry_splice_shell_set();
+// Hardware that makes the gantry and both tooling plates adjustable: four
+// keyed gantry joint plates, four fixture spacers, and the four fixed-carrier
+// links (two upper, two lower).
+module production_batch_03_movable_mounts() {
+    translate([22.0, 25.0, 0]) gantry_joint_plate_set();
+    translate([105.0, 15.0, 0]) plate_spacer_set();
+    translate([150.0, 66.0, 0]) rear_carrier_link_set();
 }
 
-module print_group_gantry_splice_bars() {
-    gantry_splice_internal_bar_set();
+// Frame completion hardware: eight stacking registration tabs, the placard's
+// two risers and keyed spacers, and the two power-strip blocks.
+module production_batch_04_frame_hardware() {
+    translate([6.0, 6.0, 0]) registration_tab_set();
+    translate([145.0, 38.0, 0]) placard_riser_pair();
+    translate([145.0, 85.0, 0]) placard_spacer_pair();
+    translate([130.0, 112.0, 0]) power_strip_mount_block_pair();
 }
 
-module print_group_plate_mounts() {
-    plate_spacer_set();
-    translate([80.0, 0, 0]) placard_riser_pair();
-    translate([45.0, 45.0, 0]) placard_spacer_pair();
-    translate([125.0, 65.0, 0]) rear_carrier_link_set();
+// Reusable fleet-width holder plus the device-specific slide-in cartridge.
+// A filament change may be scheduled at placard_insert_thickness when a
+// contrasting raised label is wanted; ironing is cosmetic and optional.
+module production_batch_05_identification() {
+    translate([115.0, 22.0, 0]) placard_holder();
+    // Keep a generous visual and slicer-selection gap between the two long,
+    // similarly shaped parts. The previous 6.5 mm gap was mechanically valid
+    // but made an oblique preview look like the insert was stacked on the
+    // holder.
+    translate([109.0, 80.0, 0]) device_id_placard();
 }
 
-module print_group_stacking_guides() {
-    registration_tab_set();
+// ---- Handbook scenes and semantic web-model layers ----------------------
+// Static guide views use a restrained IKEA-like state language: completed
+// aluminum is gray, the parts added in the current step are orange, and metal
+// connectors remain dark. Fine callouts stay in SVG/HTML rather than becoming
+// fragile OpenSCAD text.
+guide_complete_tint = [0.66, 0.69, 0.72];
+guide_new_tint = [0.96, 0.43, 0.08];
+guide_spare_tint = [0.12, 0.52, 0.78];
+guide_metal_tint = [0.38, 0.40, 0.43];
+
+// A loaded production short bar shown in its rail-installation orientation.
+// The printed bar's broad bearing face is up, toward the slot mouth; the open
+// metal-nut pocket faces down, toward the extrusion centre.
+module guide_loaded_short_bar() {
+    color(guide_new_tint)
+        m3_slide_nut_carrier();
+    color(guide_metal_tint)
+        translate([0, 0,
+                   m3_slide_nut_height - m3_nut_measured_thickness])
+            cylinder(
+                d = m3_nut_measured_across_flats / cos(30),
+                h = m3_nut_measured_thickness,
+                $fn = 6
+            );
 }
 
-module print_group_device_label() {
-    device_id_placard();
+module guide_arrow_x(start_x, length, z) {
+    shaft_length = length - 8.0;
+    color(guide_spare_tint) {
+        translate([start_x, 0, z])
+            rotate([0, 90, 0])
+                cylinder(d = 3.0, h = shaft_length, $fn = 24);
+        translate([start_x + shaft_length, 0, z])
+            rotate([0, 90, 0])
+                cylinder(d1 = 8.0, d2 = 0.0, h = 8.0, $fn = 24);
+    }
 }
 
-// Safe unattended batch after the reinforced-splice test starts/finishes:
-// one top/bottom rear-link fit pair, the already accepted production M3 nut
-// bars, and the four independent gantry indexing plates.  Production splice
-// parts are deliberately absent until the assembled test joint passes.
-module print_group_after_splice_overnight() {
-    // Native set bounds become X=0..126, Y~0..87.
-    translate([15.0, 6.0, 0]) m3_slide_nut_carrier_set();
+// Reusable direction arrow for assembly illustrations.  The local arrow
+// points +X from its origin; rotations map it onto the six chassis directions.
+module guide_axis_arrow(origin = [0, 0, 0], axis = "x",
+                        direction = 1, length = 40.0) {
+    shaft_length = length - 8.0;
+    rotation =
+        axis == "x" ? (direction > 0 ? [0, 0, 0] : [0, 0, 180]) :
+        axis == "y" ? (direction > 0 ? [0, 0, 90] : [0, 0, -90]) :
+                      (direction > 0 ? [0, -90, 0] : [0, 90, 0]);
 
-    // Ten millimetres of X separation from the nut-bar set.
-    translate([145.0, 58.0, 0]) rear_carrier_link_fit_pair();
-
-    // Five millimetres of Y separation from the nut-bar set.
-    translate([18.0, 114.0, 0]) gantry_joint_plate_set();
+    color(guide_spare_tint)
+        translate(origin)
+            rotate(rotation) {
+                rotate([0, 90, 0])
+                    cylinder(d = 3.0, h = shaft_length, $fn = 24);
+                translate([shaft_length, 0, 0])
+                    rotate([0, 90, 0])
+                        cylinder(d1 = 8.0, d2 = 0.0,
+                                 h = 8.0, $fn = 24);
+            }
 }
 
-// Remaining first-node hardware that is independent of both outstanding
-// physical gates.  This 17-object bed intentionally excludes duplicate nut
-// bars/indexing plates, the unapproved second rear-link pair, and whichever
-// production splice design the full-collar test selects.
-module print_group_independent_completion() {
-    // Eight stacking guides; native bounds X=0..114, Y=0..150.
-    registration_tab_set();
+module guide_label(label_text, position, size = 8.0,
+                   rotation = [0, 0, 0],
+                   tint = [0.12, 0.16, 0.20]) {
+    color(tint)
+        translate(position)
+            rotate(rotation)
+                linear_extrude(height = 0.5)
+                    text(label_text, size = size,
+                         font = "Liberation Sans:style=Bold",
+                         halign = "center", valign = "center");
+}
 
-    // Four fixture-board spacers in the open right-hand strip.
-    translate([133.0, 7.0, 0]) plate_spacer_set();
+module guide_segment(start, finish, diameter = 2.5,
+                     tint = guide_spare_tint) {
+    color(tint)
+        hull() {
+            translate(start) sphere(d = diameter, $fn = 20);
+            translate(finish) sphere(d = diameter, $fn = 20);
+        }
+}
 
-    // Two placard risers and two placard spacers above the fixture spacers.
-    translate([145.0, 68.0, 0]) placard_riser_pair();
-    translate([145.0, 109.0, 0]) placard_spacer_pair();
+// Handbook close-up: the exact short bar and captured M3 nut are aligned with
+// an open rail end. The exploded gap is intentional so both profiles remain
+// legible. Nothing in this scene is a production part.
+module guide_preload_channel_bar() {
+    rail_start_x = 22.0;
+    rail_length = 72.0;
+    rail_center_z = profile_size / 2;
+    bar_center_x = 0.0;
+    bar_bearing_z = profile_size - 0.4;
 
-    // One front device placard in the open strip above the stacking guides.
-    translate([83.0, 174.0, 0]) device_id_placard();
+    translate([rail_start_x, 0, rail_center_z])
+        extrusion(rail_length, "x", guide_complete_tint);
+
+    translate([bar_center_x, 0, bar_bearing_z])
+        rotate([180, 0, 0])
+            guide_loaded_short_bar();
+
+    // Direction arrow sits above the slot so it cannot be confused with a
+    // printable or retained component.
+    guide_arrow_x(-28.0, 48.0, profile_size + 12.0);
+}
+
+// Symbolic bar markers for the whole-frame preload map. Their orientation
+// follows the host rail. They sit just outside the slot mouth so the hidden
+// captive-bar inventory remains visible in a static handbook render.
+module guide_preload_marker(position, axis = "x",
+                            tint = guide_new_tint) {
+    marker_length = 24.0;
+    marker_width = 5.0;
+    marker_height = 8.0;
+    color(tint)
+        translate(position)
+            if (axis == "x")
+                cube([marker_length, marker_width, marker_height],
+                     center = true);
+            else if (axis == "y")
+                cube([marker_width, marker_length, marker_height],
+                     center = true);
+            else
+                cube([marker_width, marker_height, marker_length],
+                     center = true);
+}
+
+module guide_preload_markers() {
+    operator_y = profile_size / 2;
+    device_y = frame_outer.y - profile_size / 2;
+    left_x = profile_size / 2;
+    right_x = frame_outer.x - profile_size / 2;
+    lower_z = outer_rail_z.x;
+    upper_z = outer_rail_z.y;
+    face_offset = profile_size / 2 + 3.0;
+    spare_depth_y = frame_outer.y - 46.0;
+
+    // WIDTH-O-L: four power-strip fasteners on its inboard (+Y) face.
+    for (x = [82.0, 126.0, frame_outer.x - 126.0,
+              frame_outer.x - 82.0])
+        guide_preload_marker(
+            [x, operator_y + face_offset, lower_z], "x");
+
+    // WIDTH-O-U: two placard fasteners on its outboard (-Y) face.
+    for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
+              frame_outer.x / 2 + placard_hole_spacing / 2])
+        guide_preload_marker(
+            [x, operator_y - face_offset, upper_z], "x");
+
+    // Device-side lower/upper width rails: two carrier-link fasteners each,
+    // on their inboard/operator-facing (-Y) faces.
+    for (x = cradle_mount_x) {
+        guide_preload_marker(
+            [x, device_y - face_offset, lower_z], "x");
+        guide_preload_marker(
+            [x, device_y - face_offset, upper_z], "x");
+    }
+
+    // Four depth rails: one active gantry-joint bar near the fixture gantry
+    // plus one blue service spare parked near the device-side end.
+    for (x = [left_x, right_x])
+        for (z = [lower_z, upper_z]) {
+            interior_x = x == left_x ? x + face_offset :
+                                      x - face_offset;
+            guide_preload_marker(
+                [interior_x, fixture_gantry_y, z], "y");
+            guide_preload_marker(
+                [interior_x, spare_depth_y, z], "y",
+                guide_spare_tint);
+        }
+
+    // Two active bars on the interior face of each gantry upright.
+    for (x = gantry_upright_x)
+        for (z = fixture_crossbar_z)
+            guide_preload_marker(
+                [x == left_x ? x + face_offset : x - face_offset,
+                 fixture_gantry_y, z], "z");
+
+    // Two active fixture-plate bars per crossbar plus one blue service spare
+    // on the operator-facing side of each crossbar.
+    for (z = fixture_crossbar_z)
+        for (x = fixture_mount_x)
+            guide_preload_marker(
+                [x, fixture_gantry_y - face_offset, z], "x");
+    guide_preload_marker(
+        [45.0, fixture_gantry_y - face_offset,
+         fixture_crossbar_z.y], "x", guide_spare_tint);
+    guide_preload_marker(
+        [frame_outer.x - 45.0, fixture_gantry_y - face_offset,
+         fixture_crossbar_z.x], "x", guide_spare_tint);
+}
+
+// Handbook overview: ghosted rails reveal the conceptual short-bar inventory.
+// Orange markers are used by an installed mount; blue markers are parked
+// replacements. Marker positions are intentionally visible outside each slot
+// mouth rather than falsely claiming that captive parts sit outside the rail.
+module guide_preload_map() {
+    outer_frame([0.70, 0.72, 0.75, 0.42]);
+    fixture_gantry([0.70, 0.72, 0.75, 0.42]);
+    guide_preload_markers();
+}
+
+module guide_uprights(tint = guide_new_tint) {
+    for (x = gantry_upright_x)
+        for (segment = [0 : gantry_upright_segment_count - 1])
+            translate([x, fixture_gantry_y,
+                       gantry_clear_z_min +
+                       segment * gantry_upright_segment_length])
+                extrusion(gantry_upright_segment_length, "z", tint);
+}
+
+module guide_step_01_splice_uprights() {
+    guide_uprights();
+    gantry_splice_previews();
+}
+
+module guide_step_02_build_gantry() {
+    fixture_gantry(guide_new_tint);
+    gantry_crossbar_connector_proxies();
+    gantry_joint_plate_previews();
+    gantry_splice_previews();
+}
+
+module guide_step_03_open_frame() {
+    outer_frame_bottom(guide_complete_tint);
+    outer_frame_posts(guide_new_tint);
+    outer_corner_connector_proxies([false]);
+}
+
+module guide_step_04_install_gantry() {
+    outer_frame_bottom(guide_complete_tint);
+    outer_frame_posts(guide_complete_tint);
+    outer_corner_connector_proxies([false]);
+    fixture_gantry(guide_new_tint);
+    gantry_crossbar_connector_proxies();
+    gantry_joint_plate_previews();
+    gantry_splice_previews();
+}
+
+module guide_step_05_close_frame() {
+    outer_frame_bottom(guide_complete_tint);
+    outer_frame_posts(guide_complete_tint);
+    outer_frame_top(guide_new_tint);
+    outer_corner_connector_proxies();
+    fixture_gantry(guide_complete_tint);
+    gantry_crossbar_connector_proxies();
+    gantry_joint_plate_previews();
+    gantry_splice_previews();
+}
+
+module guide_step_06_mount_carrier() {
+    guide_layer_aluminum();
+    guide_layer_connectors();
+    gantry_joint_plate_previews();
+    gantry_splice_previews();
+
+    color(guide_new_tint)
+        cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
+    color(guide_new_tint)
+        cradle_mesh_at_installed_datum(cradle_hooks_presentation_mesh);
+    for (x = cradle_mount_x)
+        for (index = [0, 1])
+            installed_rear_carrier_link(x, cradle_mount_z[index],
+                                        outer_rail_z[index]);
+}
+
+module guide_step_07_mount_fixture() {
+    guide_layer_aluminum();
+    guide_layer_connectors();
+    gantry_joint_plate_previews();
+    gantry_splice_previews();
+
+    color(guide_complete_tint)
+        cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
+    color([0.28, 0.29, 0.31])
+        cradle_mesh_at_installed_datum(cradle_hooks_presentation_mesh);
+    for (x = cradle_mount_x)
+        for (index = [0, 1])
+            installed_rear_carrier_link(x, cradle_mount_z[index],
+                                        outer_rail_z[index]);
+
+    color(guide_new_tint)
+        fixture_mesh_at_installed_datum(fixture_presentation_mesh);
+    color([0.16, 0.28, 0.38])
+        fixture_mesh_at_installed_datum(
+            fixture_components_presentation_mesh);
+    for (x = fixture_mount_x)
+        for (z = fixture_crossbar_z)
+            installed_fixture_plate_spacer([x, z]);
+    webcam_preview();
+}
+
+module guide_step_08_complete() {
+    assembly("mesh");
+}
+
+// ---- Focused LEGO-style handbook panels --------------------------------
+// The section-level renders above show the desired end state.  These smaller
+// scenes expose the hidden interface, motion, or measurement that a completed
+// overview cannot communicate.
+
+// One lower-left gantry corner.  The translucent extrusion exposes the
+// concealed metal L connector that joins a crossbar to an upright.
+module guide_detail_02_crossbar_corner() {
+    crossbar_z = fixture_crossbar_z.x;
+    translate([0, 0, -crossbar_z]) {
+        translate([gantry_upright_x.x, fixture_gantry_y,
+                   gantry_clear_z_min])
+            extrusion(120.0, "z", [0.66, 0.69, 0.72, 0.42]);
+        translate([profile_size, fixture_gantry_y, crossbar_z])
+            extrusion(130.0, "x", [0.66, 0.69, 0.72, 0.42]);
+        gantry_l_connector_proxy(fixture_gantry_y, crossbar_z, false);
+    }
+}
+
+// Top-down rail naming diagram.  Labels derive from the same frame dimensions
+// as the production geometry, so the human/device and left/right contract
+// cannot drift from the CAD.
+module guide_detail_03_lower_frame_layout() {
+    label_z = profile_size + 1.0;
+    outer_frame_bottom(guide_complete_tint);
+
+    guide_label("WIDTH-O-L",
+                [frame_outer.x / 2, profile_size / 2, label_z], 10.0);
+    guide_label("WIDTH-D-L",
+                [frame_outer.x / 2,
+                 frame_outer.y - profile_size / 2, label_z], 10.0);
+    guide_label("DEPTH-L-L",
+                [profile_size / 2, frame_outer.y / 2, label_z], 9.0,
+                [0, 0, 90]);
+    guide_label("DEPTH-R-L",
+                [frame_outer.x - profile_size / 2,
+                 frame_outer.y / 2, label_z], 9.0,
+                [0, 0, -90]);
+    guide_label("OPERATOR",
+                [frame_outer.x / 2, -24.0, label_z], 11.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("DEVICE / WALL",
+                [frame_outer.x / 2, frame_outer.y + 24.0, label_z], 11.0,
+                [0, 0, 0], guide_spare_tint);
+}
+
+// The complete gantry hovers above its final position.  Two arrows show that
+// it must be lowered between the four still-open posts before the top ring is
+// installed.
+module guide_detail_04_lower_gantry() {
+    lift = 54.0;
+    outer_frame_bottom(guide_complete_tint);
+    outer_frame_posts(guide_complete_tint);
+    outer_corner_connector_proxies([false]);
+
+    translate([0, 0, lift]) {
+        fixture_gantry(guide_new_tint);
+        gantry_crossbar_connector_proxies();
+        gantry_joint_plate_previews();
+        gantry_splice_previews();
+    }
+
+    for (x = [frame_outer.x * 0.32, frame_outer.x * 0.68])
+        guide_axis_arrow([x, fixture_gantry_y - 18.0,
+                          frame_outer.z + 44.0],
+                         "z", -1, 48.0);
+}
+
+// Exact lower-left indexing plate relationship: one key enters the gantry
+// upright; the perpendicular key enters the outer depth rail.
+module guide_detail_04_joint_plate() {
+    translate([gantry_upright_x.x, 0, outer_rail_z.x])
+        extrusion(135.0, "y", [0.66, 0.69, 0.72, 0.42]);
+    translate([gantry_upright_x.x, fixture_gantry_y,
+               gantry_clear_z_min])
+        extrusion(105.0, "z", [0.66, 0.69, 0.72, 0.42]);
+    color(guide_new_tint)
+        installed_gantry_joint_plate(fixture_gantry_y, false, false);
+}
+
+// Top-down placement datum for the movable gantry.  The blue arrow starts at
+// the operator-side outside plane and ends at the upright centerline.
+module guide_detail_04_gantry_position() {
+    outer_frame_bottom([0.66, 0.69, 0.72, 0.42]);
+    fixture_gantry(guide_new_tint);
+    guide_axis_arrow([frame_outer.x / 2, 0, profile_size + 7.0],
+                     "y", 1, fixture_gantry_y);
+    guide_label("75 mm",
+                [frame_outer.x / 2 - 30.0,
+                 fixture_gantry_y / 2, profile_size + 8.0], 9.0,
+                [0, 0, 90], guide_spare_tint);
+    guide_label("OPERATOR PLANE",
+                [frame_outer.x / 2, -24.0, profile_size + 8.0], 10.0,
+                [0, 0, 0], guide_spare_tint);
+}
+
+// The upper ring is intentionally exploded above the four posts.  It is
+// lowered as one subassembly only after the gantry is captive.
+module guide_detail_05_lower_top_ring() {
+    lift = 58.0;
+    outer_frame_bottom(guide_complete_tint);
+    outer_frame_posts(guide_complete_tint);
+    outer_corner_connector_proxies([false]);
+    fixture_gantry(guide_complete_tint);
+    gantry_crossbar_connector_proxies();
+    gantry_joint_plate_previews();
+    gantry_splice_previews();
+
+    translate([0, 0, lift]) {
+        outer_frame_top(guide_new_tint);
+        outer_corner_connector_proxies([true]);
+    }
+
+    for (x = [frame_outer.x * 0.28, frame_outer.x * 0.72])
+        guide_axis_arrow([x, frame_outer.y / 2,
+                          frame_outer.z + lift + 28.0],
+                         "z", -1, 42.0);
+}
+
+// Top-down diagonal equality check used to square both rings.
+module guide_detail_05_square_diagonals() {
+    z = profile_size + 3.0;
+    inset = profile_size / 2;
+    outer_frame_bottom(guide_complete_tint);
+    guide_segment([inset, inset, z],
+                  [frame_outer.x - inset,
+                   frame_outer.y - inset, z], 3.2);
+    guide_segment([frame_outer.x - inset, inset, z],
+                  [inset, frame_outer.y - inset, z], 3.2,
+                  [0.96, 0.43, 0.08]);
+    guide_label("A",
+                [frame_outer.x * 0.30, frame_outer.y * 0.30, z + 1.0],
+                13.0, [0, 0, 0], guide_spare_tint);
+    guide_label("B",
+                [frame_outer.x * 0.70, frame_outer.y * 0.30, z + 1.0],
+                13.0, [0, 0, 0], guide_new_tint);
+    guide_label("A AND B WITHIN 2 mm",
+                [frame_outer.x / 2, frame_outer.y / 2, z + 1.0], 11.0);
+}
+
+// The two carrier-link lengths are easy to confuse on the bench.  This
+// broad-face view uses the exact printable modules and derived lengths.
+module guide_detail_06_carrier_link_lengths() {
+    color(guide_new_tint) {
+        translate([0, 30.0, 0])
+            rotate([0, 0, 90]) rear_carrier_link_top();
+        translate([0, -42.0, 0])
+            rotate([0, 0, 90]) rear_carrier_link_bottom();
+    }
+    guide_label(str("UPPER  ", rear_carrier_top_length, " mm"),
+                [0, 48.0, rear_carrier_link_thickness + 1.0], 8.5);
+    guide_label(str("LOWER  ", rear_carrier_bottom_length, " mm"),
+                [0, -23.0, rear_carrier_link_thickness + 1.0], 8.5);
+}
+
+// Side/exploded view of the exact fixture plate, its two crossbars, and all
+// four keyed 5 mm spacers.  Blue arrows point from the plate toward the
+// crossbar slots.
+module guide_detail_07_fixture_spacers() {
+    for (z = fixture_crossbar_z)
+        translate([profile_size, fixture_gantry_y, z])
+            extrusion(gantry_crossbar_length, "x",
+                      [0.66, 0.69, 0.72, 0.46]);
+    color([0.88, 0.88, 0.84, 0.30])
+        fixture_mesh_at_installed_datum(fixture_presentation_mesh);
+    for (x = fixture_mount_x)
+        for (z = fixture_crossbar_z) {
+            installed_fixture_plate_spacer([x, z]);
+            guide_axis_arrow([x, fixture_plane_y - 16.0, z],
+                             "y", 1, 14.0);
+        }
+}
+
+// Optical-orientation proof without the surrounding frame.  The camera cone
+// begins at the C270 lens and terminates at the complete DUT envelope.
+module guide_detail_07_optical_axis() {
+    color([0.88, 0.88, 0.84, 0.45])
+        fixture_mesh_at_installed_datum(fixture_presentation_mesh);
+    color([0.88, 0.88, 0.84, 0.45])
+        cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
+    color([0.15, 0.16, 0.17, 0.86])
+        device_model_mesh_at_installed_datum(
+            device_shell_presentation_mesh);
+    webcam_preview();
+    color([0.18, 0.72, 0.92, 0.20])
+        camera_frustum_geometry();
+}
+
+// Installed operator-side placard interface.  The cartridge is intentionally
+// withdrawn to the right and the arrow shows its insertion direction.
+module guide_detail_08_placard() {
+    insert_offset = 52.0;
+    translate([profile_size, profile_size / 2, outer_rail_z.y])
+        extrusion(structural_x_length, "x", guide_complete_tint);
+    placard_risers_preview();
+    placard_holder_preview();
+    color([0.96, 0.72, 0.12])
+        translate([frame_outer.x / 2 + insert_offset,
+                   -(placard_spacer_thickness + placard_riser_size.z +
+                     placard_holder_base_thickness),
+                   placard_center_z])
+            rotate([90, 0, 0])
+                placard_insert();
+    guide_axis_arrow(
+        [frame_outer.x / 2 + placard_size.x / 2 + 84.0,
+         -(placard_spacer_thickness + placard_riser_size.z + 12.0),
+         placard_center_z],
+        "x", -1, 58.0);
+}
+
+// The mount blocks stay on the lower operator rail while the translucent
+// power strip approaches their supplied screw heads from inside the chassis.
+module guide_detail_08_power_strip() {
+    exploded_y = 58.0;
+    translate([profile_size, profile_size / 2, outer_rail_z.x])
+        extrusion(structural_x_length, "x", guide_complete_tint);
+    power_strip_mounts_preview();
+    color([0.91, 0.91, 0.88, 0.50])
+        translate([power_strip_left_x,
+                   power_strip_mount_face_y + exploded_y,
+                   power_strip_bottom_z])
+            cube(power_strip_body_size);
+    for (x = power_strip_block_x)
+        guide_axis_arrow(
+            [x, power_strip_mount_face_y + exploded_y - 4.0,
+             power_strip_body_size.z / 2],
+            "y", -1, exploded_y - 8.0);
+}
+
+// One exact upper corner shows the two perpendicular registration tabs and a
+// ghosted lower corner of the chassis above.  The blue arrow is the stack
+// direction; broad frame faces meet before the tab can carry vertical load.
+module guide_detail_08_stacking_corner() {
+    detail_length = 105.0;
+
+    translate([profile_size / 2, profile_size / 2,
+               frame_outer.z - 105.0])
+        extrusion(detail_length, "z", guide_complete_tint);
+    translate([profile_size, profile_size / 2, outer_rail_z.y])
+        extrusion(detail_length, "x", guide_complete_tint);
+    translate([profile_size / 2, profile_size, outer_rail_z.y])
+        extrusion(detail_length, "y", guide_complete_tint);
+    three_way_end_connector_proxy(false, false, true);
+
+    color(guide_new_tint) {
+        multmatrix([
+            [0, 0, -1, 0],
+            [1, 0, 0, 0],
+            [0, 1, 0, registration_guide_bottom],
+            [0, 0, 0, 1]
+        ]) registration_tab();
+        multmatrix([
+            [1, 0, 0, 0],
+            [0, 0, -1, 0],
+            [0, 1, 0, registration_guide_bottom],
+            [0, 0, 0, 1]
+        ]) registration_tab();
+    }
+
+    color([0.66, 0.69, 0.72, 0.34]) {
+        translate([profile_size / 2, profile_size / 2,
+                   frame_outer.z + frame_aluminum_z_min])
+            extrusion(90.0, "z");
+        translate([profile_size, profile_size / 2,
+                   frame_outer.z + outer_rail_z.x])
+            extrusion(detail_length, "x");
+        translate([profile_size / 2, profile_size,
+                   frame_outer.z + outer_rail_z.x])
+            extrusion(detail_length, "y");
+    }
+    guide_axis_arrow([62.0, 62.0, frame_outer.z + 88.0],
+                     "z", -1, 55.0);
+}
+
+// These world-positioned layers are intentionally colorless STL exports. The
+// pinned web-asset builder assigns one PBR material per named layer, retains
+// semantic nodes in the GLB, and converts millimetres to metres.
+module guide_layer_aluminum() {
+    outer_frame();
+    fixture_gantry();
+}
+
+module guide_layer_connectors() {
+    outer_corner_connector_proxies();
+    gantry_crossbar_connector_proxies();
+}
+
+module guide_layer_printed_hardware() {
+    gantry_joint_plate_previews();
+    gantry_splice_previews();
+    plate_mount_previews();
+    installed_registration_guides();
+    power_strip_mounts_preview();
+    placard_risers_preview();
+}
+
+module guide_layer_fixture_plate() {
+    fixture_mesh_at_installed_datum(fixture_presentation_mesh);
+}
+
+module guide_layer_fixture_components() {
+    fixture_mesh_at_installed_datum(
+        fixture_components_presentation_mesh);
+}
+
+module guide_layer_fixture_labels() {
+    fixture_mesh_at_installed_datum(fixture_labels_presentation_mesh);
+}
+
+module guide_layer_carrier_body() {
+    cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
+}
+
+module guide_layer_carrier_labels() {
+    cradle_mesh_at_installed_datum(cradle_labels_presentation_mesh);
+}
+
+module guide_layer_carrier_hooks() {
+    cradle_mesh_at_installed_datum(cradle_hooks_presentation_mesh);
+}
+
+module guide_layer_device_shell() {
+    device_model_mesh_at_installed_datum(device_shell_presentation_mesh);
+}
+
+module guide_layer_device_controls() {
+    device_model_mesh_at_installed_datum(
+        device_controls_presentation_mesh, 0.03);
+}
+
+module guide_layer_device_screen() {
+    device_model_mesh_at_installed_datum(
+        device_screen_presentation_mesh, 0.06);
+}
+
+module guide_layer_webcam() {
+    webcam_preview();
+}
+
+module guide_layer_power_strip() {
+    power_strip_body_preview();
+}
+
+module guide_layer_placard_holder() {
+    placard_holder_preview();
+}
+
+module guide_layer_placard_insert() {
+    placard_insert_preview();
+}
+
+module guide_layer_camera_frustum() {
+    camera_frustum_geometry();
 }
 
 module cutlist_echo() {
@@ -1623,9 +2851,10 @@ module assembly(plate_detail = PLATE_DETAIL) {
         cradle_plate_preview(plate_detail);
         plate_mount_previews();
     }
-    if (SHOW_DEVICE) device_and_camera_preview();
+    if (SHOW_DEVICE) device_and_camera_preview(plate_detail);
     if (SHOW_CAMERA_FRUSTUM) camera_frustum_preview();
     if (SHOW_REGISTRATION_GUIDES) installed_registration_guides();
+    if (SHOW_POWER_STRIP) power_strip_system_preview();
     placard_assembly_preview();
 }
 
@@ -1670,6 +2899,26 @@ if (PART == "assembly") {
     corner_joint_detail();
 } else if (PART == "placard") {
     device_id_placard();
+} else if (PART == "placard_holder") {
+    placard_holder();
+} else if (PART == "placard_insert") {
+    placard_insert();
+} else if (PART == "placard_slide_fit_coupon") {
+    placard_slide_fit_coupon();
+} else if (PART == "placard_system_preview") {
+    placard_system_detail_preview();
+} else if (PART == "power_strip_fit_coupon_set") {
+    power_strip_fit_coupon_set();
+} else if (PART == "power_strip_mount_block") {
+    power_strip_mount_block();
+} else if (PART == "power_strip_mount_block_pair") {
+    power_strip_mount_block_pair();
+} else if (PART == "power_strip_system_preview") {
+    power_strip_system_preview();
+} else if (PART == "ironing_test_coupon") {
+    ironing_test_coupon();
+} else if (PART == "ironing_test_coupon_set") {
+    ironing_test_coupon_set();
 } else if (PART == "placard_riser") {
     placard_riser();
 } else if (PART == "placard_riser_pair") {
@@ -1694,26 +2943,16 @@ if (PART == "assembly") {
     gantry_joint_plate();
 } else if (PART == "gantry_joint_plate_set") {
     gantry_joint_plate_set();
-} else if (PART == "gantry_splice_shell") {
-    gantry_splice_shell();
-} else if (PART == "gantry_splice_shell_pair") {
-    gantry_splice_shell_pair();
-} else if (PART == "gantry_splice_shell_set") {
-    gantry_splice_shell_set();
 } else if (PART == "gantry_splice_internal_bar") {
     gantry_splice_internal_bar();
-} else if (PART == "gantry_splice_internal_bar_set") {
-    gantry_splice_internal_bar_set();
-} else if (PART == "gantry_splice_test_set") {
-    gantry_splice_test_set();
 } else if (PART == "gantry_splice_full_collar") {
     gantry_splice_full_collar_print();
-} else if (PART == "gantry_splice_full_collar_test_set") {
-    gantry_splice_full_collar_test_set();
+} else if (PART == "gantry_splice_full_collar_internal_bar") {
+    gantry_splice_full_collar_internal_bar();
+} else if (PART == "gantry_splice_full_collar_internal_bar_pair") {
+    gantry_splice_full_collar_internal_bar_pair();
 } else if (PART == "gantry_splice_installed_preview") {
     gantry_splice_installed_preview();
-} else if (PART == "gantry_splice_coupon") {
-    gantry_splice_fit_coupon();
 } else if (PART == "registration_tab") {
     registration_tab();
 } else if (PART == "registration_tab_set") {
@@ -1726,26 +2965,98 @@ if (PART == "assembly") {
     m3_slide_nut_carrier_set();
 } else if (PART == "m3_slide_nut_coupon") {
     m3_slide_nut_fit_coupon();
-} else if (PART == "print_group_calibration") {
-    print_group_calibration();
-} else if (PART == "print_group_gantry_hardware") {
-    print_group_gantry_hardware();
-} else if (PART == "print_group_nut_bars") {
-    print_group_nut_bars();
-} else if (PART == "print_group_gantry_splices") {
-    print_group_gantry_splices();
-} else if (PART == "print_group_gantry_splice_bars") {
-    print_group_gantry_splice_bars();
-} else if (PART == "print_group_plate_mounts") {
-    print_group_plate_mounts();
-} else if (PART == "print_group_stacking_guides") {
-    print_group_stacking_guides();
-} else if (PART == "print_group_device_label") {
-    print_group_device_label();
-} else if (PART == "print_group_after_splice_overnight") {
-    print_group_after_splice_overnight();
-} else if (PART == "print_group_independent_completion") {
-    print_group_independent_completion();
+} else if (PART == "production_batch_00_calibration") {
+    production_batch_00_calibration();
+} else if (PART == "production_batch_01_ironed_interfaces") {
+    production_batch_01_ironed_interfaces();
+} else if (PART == "production_batch_02_splice_collars") {
+    production_batch_02_splice_collars();
+} else if (PART == "production_batch_03_movable_mounts") {
+    production_batch_03_movable_mounts();
+} else if (PART == "production_batch_04_frame_hardware") {
+    production_batch_04_frame_hardware();
+} else if (PART == "production_batch_05_identification") {
+    production_batch_05_identification();
+} else if (PART == "guide_step_01_splice_uprights") {
+    guide_step_01_splice_uprights();
+} else if (PART == "guide_step_02_build_gantry") {
+    guide_step_02_build_gantry();
+} else if (PART == "guide_step_03_open_frame") {
+    guide_step_03_open_frame();
+} else if (PART == "guide_step_04_install_gantry") {
+    guide_step_04_install_gantry();
+} else if (PART == "guide_step_05_close_frame") {
+    guide_step_05_close_frame();
+} else if (PART == "guide_step_06_mount_carrier") {
+    guide_step_06_mount_carrier();
+} else if (PART == "guide_step_07_mount_fixture") {
+    guide_step_07_mount_fixture();
+} else if (PART == "guide_step_08_complete") {
+    guide_step_08_complete();
+} else if (PART == "guide_preload_channel_bar") {
+    guide_preload_channel_bar();
+} else if (PART == "guide_preload_map") {
+    guide_preload_map();
+} else if (PART == "guide_detail_02_crossbar_corner") {
+    guide_detail_02_crossbar_corner();
+} else if (PART == "guide_detail_03_lower_frame_layout") {
+    guide_detail_03_lower_frame_layout();
+} else if (PART == "guide_detail_04_lower_gantry") {
+    guide_detail_04_lower_gantry();
+} else if (PART == "guide_detail_04_joint_plate") {
+    guide_detail_04_joint_plate();
+} else if (PART == "guide_detail_04_gantry_position") {
+    guide_detail_04_gantry_position();
+} else if (PART == "guide_detail_05_lower_top_ring") {
+    guide_detail_05_lower_top_ring();
+} else if (PART == "guide_detail_05_square_diagonals") {
+    guide_detail_05_square_diagonals();
+} else if (PART == "guide_detail_06_carrier_link_lengths") {
+    guide_detail_06_carrier_link_lengths();
+} else if (PART == "guide_detail_07_fixture_spacers") {
+    guide_detail_07_fixture_spacers();
+} else if (PART == "guide_detail_07_optical_axis") {
+    guide_detail_07_optical_axis();
+} else if (PART == "guide_detail_08_placard") {
+    guide_detail_08_placard();
+} else if (PART == "guide_detail_08_power_strip") {
+    guide_detail_08_power_strip();
+} else if (PART == "guide_detail_08_stacking_corner") {
+    guide_detail_08_stacking_corner();
+} else if (PART == "guide_layer_aluminum") {
+    guide_layer_aluminum();
+} else if (PART == "guide_layer_connectors") {
+    guide_layer_connectors();
+} else if (PART == "guide_layer_printed_hardware") {
+    guide_layer_printed_hardware();
+} else if (PART == "guide_layer_fixture_plate") {
+    guide_layer_fixture_plate();
+} else if (PART == "guide_layer_fixture_components") {
+    guide_layer_fixture_components();
+} else if (PART == "guide_layer_fixture_labels") {
+    guide_layer_fixture_labels();
+} else if (PART == "guide_layer_carrier_body") {
+    guide_layer_carrier_body();
+} else if (PART == "guide_layer_carrier_labels") {
+    guide_layer_carrier_labels();
+} else if (PART == "guide_layer_carrier_hooks") {
+    guide_layer_carrier_hooks();
+} else if (PART == "guide_layer_device_shell") {
+    guide_layer_device_shell();
+} else if (PART == "guide_layer_device_controls") {
+    guide_layer_device_controls();
+} else if (PART == "guide_layer_device_screen") {
+    guide_layer_device_screen();
+} else if (PART == "guide_layer_webcam") {
+    guide_layer_webcam();
+} else if (PART == "guide_layer_power_strip") {
+    guide_layer_power_strip();
+} else if (PART == "guide_layer_placard_holder") {
+    guide_layer_placard_holder();
+} else if (PART == "guide_layer_placard_insert") {
+    guide_layer_placard_insert();
+} else if (PART == "guide_layer_camera_frustum") {
+    guide_layer_camera_frustum();
 } else if (PART == "cutlist") {
     cutlist_echo();
     cube([0.1, 0.1, 0.1]);
