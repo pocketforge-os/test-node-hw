@@ -105,10 +105,12 @@ make replacements
 
 ## Captive M3 channel bars
 
-The accepted short bar is 30 mm long, 11.75 mm across the bearing face, and
-6.46 mm at the deep face. It captures an ordinary metal M3 nut in an open
+The accepted short carrier is 18 mm long, 11.75 mm across the bearing face,
+and 6.46 mm at the deep face. It captures an ordinary metal M3 nut in an open
 5.60 × 2.80 mm hex pocket. Its broad solid face points toward the visible slot
-mouth; the open nut pocket points toward the extrusion center.
+mouth; the open nut pocket points toward the extrusion center. The compact
+18 mm length stays inside the 20 mm fixture-upright landing envelope; the
+superseded 30 mm handling-bar version can interfere at those joints.
 
 The part is deliberately wider than the slot mouth. Load it through a cut rail
 end before installing the end connector. Pull the nut squarely into the pocket

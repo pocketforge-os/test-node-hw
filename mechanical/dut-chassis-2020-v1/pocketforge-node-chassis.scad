@@ -310,7 +310,10 @@ m3_nut_measured_across_flats = 5.36;
 m3_nut_measured_thickness = 2.30;
 m3_nut_pocket_across_flats = 5.60;
 m3_nut_pocket_depth = 2.80;
-m3_slide_nut_length = 30.0;
+// Keep the single-nut carrier inside the 20 mm fixture-upright landing
+// envelope. The earlier 30/60 mm handling-bar experiments protruded beyond
+// that interface and physically interfered during the owner walkthrough.
+m3_slide_nut_length = 18.0;
 m3_slide_nut_bearing_width = 11.75;
 // Owner physically accepted both pass-3 bars on 2026-07-22. The wider,
 // two-scallop 6.46 mm candidate is the production profile because it retains
@@ -630,8 +633,11 @@ assert(m3_slide_nut_height <
 assert(m3_slide_nut_flange_height > 0 &&
        m3_slide_nut_flange_height < m3_slide_nut_height,
        "Nut-bar bearing flange must fit inside its total channel depth");
-assert(m3_slide_nut_length >= 24.0,
-       "End-loaded carrier must retain useful nut walls and handling length");
+assert(m3_slide_nut_length >=
+       m3_nut_pocket_across_flats + 2 * 3.0,
+       "End-loaded carrier must retain 3 mm end walls around the metal nut");
+assert(m3_slide_nut_length <= profile_size - 2.0,
+       "Short carrier must stay inside the fixture-upright landing envelope");
 assert(m3_slide_nut_height - m3_nut_pocket_depth >= 1.6,
        "End-loaded carrier needs at least four 0.4 mm floor layers");
 assert(m3_slide_nut_width_at_height(
@@ -1670,7 +1676,7 @@ module gantry_joint_plate_set() {
 // A long version of the physically accepted 11.75 / 6.46 mm M3 nut bar.
 // It slides halfway into the first open rail, the second rail slides over its
 // exposed half, and its two metal nuts land on opposite sides of the seam.
-// Print the broad bearing face down exactly like the accepted 30 mm bars.
+// Print the broad bearing face down exactly like the accepted short bars.
 module gantry_splice_internal_bar(
     bar_length = gantry_splice_internal_bar_length,
     nut_positions = gantry_splice_internal_nut_x,
@@ -2034,16 +2040,16 @@ module rail_fit_coupon() {
             rail_fit_key(widths[index], str(widths[index]));
 }
 
-// Large end-loaded sliding T-nut bar.  This is intentionally a 30 mm handling
-// bar, not a commercial-nut-sized nubbin: it nearly fills the delivered slot,
-// cannot rotate, and is easy to position with a loose screw as a handle.  The
-// bearing face gets one 0.4 mm print layer before a rail-matched keystone
-// tapers toward measured dimension F at the extrusion web. It has no spring ears,
-// printed threads, or sub-nozzle details.  Print the solid bearing face down
-// and pull an ordinary M3 nut into the upward hex pocket with a screw and
-// washer.  The open pocket faces the rail center.  The metal nut carries the
-// thread; ABS only spreads light clamp load.  Never use this part for frame,
-// stacking, or safety loads.
+// Compact end-loaded sliding T-nut carrier. Its 18 mm rail-axis length keeps
+// the plastic inside a 20 mm fixture-upright landing while retaining generous
+// walls around the metal nut. The bearing face gets one 0.4 mm print layer
+// before a rail-matched keystone tapers toward measured dimension F at the
+// extrusion web. It cannot rotate and remains easy to position with a loose
+// screw as a handle. It has no spring ears, printed threads, or sub-nozzle
+// details. Print the solid bearing face down and pull an ordinary M3 nut into
+// the upward hex pocket with a screw and washer. The open pocket faces the
+// rail center. The metal nut carries the thread; ABS only spreads light clamp
+// load. Never use this part for frame, stacking, or safety loads.
 module m3_slide_nut_outline(body_width,
                             length = m3_slide_nut_length) {
     chamfer = min(m3_slide_nut_corner_chamfer,
@@ -2142,8 +2148,8 @@ module m3_slide_nut_carrier_set() {
             m3_slide_nut_carrier();
 }
 
-// The 30 mm bars have enough layer time for the owner's ABS process, so this
-// third pass needs only one of each bracketing deep-face width.
+// The paired 18 mm candidates provide enough layer time for the owner's ABS
+// process while preserving the two accepted bracketing deep-face widths.
 module m3_slide_nut_fit_coupon() {
     for (index = [0 : len(m3_slide_nut_coupon_deep_widths) - 1])
         for (copy = [0 : m3_slide_nut_coupon_copies - 1])
@@ -2168,12 +2174,13 @@ module production_batch_00_calibration() {
 }
 
 // All rail-channel interfaces share one ironing-enabled bed. Twenty-eight
-// 30 mm M3 nut bars cover 22 active locations plus six deliberately parked
+// compact 18 mm M3 nut carriers cover 22 active locations plus six parked
 // replacements. Four 76.8 mm double-nut bars reinforce the two gantry
 // upright splices. Print every broad bearing face on the bed.
 module production_batch_01_ironed_interfaces() {
     for (index = [0 : m3_slide_nut_set_count - 1])
-        translate([17.0 + (index % 7) * 34.0,
+        translate([17.0 + (index % 7) *
+                              (m3_slide_nut_length + 4.0),
                    8.0 + floor(index / 7) * 15.0, 0])
             m3_slide_nut_carrier();
 
@@ -2358,6 +2365,7 @@ module guide_segment(start, finish, diameter = 2.5,
 module guide_captive_nut_install() {
     exploded_x = -48.0;
     ready_x = 48.0;
+    bar_half = m3_slide_nut_length / 2;
 
     color(guide_new_tint)
         translate([exploded_x, 0, 0])
@@ -2365,16 +2373,16 @@ module guide_captive_nut_install() {
     guide_m3_nut([exploded_x, 0, 11.0]);
     guide_m3_washer([exploded_x, 0, -5.0]);
     guide_m3_screw([exploded_x, 0, -12.0], 21.0);
-    guide_axis_arrow([exploded_x + 18.0, 0, -9.0],
+    guide_axis_arrow([exploded_x + bar_half + 6.0, 0, -9.0],
                      "z", 1, 25.0);
 
     translate([ready_x, 0, 0])
         guide_loaded_short_bar();
-    guide_segment([ready_x + 22.0, -5.0, 6.0],
-                  [ready_x + 28.0, -5.0, 0.0],
+    guide_segment([ready_x + bar_half + 5.0, -5.0, 6.0],
+                  [ready_x + bar_half + 11.0, -5.0, 0.0],
                   3.2, guide_check_tint);
-    guide_segment([ready_x + 28.0, -5.0, 0.0],
-                  [ready_x + 40.0, -5.0, 14.0],
+    guide_segment([ready_x + bar_half + 11.0, -5.0, 0.0],
+                  [ready_x + bar_half + 23.0, -5.0, 14.0],
                   3.2, guide_check_tint);
 }
 
@@ -2384,9 +2392,9 @@ module guide_captive_nut_install() {
 // receive two.
 module guide_captive_nut_count() {
     short_columns = 7;
-    short_pitch = [36.0, 16.0];
+    short_pitch = [24.0, 16.0];
     short_origin = [0.0, 0.0, 0.0];
-    splice_origin = [295.0, 8.0, 0.0];
+    splice_origin = [205.0, 8.0, 0.0];
 
     for (index = [0 : m3_slide_nut_set_count - 1])
         translate([
@@ -2395,8 +2403,8 @@ module guide_captive_nut_count() {
             0
         ]) guide_loaded_short_bar();
 
-    guide_label("28 SHORT BARS  /  1 NUT EACH",
-                [108.0, -20.0, 0.0], 9.0);
+    guide_label("28 SHORT 18 MM BARS  /  1 NUT EACH",
+                [72.0, -18.0, 0.0], 8.0);
 
     for (index = [0 : gantry_splice_internal_bar_count - 1])
         translate([
@@ -2406,9 +2414,9 @@ module guide_captive_nut_count() {
         ]) guide_loaded_splice_bar();
 
     guide_label("4 LONG SPLICE BARS  /  2 NUTS EACH",
-                [338.0, -20.0, 0.0], 9.0);
+                [248.0, -42.0, 0.0], 8.0);
     guide_label("36 METAL M3 NUTS TOTAL",
-                [205.0, 82.0, 0.0], 11.0, [0, 0, 0],
+                [165.0, 82.0, 0.0], 11.0, [0, 0, 0],
                 guide_check_tint);
 }
 
@@ -2444,7 +2452,7 @@ module guide_preload_channel_bar() {
 module guide_preload_marker(position, axis = "x",
                             tint = guide_new_tint,
                             blue_tape = false) {
-    marker_length = 24.0;
+    marker_length = m3_slide_nut_length;
     marker_width = 5.0;
     marker_height = 8.0;
     color(tint)
@@ -2544,7 +2552,7 @@ module guide_parked_replacement_explained_content() {
     active_rail_x = 120.0;
     spare_rail_x = 330.0;
 
-    guide_label("BOTH ARE THE SAME BATCH 01 SHORT NUT BAR",
+    guide_label("BOTH ARE THE SAME 18 MM BATCH 01 SHORT NUT BAR",
                 [210.0, 178.0, 0.0], 11.0);
 
     translate([active_x, role_y, 0])

@@ -438,7 +438,7 @@ $(GUIDE_BUILD)/prep-captive-nut.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 
 $(GUIDE_BUILD)/prep-captive-nut-count.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,620 \
-		--projection=ortho --camera=205,30,675,205,30,0 \
+		--projection=ortho --camera=165,25,675,165,25,0 \
 		-D 'PART="guide_captive_nut_count"' $<
 
 $(GUIDE_BUILD)/preload-channel-bar.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
@@ -797,7 +797,15 @@ validate-nut-carrier-guard: | $(BUILD)
 		echo 'ERROR: over-depth carrier was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'fit behind the measured slot lip' $$tall_log; \
-	echo 'nut_carrier_guard=pass rejected_bearing_widths=6.7,12.2mm rejected_deep_width=8.7mm rejected_height=4.9mm'
+	long_log=$(BUILD)/invalid-nut-carrier-long.log; \
+	long_mesh=$(BUILD)/invalid-nut-carrier-long.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$long_mesh \
+			-D 'PART="m3_slide_nut"' \
+			-D 'm3_slide_nut_length=30' $(SOURCE) >$$long_log 2>&1; then \
+		echo 'ERROR: overlong carrier was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'stay inside the fixture-upright landing envelope' $$long_log; \
+	echo 'nut_carrier_guard=pass rejected_bearing_widths=6.7,12.2mm rejected_deep_width=8.7mm rejected_height=4.9mm rejected_length=30mm'
 
 validate-gantry-travel-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-gantry-travel.log; \
