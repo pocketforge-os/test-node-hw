@@ -43,7 +43,8 @@ assumption:
 - BLCCLOY B08D6T9CGN concealed metal L-connectors;
 - ordinary metal M3 nuts measuring 5.36 mm across flats × 2.30 mm thick;
 - face-loaded M5 drop-in T-nuts with low-profile M5 × 10 mm button-head
-  screws and washers no larger than 10 mm OD for cable anchors; and
+  screws and washers no larger than 10 mm OD for registration tabs and cable
+  anchors; and
 - Logitech C270 HD webcam, conservatively modeled from its 55° diagonal FOV.
 
 The outer-frame and stacking load path is aluminum plus metal connectors.
@@ -78,7 +79,7 @@ New chassis builds use these stable outputs:
 | 01 | `production-batch-01-ironed-interfaces.stl` | 28 short channel bars and four long splice bars | Iron topmost surfaces |
 | 02 | `production-batch-02-splice-collars.stl` | Two full-wrap gantry collars | Print upright as exported |
 | 03 | `production-batch-03-movable-mounts.stl` | Gantry plates, fixture spacers, carrier links | None |
-| 04 | `production-batch-04-frame-hardware.stl` | Registration tabs, placard mounts, power-strip blocks | None |
+| 04 | `production-batch-04-frame-hardware.stl` | Eight 18 × 92 × 4 mm registration tabs, placard mounts, power-strip blocks | None |
 | 05 | `production-batch-05-placard-holder.stl` | Reusable placard holder | None |
 | 06 | `production-batch-06-device-nameplate.stl` | Device-name plate only | Print white; change to black at 2.4 mm |
 | 07 | `production-batch-07-wire-management.stl` | Eight rail-mounted zip-tie anchors | None |
@@ -123,6 +124,22 @@ with an M3 screw and washer; do not glue or encapsulate it.
 Batch 01 provides 28 short bars: 22 use-now mount positions and six parked
 replacement bars. The authoritative rail/face preload map is in the handbook
 assembly guide. Do not close a rail end until that map balances to 28.
+
+## Stacking registration tabs
+
+Batch 04 contains eight identical **18 × 92 × 4 mm** tabs, two for each upper
+corner. The 18 mm width stays 1 mm inside each edge of a 20 mm rail face. Each
+tab retains the established 60 mm lower-chassis engagement and screw-slot
+centres at 12 and 28 mm, then projects 32 mm above the aluminum stack
+interface. That projection spans the complete bottom rail of the chassis above
+and continues 12 mm beside its corner post.
+
+Install each tab to the lower chassis with two face-loaded M5 sets. After an
+upper chassis is fully seated aluminum-to-aluminum, its third hole aligns with
+the outward groove center of the upper chassis's bottom rail, 10 mm above the
+interface. One additional face-loaded M5 set per tab then positively locks the
+pair. The printed tabs provide lateral registration only; they never carry the
+vertical stack load.
 
 ## Rail-mounted wire management
 
