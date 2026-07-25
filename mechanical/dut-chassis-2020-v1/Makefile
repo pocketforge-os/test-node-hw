@@ -19,6 +19,11 @@ SOURCE_REPOSITORY := https://github.com/pocketforge-os/test-node-hw
 FIXTURE_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl
 FIXTURE_COMPONENTS_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-components.stl
 FIXTURE_LABELS_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-labels.stl
+FIXTURE_BPI_PCB_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-pcb.stl
+FIXTURE_BPI_DARK_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-dark.stl
+FIXTURE_BPI_METAL_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-metal.stl
+FIXTURE_BPI_GOLD_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-gold.stl
+FIXTURE_BPI_SILKSCREEN_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-silkscreen.stl
 CRADLE_BODY_STL := ../dut-cradle-v1/build/trimui-smart-pro-family-carrier-body.stl
 CRADLE_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-labels.stl
 CRADLE_S_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-s-labels.stl
@@ -28,6 +33,11 @@ PRESENTATION_IMPORT_DIR := $(BUILD)/imports
 PRESENTATION_FIXTURE_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-v1.stl
 PRESENTATION_FIXTURE_COMPONENTS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-components.stl
 PRESENTATION_FIXTURE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-dut-fixture-labels.stl
+PRESENTATION_FIXTURE_BPI_PCB_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-pcb.stl
+PRESENTATION_FIXTURE_BPI_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-dark.stl
+PRESENTATION_FIXTURE_BPI_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-metal.stl
+PRESENTATION_FIXTURE_BPI_GOLD_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-gold.stl
+PRESENTATION_FIXTURE_BPI_SILKSCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-silkscreen.stl
 PRESENTATION_CRADLE_BODY_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-family-carrier-body.stl
 PRESENTATION_CRADLE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-labels.stl
 PRESENTATION_CRADLE_S_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-labels.stl
@@ -45,6 +55,11 @@ PRESENTATION_ASSETS := \
 	$(PRESENTATION_FIXTURE_STL) \
 	$(PRESENTATION_FIXTURE_COMPONENTS_STL) \
 	$(PRESENTATION_FIXTURE_LABELS_STL) \
+	$(PRESENTATION_FIXTURE_BPI_PCB_STL) \
+	$(PRESENTATION_FIXTURE_BPI_DARK_STL) \
+	$(PRESENTATION_FIXTURE_BPI_METAL_STL) \
+	$(PRESENTATION_FIXTURE_BPI_GOLD_STL) \
+	$(PRESENTATION_FIXTURE_BPI_SILKSCREEN_STL) \
 	$(PRESENTATION_CRADLE_BODY_STL) \
 	$(PRESENTATION_CRADLE_LABELS_STL) \
 	$(PRESENTATION_CRADLE_S_LABELS_STL) \
@@ -150,6 +165,11 @@ GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/fixture-plate.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-components.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-labels.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-bpi-pcb.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-bpi-dark.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-bpi-metal.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-bpi-gold.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-bpi-silkscreen.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-body.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-labels.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-hooks.stl \
@@ -299,6 +319,21 @@ $(FIXTURE_COMPONENTS_STL):
 $(FIXTURE_LABELS_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-labels.stl
 
+$(FIXTURE_BPI_PCB_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-pcb.stl
+
+$(FIXTURE_BPI_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-dark.stl
+
+$(FIXTURE_BPI_METAL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-metal.stl
+
+$(FIXTURE_BPI_GOLD_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-gold.stl
+
+$(FIXTURE_BPI_SILKSCREEN_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-silkscreen.stl
+
 $(CRADLE_BODY_STL):
 	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-family-carrier-body.stl
 
@@ -318,6 +353,21 @@ $(PRESENTATION_FIXTURE_COMPONENTS_STL): $(FIXTURE_COMPONENTS_STL) | $(PRESENTATI
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_LABELS_STL): $(FIXTURE_LABELS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BPI_PCB_STL): $(FIXTURE_BPI_PCB_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BPI_DARK_STL): $(FIXTURE_BPI_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BPI_METAL_STL): $(FIXTURE_BPI_METAL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BPI_GOLD_STL): $(FIXTURE_BPI_GOLD_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BPI_SILKSCREEN_STL): $(FIXTURE_BPI_SILKSCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
 $(PRESENTATION_CRADLE_BODY_STL): $(CRADLE_BODY_STL) | $(PRESENTATION_IMPORT_DIR)
@@ -652,6 +702,21 @@ $(GUIDE_LAYER_BUILD)/fixture-components.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_
 
 $(GUIDE_LAYER_BUILD)/fixture-labels.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_labels"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-bpi-pcb.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_pcb"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-bpi-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-bpi-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_metal"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-bpi-gold.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_gold"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-bpi-silkscreen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_silkscreen"' $<
 
 $(GUIDE_LAYER_BUILD)/carrier-body.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_carrier_body"' $<

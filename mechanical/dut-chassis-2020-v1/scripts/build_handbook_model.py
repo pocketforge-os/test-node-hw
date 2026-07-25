@@ -21,6 +21,21 @@ LAYER_MATERIALS = {
     "fixture-plate": ("Fixture plate", "#d9dbd6", 0.0, 0.58, 1.0),
     "fixture-components": ("Fixture components", "#20384b", 0.02, 0.52, 1.0),
     "fixture-labels": ("Fixture labels", "#16794f", 0.0, 0.55, 1.0),
+    "fixture-bpi-pcb": (
+        "Banana Pi blue PCB", "#1769a8", 0.0, 0.44, 1.0
+    ),
+    "fixture-bpi-dark": (
+        "Banana Pi ICs and header", "#171a1e", 0.0, 0.38, 1.0
+    ),
+    "fixture-bpi-metal": (
+        "Banana Pi shields and ports", "#b7bcc2", 0.78, 0.24, 1.0
+    ),
+    "fixture-bpi-gold": (
+        "Banana Pi gold contacts", "#d9aa32", 0.82, 0.22, 1.0
+    ),
+    "fixture-bpi-silkscreen": (
+        "Banana Pi silkscreen", "#e9ece6", 0.0, 0.52, 1.0
+    ),
     "carrier-body": ("DUT carrier", "#e1e2dc", 0.0, 0.58, 1.0),
     "carrier-labels": ("Carrier labels", "#17191c", 0.0, 0.55, 1.0),
     "carrier-hooks": ("Carrier hooks", "#34383e", 0.0, 0.48, 1.0),

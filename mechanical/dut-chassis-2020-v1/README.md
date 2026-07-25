@@ -152,6 +152,10 @@ The presentation imports the authoritative fixture/carrier STLs from their
 sibling CAD projects. The TrimUI Smart Pro visual model is fetched from a
 pinned platform commit and verified by SHA-256. Production STL exports never
 contain presentation-only device geometry or camera-frustum overlays.
+The installed Banana Pi BPI-M2 Zero V1.0 is carried through as five semantic
+fixture layers, preserving its blue PCB, dark packages/header, metal ports and
+shield, gold contacts, and pale silkscreen in both static renders and the
+interactive handbook GLB.
 The semantic model and static previews split the white placard insert from its
 black raised device-name labels at `placard_insert_thickness`. The production
 nameplate remains one fused STL on its own bed: print white through 2.4 mm,
@@ -186,7 +190,9 @@ make PYTHON=/tmp/pf-chassis-model-venv/bin/python handbook-assets
 
 Generated artifacts live under `build/` and are not committed. The public
 handbook pins an immutable `test-node-hw` revision and regenerates them in CI,
-preventing stale CAD visuals from being published.
+preventing stale CAD visuals from being published. Every protected-`main`
+change under `mechanical/**` also triggers `handbook-cad-refresh.yml`, which
+advances the handbook's exact CAD gitlink through its own reviewed PR.
 
 The static scene set includes one completed-state render for each major
 assembly section plus focused panels for hidden splice hardware, concealed
