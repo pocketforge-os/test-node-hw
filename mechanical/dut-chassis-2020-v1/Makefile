@@ -499,7 +499,7 @@ $(GUIDE_BUILD)/preload-camera-frame.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BU
 
 $(GUIDE_BUILD)/wire-management-anchor.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,900 \
-		--projection=ortho --viewall --camera=205,-260,185,0,0,18 \
+		--projection=ortho --camera=185,-235,170,0,0,18 \
 		-D 'PART="guide_cable_tie_anchor_install"' $<
 
 $(GUIDE_BUILD)/detail-01-splice-xray.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
