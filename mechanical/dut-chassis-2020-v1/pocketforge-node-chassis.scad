@@ -466,16 +466,16 @@ power_strip_small_hole_diameter = 3.4;
 power_strip_small_hole_centres = 31.0 - power_strip_small_hole_diameter;
 // This is a drill-start guide, not a final thread-size promise. Start with the
 // printed 2 mm pilot and enlarge only if the supplied screw's root diameter or
-// insertion torque requires it. The 23 mm blind depth leaves 3 mm of ABS
+// insertion torque requires it. The 10 mm blind depth leaves 3 mm of ABS
 // between the screw and the extrusion.
 power_strip_screw_pilot_diameter = 2.0;
-power_strip_screw_pilot_depth = 23.0;
+power_strip_screw_pilot_depth = 10.0;
 power_strip_screw_pilot_entry_diameter = 3.2;
 power_strip_screw_pilot_entry_depth = 1.2;
 // Local block X becomes installed world Z; local Y becomes world X. Retaining
-// the 54 x 40 x 26 mm printed envelope therefore yields a 40 mm wide,
+// the 54 x 40 x 13 mm printed envelope therefore yields a 40 mm wide,
 // 54 mm tall block on the human-side lower cross rail.
-power_strip_mount_plate_size = [54.0, 40.0, 26.0];
+power_strip_mount_plate_size = [54.0, 40.0, 13.0];
 power_strip_mount_face_y =
     power_strip_inside_rail_face_y + power_strip_mount_plate_size.z;
 power_strip_body_front_y =
