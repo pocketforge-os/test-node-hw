@@ -8,6 +8,7 @@ GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
 GUIDE_MODEL_BUILD := $(GUIDE_BUILD)/model
 SOURCE := pocketforge-node-chassis.scad
 BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
+TOPOLOGY := scripts/check_stl_topology.py
 CUT_LIST := CUT_LIST.md
 GUIDE_MODEL_SCRIPT := scripts/build_handbook_model.py
 GUIDE_BATCH_MODEL_SCRIPT := scripts/build_handbook_batch_model.py
@@ -59,7 +60,8 @@ PRODUCTION_BATCHES := \
 	$(BUILD)/production-batch-03-movable-mounts.stl \
 	$(BUILD)/production-batch-04-frame-hardware.stl \
 	$(BUILD)/production-batch-05-placard-holder.stl \
-	$(BUILD)/production-batch-06-device-nameplate.stl
+	$(BUILD)/production-batch-06-device-nameplate.stl \
+	$(BUILD)/production-batch-07-wire-management.stl
 
 CALIBRATION := $(BUILD)/production-batch-00-calibration.stl
 
@@ -89,7 +91,9 @@ REPLACEMENT_PARTS := \
 	$(BUILD)/rail-fit-coupon.stl \
 	$(BUILD)/m3-slide-nut-carrier.stl \
 	$(BUILD)/m3-slide-nut-carrier-set.stl \
-	$(BUILD)/m3-slide-nut-fit-coupon.stl
+	$(BUILD)/m3-slide-nut-fit-coupon.stl \
+	$(BUILD)/cable-tie-anchor.stl \
+	$(BUILD)/cable-tie-anchor-set.stl
 
 GUIDE_STEPS := \
 	$(GUIDE_BUILD)/hero.png \
@@ -101,6 +105,7 @@ GUIDE_STEPS := \
 	$(GUIDE_BUILD)/preload-parked-replacement.png \
 	$(GUIDE_BUILD)/preload-depth-rails.png \
 	$(GUIDE_BUILD)/preload-camera-frame.png \
+	$(GUIDE_BUILD)/wire-management-anchor.png \
 	$(GUIDE_BUILD)/step-01-splice-uprights.png \
 	$(GUIDE_BUILD)/step-02-build-gantry.png \
 	$(GUIDE_BUILD)/step-03-open-frame.png \
@@ -132,7 +137,8 @@ GUIDE_BATCH_PREVIEWS := \
 	$(GUIDE_BUILD)/batch-03-movable-mounts.png \
 	$(GUIDE_BUILD)/batch-04-frame-hardware.png \
 	$(GUIDE_BUILD)/batch-05-placard-holder.png \
-	$(GUIDE_BUILD)/batch-06-device-nameplate.png
+	$(GUIDE_BUILD)/batch-06-device-nameplate.png \
+	$(GUIDE_BUILD)/batch-07-wire-management.png
 
 GUIDE_BATCH_MODELS := \
 	$(GUIDE_BUILD)/batch-00-calibration.glb \
@@ -141,7 +147,8 @@ GUIDE_BATCH_MODELS := \
 	$(GUIDE_BUILD)/batch-03-movable-mounts.glb \
 	$(GUIDE_BUILD)/batch-04-frame-hardware.glb \
 	$(GUIDE_BUILD)/batch-05-placard-holder.glb \
-	$(GUIDE_BUILD)/batch-06-device-nameplate.glb
+	$(GUIDE_BUILD)/batch-06-device-nameplate.glb \
+	$(GUIDE_BUILD)/batch-07-wire-management.glb
 
 GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/aluminum.stl \
@@ -174,7 +181,8 @@ GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
 	cutlist refresh-cut-list \
 	validate-cut-list-sync validate validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
-	validate-gantry-travel-guard validate-production-batches clean
+	validate-gantry-travel-guard validate-cable-anchor-guard \
+	validate-production-batches clean
 
 all: batches replacements cutlist
 
@@ -269,6 +277,13 @@ $(BUILD)/m3-slide-nut-carrier-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 $(BUILD)/m3-slide-nut-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="m3_slide_nut_coupon"' $<
 
+$(BUILD)/cable-tie-anchor.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="cable_tie_anchor"' $<
+
+$(BUILD)/cable-tie-anchor-set.stl: \
+		$(BUILD)/production-batch-07-wire-management.stl | $(BUILD)
+	cp $< $@
+
 $(BUILD)/production-batch-00-calibration.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_00_calibration"' $<
 
@@ -289,6 +304,9 @@ $(BUILD)/production-batch-05-placard-holder.stl: $(SOURCE) lib/pf-2020.scad | $(
 
 $(BUILD)/production-batch-06-device-nameplate.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_06_device_nameplate"' $<
+
+$(BUILD)/production-batch-07-wire-management.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_07_wire_management"' $<
 
 $(FIXTURE_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-dut-fixture-v1.stl
@@ -395,6 +413,11 @@ $(BUILD)/layout-power-strip-system.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,1100 \
 		--projection=ortho --viewall -D 'PART="power_strip_system_preview"' $<
 
+$(BUILD)/layout-cable-tie-anchor.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
+		--projection=ortho --viewall --camera=70,-90,75,0,0,2 \
+		-D 'PART="cable_tie_anchor"' $<
+
 $(GUIDE_BUILD)/hero.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
 		--viewall $(GUIDE_CAMERA) -D 'PART="guide_step_08_complete"' $<
@@ -473,6 +496,11 @@ $(GUIDE_BUILD)/preload-camera-frame.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BU
 		--projection=ortho --viewall \
 		--camera=173,-600,184,173,75,184 \
 		-D 'PART="guide_preload_camera_frame"' $<
+
+$(GUIDE_BUILD)/wire-management-anchor.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,900 \
+		--projection=ortho --camera=185,-235,170,0,0,18 \
+		-D 'PART="guide_cable_tie_anchor_install"' $<
 
 $(GUIDE_BUILD)/detail-01-splice-xray.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,820 \
@@ -581,6 +609,12 @@ $(GUIDE_BUILD)/batch-06-device-nameplate.png: $(SOURCE) lib/pf-2020.scad | $(GUI
 		--camera=109,-70,320,109,22,0 \
 		-D 'PART="production_batch_06_device_nameplate_preview"' $<
 
+$(GUIDE_BUILD)/batch-07-wire-management.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,700 \
+		--projection=ortho --viewall \
+		--camera=78,-70,260,78,26,0 \
+		-D 'PART="production_batch_07_wire_management"' $<
+
 $(GUIDE_BUILD)/batch-00-calibration.glb: $(CALIBRATION) \
 		$(GUIDE_BATCH_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) | $(GUIDE_BUILD)
 	$(PYTHON) $(GUIDE_BATCH_MODEL_SCRIPT) \
@@ -634,6 +668,12 @@ $(GUIDE_BUILD)/batch-06-device-nameplate.glb: \
 		--layer "$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-body.stl::White nameplate body::#f5f5ed" \
 		--layer "$(GUIDE_BATCH_LAYER_BUILD)/batch-06-device-nameplate-labels.stl::Black raised labels::#050505" \
 		--output $@ --name "Batch 06 device nameplate"
+
+$(GUIDE_BUILD)/batch-07-wire-management.glb: \
+		$(BUILD)/production-batch-07-wire-management.stl \
+		$(GUIDE_BATCH_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) | $(GUIDE_BUILD)
+	$(PYTHON) $(GUIDE_BATCH_MODEL_SCRIPT) \
+		--input $< --output $@ --name "Batch 07 wire management"
 
 $(GUIDE_LAYER_BUILD)/aluminum.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_aluminum"' $<
@@ -715,6 +755,7 @@ preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-gantry-splice-installed.png \
 	$(BUILD)/layout-placard-system.png \
 	$(BUILD)/layout-power-strip-system.png \
+	$(BUILD)/layout-cable-tie-anchor.png \
 	guide-static
 
 $(BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(BUILD)
@@ -826,7 +867,47 @@ validate-gantry-travel-guard: | $(BUILD)
 	grep -q 'at least 30 mm of human-side service bay' $$service_log; \
 	echo 'gantry_guards=pass rejected_y=20mm rejected_service_y=60mm'
 
-validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES)
+validate-cable-anchor-guard: | $(BUILD)
+	@set -eu; count_log=$(BUILD)/invalid-cable-anchor-count.log; \
+	count_mesh=$(BUILD)/invalid-cable-anchor-count.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$count_mesh \
+			-D 'PART="production_batch_07_wire_management"' \
+			-D 'cable_anchor_count=7' $(SOURCE) >$$count_log 2>&1; then \
+		echo 'ERROR: seven-anchor starter batch was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'must contain exactly eight anchors' $$count_log; \
+	tunnel_log=$(BUILD)/invalid-cable-anchor-tunnel.log; \
+	tunnel_mesh=$(BUILD)/invalid-cable-anchor-tunnel.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$tunnel_mesh \
+			-D 'PART="cable_tie_anchor"' \
+			-D 'cable_anchor_tie_passage=[4.8,2.0]' \
+			$(SOURCE) >$$tunnel_log 2>&1; then \
+		echo 'ERROR: undersized cable-tie tunnel was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'need 0.8 mm clearance' $$tunnel_log; \
+	roof_log=$(BUILD)/invalid-cable-anchor-roof.log; \
+	roof_mesh=$(BUILD)/invalid-cable-anchor-roof.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$roof_mesh \
+			-D 'PART="cable_tie_anchor"' \
+			-D 'cable_anchor_bridge_roof=0.8' \
+			$(SOURCE) >$$roof_log 2>&1; then \
+		echo 'ERROR: thin cable-anchor roof was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'need two 0.8 mm nozzle lines' $$roof_log; \
+	wide_log=$(BUILD)/invalid-cable-anchor-width.log; \
+	wide_mesh=$(BUILD)/invalid-cable-anchor-width.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$wide_mesh \
+			-D 'PART="cable_tie_anchor"' \
+			-D 'cable_anchor_size=[32,19]' \
+			$(SOURCE) >$$wide_log 2>&1; then \
+		echo 'ERROR: over-wide cable anchor was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'stay inside the 2020 rail face' $$wide_log; \
+	echo 'cable_anchor_guard=pass count=8 max_tie=4.8x1.6mm min_wall=1.6mm rail_face=18mm'
+
+validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES) \
+		$(BUILD)/cable-tie-anchor.stl \
+		$(BUILD)/cable-tie-anchor-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 10 \
 		$(BUILD)/production-batch-00-calibration.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 6 \
@@ -841,11 +922,23 @@ validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES)
 		$(BUILD)/production-batch-05-placard-holder.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 8 \
 		$(BUILD)/production-batch-06-device-nameplate.stl
-	@echo 'production_batches=pass count=6 optional_calibration=pass'
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 9 \
+		$(BUILD)/production-batch-07-wire-management.stl
+	$(PYTHON) $(BOUNDS) --max-x 32 --max-y 18 --max-z 8.8 \
+		$(BUILD)/cable-tie-anchor.stl
+	$(PYTHON) $(BOUNDS) \
+		--equivalent-to $(BUILD)/production-batch-07-wire-management.stl \
+		$(BUILD)/cable-tie-anchor-set.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 \
+		$(BUILD)/cable-tie-anchor.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 8 \
+		$(BUILD)/production-batch-07-wire-management.stl
+	@echo 'production_batches=pass count=7 optional_calibration=pass cable_anchors=8'
 
 validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
-	validate-gantry-travel-guard validate-production-batches \
+	validate-gantry-travel-guard validate-cable-anchor-guard \
+	validate-production-batches \
 	validate-cut-list-sync
 	printf '%s  %s\n' '$(DEVICE_MODEL_SHA256)' \
 		'$(PRESENTATION_DEVICE_SCAD)' | sha256sum -c -
@@ -857,7 +950,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass production_batches=6 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=23'
+	@echo 'chassis_validation=pass production_batches=7 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=24 cable_anchors=8'
 
 clean:
 	rm -rf $(BUILD)

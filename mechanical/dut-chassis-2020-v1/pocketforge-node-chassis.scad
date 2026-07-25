@@ -23,7 +23,7 @@
  *   gantry_splice_full_collar_internal_bar_pair,
  *   gantry_splice_installed_preview,
  *   rail_fit_coupon, m3_slide_nut, m3_slide_nut_set,
- *   m3_slide_nut_coupon,
+ *   m3_slide_nut_coupon, cable_tie_anchor, cable_tie_anchor_set,
  *   production_batch_00_calibration,
  *   production_batch_01_ironed_interfaces,
  *   production_batch_02_splice_collars,
@@ -34,6 +34,7 @@
  *   production_batch_06_device_nameplate_body,
  *   production_batch_06_device_nameplate_labels,
  *   production_batch_06_device_nameplate_preview,
+ *   production_batch_07_wire_management,
  *   guide_step_01_splice_uprights, guide_step_02_build_gantry,
  *   guide_step_03_open_frame, guide_step_04_install_gantry,
  *   guide_step_05_close_frame, guide_step_06_mount_carrier,
@@ -51,7 +52,7 @@
  *   guide_layer_device_controls, guide_layer_device_screen,
  *   guide_layer_webcam, guide_layer_power_strip,
  *   guide_layer_placard_holder, guide_layer_placard_insert,
- *   guide_layer_camera_frustum, cutlist
+ *   guide_layer_camera_frustum, guide_cable_tie_anchor_install, cutlist
  */
 
 include <lib/pf-2020.scad>;
@@ -531,6 +532,36 @@ registration_lower_slot = [9.0, m5_clearance];
 registration_lower_hole_y = [12.0, 28.0];
 registration_upper_lock_y = 66.0;
 
+// Repositionable, non-structural cable anchors bolt to any exposed 2020 rail
+// face with one M5 drop-in T-nut. Two transverse tunnels keep an ordinary zip
+// tie entirely outside the aluminum slot and let a builder use either one tie
+// or two without changing the part. The tunnel contract accepts common ties
+// up to 4.8 mm wide x 1.6 mm thick. Every wall/roof dimension is a multiple of
+// the lab's 0.8 mm nozzle where practical, and the 5.6 mm bridge span prints
+// broad-face-down without support.
+cable_anchor_count = 8;
+cable_anchor_size = [32.0, 18.0];
+cable_anchor_corner_radius = 2.4;
+cable_anchor_base_thickness = 4.8;
+cable_anchor_tie_max_width = 4.8;
+cable_anchor_tie_max_thickness = 1.6;
+cable_anchor_tie_passage = [5.6, 2.4]; // [tie width, tie thickness]
+cable_anchor_passage_radius = 0.6;
+cable_anchor_entry_flare = 0.4;
+cable_anchor_bridge_wall = 1.6;
+cable_anchor_bridge_roof = 1.6;
+cable_anchor_bridge_width =
+    cable_anchor_tie_passage.x + 2 * cable_anchor_bridge_wall;
+cable_anchor_bridge_centres = [-9.6, 9.6];
+cable_anchor_total_height = cable_anchor_base_thickness +
+                            cable_anchor_tie_passage.y +
+                            cable_anchor_bridge_roof;
+cable_anchor_m5_washer_diameter = 10.0;
+cable_anchor_m5_head_stack = 3.8; // <=1 mm washer + M5 button head
+cable_anchor_batch_columns = 4;
+cable_anchor_batch_pitch = [40.0, 28.0];
+cable_anchor_batch_origin = [18.0, 12.0];
+
 // ---- Derived-fit guards --------------------------------------------------
 // The axis swap intentionally accepts 29.5 mm on each side of the widest
 // 247 mm carrier so every finished outer-frame rail can be reused.
@@ -768,6 +799,35 @@ assert(registration_guide_bottom + max(registration_lower_hole_y) <
        "Registration lower screws must land in the vertical extrusion");
 assert(registration_guide_bottom + registration_upper_lock_y > frame_outer.z,
        "Registration upper lock must land in the stacked frame");
+assert(cable_anchor_count == 8,
+       "Wire-management starter batch must contain exactly eight anchors");
+assert(cable_anchor_size.y <= profile_size - 2.0,
+       "Cable anchor must stay inside the 2020 rail face");
+assert(cable_anchor_tie_passage.x + epsilon >=
+           cable_anchor_tie_max_width + 0.8 &&
+       cable_anchor_tie_passage.y + epsilon >=
+           cable_anchor_tie_max_thickness + 0.8,
+       "Cable-anchor passages need 0.8 mm clearance around the largest tie");
+assert(cable_anchor_bridge_wall >= 1.6 &&
+       cable_anchor_bridge_roof >= 1.6,
+       "Cable-anchor tunnel walls and roof need two 0.8 mm nozzle lines");
+assert(cable_anchor_entry_flare > 0 &&
+       cable_anchor_entry_flare <= cable_anchor_bridge_roof / 4,
+       "Cable-anchor entry flare must soften the tie edge without thinning the roof");
+assert(min([for (x = cable_anchor_bridge_centres)
+                abs(x) - cable_anchor_bridge_width / 2]) + epsilon >=
+           cable_anchor_m5_washer_diameter / 2 + 0.2,
+       "Cable-anchor bridges must leave a flat M5 washer seat");
+assert(max([for (x = cable_anchor_bridge_centres)
+                abs(x) + cable_anchor_bridge_width / 2]) <=
+           cable_anchor_size.x / 2 - 1.6,
+       "Cable-anchor bridges need printable end walls");
+assert(cable_anchor_total_height >=
+           cable_anchor_base_thickness + cable_anchor_m5_head_stack,
+       "Cable-anchor bridges must stand above the low-profile M5 head");
+assert(cable_anchor_batch_pitch.x >= cable_anchor_size.x + 4.0 &&
+       cable_anchor_batch_pitch.y >= cable_anchor_size.y + 4.0,
+       "Cable-anchor batch objects need at least 4 mm slicer separation");
 
 module extrusion(length, axis, tint = [0.72, 0.74, 0.77]) {
     color(tint)
@@ -1943,6 +2003,101 @@ module registration_tab_set() {
                 registration_tab();
 }
 
+module cable_anchor_passage_section(center_x, position_y, section_size) {
+    translate([
+        center_x,
+        position_y,
+        cable_anchor_base_thickness + cable_anchor_tie_passage.y / 2
+    ])
+        rotate([-90, 0, 0])
+            linear_extrude(height = epsilon)
+                pf_rounded_rect_2d(
+                    section_size,
+                    min(cable_anchor_passage_radius +
+                            (section_size.y -
+                             cable_anchor_tie_passage.y) / 2,
+                        section_size.y / 2 - epsilon)
+                );
+}
+
+module cable_anchor_tie_tunnel(center_x) {
+    translate([
+        center_x,
+        -cable_anchor_size.y / 2 - epsilon,
+        cable_anchor_base_thickness + cable_anchor_tie_passage.y / 2
+    ])
+        rotate([-90, 0, 0])
+            linear_extrude(height = cable_anchor_size.y + 2 * epsilon)
+                pf_rounded_rect_2d(
+                    cable_anchor_tie_passage,
+                    cable_anchor_passage_radius
+                );
+
+    // A shallow rounded flare at both openings prevents a cut zip-tie edge
+    // from bearing on a sharp printed corner.
+    for (side = [-1, 1])
+        hull() {
+            cable_anchor_passage_section(
+                center_x,
+                side * (cable_anchor_size.y / 2 + epsilon),
+                cable_anchor_tie_passage +
+                    [2 * cable_anchor_entry_flare,
+                     2 * cable_anchor_entry_flare]
+            );
+            cable_anchor_passage_section(
+                center_x,
+                side * (cable_anchor_size.y / 2 -
+                        cable_anchor_entry_flare),
+                cable_anchor_tie_passage
+            );
+        }
+}
+
+// Print with the broad rail-contact face on the bed. The two raised bridges
+// support the cable above a low-profile M5 button head; either transverse
+// tunnel accepts one reusable or single-use zip tie after installation.
+module cable_tie_anchor() {
+    difference() {
+        union() {
+            linear_extrude(height = cable_anchor_base_thickness)
+                pf_rounded_rect_2d(cable_anchor_size,
+                                   cable_anchor_corner_radius);
+            for (x = cable_anchor_bridge_centres)
+                translate([x, 0, cable_anchor_base_thickness])
+                    linear_extrude(
+                        height = cable_anchor_tie_passage.y +
+                                 cable_anchor_bridge_roof
+                    )
+                        pf_rounded_rect_2d(
+                            [cable_anchor_bridge_width,
+                             cable_anchor_size.y],
+                            0.8
+                        );
+        }
+
+        translate([0, 0, -epsilon])
+            cylinder(d = m5_clearance,
+                     h = cable_anchor_total_height + 2 * epsilon,
+                     $fn = 36);
+        for (x = cable_anchor_bridge_centres)
+            cable_anchor_tie_tunnel(x);
+    }
+}
+
+module cable_tie_anchor_set() {
+    for (index = [0 : cable_anchor_count - 1])
+        translate([
+            cable_anchor_batch_origin.x +
+                (index % cable_anchor_batch_columns) *
+                    cable_anchor_batch_pitch.x,
+            cable_anchor_batch_origin.y +
+                floor(index / cable_anchor_batch_columns) *
+                    cable_anchor_batch_pitch.y,
+            0
+        ])
+            cable_tie_anchor();
+}
+
 module installed_registration_guides() {
     color([0.96, 0.47, 0.10, 0.90])
         for (x_side = [0, frame_outer.x])
@@ -2244,6 +2399,13 @@ module production_batch_06_device_nameplate_preview() {
         production_batch_06_device_nameplate_labels();
 }
 
+// Eight starter anchors are intentionally isolated on their own bed. Cable
+// routes are DUT-specific, so this batch is easy to omit, repeat, or replace
+// without reprinting structural frame hardware.
+module production_batch_07_wire_management() {
+    cable_tie_anchor_set();
+}
+
 // ---- Handbook scenes and semantic web-model layers ----------------------
 // Static guide views use a restrained IKEA-like state language: completed
 // aluminum is gray, the parts added in the current step are orange, and metal
@@ -2283,6 +2445,147 @@ module guide_m3_screw(position = [0, 0, 0], shaft_length = 18.0) {
             translate([0, 0, -3.0])
                 cylinder(d = 6.0, h = 3.0, $fn = 32);
         }
+}
+
+module guide_m5_drop_in_nut(position = [0, 0, 0]) {
+    color(guide_metal_tint)
+        translate(position)
+            difference() {
+                linear_extrude(height = 3.2)
+                    pf_rounded_rect_2d([10.0, 6.2], 1.0);
+                translate([0, 0, -epsilon])
+                    cylinder(d = 4.2, h = 3.2 + 2 * epsilon, $fn = 28);
+            }
+}
+
+module guide_m5_washer(position = [0, 0, 0]) {
+    color([0.72, 0.74, 0.77])
+        translate(position)
+            difference() {
+                cylinder(d = cable_anchor_m5_washer_diameter,
+                         h = 1.0, $fn = 40);
+                translate([0, 0, -epsilon])
+                    cylinder(d = m5_clearance,
+                             h = 1.0 + 2 * epsilon, $fn = 32);
+            }
+}
+
+module guide_m5_button_screw(position = [0, 0, 0],
+                             shaft_length = 10.0) {
+    color([0.58, 0.61, 0.64])
+        translate(position) {
+            translate([0, 0, -shaft_length])
+                cylinder(d = 5.0, h = shaft_length, $fn = 32);
+            cylinder(d1 = 9.5, d2 = 8.0, h = 2.8, $fn = 40);
+        }
+}
+
+module guide_cable_bundle(length = 64.0) {
+    cable_tints = [
+        [0.18, 0.20, 0.23],
+        [0.72, 0.58, 0.12],
+        [0.20, 0.43, 0.60]
+    ];
+    for (index = [0 : 2])
+        color(cable_tints[index])
+            translate([0, (index - 1) * 3.5, index % 2 == 0 ? 0 : 1.2])
+                rotate([0, 90, 0])
+                    cylinder(d = 4.0, h = length, center = true, $fn = 28);
+}
+
+module guide_zip_tie_loop(position = [0, 0, 0]) {
+    loop_outer = [18.0, 22.0];
+    loop_wall = 1.2;
+    color(guide_spare_tint)
+        translate(position)
+            rotate([0, 90, 0])
+                linear_extrude(height = 4.4, center = true)
+                    difference() {
+                        pf_rounded_rect_2d(loop_outer, 4.0);
+                        pf_rounded_rect_2d(
+                            loop_outer - [2 * loop_wall, 2 * loop_wall],
+                            4.0 - loop_wall
+                        );
+                    }
+}
+
+// Two-panel wiring close-up. Left: the face-loaded metal nut, anchor, washer,
+// and button-head screw are exploded above one rail slot. Right: one blue zip
+// tie passes through either tunnel and loosely surrounds a cable bundle.
+// Colors are repeated in the handbook picture key, so no instruction relies
+// on color alone.
+module guide_cable_tie_anchor_install() {
+    rail_length = 80.0;
+    rail_top = profile_size / 2;
+    exploded_x = -62.0;
+    installed_x = 62.0;
+    exploded_anchor_z = rail_top + 13.0;
+    installed_anchor_z = rail_top;
+    tunnel_x = cable_anchor_bridge_centres.y;
+    tie_loop_center_z = installed_anchor_z +
+                        cable_anchor_base_thickness +
+                        cable_anchor_tie_passage.y / 2 + 7.8;
+
+    for (station_x = [exploded_x, installed_x])
+        translate([station_x - rail_length / 2, 0, 0])
+            extrusion(rail_length, "x", guide_complete_tint);
+
+    translate([exploded_x, 0,
+               rail_top - extrusion_slot_depth + 1.4])
+        guide_m5_drop_in_nut();
+    color(guide_new_tint)
+        translate([exploded_x, 0, exploded_anchor_z])
+            cable_tie_anchor();
+    guide_m5_washer([
+        exploded_x, 0,
+        exploded_anchor_z + cable_anchor_base_thickness + 6.0
+    ]);
+    guide_m5_button_screw([
+        exploded_x, 0,
+        exploded_anchor_z + cable_anchor_base_thickness + 10.0
+    ]);
+    guide_axis_arrow([
+        exploded_x + cable_anchor_size.x / 2 + 8.0,
+        0,
+        exploded_anchor_z + cable_anchor_total_height + 11.0
+    ], "z", -1, 21.0);
+
+    translate([installed_x, 0,
+               rail_top - extrusion_slot_depth + 1.4])
+        guide_m5_drop_in_nut();
+    color(guide_new_tint)
+        translate([installed_x, 0, installed_anchor_z])
+            cable_tie_anchor();
+    guide_m5_washer([
+        installed_x, 0,
+        installed_anchor_z + cable_anchor_base_thickness
+    ]);
+    guide_m5_button_screw([
+        installed_x, 0,
+        installed_anchor_z + cable_anchor_base_thickness + 1.0
+    ]);
+    translate([
+        installed_x + tunnel_x,
+        0,
+        installed_anchor_z + cable_anchor_total_height + 3.5
+    ])
+        guide_cable_bundle();
+    guide_zip_tie_loop([
+        installed_x + tunnel_x,
+        0,
+        tie_loop_center_z
+    ]);
+    guide_axis_arrow([
+        installed_x + tunnel_x,
+        -31.0,
+        installed_anchor_z + cable_anchor_base_thickness +
+            cable_anchor_tie_passage.y / 2
+    ], "y", 1, 19.0);
+
+    guide_label("1  DROP-IN M5",
+                [exploded_x, -25.0, -8.5], 8.0);
+    guide_label("2  ZIP TIE",
+                [installed_x, -25.0, -8.5], 8.0);
 }
 
 // A loaded production short bar shown in its rail-installation orientation.
@@ -3455,6 +3758,10 @@ if (PART == "assembly") {
     m3_slide_nut_carrier_set();
 } else if (PART == "m3_slide_nut_coupon") {
     m3_slide_nut_fit_coupon();
+} else if (PART == "cable_tie_anchor") {
+    cable_tie_anchor();
+} else if (PART == "cable_tie_anchor_set") {
+    cable_tie_anchor_set();
 } else if (PART == "production_batch_00_calibration") {
     production_batch_00_calibration();
 } else if (PART == "production_batch_01_ironed_interfaces") {
@@ -3475,6 +3782,8 @@ if (PART == "assembly") {
     production_batch_06_device_nameplate_labels();
 } else if (PART == "production_batch_06_device_nameplate_preview") {
     production_batch_06_device_nameplate_preview();
+} else if (PART == "production_batch_07_wire_management") {
+    production_batch_07_wire_management();
 } else if (PART == "guide_step_01_splice_uprights") {
     guide_step_01_splice_uprights();
 } else if (PART == "guide_step_02_build_gantry") {
@@ -3507,6 +3816,8 @@ if (PART == "assembly") {
     guide_preload_depth_rails();
 } else if (PART == "guide_preload_camera_frame") {
     guide_preload_camera_frame();
+} else if (PART == "guide_cable_tie_anchor_install") {
+    guide_cable_tie_anchor_install();
 } else if (PART == "guide_detail_02_crossbar_corner") {
     guide_detail_02_crossbar_corner();
 } else if (PART == "guide_detail_03_lower_frame_layout") {
