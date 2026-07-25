@@ -6,7 +6,8 @@ PocketForge test node. The chassis carries:
 - a movable electronics/webcam fixture on a two-upright gantry;
 - a fixed device-specific DUT carrier on the shared optical axis;
 - an operator-side power strip and replaceable device placard; and
-- non-load-bearing stacking registration tabs.
+- non-load-bearing stacking registration tabs and repositionable cable
+  anchors.
 
 The handheld is the **device under test (DUT)**. This surrounding assembly is
 the **test-node chassis**.
@@ -40,7 +41,9 @@ assumption:
   12.15 mm, lip depth 1.66 mm, and deep channel width 6.66 mm;
 - BLCCLOY B08C9Q2TGW metal three-way end connectors;
 - BLCCLOY B08D6T9CGN concealed metal L-connectors;
-- ordinary metal M3 nuts measuring 5.36 mm across flats × 2.30 mm thick; and
+- ordinary metal M3 nuts measuring 5.36 mm across flats × 2.30 mm thick;
+- face-loaded M5 drop-in T-nuts with low-profile M5 × 10 mm button-head
+  screws and washers no larger than 10 mm OD for cable anchors; and
 - Logitech C270 HD webcam, conservatively modeled from its 55° diagonal FOV.
 
 The outer-frame and stacking load path is aluminum plus metal connectors.
@@ -78,6 +81,7 @@ New chassis builds use these stable outputs:
 | 04 | `production-batch-04-frame-hardware.stl` | Registration tabs, placard mounts, power-strip blocks | None |
 | 05 | `production-batch-05-placard-holder.stl` | Reusable placard holder | None |
 | 06 | `production-batch-06-device-nameplate.stl` | Device-name plate only | Print white; change to black at 2.4 mm |
+| 07 | `production-batch-07-wire-management.stl` | Eight rail-mounted zip-tie anchors | None |
 
 All exported geometry is already in a support-free orientation and fits the
 conservative 247 × 207 mm Prusa printable envelope. The accepted process is
@@ -119,6 +123,26 @@ with an M3 screw and washer; do not glue or encapsulate it.
 Batch 01 provides 28 short bars: 22 use-now mount positions and six parked
 replacement bars. The authoritative rail/face preload map is in the handbook
 assembly guide. Do not close a rail end until that map balances to 28.
+
+## Rail-mounted wire management
+
+Batch 07 provides a starter set of eight identical anchors. Each
+**32 × 18 × 8.8 mm** anchor bolts to any exposed 2020 rail face with one
+face-loaded M5 T-nut, one low-profile M5 × 10 mm button-head screw, and one
+flat washer no larger than 10 mm OD. Nothing is preloaded through a cut rail
+end.
+
+Two rounded **5.6 × 2.4 mm** transverse tunnels accept common zip ties up to
+4.8 mm wide × 1.6 mm thick. Thread one tie through either tunnel, or use both
+for a wider bundle. Print the broad rail-contact face on the bed with supports
+disabled. Tighten the M5 screw only enough to stop the anchor from sliding,
+and leave the tie loose enough that cables can move slightly under a fingertip.
+
+These are routing aids, not strain relief, structural clamps, or stack
+hardware. Their positions and final count follow each DUT harness. The
+canonical eight-piece bed is intentionally separate so it can be repeated or
+omitted without reprinting frame hardware; individual and eight-piece
+replacement exports are also available.
 
 ## Fixture-upright splice
 
@@ -168,13 +192,13 @@ That command:
 - lints all repository OpenSCAD sources;
 - exports and bounds-checks every production and replacement STL;
 - renders the assembly and guide scenes;
-- exercises routing, optical-FOV, gantry-travel, and channel-bar negative
-  guards;
+- exercises routing, optical-FOV, gantry-travel, channel-bar, and cable-anchor
+  negative guards;
 - regenerates the cut list and compares it byte-for-byte with `CUT_LIST.md`;
   and
 - verifies the pinned device model.
 
-Generate the handbook's static scenes, seven interactive print beds, and
+Generate the handbook's static scenes, eight interactive print beds, and
 semantic full-chassis model:
 
 ```sh
@@ -193,7 +217,8 @@ assembly section plus focused panels for hidden splice hardware, concealed
 gantry connectors, captive-nut preparation, exact per-rail preload counts,
 the physical identity and lifecycle of parked replacement bars, rail
 orientation, corner topology, assembly motion, positioning datums, carrier-link
-selection, fixture spacing, optical orientation, and final frame hardware.
+selection, fixture spacing, optical orientation, final frame hardware, and the
+face-loaded cable-anchor/tie path.
 Keep those panels derived from the production modules rather than redrawing
 their geometry independently.
 
@@ -216,3 +241,6 @@ to this engineering README.
   count, and positively restrain the stack against tipping.
 - Printed registration tabs locate stacked frames laterally; aluminum carries
   vertical load.
+- Printed cable anchors organize a loose harness only. Do not use them as
+  connector strain relief, overtighten a zip tie, or route a cable across a
+  sharp rail end.
