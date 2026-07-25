@@ -201,7 +201,8 @@ GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
 	cutlist refresh-cut-list \
 	validate-cut-list-sync validate validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
-	validate-gantry-travel-guard validate-cable-anchor-guard \
+	validate-gantry-travel-guard validate-registration-tab-guard \
+	validate-cable-anchor-guard \
 	validate-production-batches clean
 
 all: batches replacements cutlist
@@ -624,7 +625,7 @@ $(GUIDE_BUILD)/detail-08-power-strip.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_B
 
 $(GUIDE_BUILD)/detail-08-stacking-corner.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1000 \
-		--projection=ortho --viewall --camera=230,-240,510,30,30,370 \
+		--projection=ortho --viewall --camera=-230,-240,510,20,20,370 \
 		-D 'PART="guide_detail_08_stacking_corner"' $<
 
 $(GUIDE_BUILD)/batch-00-calibration.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
@@ -932,6 +933,56 @@ validate-gantry-travel-guard: | $(BUILD)
 	grep -q 'at least 30 mm of human-side service bay' $$service_log; \
 	echo 'gantry_guards=pass rejected_y=20mm rejected_service_y=60mm'
 
+validate-registration-tab-guard: | $(BUILD)
+	@set -eu; size_log=$(BUILD)/invalid-registration-tab-size.log; \
+	size_mesh=$(BUILD)/invalid-registration-tab-size.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$size_mesh \
+			-D 'PART="registration_tab"' \
+			-D 'registration_tab_size=[19,92,4]' \
+			$(SOURCE) >$$size_log 2>&1; then \
+		echo 'ERROR: 19 mm-wide registration tab was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'exactly 18 x 92 x 4 mm' $$size_log; \
+	engagement_log=$(BUILD)/invalid-registration-tab-engagement.log; \
+	engagement_mesh=$(BUILD)/invalid-registration-tab-engagement.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$engagement_mesh \
+			-D 'PART="registration_tab"' \
+			-D 'registration_tab_size=[18,92,4]' \
+			-D 'registration_lower_engagement=59' \
+			$(SOURCE) >$$engagement_log 2>&1; then \
+		echo 'ERROR: 59 mm registration engagement was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'require 60 mm lower engagement and 32 mm upper engagement' \
+		$$engagement_log; \
+	slot_log=$(BUILD)/invalid-registration-tab-slots.log; \
+	slot_mesh=$(BUILD)/invalid-registration-tab-slots.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$slot_mesh \
+			-D 'PART="registration_tab"' \
+			-D 'registration_lower_hole_y=[13,28]' \
+			$(SOURCE) >$$slot_log 2>&1; then \
+		echo 'ERROR: shifted registration lower slot was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'preserve the 12 and 28 mm screw datums' $$slot_log; \
+	lock_log=$(BUILD)/invalid-registration-tab-upper-lock.log; \
+	lock_mesh=$(BUILD)/invalid-registration-tab-upper-lock.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$lock_mesh \
+			-D 'PART="registration_tab"' \
+			-D 'registration_upper_lock_y=69' \
+			$(SOURCE) >$$lock_log 2>&1; then \
+		echo 'ERROR: shifted registration upper lock was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'meet the upper bottom-rail groove center' $$lock_log; \
+	count_log=$(BUILD)/invalid-registration-tab-count.log; \
+	count_mesh=$(BUILD)/invalid-registration-tab-count.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$count_mesh \
+			-D 'PART="registration_tab_set"' \
+			-D 'registration_tab_count=7' \
+			$(SOURCE) >$$count_log 2>&1; then \
+		echo 'ERROR: seven-tab frame batch was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'exactly eight registration tabs' $$count_log; \
+	echo 'registration_tab_guard=pass size=18x92x4mm lower=60mm upper=32mm lower_slots=12,28mm upper_lock=70mm count=8'
+
 validate-cable-anchor-guard: | $(BUILD)
 	@set -eu; count_log=$(BUILD)/invalid-cable-anchor-count.log; \
 	count_mesh=$(BUILD)/invalid-cable-anchor-count.stl; \
@@ -971,6 +1022,8 @@ validate-cable-anchor-guard: | $(BUILD)
 	echo 'cable_anchor_guard=pass count=8 max_tie=4.8x1.6mm min_wall=1.6mm rail_face=18mm'
 
 validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES) \
+		$(BUILD)/stacking-registration-tab.stl \
+		$(BUILD)/stacking-registration-tab-set.stl \
 		$(BUILD)/cable-tie-anchor.stl \
 		$(BUILD)/cable-tie-anchor-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 10 \
@@ -989,6 +1042,14 @@ validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES) \
 		$(BUILD)/production-batch-06-device-nameplate.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 9 \
 		$(BUILD)/production-batch-07-wire-management.stl
+	$(PYTHON) $(BOUNDS) --max-x 18 --max-y 92 --max-z 4 \
+		$(BUILD)/stacking-registration-tab.stl
+	$(PYTHON) $(BOUNDS) --max-x 90 --max-y 190 --max-z 4 \
+		$(BUILD)/stacking-registration-tab-set.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 \
+		$(BUILD)/stacking-registration-tab.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 8 \
+		$(BUILD)/stacking-registration-tab-set.stl
 	$(PYTHON) $(BOUNDS) --max-x 32 --max-y 18 --max-z 8.8 \
 		$(BUILD)/cable-tie-anchor.stl
 	$(PYTHON) $(BOUNDS) \
@@ -998,11 +1059,12 @@ validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES) \
 		$(BUILD)/cable-tie-anchor.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 8 \
 		$(BUILD)/production-batch-07-wire-management.stl
-	@echo 'production_batches=pass count=7 optional_calibration=pass cable_anchors=8'
+	@echo 'production_batches=pass count=7 optional_calibration=pass registration_tabs=8 cable_anchors=8'
 
 validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
-	validate-gantry-travel-guard validate-cable-anchor-guard \
+	validate-gantry-travel-guard validate-registration-tab-guard \
+	validate-cable-anchor-guard \
 	validate-production-batches \
 	validate-cut-list-sync
 	printf '%s  %s\n' '$(DEVICE_MODEL_SHA256)' \

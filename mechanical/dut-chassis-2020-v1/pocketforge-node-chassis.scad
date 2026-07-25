@@ -539,11 +539,38 @@ ironing_coupon_rows = 2;
 ironing_coupon_gap = [10.0, 10.0];
 ironing_coupon_count = ironing_coupon_columns * ironing_coupon_rows;
 
-registration_tab_size = [24.0, 72.0, 4.0];
-registration_above_frame = 12.0;
+// Each corner gets two non-load-bearing registration tabs.  The 18 mm width
+// leaves 1 mm of visible aluminum on either side of a 20 mm rail face.  The
+// lower 60 mm preserves the established lower-chassis screw datums; the upper
+// 32 mm spans the complete bottom rail of the next chassis and continues
+// 12 mm beside its post for a generous lead-in.
+registration_lower_engagement = 60.0;
+registration_above_frame = 32.0;
+registration_tab_size = [
+    18.0,
+    registration_lower_engagement + registration_above_frame,
+    4.0
+];
 registration_lower_slot = [9.0, m5_clearance];
 registration_lower_hole_y = [12.0, 28.0];
-registration_upper_lock_y = 66.0;
+registration_upper_lock_y =
+    registration_lower_engagement + profile_size / 2;
+registration_tab_count = 8;
+registration_tab_columns = 4;
+registration_tab_gap = [6.0, 6.0];
+registration_tab_pitch = [
+    registration_tab_size.x + registration_tab_gap.x,
+    registration_tab_size.y + registration_tab_gap.y
+];
+registration_tab_rows =
+    ceil(registration_tab_count / registration_tab_columns);
+registration_tab_set_size = [
+    (registration_tab_columns - 1) * registration_tab_pitch.x +
+        registration_tab_size.x,
+    (registration_tab_rows - 1) * registration_tab_pitch.y +
+        registration_tab_size.y,
+    registration_tab_size.z
+];
 
 // Repositionable, non-structural cable anchors bolt to any exposed 2020 rail
 // face with one M5 drop-in T-nut. Two transverse tunnels keep an ordinary zip
@@ -801,17 +828,36 @@ assert(ironing_coupon_count >= 6,
 assert((ironing_coupon_count - 1) * ironing_coupon_notch_pitch <
            ironing_coupon_size.y - 2 * ironing_coupon_corner_radius,
        "Ironing coupon edge marks must remain clear of rounded corners");
-assert(registration_above_frame > 0 &&
-       registration_above_frame < profile_size,
-       "Registration guide must engage, but not exceed, one upper post width");
+assert(registration_tab_size == [18.0, 92.0, 4.0],
+       "Registration tabs must remain exactly 18 x 92 x 4 mm");
+assert(registration_lower_engagement == 60.0 &&
+       registration_above_frame == 32.0,
+       "Registration tabs require 60 mm lower engagement and 32 mm upper engagement");
+assert(registration_tab_size.x <= profile_size - 2.0,
+       "Registration tabs must leave 1 mm of aluminum visible on each rail-face edge");
+assert(registration_lower_hole_y == [12.0, 28.0],
+       "Registration lower slots must preserve the 12 and 28 mm screw datums");
+assert(registration_upper_lock_y ==
+           registration_lower_engagement + profile_size / 2,
+       "Registration upper lock must meet the upper bottom-rail groove center");
+assert(registration_tab_count == 8 &&
+       registration_tab_columns == 4 &&
+       registration_tab_rows == 2,
+       "Frame-hardware batch must contain exactly eight registration tabs");
+assert(registration_tab_gap.x >= 4.0 &&
+       registration_tab_gap.y >= 4.0,
+       "Registration tabs need at least 4 mm of print-bed separation");
+assert((registration_tab_size.x - registration_lower_slot.y) / 2 >= 4.0 &&
+       (registration_tab_size.x - m5_clearance) / 2 >= 4.0,
+       "Registration slots need at least 4 mm of material to each side");
 registration_guide_bottom = frame_outer.z -
-                            (registration_tab_size.y -
-                             registration_above_frame);
+                            registration_lower_engagement;
 assert(registration_guide_bottom + max(registration_lower_hole_y) <
        outer_rail_z.y - profile_size / 2,
        "Registration lower screws must land in the vertical extrusion");
-assert(registration_guide_bottom + registration_upper_lock_y > frame_outer.z,
-       "Registration upper lock must land in the stacked frame");
+assert(registration_guide_bottom + registration_upper_lock_y ==
+           frame_outer.z + profile_size / 2,
+       "Registration upper lock must land in the stacked frame bottom rail");
 assert(cable_anchor_count == 8,
        "Wire-management starter batch must contain exactly eight anchors");
 assert(cable_anchor_size.y <= profile_size - 2.0,
@@ -2016,7 +2062,8 @@ module registration_tab() {
                     rotate(90)
                         pf_capsule_2d(registration_lower_slot.x,
                                       registration_lower_slot.y);
-        // Optional positive lock into the bottom 2020 post of the upper frame.
+        // Positive lock into the outward groove of the upper frame's bottom
+        // rail after both aluminum chassis faces are fully seated.
         translate([registration_tab_size.x / 2,
                    registration_upper_lock_y, -epsilon])
             cylinder(d = m5_clearance,
@@ -2025,10 +2072,15 @@ module registration_tab() {
 }
 
 module registration_tab_set() {
-    for (row = [0, 1])
-        for (column = [0 : 3])
-            translate([column * 30.0, row * 78.0, 0])
-                registration_tab();
+    for (index = [0 : registration_tab_count - 1])
+        translate([
+            (index % registration_tab_columns) *
+                registration_tab_pitch.x,
+            floor(index / registration_tab_columns) *
+                registration_tab_pitch.y,
+            0
+        ])
+            registration_tab();
 }
 
 module cable_anchor_passage_section(center_x, position_y, section_size) {
@@ -2126,26 +2178,41 @@ module cable_tie_anchor_set() {
             cable_tie_anchor();
 }
 
+// Map an exact print-oriented tab (local X across the rail, local Y vertical,
+// local Z outward) onto either exterior face at one frame corner.
+module registration_tab_x_face_transform(x_side, y_side) {
+    multmatrix([
+        [0, 0, x_side == 0 ? -1 : 1,
+         x_side == 0 ? 0 : frame_outer.x],
+        [y_side == 0 ? 1 : -1, 0, 0,
+         y_side == 0 ? 0 : frame_outer.y],
+        [0, 1, 0, registration_guide_bottom],
+        [0, 0, 0, 1]
+    ]) children();
+}
+
+module registration_tab_y_face_transform(x_side, y_side) {
+    multmatrix([
+        [x_side == 0 ? 1 : -1, 0, 0,
+         x_side == 0 ? 0 : frame_outer.x],
+        [0, 0, y_side == 0 ? -1 : 1,
+         y_side == 0 ? 0 : frame_outer.y],
+        [0, 1, 0, registration_guide_bottom],
+        [0, 0, 0, 1]
+    ]) children();
+}
+
 module installed_registration_guides() {
     color([0.96, 0.47, 0.10, 0.90])
         for (x_side = [0, frame_outer.x])
             for (y_side = [0, frame_outer.y]) {
-                // One flat tab on each exterior post face.  Their upper 12 mm
-                // form an open lead-in; aluminum top faces carry stack weight.
-                translate([x_side == 0 ? -registration_tab_size.z :
-                                         frame_outer.x,
-                           y_side == 0 ? 0 : frame_outer.y - profile_size,
-                           registration_guide_bottom])
-                    cube([registration_tab_size.z,
-                          profile_size,
-                          registration_tab_size.y]);
-                translate([x_side == 0 ? 0 : frame_outer.x - profile_size,
-                           y_side == 0 ? -registration_tab_size.z :
-                                         frame_outer.y,
-                           registration_guide_bottom])
-                    cube([profile_size,
-                          registration_tab_size.z,
-                          registration_tab_size.y]);
+                // Two exact production tabs wrap every corner. Their upper
+                // 32 mm are only a lateral guide; meeting aluminum faces carry
+                // the vertical stack load.
+                registration_tab_x_face_transform(x_side, y_side)
+                    registration_tab();
+                registration_tab_y_face_transform(x_side, y_side)
+                    registration_tab();
             }
 }
 
@@ -3512,9 +3579,26 @@ module guide_detail_08_power_strip() {
             "y", -1, exploded_y - 8.0);
 }
 
-// One exact upper corner shows the two perpendicular registration tabs and a
-// ghosted lower corner of the chassis above.  The blue arrow is the stack
-// direction; broad frame faces meet before the tab can carry vertical load.
+module guide_registration_tab_fasteners() {
+    for (y = concat(registration_lower_hole_y,
+                    [registration_upper_lock_y])) {
+        guide_m5_washer([
+            registration_tab_size.x / 2,
+            y,
+            registration_tab_size.z
+        ]);
+        guide_m5_button_screw([
+            registration_tab_size.x / 2,
+            y,
+            registration_tab_size.z + 1.0
+        ]);
+    }
+}
+
+// One exact upper corner shows the two perpendicular production tabs, all six
+// visible M5 fasteners, and the seated lower corner of the chassis above.
+// Blue marks the final action: install one upper lock per tab. Orange is
+// printed geometry, silver is hardware, and gray is aluminum.
 module guide_detail_08_stacking_corner() {
     detail_length = 105.0;
 
@@ -3528,18 +3612,10 @@ module guide_detail_08_stacking_corner() {
     three_way_end_connector_proxy(false, false, true);
 
     color(guide_new_tint) {
-        multmatrix([
-            [0, 0, -1, 0],
-            [1, 0, 0, 0],
-            [0, 1, 0, registration_guide_bottom],
-            [0, 0, 0, 1]
-        ]) registration_tab();
-        multmatrix([
-            [1, 0, 0, 0],
-            [0, 0, -1, 0],
-            [0, 1, 0, registration_guide_bottom],
-            [0, 0, 0, 1]
-        ]) registration_tab();
+        registration_tab_x_face_transform(0, 0)
+            registration_tab();
+        registration_tab_y_face_transform(0, 0)
+            registration_tab();
     }
 
     color([0.66, 0.69, 0.72, 0.34]) {
@@ -3553,8 +3629,17 @@ module guide_detail_08_stacking_corner() {
                    frame_outer.z + outer_rail_z.x])
             extrusion(detail_length, "y");
     }
-    guide_axis_arrow([62.0, 62.0, frame_outer.z + 88.0],
-                     "z", -1, 55.0);
+    registration_tab_x_face_transform(0, 0)
+        guide_registration_tab_fasteners();
+    registration_tab_y_face_transform(0, 0)
+        guide_registration_tab_fasteners();
+
+    guide_axis_arrow([-25.0, registration_tab_size.x / 2,
+                      frame_outer.z + profile_size / 2],
+                     "x", 1, 17.0);
+    guide_axis_arrow([registration_tab_size.x / 2, -25.0,
+                      frame_outer.z + profile_size / 2],
+                     "y", 1, 17.0);
 }
 
 // These world-positioned layers are intentionally colorless STL exports. The
