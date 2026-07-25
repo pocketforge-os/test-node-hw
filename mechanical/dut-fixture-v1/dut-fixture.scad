@@ -7,9 +7,14 @@
  * Export with, for example:
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
- * PART choices: preview, plate, presentation_components,
- * presentation_labels, fit_coupon, plate_lower, plate_upper, joiner.
+ * PART choices: preview, plate, presentation_bpi, presentation_components,
+ * presentation_bpi_pcb, presentation_bpi_dark,
+ * presentation_bpi_metal, presentation_bpi_gold,
+ * presentation_bpi_silkscreen, presentation_labels, fit_coupon,
+ * plate_lower, plate_upper, joiner.
  */
+
+use <bpi-m2-zero-v1.scad>;
 
 PART = "preview";
 SHOW_COMPONENTS = true;
@@ -83,6 +88,8 @@ bpi_size = [29.90, 65.00];
 bpi_hole_diameter = 2.6;
 bpi_hole_far_spacing = [25.60, 60.96];
 bpi_hole_centres = bpi_hole_far_spacing - [bpi_hole_diameter, bpi_hole_diameter];
+BPI_MODEL_SCALE = 1.0;
+BPI_MODEL_HOLE_CENTRES = bpi_hole_centres;
 
 // The diagonal holes have a 5 mm horizontal gap from the hole edge to the
 // adjacent short board side. The sketch also records 1.1 mm at the top hole
@@ -354,10 +361,19 @@ module service_keepout_preview(origin, size, colour = "Crimson") {
             rounded_prism([size.x, size.y, 0.8], 1.5);
 }
 
-module component_preview(show_service_keepouts = true) {
+module bpi_model_at_fixture_datum() {
+    translate([bpi_origin.x, bpi_origin.y,
+               plate_thickness + standoff_height + 0.2])
+        children();
+}
+
+module bpi_model_preview() {
+    bpi_model_at_fixture_datum() bpi_m2_zero_complete();
+}
+
+module generic_component_preview(show_service_keepouts = true) {
     envelope(relay_origin, relay_size, 15, "RoyalBlue", 2,
              relay_standoff_height);
-    envelope(bpi_origin, bpi_size, 7, "SteelBlue");
     envelope(boost_origin, boost_size, 12, "DarkOrange");
     envelope(mosfet_origin, mosfet_size, 8, "Teal");
     envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
@@ -377,6 +393,11 @@ module component_preview(show_service_keepouts = true) {
         for (service = hub_service_envelopes)
             service_keepout_preview(service[1], service[2], "DodgerBlue");
     }
+}
+
+module component_preview(show_service_keepouts = true) {
+    generic_component_preview(show_service_keepouts);
+    bpi_model_preview();
 }
 
 // ---- Calibration coupon ----------------------------------------------------
@@ -478,6 +499,25 @@ assert(envelope_inside_plate(webcam_below_service_origin, webcam_below_service_s
        "Webcam below-clearance exceeds plate");
 assert(envelope_inside_plate(powered_hub_origin, powered_hub_size), "Powered hub exceeds plate");
 assert(envelope_inside_plate(unpowered_hub_origin, unpowered_hub_size), "USB hub exceeds plate");
+assert(bpi_size == bpi_m2_zero_board_size(),
+       str("Fixture and BPI board envelopes disagree: ", bpi_size,
+           " vs ", bpi_m2_zero_board_size()));
+assert(bpi_hole_diameter == bpi_m2_zero_hole_diameter(),
+       str("Fixture and BPI hole diameters disagree: ", bpi_hole_diameter,
+           " vs ", bpi_m2_zero_hole_diameter()));
+assert(bpi_hole_centres == bpi_m2_zero_hole_centres(),
+       str("Fixture and BPI mounting registration disagree: ",
+           bpi_hole_centres, " vs ", bpi_m2_zero_hole_centres()));
+assert(BPI_MODEL_SCALE == 1.0,
+       str("BPI model scale/orientation changed: ", BPI_MODEL_SCALE));
+assert(BPI_MODEL_HOLE_CENTRES == bpi_hole_centres,
+       str("BPI mounting registration changed: ", BPI_MODEL_HOLE_CENTRES));
+assert(bpi_m2_zero_top_dxf_sha256() ==
+       "7adbb58ab77addc91a5fc2ee84df689e5db62e7ed2b9b2b12b166684b1632833",
+       "BPI top-DXF reference hash changed");
+assert(bpi_m2_zero_bottom_dxf_sha256() ==
+       "9d0815fd9bdb3cb5dd790d8dda1eb132a36802b586dc5eab696c79cea3dc592a",
+       "BPI bottom-DXF reference hash changed");
 assert(webcam_aperture.x + webcam_aperture_clearance <= webcam_keepout.x &&
        webcam_aperture.y + webcam_aperture_clearance <= webcam_keepout.y,
        "Webcam aperture exceeds its keep-out");
@@ -735,10 +775,26 @@ for (fastener = joiner_fastener_envelopes)
 
 if (PART == "plate") {
     fixture_plate();
+} else if (PART == "presentation_bpi") {
+    bpi_model_preview();
 } else if (PART == "presentation_components") {
-    // Measured populated-harness envelopes only. Service keep-outs remain
-    // analytical editor overlays and are intentionally excluded.
-    component_preview(false);
+    // Generic measured harness envelopes only. The exact BPI is exported into
+    // material-specific meshes below. Service keep-outs remain analytical.
+    generic_component_preview(false);
+} else if (PART == "presentation_bpi_pcb") {
+    bpi_model_at_fixture_datum()
+        bpi_m2_zero_pcb(
+            board_size = bpi_size * BPI_MODEL_SCALE,
+            hole_centres = BPI_MODEL_HOLE_CENTRES,
+            hole_diameter = bpi_hole_diameter);
+} else if (PART == "presentation_bpi_dark") {
+    bpi_model_at_fixture_datum() bpi_m2_zero_dark_components();
+} else if (PART == "presentation_bpi_metal") {
+    bpi_model_at_fixture_datum() bpi_m2_zero_metal();
+} else if (PART == "presentation_bpi_gold") {
+    bpi_model_at_fixture_datum() bpi_m2_zero_gold();
+} else if (PART == "presentation_bpi_silkscreen") {
+    bpi_model_at_fixture_datum() bpi_m2_zero_silkscreen();
 } else if (PART == "presentation_labels") {
     fixture_labels();
 } else if (PART == "fit_coupon") {

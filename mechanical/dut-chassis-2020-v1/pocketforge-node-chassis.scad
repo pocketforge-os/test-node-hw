@@ -47,6 +47,9 @@
  *   guide_layer_aluminum, guide_layer_connectors,
  *   guide_layer_printed_hardware, guide_layer_fixture_plate,
  *   guide_layer_fixture_components, guide_layer_fixture_labels,
+ *   guide_layer_fixture_bpi_pcb, guide_layer_fixture_bpi_dark,
+ *   guide_layer_fixture_bpi_metal, guide_layer_fixture_bpi_gold,
+ *   guide_layer_fixture_bpi_silkscreen,
  *   guide_layer_carrier_body, guide_layer_carrier_labels,
  *   guide_layer_carrier_hooks, guide_layer_device_shell,
  *   guide_layer_device_controls, guide_layer_device_screen,
@@ -79,6 +82,16 @@ fixture_components_presentation_mesh =
     "build/imports/pocketforge-dut-fixture-components.stl";
 fixture_labels_presentation_mesh =
     "build/imports/pocketforge-dut-fixture-labels.stl";
+fixture_bpi_pcb_presentation_mesh =
+    "build/imports/pocketforge-bpi-m2-zero-pcb.stl";
+fixture_bpi_dark_presentation_mesh =
+    "build/imports/pocketforge-bpi-m2-zero-dark.stl";
+fixture_bpi_metal_presentation_mesh =
+    "build/imports/pocketforge-bpi-m2-zero-metal.stl";
+fixture_bpi_gold_presentation_mesh =
+    "build/imports/pocketforge-bpi-m2-zero-gold.stl";
+fixture_bpi_silkscreen_presentation_mesh =
+    "build/imports/pocketforge-bpi-m2-zero-silkscreen.stl";
 cradle_body_presentation_mesh =
     "build/imports/trimui-smart-pro-family-carrier-body.stl";
 cradle_s_labels_presentation_mesh =
@@ -1038,6 +1051,21 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
         color([0.08, 0.48, 0.32])
             fixture_mesh_at_installed_datum(
                 fixture_labels_presentation_mesh);
+        color("#1769a8")
+            fixture_mesh_at_installed_datum(
+                fixture_bpi_pcb_presentation_mesh);
+        color("#171a1e")
+            fixture_mesh_at_installed_datum(
+                fixture_bpi_dark_presentation_mesh);
+        color("#b7bcc2")
+            fixture_mesh_at_installed_datum(
+                fixture_bpi_metal_presentation_mesh);
+        color("#d9aa32")
+            fixture_mesh_at_installed_datum(
+                fixture_bpi_gold_presentation_mesh);
+        color("#e9ece6")
+            fixture_mesh_at_installed_datum(
+                fixture_bpi_silkscreen_presentation_mesh);
     } else {
         color([0.90, 0.90, 0.86])
             translate([fixture_origin.x,
@@ -3564,6 +3592,27 @@ module guide_layer_fixture_labels() {
     fixture_mesh_at_installed_datum(fixture_labels_presentation_mesh);
 }
 
+module guide_layer_fixture_bpi_pcb() {
+    fixture_mesh_at_installed_datum(fixture_bpi_pcb_presentation_mesh);
+}
+
+module guide_layer_fixture_bpi_dark() {
+    fixture_mesh_at_installed_datum(fixture_bpi_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_bpi_metal() {
+    fixture_mesh_at_installed_datum(fixture_bpi_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_bpi_gold() {
+    fixture_mesh_at_installed_datum(fixture_bpi_gold_presentation_mesh);
+}
+
+module guide_layer_fixture_bpi_silkscreen() {
+    fixture_mesh_at_installed_datum(
+        fixture_bpi_silkscreen_presentation_mesh);
+}
+
 module guide_layer_carrier_body() {
     cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
 }
@@ -3856,6 +3905,16 @@ if (PART == "assembly") {
     guide_layer_fixture_components();
 } else if (PART == "guide_layer_fixture_labels") {
     guide_layer_fixture_labels();
+} else if (PART == "guide_layer_fixture_bpi_pcb") {
+    guide_layer_fixture_bpi_pcb();
+} else if (PART == "guide_layer_fixture_bpi_dark") {
+    guide_layer_fixture_bpi_dark();
+} else if (PART == "guide_layer_fixture_bpi_metal") {
+    guide_layer_fixture_bpi_metal();
+} else if (PART == "guide_layer_fixture_bpi_gold") {
+    guide_layer_fixture_bpi_gold();
+} else if (PART == "guide_layer_fixture_bpi_silkscreen") {
+    guide_layer_fixture_bpi_silkscreen();
 } else if (PART == "guide_layer_carrier_body") {
     guide_layer_carrier_body();
 } else if (PART == "guide_layer_carrier_labels") {

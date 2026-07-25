@@ -47,11 +47,16 @@ plate, fit coupon, split fallback, joiner, layout previews, and SHA-256 checksum
 30-day workflow artifact. New OpenSCAD projects join the same process by adding one project entry to
 the workflow matrix.
 
-Two additional presentation-only meshes expose the measured populated harness
-without contaminating the production plate: `pocketforge-dut-fixture-components.stl`
-contains all ten component envelopes (including the under-plate webcam), and
-`pocketforge-dut-fixture-labels.stl` contains their ten placement labels.
-Analytical connector/service keep-outs remain editor-only and are excluded.
+Presentation-only meshes expose the populated harness without contaminating
+the production plate. `pocketforge-dut-fixture-components.stl` contains the
+nine remaining interface envelopes (including the under-plate webcam), and
+`pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
+Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
+into five real-material meshes: blue PCB, dark ICs/header, metal
+shields/ports, gold contacts, and pale silkscreen. Its dedicated close-up is
+`layout-bpi-m2-zero.png`; source evidence and immutable manufacturer-reference
+hashes are recorded in `BPI-M2-ZERO-PROVENANCE.md`. Analytical
+connector/service keep-outs remain editor-only and are excluded.
 
 No container is required for this: OpenSCAD is a single distro package, the source is portable, and
 the stdlib-only bounds validator removes Python dependency drift. A container would add substantially
@@ -116,7 +121,7 @@ centre spacing = far-edge spacing - hole diameter
 | DP100 tie positions | Two total: one on each short side, 21 / 25 mm down from top | Interpreted from sketch; parameterized |
 | Webcam | 71 × 31.55 mm keep-out; 44.75 × 19.5 mm minimum aperture; 71 × 20 mm lower clear strip | Physically fit; printable opening gets 0.4 mm clearance |
 | 4-channel relay | 51.85 × 72.70 mm; Ø3 holes; 45.03 × 66.93 mm centres; 26 mm standoffs | Measured; height owner-corrected after physical fit |
-| BPI-M2-Zero | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres | Converted from measured far edges |
+| BPI-M2-Zero V1.0 | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres; H2+, K016 shield, populated 2x20 header, u.FL, mini-HDMI, dual micro-USB, micro-SD, and CSI | Runtime identity, owner photo/calipers, and manufacturer V1.0 DXF cross-check; original repository-native model |
 | Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes with 5 mm horizontal hole-edge-to-board-edge gaps (6.5 mm X centre insets), plus 1.1 mm top and 0.7 mm bottom gaps | Owner-corrected from physical fit and annotated measurement |
 | MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
 | Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
@@ -127,19 +132,26 @@ centre spacing = far-edge spacing - hole diameter
 
 ## Refinement workflow
 
-1. Change only the named component parameters near the top of `dut-fixture.scad`.
+1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
+   Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`.
 2. Run `make preview validate`.
 3. Reprint only the fit coupon when changing pilot, tie-slot, or webcam-aperture tolerances.
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
-Preview component blocks are translucent interface envelopes, not cosmetic models. They are omitted
-from every production STL and exist to expose inaccessible connectors and bad cable paths. The complete
-preview subtree—including the component labels—uses OpenSCAD's `%` background modifier. Labels remain
-visible in the editor but are intentionally absent from printable meshes because the lab printer uses
-a 0.8 mm nozzle. Even a manual STL export from the default preview view contains only the printable
-fixture. `make validate` proves that preview and production
-exports have identical triangle geometry. Pairwise component spacing is also machine-enforced: every
-render/export asserts at least 3 mm between envelopes; retention slots keep at least 1 mm from
-components and one another; reserved webcam/hub service zones stay clear; and full M3 joiner screw-head
-keep-outs may not intersect components, tie slots, or service zones. `make validate` includes an
-intentional relay/antenna collision that must be rejected.
+Most preview component blocks remain translucent analytical envelopes rather
+than cosmetic models; the BPI-M2 Zero is the first exact populated-board
+replacement. All preview geometry is omitted from every production STL and
+exists to expose inaccessible connectors and bad cable paths. The complete
+preview subtree—including the component labels—uses OpenSCAD's `%` background
+modifier. Labels remain visible in the editor but are intentionally absent
+from printable meshes because the lab printer uses a 0.8 mm nozzle. Even a
+manual STL export from the default preview view contains only the printable
+fixture. `make validate` proves that preview and production exports have
+identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
+bounds, and deliberately rejects scale or hole-registration drift. Pairwise
+component spacing is also machine-enforced: every render/export asserts at
+least 3 mm between envelopes; retention slots keep at least 1 mm from
+components and one another; reserved webcam/hub service zones stay clear; and
+full M3 joiner screw-head keep-outs may not intersect components, tie slots,
+or service zones. `make validate` includes an intentional relay/antenna
+collision that must be rejected.
