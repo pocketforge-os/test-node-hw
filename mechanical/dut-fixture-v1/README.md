@@ -49,7 +49,7 @@ the workflow matrix.
 
 Presentation-only meshes expose the populated harness without contaminating
 the production plate. `pocketforge-dut-fixture-components.stl` contains the
-four remaining analytical interface envelopes, and
+three remaining analytical interface envelopes, and
 `pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
 Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
 into five real-material meshes: blue PCB, dark ICs/header, metal
@@ -85,6 +85,17 @@ height, and IN-on-−X / OUT-on-+X orientation. Its close-up is
 `layout-hiletgo-xl6009.png`; `HILETGO-XL6009-PROVENANCE.md` records the
 Amazon hashes, 43 × 21 mm gallery dimension, contradictory 47 × 22 × 13 mm
 prose, and rejected online-model candidates.
+
+The MOSFET switch is an original reconstruction of the exact Ceksezx
+`B0FMJH3DML` / `MTSD001` revision. Six meshes preserve its blue 34 × 17 mm
+PCB, blue four-position terminal bank, two dark `PD4184` MOSFET packages and
+gate-network passives, plated holes/screws/leads, indicator LED, and pale
+markings. The exact board is centred inside the accepted 35 × 18 mm collision
+envelope and rotated 180 degrees, so its clipped Ø2.2 mm holes remain on the
+existing 13.38 mm-centre standoffs while the terminal bank faces −X as in the
+owner photograph. Its populated height is 12 mm. The close-up is
+`layout-ceksezx-mtsd001.png`; `CEKSEZX-MTSD001-PROVENANCE.md` records the
+Amazon/gallery/owner-photo hashes and rejected online-model search.
 
 The ALIENTEK DP100 is an original reconstruction of exact Amazon ASIN
 `B0CWRG6YFM`, split into seven meshes for its dark enclosure, black
@@ -148,6 +159,9 @@ more machinery than determinism here.
   9 mm-diameter standoffs, providing vertical clearance for the adjacent
   DP100 connections. Its twelve-position screw-terminal edge faces right
   (+X), while its logic and relay-power headers face left.
+- The MTSD001 board retains the existing two M2 standoffs. Its four screw
+  terminals face left (−X), while the PWM/GND pads and mounting-hole edge face
+  right (+X), matching the owner's installed component photograph.
 - The DP100 retains its two opposite-side ties and measured 94.6 × 62.2 mm
   body. The black/red banana outputs project toward −X, while the USB-C input
   and USB-A communications connector open toward +X with a 15 mm cable
@@ -183,7 +197,7 @@ centre spacing = far-edge spacing - hole diameter
 | 4-channel relay | 51.85 × 72.70 mm; Ø3 holes; 45.03 × 66.93 mm centres; 26 mm standoffs | Measured; height owner-corrected after physical fit |
 | BPI-M2-Zero V1.0 | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres; H2+, K016 shield, populated 2x20 header, u.FL, mini-HDMI, dual micro-USB, micro-SD, and CSI | Runtime identity, owner photo/calipers, and manufacturer V1.0 DXF cross-check; original repository-native model |
 | HiLetgo Flying-Fish XL6009 boost converter | 43.16 × 21.23 × 14 mm; two Ø3 diagonal holes at `[6.50, 18.63]` / `[36.66, 2.20]`; IN at −X and OUT at +X | Owner physical fit plus exact B07BNHR4HW gallery cross-check; original repository-native model |
-| MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
+| Ceksezx MTSD001 dual-MOSFET module | 34 × 17 × 12 mm populated board centred in the accepted 35 × 18 mm analytical envelope; two clipped Ø2.2 holes at 13.38 mm centres; terminal bank −X | Owner photograph/mounting measurements plus exact B0FMJH3DML gallery cross-check; original repository-native model |
 | Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
 | ACEIRMC ESP32-S3 SuperMini HW-747 V0.0.2 | 23.67 × 18.5 mm; 18 plated edge holes at 2.54 mm pitch; USB-C; ESP32-S3FH4R2; BOOT/RST; red ceramic antenna; four 3 × 3 mm short-edge tie slots | Envelope physically measured; population and revision cross-checked to owner-supplied Amazon ASIN B0GS1X97DZ; original repository-native model |
 | Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends; 25 mm top and 18 mm right service | Measured and physically fit |
@@ -195,7 +209,8 @@ centre spacing = far-edge spacing - hole diameter
 1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
    exact relay presentation geometry in `elegoo-4-channel-relay.scad`; change
    only exact boost-converter presentation geometry in
-   `hiletgo-xl6009.scad`; change only exact DP100 presentation geometry in
+   `hiletgo-xl6009.scad`; change only exact MOSFET presentation geometry in
+   `ceksezx-mtsd001.scad`; change only exact DP100 presentation geometry in
    `alientek-dp100.scad`; change
    only Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
    HW-747 presentation geometry in
@@ -207,8 +222,8 @@ centre spacing = far-edge spacing - hole diameter
 
 Most preview component blocks remain translucent analytical envelopes rather
 than cosmetic models; the ELEGOO relay, BPI-M2 Zero, HiLetgo XL6009,
-ALIENTEK DP100, ESP32-S3 SuperMini, and Logitech C270 are exact visual
-replacements. All
+the Ceksezx MTSD001, ALIENTEK DP100, ESP32-S3 SuperMini, and Logitech C270
+are exact visual replacements. All
 preview geometry is omitted
 from every production STL and
 exists to expose inaccessible connectors and bad cable paths. The complete
@@ -221,7 +236,9 @@ identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
 bounds, proves the relay's 51.85 × 72.70 mm installed envelope, four-channel
 population, mounting registration, and +X terminal orientation, proves the
 boost converter's 43.16 × 21.23 × 14 mm envelope, diagonal mounting
-registration, and −X input orientation, proves the DP100's 94.60 × 62.20 ×
+registration, and −X input orientation, proves the MTSD001's 34 × 17 × 12 mm
+populated envelope, two-MOSFET/four-terminal population, existing standoff
+registration, and −X terminal orientation, proves the DP100's 94.60 × 62.20 ×
 17.20 mm installed body, 100.40 mm terminal-inclusive overall length, and
 −X-output/+X-USB/−Y-control orientation, proves the
 ESP32's 18.50 × 23.67 mm installed envelope and bottom USB orientation, proves

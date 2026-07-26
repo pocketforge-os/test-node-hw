@@ -8,12 +8,16 @@
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
  * PART choices: preview, plate, presentation_relay, presentation_bpi,
- * presentation_boost, presentation_dp100, presentation_esp32,
+ * presentation_boost, presentation_mosfet, presentation_dp100,
+ * presentation_esp32,
  * presentation_c270,
  * presentation_components,
  * presentation_boost_pcb, presentation_boost_dark,
  * presentation_boost_adjuster, presentation_boost_metal,
  * presentation_boost_silkscreen,
+ * presentation_mosfet_pcb, presentation_mosfet_blue,
+ * presentation_mosfet_dark, presentation_mosfet_metal,
+ * presentation_mosfet_led, presentation_mosfet_silkscreen,
  * presentation_dp100_shell, presentation_dp100_dark,
  * presentation_dp100_controls,
  * presentation_dp100_screen, presentation_dp100_accent,
@@ -36,6 +40,7 @@ use <bpi-m2-zero-v1.scad>;
 use <elegoo-4-channel-relay.scad>;
 use <esp32-s3-supermini-hw747-v0.0.2.scad>;
 use <hiletgo-xl6009.scad>;
+use <ceksezx-mtsd001.scad>;
 use <alientek-dp100.scad>;
 use <logitech-c270.scad>;
 
@@ -139,10 +144,12 @@ BOOST_MODEL_SCALE = 1.0;
 BOOST_MODEL_HOLE_CENTRES = boost_hole_centres;
 BOOST_MODEL_INPUT_EDGE = "-X";
 
-// Board outline was not dimensioned. The 2.2 mm holes and 15.58 mm far-edge
-// spacing were; both holes are shown nearly touching the same board edge.
+// The original sketch measured the mounting interface but treated the board
+// outline as provisional. The exact listing/owner-photo match is a 34 x 17 mm
+// MTSD001 board centred within this 35 x 18 mm collision envelope. Its two
+// clipped holes remain on the existing printed standoff centres.
 mosfet_origin = [157, 122];
-mosfet_size = [35.0, 18.0];             // provisional envelope, easy to tune
+mosfet_size = [35.0, 18.0];             // accepted collision/standoff envelope
 mosfet_hole_diameter = 2.2;
 mosfet_hole_centre_spacing = 15.58 - mosfet_hole_diameter;
 mosfet_hole_x = mosfet_size.x - (mosfet_hole_diameter / 2 + 0.1);
@@ -150,6 +157,10 @@ mosfet_hole_centres = [
     [mosfet_hole_x, (mosfet_size.y - mosfet_hole_centre_spacing) / 2],
     [mosfet_hole_x, (mosfet_size.y + mosfet_hole_centre_spacing) / 2]
 ];
+MOSFET_MODEL_SCALE = 1.0;
+MOSFET_MODEL_BOARD = [34.0, 17.0];
+MOSFET_MODEL_HOLE_CENTRES = mosfet_hole_centres;
+MOSFET_MODEL_TERMINAL_EDGE = "-X";
 
 antenna_origin = [42, 228.5];
 antenna_size = [110.0, 14.3];             // width measured; length provisional
@@ -465,6 +476,21 @@ module boost_model_preview() {
     boost_model_at_fixture_datum() hiletgo_xl6009_complete();
 }
 
+module mosfet_model_at_fixture_datum() {
+    inset = (mosfet_size - ceksezx_mtsd001_board_size()) / 2;
+    translate([
+        mosfet_origin.x + mosfet_size.x - inset.x,
+        mosfet_origin.y + mosfet_size.y - inset.y,
+        plate_thickness + standoff_height + 0.2
+    ])
+        rotate([0, 0, 180])
+            children();
+}
+
+module mosfet_model_preview() {
+    mosfet_model_at_fixture_datum() ceksezx_mtsd001_complete();
+}
+
 module dp100_model_at_fixture_datum() {
     translate([dp100_origin.x, dp100_origin.y,
                plate_thickness + dp100_install_lift])
@@ -495,7 +521,6 @@ module c270_model_preview() {
 }
 
 module generic_component_preview(show_service_keepouts = true) {
-    envelope(mosfet_origin, mosfet_size, 8, "Teal");
     envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
     envelope(powered_hub_origin, powered_hub_size, 15, "WhiteSmoke", 4);
     envelope(unpowered_hub_origin, unpowered_hub_size, 15, "Black", 4);
@@ -520,6 +545,7 @@ module component_preview(show_service_keepouts = true) {
     relay_model_preview();
     bpi_model_preview();
     boost_model_preview();
+    mosfet_model_preview();
     dp100_model_preview();
     esp32_model_preview();
     c270_model_preview();
@@ -738,6 +764,34 @@ assert(BOOST_MODEL_INPUT_EDGE == hiletgo_xl6009_input_edge() &&
            BOOST_MODEL_INPUT_EDGE));
 assert(hiletgo_xl6009_complete_height() == 14.0,
        "HiLetgo XL6009 populated height changed");
+assert(MOSFET_MODEL_SCALE == 1.0 &&
+       MOSFET_MODEL_BOARD == ceksezx_mtsd001_board_size() &&
+       MOSFET_MODEL_BOARD == [34.0, 17.0],
+       str("Ceksezx MTSD001 model scale/envelope changed: ",
+           MOSFET_MODEL_SCALE, " ", MOSFET_MODEL_BOARD));
+assert(mosfet_hole_diameter == ceksezx_mtsd001_hole_diameter() &&
+       MOSFET_MODEL_HOLE_CENTRES ==
+       ceksezx_mtsd001_installed_hole_centres(mosfet_size),
+       str("Ceksezx MTSD001 mounting registration changed: ",
+           MOSFET_MODEL_HOLE_CENTRES));
+assert(MOSFET_MODEL_TERMINAL_EDGE ==
+       ceksezx_mtsd001_installed_terminal_edge() &&
+       MOSFET_MODEL_TERMINAL_EDGE == "-X",
+       str("Ceksezx MTSD001 terminal/control orientation changed: ",
+           MOSFET_MODEL_TERMINAL_EDGE));
+assert(ceksezx_mtsd001_complete_height() == 12.0 &&
+       ceksezx_mtsd001_terminal_count() == 4 &&
+       ceksezx_mtsd001_mosfet_count() == 2,
+       "Ceksezx MTSD001 population/height changed");
+assert(ceksezx_mtsd001_amazon_hero_sha256() ==
+       "42a2bc3a51587a51649d885db1ae87d65b1166c204ddd6e5e669cb8f76c5fd69",
+       "Ceksezx MTSD001 Amazon reference hash changed");
+assert(ceksezx_mtsd001_dimension_view_sha256() ==
+       "6706f3e1594e2b63a8366370717503e2b09ffabacd3650f80048e746d8538fc7",
+       "Ceksezx MTSD001 dimensional reference hash changed");
+assert(ceksezx_mtsd001_owner_photo_sha256() ==
+       "cf2419bc0a5a33edcec808d35592dc417749536ee2e8cc67885f74a656c9e2a6",
+       "Ceksezx MTSD001 owner-photo hash changed");
 assert(dp100_size == [alientek_dp100_body_size().x,
                       alientek_dp100_body_size().y] &&
        DP100_MODEL_BODY == alientek_dp100_body_size() &&
@@ -1032,6 +1086,8 @@ if (PART == "plate") {
     relay_model_preview();
 } else if (PART == "presentation_boost") {
     boost_model_preview();
+} else if (PART == "presentation_mosfet") {
+    mosfet_model_preview();
 } else if (PART == "presentation_dp100") {
     dp100_model_preview();
 } else if (PART == "presentation_esp32") {
@@ -1040,8 +1096,8 @@ if (PART == "plate") {
     c270_model_preview();
 } else if (PART == "presentation_components") {
     // Generic measured harness envelopes only. Exact relay, BPI, boost,
-    // ESP32, and C270 models are exported into material-specific meshes
-    // below. Keep-outs stay analytical.
+    // MOSFET, DP100, ESP32, and C270 models are exported into
+    // material-specific meshes below. Keep-outs stay analytical.
     generic_component_preview(false);
 } else if (PART == "presentation_boost_pcb") {
     boost_model_at_fixture_datum() hiletgo_xl6009_pcb();
@@ -1053,6 +1109,18 @@ if (PART == "plate") {
     boost_model_at_fixture_datum() hiletgo_xl6009_metal();
 } else if (PART == "presentation_boost_silkscreen") {
     boost_model_at_fixture_datum() hiletgo_xl6009_silkscreen();
+} else if (PART == "presentation_mosfet_pcb") {
+    mosfet_model_at_fixture_datum() ceksezx_mtsd001_pcb();
+} else if (PART == "presentation_mosfet_blue") {
+    mosfet_model_at_fixture_datum() ceksezx_mtsd001_blue();
+} else if (PART == "presentation_mosfet_dark") {
+    mosfet_model_at_fixture_datum() ceksezx_mtsd001_dark();
+} else if (PART == "presentation_mosfet_metal") {
+    mosfet_model_at_fixture_datum() ceksezx_mtsd001_metal();
+} else if (PART == "presentation_mosfet_led") {
+    mosfet_model_at_fixture_datum() ceksezx_mtsd001_led();
+} else if (PART == "presentation_mosfet_silkscreen") {
+    mosfet_model_at_fixture_datum() ceksezx_mtsd001_silkscreen();
 } else if (PART == "presentation_dp100_shell") {
     dp100_model_at_fixture_datum() alientek_dp100_shell();
 } else if (PART == "presentation_dp100_dark") {

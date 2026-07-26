@@ -208,6 +208,12 @@ regulator/470-marked inductor/passives, blue W103 adjuster, metal
 capacitors/pads/leads/screw, and pale markings. Its exact 43.16 × 21.23 ×
 14.00 mm installed envelope retains the measured diagonal Ø3 mm mounting
 registration, with IN on −X and OUT on +X.
+The installed Ceksezx B0FMJH3DML / MTSD001 dual-MOSFET switch is carried
+through as six semantic fixture layers: blue PCB, blue terminal bodies, dark
+PD4184 MOSFETs/passives, metal screws/pads/leads, indicator LED, and pale
+markings. Its exact 34 × 17 × 12 mm populated envelope remains centred in the
+accepted 35 × 18 mm fixture envelope; the measured Ø2.2 mm mounting
+registration is unchanged, and its four-position terminal bank faces −X.
 The installed ALIENTEK B0CWRG6YFM / DP100 is carried through as seven semantic
 fixture layers: dark enclosure, black panel/ports/seam/vents, gray controls,
 IPS screen, red positive-output/status accents, metal banana/USB interfaces,
