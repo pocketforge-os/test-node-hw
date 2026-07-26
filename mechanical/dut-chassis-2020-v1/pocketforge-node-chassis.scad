@@ -65,6 +65,19 @@
  *   guide_layer_fixture_esp32_metal, guide_layer_fixture_esp32_gold,
  *   guide_layer_fixture_esp32_antenna,
  *   guide_layer_fixture_esp32_silkscreen,
+ *   guide_layer_fixture_antenna_dark,
+ *   guide_layer_fixture_antenna_metal,
+ *   guide_layer_fixture_antenna_markings,
+ *   guide_layer_fixture_vienon_shell,
+ *   guide_layer_fixture_vienon_dark,
+ *   guide_layer_fixture_vienon_metal,
+ *   guide_layer_fixture_vienon_blue,
+ *   guide_layer_fixture_vienon_led,
+ *   guide_layer_fixture_smays_shell,
+ *   guide_layer_fixture_smays_dark,
+ *   guide_layer_fixture_smays_metal,
+ *   guide_layer_fixture_smays_led,
+ *   guide_layer_fixture_smays_markings,
  *   guide_layer_carrier_body, guide_layer_carrier_labels,
  *   guide_layer_carrier_hooks, guide_layer_device_shell,
  *   guide_layer_device_controls, guide_layer_device_screen,
@@ -179,6 +192,32 @@ fixture_c270_led_presentation_mesh =
     "build/imports/pocketforge-logitech-c270-led.stl";
 fixture_c270_labels_presentation_mesh =
     "build/imports/pocketforge-logitech-c270-labels.stl";
+fixture_antenna_dark_presentation_mesh =
+    "build/imports/pocketforge-eightwood-ewua0205-dark.stl";
+fixture_antenna_metal_presentation_mesh =
+    "build/imports/pocketforge-eightwood-ewua0205-metal.stl";
+fixture_antenna_markings_presentation_mesh =
+    "build/imports/pocketforge-eightwood-ewua0205-markings.stl";
+fixture_vienon_shell_presentation_mesh =
+    "build/imports/pocketforge-vienon-usb-001-shell.stl";
+fixture_vienon_dark_presentation_mesh =
+    "build/imports/pocketforge-vienon-usb-001-dark.stl";
+fixture_vienon_metal_presentation_mesh =
+    "build/imports/pocketforge-vienon-usb-001-metal.stl";
+fixture_vienon_blue_presentation_mesh =
+    "build/imports/pocketforge-vienon-usb-001-blue.stl";
+fixture_vienon_led_presentation_mesh =
+    "build/imports/pocketforge-vienon-usb-001-led.stl";
+fixture_smays_shell_presentation_mesh =
+    "build/imports/pocketforge-smays-microb-hub-8152-shell.stl";
+fixture_smays_dark_presentation_mesh =
+    "build/imports/pocketforge-smays-microb-hub-8152-dark.stl";
+fixture_smays_metal_presentation_mesh =
+    "build/imports/pocketforge-smays-microb-hub-8152-metal.stl";
+fixture_smays_led_presentation_mesh =
+    "build/imports/pocketforge-smays-microb-hub-8152-led.stl";
+fixture_smays_markings_presentation_mesh =
+    "build/imports/pocketforge-smays-microb-hub-8152-markings.stl";
 cradle_body_presentation_mesh =
     "build/imports/trimui-smart-pro-family-carrier-body.stl";
 cradle_s_labels_presentation_mesh =
@@ -1293,6 +1332,45 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
         color("#eceee8")
             fixture_mesh_at_installed_datum(
                 fixture_esp32_silkscreen_presentation_mesh);
+        color("#15181b")
+            fixture_mesh_at_installed_datum(
+                fixture_antenna_dark_presentation_mesh);
+        color("#c2a64b")
+            fixture_mesh_at_installed_datum(
+                fixture_antenna_metal_presentation_mesh);
+        color("#d7d9d4")
+            fixture_mesh_at_installed_datum(
+                fixture_antenna_markings_presentation_mesh);
+        color("#16191d")
+            fixture_mesh_at_installed_datum(
+                fixture_vienon_shell_presentation_mesh);
+        color("#07090b")
+            fixture_mesh_at_installed_datum(
+                fixture_vienon_dark_presentation_mesh);
+        color("#bfc4c8")
+            fixture_mesh_at_installed_datum(
+                fixture_vienon_metal_presentation_mesh);
+        color("#176fc0")
+            fixture_mesh_at_installed_datum(
+                fixture_vienon_blue_presentation_mesh);
+        color("#3da7e8")
+            fixture_mesh_at_installed_datum(
+                fixture_vienon_led_presentation_mesh);
+        color("#e7e8e5")
+            fixture_mesh_at_installed_datum(
+                fixture_smays_shell_presentation_mesh);
+        color("#17191c")
+            fixture_mesh_at_installed_datum(
+                fixture_smays_dark_presentation_mesh);
+        color("#c4c8cb")
+            fixture_mesh_at_installed_datum(
+                fixture_smays_metal_presentation_mesh);
+        color("#84bb55")
+            fixture_mesh_at_installed_datum(
+                fixture_smays_led_presentation_mesh);
+        color("#777b7d")
+            fixture_mesh_at_installed_datum(
+                fixture_smays_markings_presentation_mesh);
     } else {
         color([0.90, 0.90, 0.86])
             translate([fixture_origin.x,
@@ -4029,6 +4107,71 @@ module guide_layer_fixture_esp32_silkscreen() {
         fixture_esp32_silkscreen_presentation_mesh);
 }
 
+module guide_layer_fixture_antenna_dark() {
+    fixture_mesh_at_installed_datum(
+        fixture_antenna_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_antenna_metal() {
+    fixture_mesh_at_installed_datum(
+        fixture_antenna_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_antenna_markings() {
+    fixture_mesh_at_installed_datum(
+        fixture_antenna_markings_presentation_mesh);
+}
+
+module guide_layer_fixture_vienon_shell() {
+    fixture_mesh_at_installed_datum(
+        fixture_vienon_shell_presentation_mesh);
+}
+
+module guide_layer_fixture_vienon_dark() {
+    fixture_mesh_at_installed_datum(
+        fixture_vienon_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_vienon_metal() {
+    fixture_mesh_at_installed_datum(
+        fixture_vienon_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_vienon_blue() {
+    fixture_mesh_at_installed_datum(
+        fixture_vienon_blue_presentation_mesh);
+}
+
+module guide_layer_fixture_vienon_led() {
+    fixture_mesh_at_installed_datum(
+        fixture_vienon_led_presentation_mesh);
+}
+
+module guide_layer_fixture_smays_shell() {
+    fixture_mesh_at_installed_datum(
+        fixture_smays_shell_presentation_mesh);
+}
+
+module guide_layer_fixture_smays_dark() {
+    fixture_mesh_at_installed_datum(
+        fixture_smays_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_smays_metal() {
+    fixture_mesh_at_installed_datum(
+        fixture_smays_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_smays_led() {
+    fixture_mesh_at_installed_datum(
+        fixture_smays_led_presentation_mesh);
+}
+
+module guide_layer_fixture_smays_markings() {
+    fixture_mesh_at_installed_datum(
+        fixture_smays_markings_presentation_mesh);
+}
+
 module guide_layer_carrier_body() {
     cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
 }
@@ -4407,6 +4550,32 @@ if (PART == "assembly") {
     guide_layer_fixture_esp32_antenna();
 } else if (PART == "guide_layer_fixture_esp32_silkscreen") {
     guide_layer_fixture_esp32_silkscreen();
+} else if (PART == "guide_layer_fixture_antenna_dark") {
+    guide_layer_fixture_antenna_dark();
+} else if (PART == "guide_layer_fixture_antenna_metal") {
+    guide_layer_fixture_antenna_metal();
+} else if (PART == "guide_layer_fixture_antenna_markings") {
+    guide_layer_fixture_antenna_markings();
+} else if (PART == "guide_layer_fixture_vienon_shell") {
+    guide_layer_fixture_vienon_shell();
+} else if (PART == "guide_layer_fixture_vienon_dark") {
+    guide_layer_fixture_vienon_dark();
+} else if (PART == "guide_layer_fixture_vienon_metal") {
+    guide_layer_fixture_vienon_metal();
+} else if (PART == "guide_layer_fixture_vienon_blue") {
+    guide_layer_fixture_vienon_blue();
+} else if (PART == "guide_layer_fixture_vienon_led") {
+    guide_layer_fixture_vienon_led();
+} else if (PART == "guide_layer_fixture_smays_shell") {
+    guide_layer_fixture_smays_shell();
+} else if (PART == "guide_layer_fixture_smays_dark") {
+    guide_layer_fixture_smays_dark();
+} else if (PART == "guide_layer_fixture_smays_metal") {
+    guide_layer_fixture_smays_metal();
+} else if (PART == "guide_layer_fixture_smays_led") {
+    guide_layer_fixture_smays_led();
+} else if (PART == "guide_layer_fixture_smays_markings") {
+    guide_layer_fixture_smays_markings();
 } else if (PART == "guide_layer_carrier_body") {
     guide_layer_carrier_body();
 } else if (PART == "guide_layer_carrier_labels") {

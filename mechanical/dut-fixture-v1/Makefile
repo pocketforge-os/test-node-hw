@@ -17,6 +17,12 @@ ESP32_SOURCE := esp32-s3-supermini-hw747-v0.0.2.scad
 ESP32_PROVENANCE := ESP32-S3-SUPERMINI-PROVENANCE.md
 C270_SOURCE := logitech-c270.scad
 C270_PROVENANCE := LOGITECH-C270-PROVENANCE.md
+ANTENNA_SOURCE := eightwood-ewua0205.scad
+ANTENNA_PROVENANCE := EIGHTWOOD-EWUA0205-PROVENANCE.md
+VIENON_SOURCE := vienon-usb-001.scad
+VIENON_PROVENANCE := VIENON-USB-001-PROVENANCE.md
+SMAYS_SOURCE := smays-microb-hub-8152.scad
+SMAYS_PROVENANCE := SMAYS-MICROB-HUB-8152-PROVENANCE.md
 BPI_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-bpi-m2-zero-pcb.stl \
 	$(BUILD)/pocketforge-bpi-m2-zero-dark.stl \
@@ -70,6 +76,29 @@ C270_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-logitech-c270-led.stl \
 	$(BUILD)/pocketforge-logitech-c270-labels.stl
 C270_COMPLETE_STL := $(BUILD)/pocketforge-logitech-c270-complete.stl
+ANTENNA_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-eightwood-ewua0205-dark.stl \
+	$(BUILD)/pocketforge-eightwood-ewua0205-metal.stl \
+	$(BUILD)/pocketforge-eightwood-ewua0205-markings.stl
+ANTENNA_COMPLETE_STL := $(BUILD)/pocketforge-eightwood-ewua0205-complete.stl
+ANTENNA_BODY_STL := $(BUILD)/pocketforge-eightwood-ewua0205-body-check.stl
+VIENON_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-vienon-usb-001-shell.stl \
+	$(BUILD)/pocketforge-vienon-usb-001-dark.stl \
+	$(BUILD)/pocketforge-vienon-usb-001-metal.stl \
+	$(BUILD)/pocketforge-vienon-usb-001-blue.stl \
+	$(BUILD)/pocketforge-vienon-usb-001-led.stl
+VIENON_COMPLETE_STL := $(BUILD)/pocketforge-vienon-usb-001-complete.stl
+VIENON_BODY_STL := $(BUILD)/pocketforge-vienon-usb-001-body-check.stl
+SMAYS_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-smays-microb-hub-8152-shell.stl \
+	$(BUILD)/pocketforge-smays-microb-hub-8152-dark.stl \
+	$(BUILD)/pocketforge-smays-microb-hub-8152-metal.stl \
+	$(BUILD)/pocketforge-smays-microb-hub-8152-led.stl \
+	$(BUILD)/pocketforge-smays-microb-hub-8152-markings.stl
+SMAYS_COMPLETE_STL := $(BUILD)/pocketforge-smays-microb-hub-8152-complete.stl
+SMAYS_BODY_STL := $(BUILD)/pocketforge-smays-microb-hub-8152-body-check.stl
+FINAL_COMPONENT_SOURCES := $(ANTENNA_SOURCE) $(VIENON_SOURCE) $(SMAYS_SOURCE)
 
 .PHONY: all lint validate validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-presentation-assets \
@@ -79,7 +108,9 @@ C270_COMPLETE_STL := $(BUILD)/pocketforge-logitech-c270-complete.stl
 	validate-mosfet-model-guard validate-mosfet-provenance \
 	validate-dp100-model-guard validate-dp100-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
-	validate-c270-model-guard validate-c270-provenance preview split clean
+	validate-c270-model-guard validate-c270-provenance \
+	validate-final-components-model-guard \
+	validate-final-components-provenance preview split clean
 
 all: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/fit-coupon.stl
 
@@ -92,13 +123,13 @@ lint:
 $(BUILD):
 	mkdir -p $@
 
-$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_components"' $<
 
-$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/pocketforge-bpi-m2-zero-pcb.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
@@ -239,28 +270,85 @@ $(BUILD)/pocketforge-logitech-c270-led.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 $(BUILD)/pocketforge-logitech-c270-labels.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_labels"' $<
 
-$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(ANTENNA_COMPLETE_STL): $(SOURCE) $(ANTENNA_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_antenna"' $<
+
+$(BUILD)/pocketforge-eightwood-ewua0205-dark.stl: $(SOURCE) $(ANTENNA_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_antenna_dark"' $<
+
+$(ANTENNA_BODY_STL): $(SOURCE) $(ANTENNA_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_antenna_body"' $<
+
+$(BUILD)/pocketforge-eightwood-ewua0205-metal.stl: $(SOURCE) $(ANTENNA_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_antenna_metal"' $<
+
+$(BUILD)/pocketforge-eightwood-ewua0205-markings.stl: $(SOURCE) $(ANTENNA_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_antenna_markings"' $<
+
+$(VIENON_COMPLETE_STL): $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_unpowered_hub"' $<
+
+$(BUILD)/pocketforge-vienon-usb-001-shell.stl: $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_vienon_shell"' $<
+
+$(VIENON_BODY_STL): $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_vienon_body"' $<
+
+$(BUILD)/pocketforge-vienon-usb-001-dark.stl: $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_vienon_dark"' $<
+
+$(BUILD)/pocketforge-vienon-usb-001-metal.stl: $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_vienon_metal"' $<
+
+$(BUILD)/pocketforge-vienon-usb-001-blue.stl: $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_vienon_blue"' $<
+
+$(BUILD)/pocketforge-vienon-usb-001-led.stl: $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_vienon_led"' $<
+
+$(SMAYS_COMPLETE_STL): $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_powered_hub"' $<
+
+$(BUILD)/pocketforge-smays-microb-hub-8152-shell.stl: $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_smays_shell"' $<
+
+$(SMAYS_BODY_STL): $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_smays_body"' $<
+
+$(BUILD)/pocketforge-smays-microb-hub-8152-dark.stl: $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_smays_dark"' $<
+
+$(BUILD)/pocketforge-smays-microb-hub-8152-metal.stl: $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_smays_metal"' $<
+
+$(BUILD)/pocketforge-smays-microb-hub-8152-led.stl: $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_smays_led"' $<
+
+$(BUILD)/pocketforge-smays-microb-hub-8152-markings.stl: $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_smays_markings"' $<
+
+$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_lower"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_upper"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="joiner"' -D 'SHOW_COMPONENTS=false' $<
 
 split: $(BUILD)/plate-lower.stl $(BUILD)/plate-upper.stl $(BUILD)/joiner.stl
 
-$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho --viewall \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) $(FINAL_COMPONENT_SOURCES) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho \
 		--autocenter --viewall --camera=100,120,400,100,120,0 \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
@@ -300,18 +388,37 @@ $(BUILD)/layout-logitech-c270.png: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 		--viewall --camera=100,85,-130,100,132,-5 \
 		-D 'PART="presentation_c270"' $<
 
+$(BUILD)/layout-eightwood-ewua0205.png: $(SOURCE) $(ANTENNA_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,650 --projection=ortho \
+		--viewall --camera=97,210,90,97,236,2 \
+		-D 'PART="presentation_antenna"' $<
+
+$(BUILD)/layout-vienon-usb-001.png: $(SOURCE) $(VIENON_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,800 --projection=ortho \
+		--viewall --camera=116,-20,95,116,20,4 \
+		-D 'PART="presentation_unpowered_hub"' $<
+
+$(BUILD)/layout-smays-microb-hub-8152.png: $(SOURCE) $(SMAYS_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,850 --projection=ortho \
+		--viewall --camera=120,94,105,120,52,7 \
+		-D 'PART="presentation_powered_hub"' $<
+
 preview: $(BUILD)/layout-preview.png $(BUILD)/layout-top.png \
 	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-elegoo-relay.png \
 	$(BUILD)/layout-hiletgo-xl6009.png \
 	$(BUILD)/layout-ceksezx-mtsd001.png \
 	$(BUILD)/layout-alientek-dp100.png \
 	$(BUILD)/layout-esp32-s3-supermini.png \
-	$(BUILD)/layout-logitech-c270.png
+	$(BUILD)/layout-logitech-c270.png \
+	$(BUILD)/layout-eightwood-ewua0205.png \
+	$(BUILD)/layout-vienon-usb-001.png \
+	$(BUILD)/layout-smays-microb-hub-8152.png
 
 validate-overlap-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/intentional-overlap.log; mesh=$(BUILD)/intentional-overlap.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="fit_coupon"' \
-			-D 'antenna_origin=[50,160]' $(SOURCE) >$$log 2>&1; then \
+			-D 'antenna_origin=[50,160]' \
+			-D 'antenna_model_tie_x=[17,77]' $(SOURCE) >$$log 2>&1; then \
 			echo 'ERROR: intentional component overlap was not rejected' >&2; exit 1; \
 		fi; \
 		grep -q 'Component envelope clearance violation: relay vs antenna' $$log; \
@@ -631,6 +738,69 @@ validate-c270-provenance: $(C270_SOURCE) $(C270_PROVENANCE)
 	@grep -Fq 'No Logitech image, third-party mesh, STEP body' $(C270_PROVENANCE)
 	@echo 'c270_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
 
+validate-final-components-model-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/intentional-antenna-scale.log; \
+		mesh=$(BUILD)/intentional-antenna-scale.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_antenna_dark"' \
+			-D 'ANTENNA_MODEL_SCALE=1.01' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional antenna scale change was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'Eightwood EWUA0205 model scale/envelope changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-vienon-orientation.log; \
+		mesh=$(BUILD)/intentional-vienon-orientation.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_vienon_shell"' \
+			-D 'UNPOWERED_HUB_MODEL_USB_EDGE="+Y"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional VIENON port reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'VIENON port population or orientation changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-smays-orientation.log; \
+		mesh=$(BUILD)/intentional-smays-orientation.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_smays_shell"' \
+			-D 'POWERED_HUB_MODEL_DC_EDGE="+Y"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional Smays DC reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'Smays USB/RJ45/OTG/DC interface orientation changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-dc-clearance.log; \
+		mesh=$(BUILD)/intentional-dc-clearance.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_smays_shell"' \
+			-D 'powered_hub_dc_service_origin=[147.9,27,13.0]' \
+			$(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: undersized Smays DC arch was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'Smays DC plug must rise above the VIENON body before crossing it' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'final_component_model_guard=pass antenna=114x15x3 vienon=100x30x10 ports=-Y smays=105.07x24x15 ports=+Y dc_arch=overhead'
+
+validate-final-components-provenance: $(ANTENNA_SOURCE) $(ANTENNA_PROVENANCE) \
+	$(VIENON_SOURCE) $(VIENON_PROVENANCE) \
+	$(SMAYS_SOURCE) $(SMAYS_PROVENANCE)
+	@grep -Fq '75dcf6792c609f9e500244ad3f05d4b624a6149340f6061efd288f906b51d473' \
+		$(ANTENNA_SOURCE)
+	@grep -Fq '75dcf6792c609f9e500244ad3f05d4b624a6149340f6061efd288f906b51d473' \
+		$(ANTENNA_PROVENANCE)
+	@grep -Fq '3c751f1dbf784083af1d7ea2ee700e7ddbccd587d77e17dfada458fb3011dc63' \
+		$(VIENON_SOURCE)
+	@grep -Fq '3c751f1dbf784083af1d7ea2ee700e7ddbccd587d77e17dfada458fb3011dc63' \
+		$(VIENON_PROVENANCE)
+	@grep -Fq '01ecb407d5862a442ac77eb52c60763db44b5067d2c55e2e0d08fc6aed7d51e5' \
+		$(SMAYS_SOURCE)
+	@grep -Fq '01ecb407d5862a442ac77eb52c60763db44b5067d2c55e2e0d08fc6aed7d51e5' \
+		$(SMAYS_PROVENANCE)
+	@grep -Fq 'geometry is redistributed.' \
+		$(ANTENNA_PROVENANCE)
+	@grep -Fq 'geometry is redistributed.' \
+		$(VIENON_PROVENANCE)
+	@grep -Fq 'geometry is redistributed.' \
+		$(SMAYS_PROVENANCE)
+	@echo 'final_component_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
+
 validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(BUILD)/pocketforge-dut-fixture-labels.stl \
 	$(RELAY_COMPLETE_STL) $(RELAY_PRESENTATION_STLS) \
@@ -639,7 +809,13 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(DP100_COMPLETE_STL) $(DP100_PRESENTATION_STLS) \
 	$(BPI_PRESENTATION_STLS) \
 	$(ESP32_COMPLETE_STL) $(ESP32_PRESENTATION_STLS) \
-	$(C270_COMPLETE_STL) $(C270_PRESENTATION_STLS)
+	$(C270_COMPLETE_STL) $(C270_PRESENTATION_STLS) \
+	$(ANTENNA_COMPLETE_STL) $(ANTENNA_BODY_STL) \
+	$(ANTENNA_PRESENTATION_STLS) \
+	$(VIENON_COMPLETE_STL) $(VIENON_BODY_STL) \
+	$(VIENON_PRESENTATION_STLS) \
+	$(SMAYS_COMPLETE_STL) $(SMAYS_BODY_STL) \
+	$(SMAYS_PRESENTATION_STLS)
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-components.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-labels.stl
 	$(PYTHON) scripts/stl_bounds.py \
@@ -729,7 +905,38 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-glass.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-led.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-labels.stl
-	@echo 'fixture_presentation_assets=pass proxies=3 labels=10 relay_layers=6 boost_layers=5 mosfet_layers=6 dp100_layers=7 bpi_layers=5 esp32_layers=6 c270_layers=5'
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 114.00 --max-x 114.00 \
+		--min-size-y 15.00 --max-y 15.00 \
+		--min-size-z 3.00 --max-z 3.00 \
+		$(ANTENNA_BODY_STL)
+	$(PYTHON) scripts/stl_bounds.py $(ANTENNA_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-eightwood-ewua0205-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-eightwood-ewua0205-metal.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-eightwood-ewua0205-markings.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 100.00 --max-x 100.00 \
+		--min-size-y 30.00 --max-y 30.00 \
+		--min-size-z 10.00 --max-z 10.00 \
+		$(VIENON_BODY_STL)
+	$(PYTHON) scripts/stl_bounds.py $(VIENON_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-vienon-usb-001-shell.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-vienon-usb-001-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-vienon-usb-001-metal.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-vienon-usb-001-blue.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-vienon-usb-001-led.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 105.07 --max-x 105.07 \
+		--min-size-y 24.00 --max-y 24.00 \
+		--min-size-z 15.00 --max-z 15.00 \
+		$(SMAYS_BODY_STL)
+	$(PYTHON) scripts/stl_bounds.py $(SMAYS_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-smays-microb-hub-8152-shell.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-smays-microb-hub-8152-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-smays-microb-hub-8152-metal.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-smays-microb-hub-8152-led.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-smays-microb-hub-8152-markings.stl
+	@echo 'fixture_presentation_assets=pass proxies=0 labels=10 retention_layers=1 antenna_layers=3 vienon_layers=5 smays_layers=5 relay_layers=6 boost_layers=5 mosfet_layers=6 dp100_layers=7 bpi_layers=5 esp32_layers=6 c270_layers=5'
 
 validate: lint all split validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-bpi-model-guard validate-bpi-provenance \
@@ -739,6 +946,8 @@ validate: lint all split validate-overlap-guard validate-service-guard \
 	validate-dp100-model-guard validate-dp100-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance \
+	validate-final-components-model-guard \
+	validate-final-components-provenance \
 	validate-presentation-assets
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 --allow-rotate $(BUILD)/pocketforge-dut-fixture-v1.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 250 --max-y 210 $(BUILD)/fit-coupon.stl

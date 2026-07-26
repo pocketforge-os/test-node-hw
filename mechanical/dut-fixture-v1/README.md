@@ -48,8 +48,8 @@ plate, fit coupon, split fallback, joiner, layout previews, and SHA-256 checksum
 the workflow matrix.
 
 Presentation-only meshes expose the populated harness without contaminating
-the production plate. `pocketforge-dut-fixture-components.stl` contains the
-three remaining analytical interface envelopes, and
+the production plate. `pocketforge-dut-fixture-components.stl` now contains
+only the physical black retention ties around the exact component models, and
 `pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
 Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
 into five real-material meshes: blue PCB, dark ICs/header, metal
@@ -118,6 +118,20 @@ the asymmetric lens—not the shell center—defines the optical datum.
 reference hashes, and the rejected online-model candidates without
 redistributing any external geometry.
 
+The final three fixture proxies are also gone. The Eightwood `EWUA0205`
+antenna is reconstructed as the exact 114 × 15 mm heat-shrink paddle, routed
+300 mm / Ø0.8 mm coax, and 2.33 mm MHF4 connector. The VIENON `Usb-001`
+four-port hub preserves its 100 × 30 × 10 mm black shell, four downward-facing
+USB-A receptacles, and fixed +X upstream cable. The white Smays
+`microb-hub-8152` preserves its 105.07 × 24 × 15 mm installed envelope, three
+upward-facing USB-A ports, −X RJ45, +X micro-USB OTG cable, and −Y 3.5 mm DC
+input. Thirteen material meshes keep their shells, interfaces, indicators, and
+markings distinct. Their dedicated close-ups are
+`layout-eightwood-ewua0205.png`, `layout-vienon-usb-001.png`, and
+`layout-smays-microb-hub-8152.png`; the matching provenance files record
+listing identifiers, reference-image hashes, reconciled dimensions, and the
+unsuccessful exact-model search.
+
 No container is required for this: OpenSCAD is a single distro package, the source is portable, and
 the stdlib-only bounds validator removes Python dependency drift. A container would add substantially
 more machinery than determinism here.
@@ -144,12 +158,21 @@ more machinery than determinism here.
   Its left-offset C270 lens remains the optical datum. A machine-enforced
   71 × 20 mm clear strip immediately below it is reserved for the owner's
   later secondary block.
-- The upper powered USB/Ethernet hub has a 25 mm connector bay above it and an 18 × 12 mm cable
-  corridor at its right end. Its lower and left sides reserve no unused cable space. Its two 7 × 2.7 mm
-  tie-slot pairs include the extra 0.5 mm width requested after the first physical fit.
-- The lower USB hub retains its physically proven bottom-edge placement. Its connector side opens
-  beyond the plate, while centred 20 × 12 mm cable corridors reserve both narrow ends. The two hub
-  bodies are separated only by the roughly 10 mm required for their independent zip-tie slots.
+- The exact upper Smays hub has three USB-A ports facing +Y, RJ45 facing −X,
+  its fixed micro-USB OTG lead facing +X, and its 3.5 mm DC input facing −Y.
+  It retains the proven 25 mm USB connector bay and 18 mm corridors at both
+  narrow ends. The installed DC plug cannot turn inside the flat inter-hub
+  gap, so a machine-checked 20 × 14 × 7.5 mm **overhead** service volume rises
+  from the gap and crosses above the black hub. Do not treat that apparent
+  gap as unused space when rewiring: preserve this overhead route or revise
+  the fixture layout. Its two 7 × 2.7 mm tie-slot pairs retain the extra
+  0.5 mm width requested after the first physical fit.
+- The exact lower VIENON hub retains its physically proven bottom-edge
+  placement, with its four USB-A ports facing −Y beyond the plate and its
+  fixed upstream lead facing +X into a 20 mm corridor. The 30 mm exact body
+  is shown 2 mm closer to the open edge than the former 24 mm proxy, leaving
+  a 6 mm body-to-body gap without moving the already proven printable tie
+  slots.
 - The ESP32-S3 SuperMini is oriented with its 18.5 mm short edge toward the
   bottom of the plate and the actual USB-C receptacle points down. A centred
   8.5 mm USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots
@@ -198,10 +221,10 @@ centre spacing = far-edge spacing - hole diameter
 | BPI-M2-Zero V1.0 | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres; H2+, K016 shield, populated 2x20 header, u.FL, mini-HDMI, dual micro-USB, micro-SD, and CSI | Runtime identity, owner photo/calipers, and manufacturer V1.0 DXF cross-check; original repository-native model |
 | HiLetgo Flying-Fish XL6009 boost converter | 43.16 × 21.23 × 14 mm; two Ø3 diagonal holes at `[6.50, 18.63]` / `[36.66, 2.20]`; IN at −X and OUT at +X | Owner physical fit plus exact B07BNHR4HW gallery cross-check; original repository-native model |
 | Ceksezx MTSD001 dual-MOSFET module | 34 × 17 × 12 mm populated board centred in the accepted 35 × 18 mm analytical envelope; two clipped Ø2.2 holes at 13.38 mm centres; terminal bank −X | Owner photograph/mounting measurements plus exact B0FMJH3DML gallery cross-check; original repository-native model |
-| Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
+| Eightwood EWUA0205 antenna | 114 × 15 × 3 mm heat-shrink paddle; 300 mm / Ø0.8 mm coax; 2.33 mm MHF4; cable exits +X; one antenna installed from the retail pair | Exact B0CRDVS774 listing dimensions and installed orientation; original repository-native model |
 | ACEIRMC ESP32-S3 SuperMini HW-747 V0.0.2 | 23.67 × 18.5 mm; 18 plated edge holes at 2.54 mm pitch; USB-C; ESP32-S3FH4R2; BOOT/RST; red ceramic antenna; four 3 × 3 mm short-edge tie slots | Envelope physically measured; population and revision cross-checked to owner-supplied Amazon ASIN B0GS1X97DZ; original repository-native model |
-| Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends; 25 mm top and 18 mm right service | Measured and physically fit |
-| Unpowered USB hub | 105 × 24 mm; bottom connectors off-plate; 20 mm at both narrow ends | Estimated envelope; placement and service physically fit |
+| Smays microb-hub-8152 powered USB/Ethernet hub | 105.07 × 24 × 15 mm installed envelope; three USB-A +Y, RJ45 −X, micro-USB OTG lead +X, 3.5 mm DC input −Y; 25 mm USB bay, 18 mm end corridors, and 20 × 14 × 7.5 mm overhead DC-plug route | Owner photo and physical fit control the footprint/orientation; B00L32UUJK listing cross-check; original repository-native model |
+| VIENON Usb-001 four-port USB hub | 100 × 30 × 10 mm; four USB-A −Y; fixed upstream lead +X; ports open beyond plate and upstream lead has 20 mm service | Exact B09MLRPTT2 listing envelope plus owner-photo orientation; original repository-native model |
 | 4040 frame anchors | Eight 12 × 5.5 mm rounded slots | Tunable; verify actual heavy-duty tie in coupon |
 
 ## Refinement workflow
@@ -215,16 +238,17 @@ centre spacing = far-edge spacing - hole diameter
    only Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
    HW-747 presentation geometry in
    `esp32-s3-supermini-hw747-v0.0.2.scad`; and change only C270 presentation
-   geometry in `logitech-c270.scad`.
+   geometry in `logitech-c270.scad`; change only exact antenna geometry in
+   `eightwood-ewua0205.scad`; change only exact black-hub geometry in
+   `vienon-usb-001.scad`; and change only exact white-hub geometry in
+   `smays-microb-hub-8152.scad`.
 2. Run `make preview validate`.
 3. Reprint only the fit coupon when changing pilot, tie-slot, or webcam-aperture tolerances.
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
-Most preview component blocks remain translucent analytical envelopes rather
-than cosmetic models; the ELEGOO relay, BPI-M2 Zero, HiLetgo XL6009,
-the Ceksezx MTSD001, ALIENTEK DP100, ESP32-S3 SuperMini, and Logitech C270
-are exact visual replacements. All
-preview geometry is omitted
+All ten populated fixture components are now exact source-owned visual
+replacements; no translucent analytical component proxy remains. All preview
+geometry is omitted
 from every production STL and
 exists to expose inaccessible connectors and bad cable paths. The complete
 preview subtree—including the component labels—uses OpenSCAD's `%` background
@@ -243,7 +267,12 @@ registration, and −X terminal orientation, proves the DP100's 94.60 × 62.20 �
 −X-output/+X-USB/−Y-control orientation, proves the
 ESP32's 18.50 × 23.67 mm installed envelope and bottom USB orientation, proves
 the C270's 71.00 × 31.55 mm installed face and -Z optical orientation, and
-deliberately rejects scale/registration/orientation drift. Pairwise
+proves the antenna's 114 × 15 mm paddle and +X cable exit, the VIENON hub's
+100 × 30 × 10 mm body and −Y USB/+X cable orientation, and the Smays hub's
+105.07 × 24 × 15 mm body and +Y USB/−X RJ45/+X OTG/−Y DC orientation. It also
+proves that the Smays DC plug and cable can rise through the inter-hub gap and
+cross above the VIENON body without a 3D collision, and deliberately rejects
+scale/registration/orientation/clearance drift. Pairwise
 component spacing is also machine-enforced: every render/export asserts at
 least 3 mm between envelopes; retention slots keep at least 1 mm from
 components and one another; reserved webcam/hub service zones stay clear; and

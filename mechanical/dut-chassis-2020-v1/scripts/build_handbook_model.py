@@ -19,7 +19,7 @@ LAYER_MATERIALS = {
     "connectors": ("Metal connectors", "#24282e", 0.78, 0.30, 1.0),
     "printed-hardware": ("Printed chassis hardware", "#e96a0a", 0.02, 0.48, 1.0),
     "fixture-plate": ("Fixture plate", "#d9dbd6", 0.0, 0.58, 1.0),
-    "fixture-components": ("Fixture components", "#20384b", 0.02, 0.52, 1.0),
+    "fixture-components": ("Fixture retention ties", "#111418", 0.02, 0.48, 1.0),
     "fixture-labels": ("Fixture labels", "#16794f", 0.0, 0.55, 1.0),
     "fixture-relay-pcb": (
         "ELEGOO relay blue PCB", "#0d6f9f", 0.0, 0.44, 1.0
@@ -141,6 +141,45 @@ LAYER_MATERIALS = {
     ),
     "fixture-esp32-silkscreen": (
         "ESP32-S3 silkscreen", "#eceee8", 0.0, 0.50, 1.0
+    ),
+    "fixture-antenna-dark": (
+        "Eightwood EWUA0205 antenna and coax", "#15181b", 0.0, 0.42, 1.0
+    ),
+    "fixture-antenna-metal": (
+        "Eightwood MHF4 connector", "#c2a64b", 0.82, 0.22, 1.0
+    ),
+    "fixture-antenna-markings": (
+        "Eightwood antenna markings", "#d7d9d4", 0.0, 0.50, 1.0
+    ),
+    "fixture-vienon-shell": (
+        "VIENON Usb-001 enclosure and cable", "#16191d", 0.0, 0.42, 1.0
+    ),
+    "fixture-vienon-dark": (
+        "VIENON seams and USB 2.0 tongues", "#07090b", 0.0, 0.34, 1.0
+    ),
+    "fixture-vienon-metal": (
+        "VIENON USB interfaces", "#bfc4c8", 0.78, 0.24, 1.0
+    ),
+    "fixture-vienon-blue": (
+        "VIENON USB 3.0 tongue", "#176fc0", 0.0, 0.32, 1.0
+    ),
+    "fixture-vienon-led": (
+        "VIENON status LED", "#3da7e8", 0.0, 0.24, 1.0
+    ),
+    "fixture-smays-shell": (
+        "Smays hub enclosure, leads, and DC cable", "#e7e8e5", 0.0, 0.50, 1.0
+    ),
+    "fixture-smays-dark": (
+        "Smays ports, seams, and strain relief", "#17191c", 0.0, 0.34, 1.0
+    ),
+    "fixture-smays-metal": (
+        "Smays USB, RJ45, and DC interfaces", "#c4c8cb", 0.78, 0.24, 1.0
+    ),
+    "fixture-smays-led": (
+        "Smays Ethernet status LEDs", "#84bb55", 0.0, 0.28, 1.0
+    ),
+    "fixture-smays-markings": (
+        "Smays enclosure markings", "#777b7d", 0.0, 0.48, 1.0
     ),
     "carrier-body": ("DUT carrier", "#e1e2dc", 0.0, 0.58, 1.0),
     "carrier-labels": ("Carrier labels", "#17191c", 0.0, 0.55, 1.0),

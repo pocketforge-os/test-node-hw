@@ -60,6 +60,19 @@ FIXTURE_C270_DARK_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-dark.
 FIXTURE_C270_GLASS_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-glass.stl
 FIXTURE_C270_LED_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-led.stl
 FIXTURE_C270_LABELS_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-labels.stl
+FIXTURE_ANTENNA_DARK_STL := ../dut-fixture-v1/build/pocketforge-eightwood-ewua0205-dark.stl
+FIXTURE_ANTENNA_METAL_STL := ../dut-fixture-v1/build/pocketforge-eightwood-ewua0205-metal.stl
+FIXTURE_ANTENNA_MARKINGS_STL := ../dut-fixture-v1/build/pocketforge-eightwood-ewua0205-markings.stl
+FIXTURE_VIENON_SHELL_STL := ../dut-fixture-v1/build/pocketforge-vienon-usb-001-shell.stl
+FIXTURE_VIENON_DARK_STL := ../dut-fixture-v1/build/pocketforge-vienon-usb-001-dark.stl
+FIXTURE_VIENON_METAL_STL := ../dut-fixture-v1/build/pocketforge-vienon-usb-001-metal.stl
+FIXTURE_VIENON_BLUE_STL := ../dut-fixture-v1/build/pocketforge-vienon-usb-001-blue.stl
+FIXTURE_VIENON_LED_STL := ../dut-fixture-v1/build/pocketforge-vienon-usb-001-led.stl
+FIXTURE_SMAYS_SHELL_STL := ../dut-fixture-v1/build/pocketforge-smays-microb-hub-8152-shell.stl
+FIXTURE_SMAYS_DARK_STL := ../dut-fixture-v1/build/pocketforge-smays-microb-hub-8152-dark.stl
+FIXTURE_SMAYS_METAL_STL := ../dut-fixture-v1/build/pocketforge-smays-microb-hub-8152-metal.stl
+FIXTURE_SMAYS_LED_STL := ../dut-fixture-v1/build/pocketforge-smays-microb-hub-8152-led.stl
+FIXTURE_SMAYS_MARKINGS_STL := ../dut-fixture-v1/build/pocketforge-smays-microb-hub-8152-markings.stl
 CRADLE_BODY_STL := ../dut-cradle-v1/build/trimui-smart-pro-family-carrier-body.stl
 CRADLE_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-labels.stl
 CRADLE_S_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-s-labels.stl
@@ -109,6 +122,19 @@ PRESENTATION_FIXTURE_C270_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-log
 PRESENTATION_FIXTURE_C270_GLASS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-glass.stl
 PRESENTATION_FIXTURE_C270_LED_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-led.stl
 PRESENTATION_FIXTURE_C270_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-labels.stl
+PRESENTATION_FIXTURE_ANTENNA_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-eightwood-ewua0205-dark.stl
+PRESENTATION_FIXTURE_ANTENNA_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-eightwood-ewua0205-metal.stl
+PRESENTATION_FIXTURE_ANTENNA_MARKINGS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-eightwood-ewua0205-markings.stl
+PRESENTATION_FIXTURE_VIENON_SHELL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-vienon-usb-001-shell.stl
+PRESENTATION_FIXTURE_VIENON_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-vienon-usb-001-dark.stl
+PRESENTATION_FIXTURE_VIENON_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-vienon-usb-001-metal.stl
+PRESENTATION_FIXTURE_VIENON_BLUE_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-vienon-usb-001-blue.stl
+PRESENTATION_FIXTURE_VIENON_LED_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-vienon-usb-001-led.stl
+PRESENTATION_FIXTURE_SMAYS_SHELL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-smays-microb-hub-8152-shell.stl
+PRESENTATION_FIXTURE_SMAYS_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-smays-microb-hub-8152-dark.stl
+PRESENTATION_FIXTURE_SMAYS_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-smays-microb-hub-8152-metal.stl
+PRESENTATION_FIXTURE_SMAYS_LED_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-smays-microb-hub-8152-led.stl
+PRESENTATION_FIXTURE_SMAYS_MARKINGS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-smays-microb-hub-8152-markings.stl
 PRESENTATION_CRADLE_BODY_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-family-carrier-body.stl
 PRESENTATION_CRADLE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-labels.stl
 PRESENTATION_CRADLE_S_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-labels.stl
@@ -166,6 +192,19 @@ PRESENTATION_ASSETS := \
 	$(PRESENTATION_FIXTURE_C270_GLASS_STL) \
 	$(PRESENTATION_FIXTURE_C270_LED_STL) \
 	$(PRESENTATION_FIXTURE_C270_LABELS_STL) \
+	$(PRESENTATION_FIXTURE_ANTENNA_DARK_STL) \
+	$(PRESENTATION_FIXTURE_ANTENNA_METAL_STL) \
+	$(PRESENTATION_FIXTURE_ANTENNA_MARKINGS_STL) \
+	$(PRESENTATION_FIXTURE_VIENON_SHELL_STL) \
+	$(PRESENTATION_FIXTURE_VIENON_DARK_STL) \
+	$(PRESENTATION_FIXTURE_VIENON_METAL_STL) \
+	$(PRESENTATION_FIXTURE_VIENON_BLUE_STL) \
+	$(PRESENTATION_FIXTURE_VIENON_LED_STL) \
+	$(PRESENTATION_FIXTURE_SMAYS_SHELL_STL) \
+	$(PRESENTATION_FIXTURE_SMAYS_DARK_STL) \
+	$(PRESENTATION_FIXTURE_SMAYS_METAL_STL) \
+	$(PRESENTATION_FIXTURE_SMAYS_LED_STL) \
+	$(PRESENTATION_FIXTURE_SMAYS_MARKINGS_STL) \
 	$(PRESENTATION_CRADLE_BODY_STL) \
 	$(PRESENTATION_CRADLE_LABELS_STL) \
 	$(PRESENTATION_CRADLE_S_LABELS_STL) \
@@ -312,6 +351,19 @@ GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/fixture-esp32-gold.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-esp32-antenna.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-esp32-silkscreen.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-antenna-dark.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-antenna-metal.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-antenna-markings.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-vienon-shell.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-vienon-dark.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-vienon-metal.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-vienon-blue.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-vienon-led.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-smays-shell.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-smays-dark.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-smays-metal.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-smays-led.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-smays-markings.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-body.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-labels.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-hooks.stl \
@@ -597,6 +649,45 @@ $(FIXTURE_C270_LED_STL):
 $(FIXTURE_C270_LABELS_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-logitech-c270-labels.stl
 
+$(FIXTURE_ANTENNA_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-eightwood-ewua0205-dark.stl
+
+$(FIXTURE_ANTENNA_METAL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-eightwood-ewua0205-metal.stl
+
+$(FIXTURE_ANTENNA_MARKINGS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-eightwood-ewua0205-markings.stl
+
+$(FIXTURE_VIENON_SHELL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-vienon-usb-001-shell.stl
+
+$(FIXTURE_VIENON_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-vienon-usb-001-dark.stl
+
+$(FIXTURE_VIENON_METAL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-vienon-usb-001-metal.stl
+
+$(FIXTURE_VIENON_BLUE_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-vienon-usb-001-blue.stl
+
+$(FIXTURE_VIENON_LED_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-vienon-usb-001-led.stl
+
+$(FIXTURE_SMAYS_SHELL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-smays-microb-hub-8152-shell.stl
+
+$(FIXTURE_SMAYS_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-smays-microb-hub-8152-dark.stl
+
+$(FIXTURE_SMAYS_METAL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-smays-microb-hub-8152-metal.stl
+
+$(FIXTURE_SMAYS_LED_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-smays-microb-hub-8152-led.stl
+
+$(FIXTURE_SMAYS_MARKINGS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-smays-microb-hub-8152-markings.stl
+
 $(CRADLE_BODY_STL):
 	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-family-carrier-body.stl
 
@@ -736,6 +827,45 @@ $(PRESENTATION_FIXTURE_C270_LED_STL): $(FIXTURE_C270_LED_STL) | $(PRESENTATION_I
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_C270_LABELS_STL): $(FIXTURE_C270_LABELS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ANTENNA_DARK_STL): $(FIXTURE_ANTENNA_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ANTENNA_METAL_STL): $(FIXTURE_ANTENNA_METAL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ANTENNA_MARKINGS_STL): $(FIXTURE_ANTENNA_MARKINGS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_VIENON_SHELL_STL): $(FIXTURE_VIENON_SHELL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_VIENON_DARK_STL): $(FIXTURE_VIENON_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_VIENON_METAL_STL): $(FIXTURE_VIENON_METAL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_VIENON_BLUE_STL): $(FIXTURE_VIENON_BLUE_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_VIENON_LED_STL): $(FIXTURE_VIENON_LED_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_SMAYS_SHELL_STL): $(FIXTURE_SMAYS_SHELL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_SMAYS_DARK_STL): $(FIXTURE_SMAYS_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_SMAYS_METAL_STL): $(FIXTURE_SMAYS_METAL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_SMAYS_LED_STL): $(FIXTURE_SMAYS_LED_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_SMAYS_MARKINGS_STL): $(FIXTURE_SMAYS_MARKINGS_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
 $(PRESENTATION_CRADLE_BODY_STL): $(CRADLE_BODY_STL) | $(PRESENTATION_IMPORT_DIR)
@@ -1197,6 +1327,45 @@ $(GUIDE_LAYER_BUILD)/fixture-esp32-antenna.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAY
 
 $(GUIDE_LAYER_BUILD)/fixture-esp32-silkscreen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_esp32_silkscreen"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-antenna-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_antenna_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-antenna-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_antenna_metal"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-antenna-markings.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_antenna_markings"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-vienon-shell.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_vienon_shell"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-vienon-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_vienon_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-vienon-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_vienon_metal"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-vienon-blue.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_vienon_blue"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-vienon-led.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_vienon_led"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-smays-shell.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_smays_shell"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-smays-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_smays_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-smays-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_smays_metal"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-smays-led.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_smays_led"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-smays-markings.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_smays_markings"' $<
 
 $(GUIDE_LAYER_BUILD)/carrier-body.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_carrier_body"' $<
