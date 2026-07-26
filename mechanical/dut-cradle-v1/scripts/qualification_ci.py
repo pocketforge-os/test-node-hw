@@ -29,6 +29,7 @@ from mesh_fingerprint import (
     StlError,
     canonicalize_stl,
     describe_mesh,
+    metric_delta,
 )
 from qualified_geometry import check_toolchain
 
@@ -1169,67 +1170,6 @@ def _job_row(
     }
 
 
-def _decimal_text(value: Decimal) -> str:
-    if value == 0:
-        return "0"
-    rendered = format(value, "f")
-    if "." in rendered:
-        rendered = rendered.rstrip("0").rstrip(".")
-    return rendered
-
-
-def _number(value: Any) -> Decimal:
-    try:
-        result = Decimal(str(value))
-    except (InvalidOperation, ValueError) as exc:
-        raise QualificationCiError(f"invalid metric number: {value!r}") from exc
-    if not result.is_finite():
-        raise QualificationCiError(f"non-finite metric number: {value!r}")
-    return result
-
-
-def _delta_text(candidate: Any, baseline: Any) -> str:
-    return _decimal_text(_number(candidate) - _number(baseline))
-
-
-def metric_delta(
-    baseline: Mapping[str, Any] | None,
-    candidate: Mapping[str, Any],
-) -> Mapping[str, Any] | None:
-    if baseline is None:
-        return None
-    bounds_delta = {
-        field: [
-            _delta_text(candidate["bounds_mm"][field][index], value)
-            for index, value in enumerate(baseline["bounds_mm"][field])
-        ]
-        for field in ("min", "max", "size")
-    }
-    topology_delta = {
-        field: int(candidate["topology"][field]) - int(value)
-        for field, value in sorted(baseline["topology"].items())
-    }
-    return {
-        "bounds_mm": bounds_delta,
-        "fingerprint_changed": (
-            candidate["fingerprint"] != baseline["fingerprint"]
-        ),
-        "surface_area_mm2": _delta_text(
-            candidate["surface_area_mm2"],
-            baseline["surface_area_mm2"],
-        ),
-        "topology": topology_delta,
-        "triangle_count": (
-            int(candidate["triangle_count"])
-            - int(baseline["triangle_count"])
-        ),
-        "volume_mm3": _delta_text(
-            candidate["volume_mm3"],
-            baseline["volume_mm3"],
-        ),
-    }
-
-
 def _manifest_artifacts(
     root: Path,
     relative: str,
@@ -1856,7 +1796,16 @@ def check_mutation_guard(
         )
     current = record.resolved.openscad_parameters.get("hook_throat")
     if not isinstance(current, Decimal):
-        current = _number(current)
+        try:
+            current = Decimal(str(current))
+        except (InvalidOperation, ValueError) as exc:
+            raise QualificationCiError(
+                f"invalid hook_throat value: {current!r}"
+            ) from exc
+        if not current.is_finite():
+            raise QualificationCiError(
+                f"non-finite hook_throat value: {current!r}"
+            )
 
     def mutated_renderer(
         resolved: holder_profiles.ResolvedProfile,

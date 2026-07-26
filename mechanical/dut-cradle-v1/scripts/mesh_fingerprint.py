@@ -18,7 +18,7 @@ import struct
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 FINGERPRINT_ALGORITHM = "pocketforge-normalized-stl-v1"
 COORDINATE_QUANTUM_MM = Decimal("0.0001")
@@ -195,6 +195,64 @@ def canonicalize_stl(path: Path) -> None:
         lines.append("  endfacet\n")
     lines.append("endsolid PocketForge_Canonical\n")
     path.write_text("".join(lines), encoding="ascii", newline="\n")
+
+
+def _metric_decimal(value: Any) -> Decimal:
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise StlError(f"invalid metric number: {value!r}") from exc
+    if not result.is_finite():
+        raise StlError(f"non-finite metric number: {value!r}")
+    return result
+
+
+def _metric_delta_text(candidate: Any, baseline: Any) -> str:
+    return _exact_decimal_text(
+        _metric_decimal(candidate) - _metric_decimal(baseline)
+    )
+
+
+def metric_delta(
+    baseline: Mapping[str, Any] | None,
+    candidate: Mapping[str, Any],
+) -> Mapping[str, Any] | None:
+    """Describe deterministic numeric/topology deltas between mesh metrics."""
+    if baseline is None:
+        return None
+    bounds_delta = {
+        field: [
+            _metric_delta_text(
+                candidate["bounds_mm"][field][index],
+                value,
+            )
+            for index, value in enumerate(baseline["bounds_mm"][field])
+        ]
+        for field in ("min", "max", "size")
+    }
+    topology_delta = {
+        field: int(candidate["topology"][field]) - int(value)
+        for field, value in sorted(baseline["topology"].items())
+    }
+    return {
+        "bounds_mm": bounds_delta,
+        "fingerprint_changed": (
+            candidate["fingerprint"] != baseline["fingerprint"]
+        ),
+        "surface_area_mm2": _metric_delta_text(
+            candidate["surface_area_mm2"],
+            baseline["surface_area_mm2"],
+        ),
+        "topology": topology_delta,
+        "triangle_count": (
+            int(candidate["triangle_count"])
+            - int(baseline["triangle_count"])
+        ),
+        "volume_mm3": _metric_delta_text(
+            candidate["volume_mm3"],
+            baseline["volume_mm3"],
+        ),
+    }
 
 
 def quantize_coordinate(value: Decimal) -> int:
