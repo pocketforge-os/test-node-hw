@@ -70,6 +70,27 @@ LAYER_MATERIALS = {
     "fixture-boost-silkscreen": (
         "XL6009 polarity and component markings", "#eef1eb", 0.0, 0.50, 1.0
     ),
+    "fixture-dp100-shell": (
+        "ALIENTEK DP100 enclosure", "#262a2e", 0.0, 0.42, 1.0
+    ),
+    "fixture-dp100-dark": (
+        "DP100 panel, ports, seam, and vents", "#090b0e", 0.0, 0.34, 1.0
+    ),
+    "fixture-dp100-controls": (
+        "DP100 buttons and adjustment wheel", "#3d4248", 0.0, 0.38, 1.0
+    ),
+    "fixture-dp100-screen": (
+        "DP100 0.96-inch IPS display", "#123e51", 0.08, 0.20, 1.0
+    ),
+    "fixture-dp100-accent": (
+        "DP100 positive output and screen accents", "#c9342f", 0.05, 0.34, 1.0
+    ),
+    "fixture-dp100-metal": (
+        "DP100 banana and USB interfaces", "#c89b3c", 0.78, 0.24, 1.0
+    ),
+    "fixture-dp100-markings": (
+        "DP100 display and control markings", "#e8ece7", 0.0, 0.50, 1.0
+    ),
     "fixture-bpi-pcb": (
         "Banana Pi blue PCB", "#1769a8", 0.0, 0.44, 1.0
     ),

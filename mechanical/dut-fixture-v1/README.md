@@ -49,7 +49,7 @@ the workflow matrix.
 
 Presentation-only meshes expose the populated harness without contaminating
 the production plate. `pocketforge-dut-fixture-components.stl` contains the
-five remaining analytical interface envelopes, and
+four remaining analytical interface envelopes, and
 `pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
 Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
 into five real-material meshes: blue PCB, dark ICs/header, metal
@@ -85,6 +85,17 @@ height, and IN-on-−X / OUT-on-+X orientation. Its close-up is
 `layout-hiletgo-xl6009.png`; `HILETGO-XL6009-PROVENANCE.md` records the
 Amazon hashes, 43 × 21 mm gallery dimension, contradictory 47 × 22 × 13 mm
 prose, and rejected online-model candidates.
+
+The ALIENTEK DP100 is an original reconstruction of exact Amazon ASIN
+`B0CWRG6YFM`, split into seven meshes for its dark enclosure, black
+panel/ports/seams, gray buttons and adjustment wheel, IPS screen, red positive
+output/status accents, metal banana/USB interfaces, and pale markings. The
+owner-measured **94.6 × 62.2 × 17.2 mm** enclosure remains the installed
+fixture envelope; a **5.8 mm** banana projection yields the manual's
+**100.4 mm** overall length. Banana outputs face −X, USB-C/USB-A face +X, and
+the screen/buttons/wheel face −Y. Its close-up is
+`layout-alientek-dp100.png`; `ALIENTEK-DP100-PROVENANCE.md` records the
+listing/manual hashes and rejected online-model search.
 
 The Logitech C270 is likewise an original source-native reconstruction, split
 into five presentation meshes for its dark-gray shell and articulated clip,
@@ -137,6 +148,11 @@ more machinery than determinism here.
   9 mm-diameter standoffs, providing vertical clearance for the adjacent
   DP100 connections. Its twelve-position screw-terminal edge faces right
   (+X), while its logic and relay-power headers face left.
+- The DP100 retains its two opposite-side ties and measured 94.6 × 62.2 mm
+  body. The black/red banana outputs project toward −X, while the USB-C input
+  and USB-A communications connector open toward +X with a 15 mm cable
+  corridor. Its display, three buttons, and adjustment wheel face the plate's
+  −Y/front edge.
 
 The plate can also be exported along the empty horizontal corridor as 200 × 150 mm lower and
 200 × 97 mm upper sections. Both fit the MK3S without rotation:
@@ -161,7 +177,7 @@ centre spacing = far-edge spacing - hole diameter
 
 | Item | Envelope / interface used | Status |
 |---|---:|---|
-| ALIENTEK DP100 | 94.6 × 62.2 mm | Owner-corrected physical measurement |
+| ALIENTEK DP100 | 94.6 × 62.2 × 17.2 mm installed body; 100.4 mm overall with 5.8 mm banana projection; outputs −X, USB +X, controls −Y | Owner-corrected physical body plus exact B0CWRG6YFM listing/manual cross-check; original repository-native model |
 | DP100 tie positions | Two total: one on each short side, 21 / 25 mm down from top | Interpreted from sketch; parameterized |
 | Webcam | 71 × 31.55 mm keep-out; 44.75 × 19.5 mm minimum aperture; 71 × 20 mm lower clear strip | Physically fit; printable opening gets 0.4 mm clearance |
 | 4-channel relay | 51.85 × 72.70 mm; Ø3 holes; 45.03 × 66.93 mm centres; 26 mm standoffs | Measured; height owner-corrected after physical fit |
@@ -179,7 +195,8 @@ centre spacing = far-edge spacing - hole diameter
 1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
    exact relay presentation geometry in `elegoo-4-channel-relay.scad`; change
    only exact boost-converter presentation geometry in
-   `hiletgo-xl6009.scad`; change
+   `hiletgo-xl6009.scad`; change only exact DP100 presentation geometry in
+   `alientek-dp100.scad`; change
    only Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
    HW-747 presentation geometry in
    `esp32-s3-supermini-hw747-v0.0.2.scad`; and change only C270 presentation
@@ -190,7 +207,8 @@ centre spacing = far-edge spacing - hole diameter
 
 Most preview component blocks remain translucent analytical envelopes rather
 than cosmetic models; the ELEGOO relay, BPI-M2 Zero, HiLetgo XL6009,
-ESP32-S3 SuperMini, and Logitech C270 are exact visual replacements. All
+ALIENTEK DP100, ESP32-S3 SuperMini, and Logitech C270 are exact visual
+replacements. All
 preview geometry is omitted
 from every production STL and
 exists to expose inaccessible connectors and bad cable paths. The complete
@@ -203,7 +221,9 @@ identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
 bounds, proves the relay's 51.85 × 72.70 mm installed envelope, four-channel
 population, mounting registration, and +X terminal orientation, proves the
 boost converter's 43.16 × 21.23 × 14 mm envelope, diagonal mounting
-registration, and −X input orientation, proves the
+registration, and −X input orientation, proves the DP100's 94.60 × 62.20 ×
+17.20 mm installed body, 100.40 mm terminal-inclusive overall length, and
+−X-output/+X-USB/−Y-control orientation, proves the
 ESP32's 18.50 × 23.67 mm installed envelope and bottom USB orientation, proves
 the C270's 71.00 × 31.55 mm installed face and -Z optical orientation, and
 deliberately rejects scale/registration/orientation drift. Pairwise

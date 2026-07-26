@@ -208,6 +208,13 @@ regulator/470-marked inductor/passives, blue W103 adjuster, metal
 capacitors/pads/leads/screw, and pale markings. Its exact 43.16 × 21.23 ×
 14.00 mm installed envelope retains the measured diagonal Ø3 mm mounting
 registration, with IN on −X and OUT on +X.
+The installed ALIENTEK B0CWRG6YFM / DP100 is carried through as seven semantic
+fixture layers: dark enclosure, black panel/ports/seam/vents, gray controls,
+IPS screen, red positive-output/status accents, metal banana/USB interfaces,
+and pale markings. Its owner-measured 94.60 × 62.20 × 17.20 mm body remains
+the fixture fit contract, while a 5.80 mm banana projection produces the
+manual's 100.40 mm overall length. Outputs face −X, USB-C/USB-A face +X, and
+the display/buttons/wheel face −Y.
 The installed Banana Pi BPI-M2 Zero V1.0 is carried through as five semantic
 fixture layers, preserving its blue PCB, dark packages/header, metal ports and
 shield, gold contacts, and pale silkscreen in both static renders and the

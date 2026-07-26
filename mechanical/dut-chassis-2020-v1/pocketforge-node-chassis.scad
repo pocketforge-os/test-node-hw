@@ -50,6 +50,10 @@
  *   guide_layer_fixture_boost_pcb, guide_layer_fixture_boost_dark,
  *   guide_layer_fixture_boost_adjuster, guide_layer_fixture_boost_metal,
  *   guide_layer_fixture_boost_silkscreen,
+ *   guide_layer_fixture_dp100_shell, guide_layer_fixture_dp100_dark,
+ *   guide_layer_fixture_dp100_controls, guide_layer_fixture_dp100_screen,
+ *   guide_layer_fixture_dp100_accent, guide_layer_fixture_dp100_metal,
+ *   guide_layer_fixture_dp100_markings,
  *   guide_layer_fixture_bpi_pcb, guide_layer_fixture_bpi_dark,
  *   guide_layer_fixture_bpi_metal, guide_layer_fixture_bpi_gold,
  *   guide_layer_fixture_bpi_silkscreen,
@@ -113,6 +117,20 @@ fixture_boost_metal_presentation_mesh =
     "build/imports/pocketforge-hiletgo-xl6009-metal.stl";
 fixture_boost_silkscreen_presentation_mesh =
     "build/imports/pocketforge-hiletgo-xl6009-silkscreen.stl";
+fixture_dp100_shell_presentation_mesh =
+    "build/imports/pocketforge-alientek-dp100-shell.stl";
+fixture_dp100_dark_presentation_mesh =
+    "build/imports/pocketforge-alientek-dp100-dark.stl";
+fixture_dp100_controls_presentation_mesh =
+    "build/imports/pocketforge-alientek-dp100-controls.stl";
+fixture_dp100_screen_presentation_mesh =
+    "build/imports/pocketforge-alientek-dp100-screen.stl";
+fixture_dp100_accent_presentation_mesh =
+    "build/imports/pocketforge-alientek-dp100-accent.stl";
+fixture_dp100_metal_presentation_mesh =
+    "build/imports/pocketforge-alientek-dp100-metal.stl";
+fixture_dp100_markings_presentation_mesh =
+    "build/imports/pocketforge-alientek-dp100-markings.stl";
 fixture_bpi_pcb_presentation_mesh =
     "build/imports/pocketforge-bpi-m2-zero-pcb.stl";
 fixture_bpi_dark_presentation_mesh =
@@ -1187,6 +1205,27 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
         color("#eef1eb")
             fixture_mesh_at_installed_datum(
                 fixture_boost_silkscreen_presentation_mesh);
+        color("#262a2e")
+            fixture_mesh_at_installed_datum(
+                fixture_dp100_shell_presentation_mesh);
+        color("#090b0e")
+            fixture_mesh_at_installed_datum(
+                fixture_dp100_dark_presentation_mesh);
+        color("#3d4248")
+            fixture_mesh_at_installed_datum(
+                fixture_dp100_controls_presentation_mesh);
+        color("#123e51")
+            fixture_mesh_at_installed_datum(
+                fixture_dp100_screen_presentation_mesh);
+        color("#c9342f")
+            fixture_mesh_at_installed_datum(
+                fixture_dp100_accent_presentation_mesh);
+        color("#c89b3c")
+            fixture_mesh_at_installed_datum(
+                fixture_dp100_metal_presentation_mesh);
+        color("#e8ece7")
+            fixture_mesh_at_installed_datum(
+                fixture_dp100_markings_presentation_mesh);
         color("#1769a8")
             fixture_mesh_at_installed_datum(
                 fixture_bpi_pcb_presentation_mesh);
@@ -3855,6 +3894,36 @@ module guide_layer_fixture_boost_silkscreen() {
         fixture_boost_silkscreen_presentation_mesh);
 }
 
+module guide_layer_fixture_dp100_shell() {
+    fixture_mesh_at_installed_datum(fixture_dp100_shell_presentation_mesh);
+}
+
+module guide_layer_fixture_dp100_dark() {
+    fixture_mesh_at_installed_datum(fixture_dp100_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_dp100_controls() {
+    fixture_mesh_at_installed_datum(
+        fixture_dp100_controls_presentation_mesh);
+}
+
+module guide_layer_fixture_dp100_screen() {
+    fixture_mesh_at_installed_datum(fixture_dp100_screen_presentation_mesh);
+}
+
+module guide_layer_fixture_dp100_accent() {
+    fixture_mesh_at_installed_datum(fixture_dp100_accent_presentation_mesh);
+}
+
+module guide_layer_fixture_dp100_metal() {
+    fixture_mesh_at_installed_datum(fixture_dp100_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_dp100_markings() {
+    fixture_mesh_at_installed_datum(
+        fixture_dp100_markings_presentation_mesh);
+}
+
 module guide_layer_fixture_bpi_pcb() {
     fixture_mesh_at_installed_datum(fixture_bpi_pcb_presentation_mesh);
 }
@@ -4231,6 +4300,20 @@ if (PART == "assembly") {
     guide_layer_fixture_boost_metal();
 } else if (PART == "guide_layer_fixture_boost_silkscreen") {
     guide_layer_fixture_boost_silkscreen();
+} else if (PART == "guide_layer_fixture_dp100_shell") {
+    guide_layer_fixture_dp100_shell();
+} else if (PART == "guide_layer_fixture_dp100_dark") {
+    guide_layer_fixture_dp100_dark();
+} else if (PART == "guide_layer_fixture_dp100_controls") {
+    guide_layer_fixture_dp100_controls();
+} else if (PART == "guide_layer_fixture_dp100_screen") {
+    guide_layer_fixture_dp100_screen();
+} else if (PART == "guide_layer_fixture_dp100_accent") {
+    guide_layer_fixture_dp100_accent();
+} else if (PART == "guide_layer_fixture_dp100_metal") {
+    guide_layer_fixture_dp100_metal();
+} else if (PART == "guide_layer_fixture_dp100_markings") {
+    guide_layer_fixture_dp100_markings();
 } else if (PART == "guide_layer_fixture_bpi_pcb") {
     guide_layer_fixture_bpi_pcb();
 } else if (PART == "guide_layer_fixture_bpi_dark") {
