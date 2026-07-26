@@ -9,6 +9,8 @@ RELAY_SOURCE := elegoo-4-channel-relay.scad
 RELAY_PROVENANCE := ELEGOO-4-CHANNEL-RELAY-PROVENANCE.md
 BOOST_SOURCE := hiletgo-xl6009.scad
 BOOST_PROVENANCE := HILETGO-XL6009-PROVENANCE.md
+MOSFET_SOURCE := ceksezx-mtsd001.scad
+MOSFET_PROVENANCE := CEKSEZX-MTSD001-PROVENANCE.md
 DP100_SOURCE := alientek-dp100.scad
 DP100_PROVENANCE := ALIENTEK-DP100-PROVENANCE.md
 ESP32_SOURCE := esp32-s3-supermini-hw747-v0.0.2.scad
@@ -36,6 +38,14 @@ BOOST_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-hiletgo-xl6009-metal.stl \
 	$(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl
 BOOST_COMPLETE_STL := $(BUILD)/pocketforge-hiletgo-xl6009-complete.stl
+MOSFET_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-ceksezx-mtsd001-pcb.stl \
+	$(BUILD)/pocketforge-ceksezx-mtsd001-blue.stl \
+	$(BUILD)/pocketforge-ceksezx-mtsd001-dark.stl \
+	$(BUILD)/pocketforge-ceksezx-mtsd001-metal.stl \
+	$(BUILD)/pocketforge-ceksezx-mtsd001-led.stl \
+	$(BUILD)/pocketforge-ceksezx-mtsd001-silkscreen.stl
+MOSFET_COMPLETE_STL := $(BUILD)/pocketforge-ceksezx-mtsd001-complete.stl
 DP100_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-alientek-dp100-shell.stl \
 	$(BUILD)/pocketforge-alientek-dp100-dark.stl \
@@ -66,6 +76,7 @@ C270_COMPLETE_STL := $(BUILD)/pocketforge-logitech-c270-complete.stl
 	validate-bpi-model-guard validate-bpi-provenance \
 	validate-relay-model-guard validate-relay-provenance \
 	validate-boost-model-guard validate-boost-provenance \
+	validate-mosfet-model-guard validate-mosfet-provenance \
 	validate-dp100-model-guard validate-dp100-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance preview split clean
@@ -81,13 +92,13 @@ lint:
 $(BUILD):
 	mkdir -p $@
 
-$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_components"' $<
 
-$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/pocketforge-bpi-m2-zero-pcb.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
@@ -143,6 +154,27 @@ $(BUILD)/pocketforge-hiletgo-xl6009-metal.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUI
 
 $(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost_silkscreen"' $<
+
+$(BUILD)/pocketforge-ceksezx-mtsd001-complete.stl: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_mosfet"' $<
+
+$(BUILD)/pocketforge-ceksezx-mtsd001-pcb.stl: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_mosfet_pcb"' $<
+
+$(BUILD)/pocketforge-ceksezx-mtsd001-blue.stl: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_mosfet_blue"' $<
+
+$(BUILD)/pocketforge-ceksezx-mtsd001-dark.stl: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_mosfet_dark"' $<
+
+$(BUILD)/pocketforge-ceksezx-mtsd001-metal.stl: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_mosfet_metal"' $<
+
+$(BUILD)/pocketforge-ceksezx-mtsd001-led.stl: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_mosfet_led"' $<
+
+$(BUILD)/pocketforge-ceksezx-mtsd001-silkscreen.stl: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_mosfet_silkscreen"' $<
 
 $(BUILD)/pocketforge-alientek-dp100-complete.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100"' $<
@@ -207,28 +239,28 @@ $(BUILD)/pocketforge-logitech-c270-led.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 $(BUILD)/pocketforge-logitech-c270-labels.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_labels"' $<
 
-$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_lower"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_upper"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="joiner"' -D 'SHOW_COMPONENTS=false' $<
 
 split: $(BUILD)/plate-lower.stl $(BUILD)/plate-upper.stl $(BUILD)/joiner.stl
 
-$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho --viewall \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(MOSFET_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho \
 		--autocenter --viewall --camera=100,120,400,100,120,0 \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
@@ -248,6 +280,11 @@ $(BUILD)/layout-hiletgo-xl6009.png: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
 		--viewall --camera=170,70,60,170,107,10 \
 		-D 'PART="presentation_boost"' $<
 
+$(BUILD)/layout-ceksezx-mtsd001.png: $(SOURCE) $(MOSFET_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 --projection=ortho \
+		--viewall --camera=174,112,60,174,131,9 \
+		-D 'PART="presentation_mosfet"' $<
+
 $(BUILD)/layout-alientek-dp100.png: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 --projection=ortho \
 		--viewall --camera=137,125,100,137,193,12 \
@@ -266,6 +303,7 @@ $(BUILD)/layout-logitech-c270.png: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 preview: $(BUILD)/layout-preview.png $(BUILD)/layout-top.png \
 	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-elegoo-relay.png \
 	$(BUILD)/layout-hiletgo-xl6009.png \
+	$(BUILD)/layout-ceksezx-mtsd001.png \
 	$(BUILD)/layout-alientek-dp100.png \
 	$(BUILD)/layout-esp32-s3-supermini.png \
 	$(BUILD)/layout-logitech-c270.png
@@ -421,6 +459,54 @@ validate-boost-provenance: $(BOOST_SOURCE) $(BOOST_PROVENANCE)
 		$(BOOST_PROVENANCE)
 	@echo 'boost_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
 
+validate-mosfet-model-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/intentional-mosfet-scale.log; \
+		mesh=$(BUILD)/intentional-mosfet-scale.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_mosfet_pcb"' \
+			-D 'MOSFET_MODEL_SCALE=1.01' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional MTSD001 scale change was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'Ceksezx MTSD001 model scale/envelope changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-mosfet-registration.log; \
+		mesh=$(BUILD)/intentional-mosfet-registration.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_mosfet_pcb"' \
+			-D 'MOSFET_MODEL_HOLE_CENTRES=[[33.81,2.31],[33.80,15.69]]' \
+			$(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional MTSD001 hole drift was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'Ceksezx MTSD001 mounting registration changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-mosfet-orientation.log; \
+		mesh=$(BUILD)/intentional-mosfet-orientation.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_mosfet_pcb"' \
+			-D 'MOSFET_MODEL_TERMINAL_EDGE="+X"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional MTSD001 terminal reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'Ceksezx MTSD001 terminal/control orientation changed' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'mosfet_model_guard=pass board=34.00x17.00 envelope=35.00x18.00 holes=2x2.20 terminal_edge=-X height=12.00'
+
+validate-mosfet-provenance: $(MOSFET_SOURCE) $(MOSFET_PROVENANCE)
+	@grep -Fq '42a2bc3a51587a51649d885db1ae87d65b1166c204ddd6e5e669cb8f76c5fd69' \
+		$(MOSFET_SOURCE)
+	@grep -Fq '6706f3e1594e2b63a8366370717503e2b09ffabacd3650f80048e746d8538fc7' \
+		$(MOSFET_SOURCE)
+	@grep -Fq 'cf2419bc0a5a33edcec808d35592dc417749536ee2e8cc67885f74a656c9e2a6' \
+		$(MOSFET_SOURCE)
+	@grep -Fq '42a2bc3a51587a51649d885db1ae87d65b1166c204ddd6e5e669cb8f76c5fd69' \
+		$(MOSFET_PROVENANCE)
+	@grep -Fq '6706f3e1594e2b63a8366370717503e2b09ffabacd3650f80048e746d8538fc7' \
+		$(MOSFET_PROVENANCE)
+	@grep -Fq 'cf2419bc0a5a33edcec808d35592dc417749536ee2e8cc67885f74a656c9e2a6' \
+		$(MOSFET_PROVENANCE)
+	@grep -Fq 'No Amazon image, Ceksezx artwork, third-party mesh, STEP body, or EDA file' \
+		$(MOSFET_PROVENANCE)
+	@echo 'mosfet_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
+
 validate-dp100-model-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/intentional-dp100-scale.log; \
 		mesh=$(BUILD)/intentional-dp100-scale.stl; \
@@ -549,6 +635,7 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(BUILD)/pocketforge-dut-fixture-labels.stl \
 	$(RELAY_COMPLETE_STL) $(RELAY_PRESENTATION_STLS) \
 	$(BOOST_COMPLETE_STL) $(BOOST_PRESENTATION_STLS) \
+	$(MOSFET_COMPLETE_STL) $(MOSFET_PRESENTATION_STLS) \
 	$(DP100_COMPLETE_STL) $(DP100_PRESENTATION_STLS) \
 	$(BPI_PRESENTATION_STLS) \
 	$(ESP32_COMPLETE_STL) $(ESP32_PRESENTATION_STLS) \
@@ -583,6 +670,21 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-adjuster.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-metal.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 34.00 --max-x 34.00 \
+		--min-size-y 17.00 --max-y 17.00 \
+		--min-size-z 12.00 --max-z 12.00 \
+		$(MOSFET_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 34.00 --max-x 34.00 \
+		--min-size-y 17.00 --max-y 17.00 \
+		--min-size-z 1.60 --max-z 1.60 \
+		$(BUILD)/pocketforge-ceksezx-mtsd001-pcb.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-ceksezx-mtsd001-blue.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-ceksezx-mtsd001-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-ceksezx-mtsd001-metal.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-ceksezx-mtsd001-led.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-ceksezx-mtsd001-silkscreen.stl
 	$(PYTHON) scripts/stl_bounds.py \
 		--min-size-x 100.40 --max-x 100.40 \
 		--min-size-y 62.20 --max-y 62.20 \
@@ -627,12 +729,13 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-glass.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-led.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-labels.stl
-	@echo 'fixture_presentation_assets=pass proxies=4 labels=10 relay_layers=6 boost_layers=5 dp100_layers=7 bpi_layers=5 esp32_layers=6 c270_layers=5'
+	@echo 'fixture_presentation_assets=pass proxies=3 labels=10 relay_layers=6 boost_layers=5 mosfet_layers=6 dp100_layers=7 bpi_layers=5 esp32_layers=6 c270_layers=5'
 
 validate: lint all split validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-bpi-model-guard validate-bpi-provenance \
 	validate-relay-model-guard validate-relay-provenance \
 	validate-boost-model-guard validate-boost-provenance \
+	validate-mosfet-model-guard validate-mosfet-provenance \
 	validate-dp100-model-guard validate-dp100-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance \

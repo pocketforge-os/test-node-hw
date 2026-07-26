@@ -50,6 +50,10 @@
  *   guide_layer_fixture_boost_pcb, guide_layer_fixture_boost_dark,
  *   guide_layer_fixture_boost_adjuster, guide_layer_fixture_boost_metal,
  *   guide_layer_fixture_boost_silkscreen,
+ *   guide_layer_fixture_mosfet_pcb, guide_layer_fixture_mosfet_blue,
+ *   guide_layer_fixture_mosfet_dark, guide_layer_fixture_mosfet_metal,
+ *   guide_layer_fixture_mosfet_led,
+ *   guide_layer_fixture_mosfet_silkscreen,
  *   guide_layer_fixture_dp100_shell, guide_layer_fixture_dp100_dark,
  *   guide_layer_fixture_dp100_controls, guide_layer_fixture_dp100_screen,
  *   guide_layer_fixture_dp100_accent, guide_layer_fixture_dp100_metal,
@@ -117,6 +121,18 @@ fixture_boost_metal_presentation_mesh =
     "build/imports/pocketforge-hiletgo-xl6009-metal.stl";
 fixture_boost_silkscreen_presentation_mesh =
     "build/imports/pocketforge-hiletgo-xl6009-silkscreen.stl";
+fixture_mosfet_pcb_presentation_mesh =
+    "build/imports/pocketforge-ceksezx-mtsd001-pcb.stl";
+fixture_mosfet_blue_presentation_mesh =
+    "build/imports/pocketforge-ceksezx-mtsd001-blue.stl";
+fixture_mosfet_dark_presentation_mesh =
+    "build/imports/pocketforge-ceksezx-mtsd001-dark.stl";
+fixture_mosfet_metal_presentation_mesh =
+    "build/imports/pocketforge-ceksezx-mtsd001-metal.stl";
+fixture_mosfet_led_presentation_mesh =
+    "build/imports/pocketforge-ceksezx-mtsd001-led.stl";
+fixture_mosfet_silkscreen_presentation_mesh =
+    "build/imports/pocketforge-ceksezx-mtsd001-silkscreen.stl";
 fixture_dp100_shell_presentation_mesh =
     "build/imports/pocketforge-alientek-dp100-shell.stl";
 fixture_dp100_dark_presentation_mesh =
@@ -1205,6 +1221,24 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
         color("#eef1eb")
             fixture_mesh_at_installed_datum(
                 fixture_boost_silkscreen_presentation_mesh);
+        color("#0d65a7")
+            fixture_mesh_at_installed_datum(
+                fixture_mosfet_pcb_presentation_mesh);
+        color("#177fd0")
+            fixture_mesh_at_installed_datum(
+                fixture_mosfet_blue_presentation_mesh);
+        color("#171a1e")
+            fixture_mesh_at_installed_datum(
+                fixture_mosfet_dark_presentation_mesh);
+        color("#c4c9cd")
+            fixture_mesh_at_installed_datum(
+                fixture_mosfet_metal_presentation_mesh);
+        color("#dce99b")
+            fixture_mesh_at_installed_datum(
+                fixture_mosfet_led_presentation_mesh);
+        color("#eef2ed")
+            fixture_mesh_at_installed_datum(
+                fixture_mosfet_silkscreen_presentation_mesh);
         color("#262a2e")
             fixture_mesh_at_installed_datum(
                 fixture_dp100_shell_presentation_mesh);
@@ -3894,6 +3928,31 @@ module guide_layer_fixture_boost_silkscreen() {
         fixture_boost_silkscreen_presentation_mesh);
 }
 
+module guide_layer_fixture_mosfet_pcb() {
+    fixture_mesh_at_installed_datum(fixture_mosfet_pcb_presentation_mesh);
+}
+
+module guide_layer_fixture_mosfet_blue() {
+    fixture_mesh_at_installed_datum(fixture_mosfet_blue_presentation_mesh);
+}
+
+module guide_layer_fixture_mosfet_dark() {
+    fixture_mesh_at_installed_datum(fixture_mosfet_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_mosfet_metal() {
+    fixture_mesh_at_installed_datum(fixture_mosfet_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_mosfet_led() {
+    fixture_mesh_at_installed_datum(fixture_mosfet_led_presentation_mesh);
+}
+
+module guide_layer_fixture_mosfet_silkscreen() {
+    fixture_mesh_at_installed_datum(
+        fixture_mosfet_silkscreen_presentation_mesh);
+}
+
 module guide_layer_fixture_dp100_shell() {
     fixture_mesh_at_installed_datum(fixture_dp100_shell_presentation_mesh);
 }
@@ -4300,6 +4359,18 @@ if (PART == "assembly") {
     guide_layer_fixture_boost_metal();
 } else if (PART == "guide_layer_fixture_boost_silkscreen") {
     guide_layer_fixture_boost_silkscreen();
+} else if (PART == "guide_layer_fixture_mosfet_pcb") {
+    guide_layer_fixture_mosfet_pcb();
+} else if (PART == "guide_layer_fixture_mosfet_blue") {
+    guide_layer_fixture_mosfet_blue();
+} else if (PART == "guide_layer_fixture_mosfet_dark") {
+    guide_layer_fixture_mosfet_dark();
+} else if (PART == "guide_layer_fixture_mosfet_metal") {
+    guide_layer_fixture_mosfet_metal();
+} else if (PART == "guide_layer_fixture_mosfet_led") {
+    guide_layer_fixture_mosfet_led();
+} else if (PART == "guide_layer_fixture_mosfet_silkscreen") {
+    guide_layer_fixture_mosfet_silkscreen();
 } else if (PART == "guide_layer_fixture_dp100_shell") {
     guide_layer_fixture_dp100_shell();
 } else if (PART == "guide_layer_fixture_dp100_dark") {

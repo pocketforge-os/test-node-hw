@@ -70,6 +70,24 @@ LAYER_MATERIALS = {
     "fixture-boost-silkscreen": (
         "XL6009 polarity and component markings", "#eef1eb", 0.0, 0.50, 1.0
     ),
+    "fixture-mosfet-pcb": (
+        "Ceksezx MTSD001 blue PCB", "#0d65a7", 0.0, 0.44, 1.0
+    ),
+    "fixture-mosfet-blue": (
+        "MTSD001 terminal bodies", "#177fd0", 0.0, 0.38, 1.0
+    ),
+    "fixture-mosfet-dark": (
+        "MTSD001 dual MOSFETs and passives", "#171a1e", 0.0, 0.34, 1.0
+    ),
+    "fixture-mosfet-metal": (
+        "MTSD001 screws, pads, and leads", "#c4c9cd", 0.76, 0.24, 1.0
+    ),
+    "fixture-mosfet-led": (
+        "MTSD001 indicator LED", "#dce99b", 0.0, 0.28, 1.0
+    ),
+    "fixture-mosfet-silkscreen": (
+        "MTSD001 markings", "#eef2ed", 0.0, 0.50, 1.0
+    ),
     "fixture-dp100-shell": (
         "ALIENTEK DP100 enclosure", "#262a2e", 0.0, 0.42, 1.0
     ),
