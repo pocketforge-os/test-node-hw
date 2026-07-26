@@ -36,6 +36,24 @@ LAYER_MATERIALS = {
     "fixture-bpi-silkscreen": (
         "Banana Pi silkscreen", "#e9ece6", 0.0, 0.52, 1.0
     ),
+    "fixture-esp32-pcb": (
+        "ESP32-S3 SuperMini black PCB", "#15191d", 0.0, 0.42, 1.0
+    ),
+    "fixture-esp32-dark": (
+        "ESP32-S3 ICs and buttons", "#090b0e", 0.0, 0.34, 1.0
+    ),
+    "fixture-esp32-metal": (
+        "ESP32-S3 USB-C and switch metal", "#b9bec4", 0.78, 0.24, 1.0
+    ),
+    "fixture-esp32-gold": (
+        "ESP32-S3 plated contacts", "#d6a83a", 0.82, 0.22, 1.0
+    ),
+    "fixture-esp32-antenna": (
+        "ESP32-S3 red ceramic antenna", "#c62326", 0.05, 0.36, 1.0
+    ),
+    "fixture-esp32-silkscreen": (
+        "ESP32-S3 silkscreen", "#eceee8", 0.0, 0.50, 1.0
+    ),
     "carrier-body": ("DUT carrier", "#e1e2dc", 0.0, 0.58, 1.0),
     "carrier-labels": ("Carrier labels", "#17191c", 0.0, 0.55, 1.0),
     "carrier-hooks": ("Carrier hooks", "#34383e", 0.0, 0.48, 1.0),
