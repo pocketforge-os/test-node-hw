@@ -1,0 +1,15 @@
+{
+  "ci_runner": "ubuntu-24.04",
+  "coordinate_system": "millimetres",
+  "fingerprint": {
+    "algorithm": "pocketforge-normalized-stl-v1",
+    "coordinate_quantum_mm": "0.0001"
+  },
+  "openscad_apt_version": "2021.01-6build4",
+  "openscad_reported_version": "2021.01",
+  "python": {
+    "minimum_version": "3.10",
+    "stdlib_only": true
+  },
+  "schema": "pocketforge-cad-toolchain-v1"
+}

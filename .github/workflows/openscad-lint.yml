@@ -8,6 +8,8 @@ on:
       - "scripts/test-lint-openscad.sh"
       - "mechanical/dut-fixture-v1/Makefile"
       - "mechanical/dut-cradle-v1/Makefile"
+      - "mechanical/dut-cradle-v1/qualification/**"
+      - "mechanical/dut-cradle-v1/scripts/**"
       - "mechanical/dut-chassis-2020-v1/Makefile"
       - "mechanical/dut-chassis-2020-v1/scripts/**"
       - ".github/workflows/openscad-lint.yml"
@@ -17,7 +19,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Check out source
@@ -35,10 +37,16 @@ jobs:
       - name: Install OpenSCAD
         run: |
           sudo apt-get update
-          sudo apt-get install --yes openscad xvfb
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
 
       - name: Reject ERROR diagnostics even with a zero process status
         run: scripts/test-lint-openscad.sh
 
       - name: Parse and evaluate every OpenSCAD source
         run: xvfb-run --auto-servernum scripts/lint-openscad.sh
+
+      - name: Verify physically qualified TrimUI geometry
+        run: |
+          xvfb-run --auto-servernum make \
+            -C mechanical/dut-cradle-v1 \
+            validate-qualified validate-qualified-mutation
