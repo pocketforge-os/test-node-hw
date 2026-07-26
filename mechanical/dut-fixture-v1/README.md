@@ -170,9 +170,10 @@ more machinery than determinism here.
 - The exact lower VIENON hub retains its physically proven bottom-edge
   placement, with its four USB-A ports facing −Y beyond the plate and its
   fixed upstream lead facing +X into a 20 mm corridor. The 30 mm exact body
-  is shown 2 mm closer to the open edge than the former 24 mm proxy, leaving
-  a 6 mm body-to-body gap without moving the already proven printable tie
-  slots.
+  is shown 2 mm closer to the open edge than the former 24 mm proxy and
+  20 mm left of its legacy tie-envelope datum. That photographed stagger
+  leaves a 6 mm body-to-body gap and puts the existing ties near the VIENON
+  body's middle and +X end without moving the proven printable slots.
 - The ESP32-S3 SuperMini is oriented with its 18.5 mm short edge toward the
   bottom of the plate and the actual USB-C receptacle points down. A centred
   8.5 mm USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots
