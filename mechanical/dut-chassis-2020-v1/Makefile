@@ -9,6 +9,7 @@ GUIDE_MODEL_BUILD := $(GUIDE_BUILD)/model
 SOURCE := pocketforge-node-chassis.scad
 BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
 TOPOLOGY := scripts/check_stl_topology.py
+TARGET_CONTRACT_TEST := scripts/test_makefile_targets.py
 CUT_LIST := CUT_LIST.md
 GUIDE_MODEL_SCRIPT := scripts/build_handbook_model.py
 GUIDE_BATCH_MODEL_SCRIPT := scripts/build_handbook_batch_model.py
@@ -399,7 +400,7 @@ GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-cable-anchor-guard \
-	validate-production-batches clean
+	validate-production-batches validate-target-contract clean
 
 all: batches replacements cutlist
 
@@ -1441,8 +1442,8 @@ $(GUIDE_MODEL) $(GUIDE_MODEL_PROVENANCE) &: $(GUIDE_LAYERS) \
 
 guide-model: $(GUIDE_MODEL) $(GUIDE_MODEL_PROVENANCE)
 
-handbook-assets: calibration batches guide-static guide-batch-models \
-	guide-model cutlist
+handbook-assets: calibration batches device-example-batches guide-static \
+	guide-batch-models guide-model cutlist
 
 preview: $(BUILD)/layout-assembly.png $(BUILD)/layout-assembly-mesh.png \
 	$(BUILD)/layout-front.png $(BUILD)/layout-stacked.png \
@@ -1690,11 +1691,14 @@ validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES) \
 		$(BUILD)/production-batch-07-wire-management.stl
 	@echo 'production_batches=pass common_core=5 device_examples=2 optional_calibration=pass registration_tabs=8 cable_anchors=8'
 
+validate-target-contract:
+	$(PYTHON) $(TARGET_CONTRACT_TEST)
+
 validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-cable-anchor-guard \
-	validate-production-batches \
+	validate-production-batches validate-target-contract \
 	validate-cut-list-sync
 	printf '%s  %s\n' '$(DEVICE_MODEL_SHA256)' \
 		'$(PRESENTATION_DEVICE_SCAD)' | sha256sum -c -
