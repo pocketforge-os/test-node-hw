@@ -22,6 +22,7 @@ from typing import Iterable, Iterator, Sequence
 
 FINGERPRINT_ALGORITHM = "pocketforge-normalized-stl-v1"
 COORDINATE_QUANTUM_MM = Decimal("0.0001")
+CANONICAL_ASCII_STL_SCHEMA = "pocketforge-canonical-ascii-stl-v1"
 SERIALIZATION_MAGIC = (
     b"PocketForge normalized STL\x00"
     b"version=1\x00"
@@ -149,6 +150,51 @@ def read_stl_points(path: Path) -> list[RawPoint]:
         return _binary_points(data)
     except _NotBinaryStl:
         return _ascii_points(data)
+
+
+def _exact_decimal_text(value: Decimal) -> str:
+    if value == 0:
+        return "0"
+    rendered = format(value, "f")
+    if "." in rendered:
+        rendered = rendered.rstrip("0").rstrip(".")
+    return rendered
+
+
+def canonicalize_stl(path: Path) -> None:
+    """Write deterministic ASCII STL bytes without changing exact geometry.
+
+    Facet order, each facet's cyclic starting vertex, advisory normals, header,
+    whitespace, and signed zero are normalized. Vertex winding is retained.
+    Unlike the normalized geometry fingerprint, coordinates are not quantized:
+    the resulting raw SHA-256 remains an exact distribution-integrity value.
+    """
+    points = read_stl_points(path)
+    if len(points) % 3:
+        raise StlError(f"invalid STL vertex count: {len(points)}")
+    facets = []
+    for offset in range(0, len(points), 3):
+        triangle = tuple(points[offset : offset + 3])
+        rotations = (
+            triangle,
+            (triangle[1], triangle[2], triangle[0]),
+            (triangle[2], triangle[0], triangle[1]),
+        )
+        facets.append(min(rotations))
+
+    lines = ["solid PocketForge_Canonical\n"]
+    for triangle in sorted(facets):
+        lines.append("  facet normal 0 0 0\n")
+        lines.append("    outer loop\n")
+        for point in triangle:
+            coordinates = " ".join(
+                _exact_decimal_text(value) for value in point
+            )
+            lines.append(f"      vertex {coordinates}\n")
+        lines.append("    endloop\n")
+        lines.append("  endfacet\n")
+    lines.append("endsolid PocketForge_Canonical\n")
+    path.write_text("".join(lines), encoding="ascii", newline="\n")
 
 
 def quantize_coordinate(value: Decimal) -> int:

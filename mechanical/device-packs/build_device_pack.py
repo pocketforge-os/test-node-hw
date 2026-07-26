@@ -36,9 +36,11 @@ sys.path.insert(0, str(CHASSIS_SCRIPTS))
 import holder_profiles  # noqa: E402
 import check_stl_topology  # noqa: E402
 from mesh_fingerprint import (  # noqa: E402
+    CANONICAL_ASCII_STL_SCHEMA,
     COORDINATE_QUANTUM_MM,
     FINGERPRINT_ALGORITHM,
     StlError,
+    canonicalize_stl,
     describe_mesh,
     read_stl_points,
 )
@@ -51,7 +53,7 @@ MODES = ("coupon", "retrofit", "full")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 SCAD_INCLUDE_RE = re.compile(r"^\s*(?:include|use)\s*<([^>]+)>", re.MULTILINE)
-STL_SERIALIZATION = "pocketforge-canonical-ascii-stl-v1"
+STL_SERIALIZATION = CANONICAL_ASCII_STL_SCHEMA
 
 
 class PackError(ValueError):
@@ -757,6 +759,7 @@ def _command(item: PlanItem, output: Path, openscad: str) -> list[str]:
 
 
 def _decimal_text(value: Decimal) -> str:
+    """Compatibility helper used by serialization regression fixtures."""
     if value == 0:
         return "0"
     rendered = format(value, "f")
@@ -768,34 +771,9 @@ def _decimal_text(value: Decimal) -> str:
 def _canonicalize_stl(path: Path) -> None:
     """Replace an STL with a deterministic, geometry-preserving ASCII form."""
     try:
-        points = read_stl_points(path)
+        canonicalize_stl(path)
     except (OSError, StlError) as exc:
         raise PackError(f"cannot canonicalize STL {path.name}: {exc}") from exc
-    if len(points) % 3:
-        raise PackError(f"invalid STL vertex count: {len(points)}")
-    facets = []
-    for offset in range(0, len(points), 3):
-        triangle = tuple(points[offset : offset + 3])
-        rotations = (
-            triangle,
-            (triangle[1], triangle[2], triangle[0]),
-            (triangle[2], triangle[0], triangle[1]),
-        )
-        facets.append(min(rotations))
-
-    lines = ["solid PocketForge_Canonical\n"]
-    for triangle in sorted(facets):
-        # STL normals are advisory. Zero makes serialization independent of
-        # renderer formatting while preserving the renderer's vertex winding.
-        lines.append("  facet normal 0 0 0\n")
-        lines.append("    outer loop\n")
-        for point in triangle:
-            coordinates = " ".join(_decimal_text(value) for value in point)
-            lines.append(f"      vertex {coordinates}\n")
-        lines.append("    endloop\n")
-        lines.append("  endfacet\n")
-    lines.append("endsolid PocketForge_Canonical\n")
-    path.write_text("".join(lines), encoding="ascii", newline="\n")
 
 
 def _render(item: PlanItem, output: Path, openscad: str) -> None:

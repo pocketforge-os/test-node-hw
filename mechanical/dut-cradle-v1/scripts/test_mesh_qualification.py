@@ -11,9 +11,11 @@ import unittest
 from pathlib import Path
 
 from mesh_fingerprint import (
+    CANONICAL_ASCII_STL_SCHEMA,
     COORDINATE_QUANTUM_MM,
     FINGERPRINT_ALGORITHM,
     StlError,
+    canonicalize_stl,
     describe_mesh,
 )
 from qualified_geometry import (
@@ -124,6 +126,29 @@ class MeshFingerprintTests(unittest.TestCase):
             ),
         )
         self.assertEqual(self.digest(positive), self.digest(negative))
+
+    def test_exact_stl_canonicalization_is_byte_deterministic(self) -> None:
+        original = self.write("canonical-ascii.stl", ascii_stl(TETRAHEDRON))
+        reordered = tuple(
+            (triangle[1], triangle[2], triangle[0])
+            for triangle in reversed(TETRAHEDRON)
+        )
+        alternate = self.write(
+            "canonical-binary.stl",
+            binary_stl(
+                reordered,
+                header=b"different",
+                normal=(9.0, 8.0, 7.0),
+                attribute=123,
+            ),
+        )
+        canonicalize_stl(original)
+        canonicalize_stl(alternate)
+        self.assertEqual(
+            "pocketforge-canonical-ascii-stl-v1",
+            CANONICAL_ASCII_STL_SCHEMA,
+        )
+        self.assertEqual(original.read_bytes(), alternate.read_bytes())
 
     def test_decimal_ascii_and_float32_binary_share_the_quantized_identity(
         self,

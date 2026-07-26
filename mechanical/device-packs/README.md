@@ -119,8 +119,9 @@ before emitting a pack.
 A device-model or holder change changes an input hash. Fit-bearing drift also
 fails the accepted normalized-geometry checks. Chassis link geometry has its
 own exact regression lock. CI builds a real coupon on pull requests and a
-complete ephemeral pack after merge, so stale generated output cannot make a
-source change look complete.
+complete ephemeral pack for every dynamically discovered qualified device on
+each relevant pushed revision, so stale generated output cannot make a source
+change look complete.
 
 The static normalized hashes in `layouts/chassis-core-v1.json` characterize
 the established chassis beds and make any later edit explicit in review. They
