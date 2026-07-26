@@ -84,19 +84,48 @@ python3 scripts/holder_profiles.py check-qualified \
 # Prove a valid 11.3 -> 11.4 mm throat change is rejected by qualification.
 python3 scripts/holder_profiles.py check-mutation \
   --profile profiles/trimui-smart-pro-family.json
+
+# Emit the sorted matrices consumed by CI. These discover every profile.
+python3 scripts/qualification_ci.py matrix --kind qualified-profiles
+python3 scripts/qualification_ci.py matrix --kind qualified-devices
+
+# Compare this checkout with an extracted PR-base cradle tree.
+python3 scripts/qualification_ci.py plan \
+  --base-root /tmp/pr-base/mechanical/dut-cradle-v1 \
+  --output /tmp/qualification-plan.json
+
+# Render one planned entry and write candidate STLs plus geometry-diff.json.
+python3 scripts/qualification_ci.py check \
+  --base-root /tmp/pr-base/mechanical/dut-cradle-v1 \
+  --profile-id trimui-smart-pro-family \
+  --output build/qualification-ci/trimui-smart-pro-family
+
+# Prove a real 0.1 mm hook mutation is caught and emitted as diff evidence.
+python3 scripts/qualification_ci.py check-mutation \
+  --base-root /tmp/pr-base/mechanical/dut-cradle-v1 \
+  --profile-id trimui-smart-pro-family \
+  --output build/qualification-ci/trimui-smart-pro-family/mutation
 ```
 
 Normal commands are read-only with respect to profiles, locks, qualification
 records and OpenSCAD source. `render` writes only the explicit output path.
+Qualification review commands refuse an existing output directory and, when
+writing inside the repository, permit only the cradle's ignored `build/`
+destinations. External temporary directories are also allowed.
+Qualification CI discovers profile files rather than using a workflow-owned
+allowlist. Adding a physically qualified profile therefore creates a required
+matrix entry automatically; each qualified device variant also enters the
+pushed-revision full-pack matrix. Every `profiles/*.json` file is owned registry
+state, and one device slug may belong to exactly one profile.
 
 ## Add a device with an existing mechanism
 
 1. Finish the platform semantic model and its separate fixture contract.
 2. Obtain the in-hand measurements required by that contract. Leave unknown
    values unresolved; do not infer pressure-fit geometry from the visual mesh.
-3. Update/add a fixture lock in a reviewed change, pinning a full platform Git
-   SHA and the raw hashes of the canonical contract plus any shared-chassis
-   aliases.
+3. Add a versioned fixture lock in a reviewed change, pinning a full platform
+   Git SHA and the raw hashes of the canonical contract plus any shared-chassis
+   aliases. Never rewrite a lock retained by accepted qualification history.
 4. Copy the nearest declarative holder profile. Select a supported reusable
    mechanism family, contact IDs and exact poses inside the locked contact
    intervals. Keep presentation choices separate from retention fields.
@@ -147,11 +176,23 @@ requires no holder update. If the platform fixture interface changes:
 
 1. its interface revision/hash changes and prior platform qualification is
    invalidated or explicitly renewed;
-2. a reviewed downstream PR refreshes this lock and shows the profile impact;
-3. holder geometry remains unqualified until coupon/full physical acceptance;
-4. only accepted geometry receives a new golden manifest.
+2. a reviewed downstream PR refreshes this lock, sets the profile to
+   `unqualified`, and adds an
+   [`awaiting_physical_acceptance`](../qualification/changes/README.md) change
+   record;
+3. CI renders candidate meshes and publishes `geometry-diff.json` against the
+   immutable prior manifest, while production pack generation remains blocked;
+4. coupon/carrier prints receive explicit owner fit acceptance; and
+5. a later PR adds a new manifest and completes the change record before
+   restoring `physically_qualified`. CI rerenders the exact candidate from
+   that PR's base and rejects any post-acceptance artifact-set or geometry
+   drift.
 
 Changing a holder profile or reusable mechanism follows the same rule: a golden
 failure is evidence to inspect and print, never an instruction to refresh the
-baseline. Raw STL SHA-256 proves distribution-file integrity; normalized mesh
-identity protects geometry; neither replaces physical fit.
+baseline. A profile that stays qualified must match the exact PR-base normalized
+geometry even if its source was refactored. Editing an accepted manifest in
+place, removing a qualified profile from discovery, or combining invalidation
+and renewed qualification in one PR fails CI. Raw STL SHA-256 proves
+distribution-file integrity; normalized mesh identity protects geometry;
+neither replaces physical fit.

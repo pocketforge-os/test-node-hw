@@ -18,10 +18,11 @@ import struct
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 FINGERPRINT_ALGORITHM = "pocketforge-normalized-stl-v1"
 COORDINATE_QUANTUM_MM = Decimal("0.0001")
+CANONICAL_ASCII_STL_SCHEMA = "pocketforge-canonical-ascii-stl-v1"
 SERIALIZATION_MAGIC = (
     b"PocketForge normalized STL\x00"
     b"version=1\x00"
@@ -149,6 +150,109 @@ def read_stl_points(path: Path) -> list[RawPoint]:
         return _binary_points(data)
     except _NotBinaryStl:
         return _ascii_points(data)
+
+
+def _exact_decimal_text(value: Decimal) -> str:
+    if value == 0:
+        return "0"
+    rendered = format(value, "f")
+    if "." in rendered:
+        rendered = rendered.rstrip("0").rstrip(".")
+    return rendered
+
+
+def canonicalize_stl(path: Path) -> None:
+    """Write deterministic ASCII STL bytes without changing exact geometry.
+
+    Facet order, each facet's cyclic starting vertex, advisory normals, header,
+    whitespace, and signed zero are normalized. Vertex winding is retained.
+    Unlike the normalized geometry fingerprint, coordinates are not quantized:
+    the resulting raw SHA-256 remains an exact distribution-integrity value.
+    """
+    points = read_stl_points(path)
+    if len(points) % 3:
+        raise StlError(f"invalid STL vertex count: {len(points)}")
+    facets = []
+    for offset in range(0, len(points), 3):
+        triangle = tuple(points[offset : offset + 3])
+        rotations = (
+            triangle,
+            (triangle[1], triangle[2], triangle[0]),
+            (triangle[2], triangle[0], triangle[1]),
+        )
+        facets.append(min(rotations))
+
+    lines = ["solid PocketForge_Canonical\n"]
+    for triangle in sorted(facets):
+        lines.append("  facet normal 0 0 0\n")
+        lines.append("    outer loop\n")
+        for point in triangle:
+            coordinates = " ".join(
+                _exact_decimal_text(value) for value in point
+            )
+            lines.append(f"      vertex {coordinates}\n")
+        lines.append("    endloop\n")
+        lines.append("  endfacet\n")
+    lines.append("endsolid PocketForge_Canonical\n")
+    path.write_text("".join(lines), encoding="ascii", newline="\n")
+
+
+def _metric_decimal(value: Any) -> Decimal:
+    try:
+        result = Decimal(str(value))
+    except (InvalidOperation, ValueError) as exc:
+        raise StlError(f"invalid metric number: {value!r}") from exc
+    if not result.is_finite():
+        raise StlError(f"non-finite metric number: {value!r}")
+    return result
+
+
+def _metric_delta_text(candidate: Any, baseline: Any) -> str:
+    return _exact_decimal_text(
+        _metric_decimal(candidate) - _metric_decimal(baseline)
+    )
+
+
+def metric_delta(
+    baseline: Mapping[str, Any] | None,
+    candidate: Mapping[str, Any],
+) -> Mapping[str, Any] | None:
+    """Describe deterministic numeric/topology deltas between mesh metrics."""
+    if baseline is None:
+        return None
+    bounds_delta = {
+        field: [
+            _metric_delta_text(
+                candidate["bounds_mm"][field][index],
+                value,
+            )
+            for index, value in enumerate(baseline["bounds_mm"][field])
+        ]
+        for field in ("min", "max", "size")
+    }
+    topology_delta = {
+        field: int(candidate["topology"][field]) - int(value)
+        for field, value in sorted(baseline["topology"].items())
+    }
+    return {
+        "bounds_mm": bounds_delta,
+        "fingerprint_changed": (
+            candidate["fingerprint"] != baseline["fingerprint"]
+        ),
+        "surface_area_mm2": _metric_delta_text(
+            candidate["surface_area_mm2"],
+            baseline["surface_area_mm2"],
+        ),
+        "topology": topology_delta,
+        "triangle_count": (
+            int(candidate["triangle_count"])
+            - int(baseline["triangle_count"])
+        ),
+        "volume_mm3": _metric_delta_text(
+            candidate["volume_mm3"],
+            baseline["volume_mm3"],
+        ),
+    }
 
 
 def quantize_coordinate(value: Decimal) -> int:

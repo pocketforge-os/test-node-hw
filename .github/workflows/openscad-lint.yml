@@ -20,7 +20,56 @@ permissions:
   contents: read
 
 jobs:
-  lint:
+  qualification_plan:
+    name: qualification plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - name: Check out source and exact PR base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git fetch --depth=1 origin "${BASE_SHA}"
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Plan every qualification transition
+        id: plan
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          base_repo="${runner_temp}/qualification-base"
+          plan_path="${runner_temp}/qualification-plan.json"
+          mkdir -p "${base_repo}"
+          git archive "${BASE_SHA}" mechanical/dut-cradle-v1 |
+            tar -x -C "${base_repo}"
+          python3 mechanical/dut-cradle-v1/scripts/qualification_ci.py plan \
+            --base-root "${base_repo}/mechanical/dut-cradle-v1" \
+            --output "${plan_path}"
+          matrix="$(jq -c '.matrix' "${plan_path}")"
+          echo "matrix=${matrix}" >>"${GITHUB_OUTPUT}"
+
+      - name: Upload the qualification plan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: holder-qualification-plan-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/qualification-plan.json
+          if-no-files-found: error
+          retention-days: 30
+
+  static:
+    name: static OpenSCAD and contract checks
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -29,6 +78,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -euo pipefail
           git init .
           git remote add origin \
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -38,6 +88,7 @@ jobs:
 
       - name: Install OpenSCAD
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install --yes openscad=2021.01-6build4 xvfb
 
@@ -47,46 +98,17 @@ jobs:
       - name: Parse and evaluate every OpenSCAD source
         run: xvfb-run --auto-servernum scripts/lint-openscad.sh
 
-      - name: Validate holder profiles and pinned platform fixture source
+      - name: Test and validate every holder profile contract
         run: |
           set -euo pipefail
           cradle="mechanical/dut-cradle-v1"
-          profile="profiles/trimui-smart-pro-family.json"
-          python3 "$cradle/scripts/test_holder_profiles.py"
-          python3 "$cradle/scripts/holder_profiles.py" validate
-          revision="$(
-            python3 "$cradle/scripts/holder_profiles.py" \
-              source-revision --profile "$profile"
-          )"
-          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
-          platform_root="$(
-            mktemp -d "$runner_temp/platform-fixture-source.XXXXXX"
-          )"
-          git init --quiet "$platform_root"
-          git -C "$platform_root" remote add origin \
-            "https://github.com/pocketforge-os/platform.git"
-          git -C "$platform_root" fetch --quiet --depth=1 origin "$revision"
-          git -C "$platform_root" checkout --quiet --detach FETCH_HEAD
-          python3 "$cradle/scripts/holder_profiles.py" \
-            verify-source --profile "$profile" \
-            --platform-root "$platform_root"
-
-      - name: Verify physically qualified TrimUI geometry
-        run: |
-          xvfb-run --auto-servernum make \
-            -C mechanical/dut-cradle-v1 \
-            validate-qualified validate-qualified-mutation
-
-      - name: Rebuild qualified geometry from the declarative profile
-        run: |
-          cradle="mechanical/dut-cradle-v1"
-          profile="profiles/trimui-smart-pro-family.json"
-          xvfb-run --auto-servernum \
-            python3 "$cradle/scripts/holder_profiles.py" \
-              check-qualified --profile "$profile"
-          xvfb-run --auto-servernum \
-            python3 "$cradle/scripts/holder_profiles.py" \
-              check-mutation --profile "$profile"
+          python3 -m unittest discover \
+            -s "${cradle}/scripts" -p 'test_*.py' -v
+          python3 "${cradle}/scripts/holder_profiles.py" validate
+          python3 "${cradle}/scripts/qualification_ci.py" \
+            matrix --kind qualified-profiles
+          python3 "${cradle}/scripts/qualification_ci.py" \
+            matrix --kind qualified-devices
 
       - name: Test device-pack contracts
         run: python3 mechanical/device-packs/test_device_pack.py
@@ -100,3 +122,120 @@ jobs:
               --device trimui-smart-pro --mode coupon
           python3 mechanical/device-packs/build_device_pack.py verify \
             --pack "$pack"
+
+  qualification:
+    name: qualification (${{ matrix.profile_id }})
+    needs: qualification_plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.qualification_plan.outputs.matrix) }}
+    steps:
+      - name: Check out source and exact PR base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git fetch --depth=1 origin "${BASE_SHA}"
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Verify the exact pinned platform fixture source
+        env:
+          PROFILE_PATH: ${{ matrix.profile_path }}
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          revision="$(
+            python3 "${cradle}/scripts/holder_profiles.py" \
+              source-revision --profile "${PROFILE_PATH}"
+          )"
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          platform_root="$(
+            mktemp -d "${runner_temp}/platform-fixture-source.XXXXXX"
+          )"
+          git init --quiet "${platform_root}"
+          git -C "${platform_root}" remote add origin \
+            "https://github.com/pocketforge-os/platform.git"
+          git -C "${platform_root}" fetch --quiet --depth=1 origin "${revision}"
+          git -C "${platform_root}" checkout --quiet --detach FETCH_HEAD
+          python3 "${cradle}/scripts/holder_profiles.py" \
+            verify-source --profile "${PROFILE_PATH}" \
+            --platform-root "${platform_root}"
+
+      - name: Render and compare the qualification candidate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PROFILE_ID: ${{ matrix.profile_id }}
+          QUALIFICATION_MODE: ${{ matrix.mode }}
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          base_repo="${runner_temp}/qualification-base"
+          mkdir -p "${base_repo}"
+          git archive "${BASE_SHA}" mechanical/dut-cradle-v1 |
+            tar -x -C "${base_repo}"
+          xvfb-run --auto-servernum \
+            python3 "${cradle}/scripts/qualification_ci.py" check \
+              --base-root "${base_repo}/mechanical/dut-cradle-v1" \
+              --profile-id "${PROFILE_ID}" \
+              --output "${cradle}/build/qualification-ci/${PROFILE_ID}"
+          if [[ "${QUALIFICATION_MODE}" == "protect" \
+            || "${QUALIFICATION_MODE}" == "requalify" ]]; then
+            xvfb-run --auto-servernum \
+              python3 "${cradle}/scripts/qualification_ci.py" \
+                check-mutation \
+                --base-root "${base_repo}/mechanical/dut-cradle-v1" \
+                --profile-id "${PROFILE_ID}" \
+                --output \
+                  "${cradle}/build/qualification-ci/${PROFILE_ID}/mutation"
+          fi
+
+      - name: Upload candidate meshes and geometry diff
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: holder-qualification-${{ matrix.profile_id }}-${{ github.event.pull_request.head.sha }}
+          path: mechanical/dut-cradle-v1/build/qualification-ci/${{ matrix.profile_id }}/
+          if-no-files-found: warn
+          compression-level: 9
+          retention-days: 30
+
+  # Preserve the existing required status-check name while making it depend on
+  # every dynamically discovered qualification job.
+  lint:
+    name: lint
+    if: ${{ always() }}
+    needs:
+      - qualification_plan
+      - static
+      - qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every OpenSCAD and qualification check
+        env:
+          PLAN_RESULT: ${{ needs.qualification_plan.result }}
+          STATIC_RESULT: ${{ needs.static.result }}
+          QUALIFICATION_RESULT: ${{ needs.qualification.result }}
+        run: |
+          set -euo pipefail
+          [[ "${PLAN_RESULT}" == "success" ]]
+          [[ "${STATIC_RESULT}" == "success" ]]
+          [[ "${QUALIFICATION_RESULT}" == "success" \
+            || "${QUALIFICATION_RESULT}" == "skipped" ]]
+          echo "openscad_lint=pass qualification_matrix=pass"

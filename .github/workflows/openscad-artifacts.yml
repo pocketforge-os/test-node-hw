@@ -22,6 +22,61 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  device_pack_plan:
+    name: qualified device-pack plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          if [[ "${BEFORE_SHA}" =~ ^[0-9a-f]{40}$ \
+            && "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ]]; then
+            git fetch --depth=1 origin "${BEFORE_SHA}"
+          fi
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Validate the pushed qualification transition
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${BEFORE_SHA}" =~ ^[0-9a-f]{40}$ \
+            || "${BEFORE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "qualification_transition=skip reason=no_push_base"
+            exit 0
+          fi
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          base_repo="${runner_temp}/qualification-base"
+          plan_path="${runner_temp}/qualification-plan.json"
+          mkdir -p "${base_repo}"
+          git archive "${BEFORE_SHA}" mechanical/dut-cradle-v1 |
+            tar -x -C "${base_repo}"
+          python3 mechanical/dut-cradle-v1/scripts/qualification_ci.py plan \
+            --base-root "${base_repo}/mechanical/dut-cradle-v1" \
+            --output "${plan_path}"
+
+      - name: Discover every physically qualified device
+        id: plan
+        run: |
+          set -euo pipefail
+          matrix="$(
+            python3 mechanical/dut-cradle-v1/scripts/qualification_ci.py \
+              matrix --kind qualified-devices
+          )"
+          echo "matrix=${matrix}" >>"${GITHUB_OUTPUT}"
+
   export:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -90,8 +145,13 @@ jobs:
           retention-days: 30
 
   device-pack:
+    name: device-pack (${{ matrix.device_slug }})
+    needs: device_pack_plan
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.device_pack_plan.outputs.matrix) }}
     steps:
       - name: Check out source
         env:
@@ -112,21 +172,23 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes openscad=2021.01-6build4 xvfb
 
-      - name: Build and verify the complete TrimUI Smart Pro pack
+      - name: Build and verify the complete qualified device pack
+        env:
+          DEVICE_SLUG: ${{ matrix.device_slug }}
         run: |
           set -euo pipefail
-          pack="mechanical/device-packs/build/trimui-smart-pro/full"
+          pack="mechanical/device-packs/build/${DEVICE_SLUG}/full"
           xvfb-run --auto-servernum \
             python3 mechanical/device-packs/build_device_pack.py build \
-              --device trimui-smart-pro --mode full
+              --device "${DEVICE_SLUG}" --mode full
           python3 mechanical/device-packs/build_device_pack.py verify \
             --pack "$pack"
 
       - name: Upload deterministic device pack
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: device-pack-trimui-smart-pro-${{ github.sha }}
-          path: mechanical/device-packs/build/trimui-smart-pro/full/
+          name: device-pack-${{ matrix.device_slug }}-${{ github.sha }}
+          path: mechanical/device-packs/build/${{ matrix.device_slug }}/full/
           if-no-files-found: error
           compression-level: 9
           retention-days: 30
