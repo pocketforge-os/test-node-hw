@@ -16,7 +16,9 @@ Commit the inputs:
 - documentation.
 
 Do not commit routine STL exports. A pack is generated from an immutable Git
-revision, verified, and carried by CI or a release artifact. Its
+revision, verified, and carried by CI or a release artifact. Pull-request and
+pushed-commit artifacts are temporary review evidence; an immutable GitHub
+release is the archive of record for physically accepted production packs. Its
 `manifest.json` records every source-file SHA-256, every exact OpenSCAD
 definition, raw STL hashes, representation-independent mesh fingerprints,
 bounds, volume, triangle count, and topology. `SHA256SUMS` covers every STL.
@@ -129,3 +131,63 @@ are regression baselines, not a claim of new physical qualification. The
 holder qualification manifest remains the authoritative physical-fit record;
 changing either kind of lock requires understanding the geometry change, not
 blindly recording a new digest.
+
+## Immutable production releases
+
+One release represents exactly one versioned physical-qualification manifest,
+not a moving snapshot of a device name. The qualification file
+`qualification/<profile-id>-vN.json` deterministically owns the tag
+`print-pack-<profile-id>-vN`. Every device variant named by that profile is
+included as its own `device-pack-<device-slug>.zip`. A source-only refactor
+does not replace or republish an accepted release. Geometry that needs renewed
+physical acceptance gets a new `vN` qualification manifest and therefore a new
+release tag.
+
+Each canonical, uncompressed ZIP has fixed metadata, sorted safe paths, and one
+`device-pack-<device-slug>/` root. The release also carries:
+
+- `release-manifest.json`, which binds every archive to the holder profile,
+  qualification manifest, accepted geometry/source revision and acceptance
+  reference, fixture lock and upstream platform revision/contracts, chassis
+  layout, test-node-hw commit, release generator, and CAD toolchain; and
+- release-level `SHA256SUMS`, which covers every ZIP and the release manifest.
+
+Build and verify the complete release candidate from a clean commit:
+
+```sh
+python3 mechanical/device-packs/release_print_pack.py build \
+  --profile-id trimui-smart-pro-family
+
+python3 mechanical/device-packs/release_print_pack.py verify \
+  --bundle mechanical/device-packs/build/releases/\
+print-pack-trimui-smart-pro-family-v1
+```
+
+The builder refuses dirty source, unqualified profiles, prototype overrides,
+unsafe archive paths, and unversioned qualification names. Repeated builds from
+the same clean commit are byte-identical. Generated release directories remain
+under the ignored `mechanical/device-packs/build/` tree; neither ZIPs nor
+release metadata are committed.
+
+Publication runs only through the main-only `Publish qualified print pack`
+workflow. Before creating a release, it requires repository release
+immutability to already be enabled. It creates a draft, uploads the complete
+asset set, verifies GitHub's reported SHA-256 and size for every asset, and only
+then publishes. It finally requires `immutable=true`, resolves the protected
+tag to the exact manifest commit, downloads and hashes every asset, and confirms
+the release was not selected as the moving latest release. An exact rerun is a
+no-op; any conflicting draft, tag, target, or asset fails closed. Published
+assets are never overwritten or deleted by this tooling.
+
+To consume a release, name the qualification tag explicitly:
+
+```sh
+tag=print-pack-trimui-smart-pro-family-v1
+gh release download "$tag" \
+  --repo pocketforge-os/test-node-hw --dir "$tag"
+(cd "$tag" && sha256sum --check SHA256SUMS)
+```
+
+For full source-aware validation, check out the commit recorded in
+`release-manifest.json` and run `release_print_pack.py verify` against the
+download directory. Do not script against GitHub's “latest” release.
