@@ -7,14 +7,19 @@
  * Export with, for example:
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
- * PART choices: preview, plate, presentation_bpi, presentation_components,
+ * PART choices: preview, plate, presentation_bpi, presentation_esp32,
+ * presentation_components,
  * presentation_bpi_pcb, presentation_bpi_dark,
  * presentation_bpi_metal, presentation_bpi_gold,
- * presentation_bpi_silkscreen, presentation_labels, fit_coupon,
+ * presentation_bpi_silkscreen, presentation_esp32_pcb,
+ * presentation_esp32_dark, presentation_esp32_metal,
+ * presentation_esp32_gold, presentation_esp32_antenna,
+ * presentation_esp32_silkscreen, presentation_labels, fit_coupon,
  * plate_lower, plate_upper, joiner.
  */
 
 use <bpi-m2-zero-v1.scad>;
+use <esp32-s3-supermini-hw747-v0.0.2.scad>;
 
 PART = "preview";
 SHOW_COMPONENTS = true;
@@ -132,6 +137,10 @@ antenna_tie_edge_gap = -0.1;
 esp32_origin = [8, 54.9];
 // Oriented with the 18.5 mm short/USB-C edge facing the bottom of the plate.
 esp32_size = [18.5, 23.67];               // owner-measured physical envelope
+ESP32_MODEL_SCALE = 1.0;
+ESP32_MODEL_ENVELOPE = esp32_size;
+ESP32_MODEL_USB_EDGE = "bottom";
+esp32_install_lift = 0.65;                 // clears photographed reverse SMDs
 // Two compact slots flank the connector on each short edge. These are smaller
 // than the general fixture slot so the USB-C corridor remains unobstructed.
 esp32_tie_slot = [3.0, 3.0];
@@ -371,13 +380,22 @@ module bpi_model_preview() {
     bpi_model_at_fixture_datum() bpi_m2_zero_complete();
 }
 
+module esp32_model_at_fixture_datum() {
+    translate([esp32_origin.x, esp32_origin.y,
+               plate_thickness + esp32_install_lift])
+        children();
+}
+
+module esp32_model_preview() {
+    esp32_model_at_fixture_datum() esp32_s3_supermini_complete();
+}
+
 module generic_component_preview(show_service_keepouts = true) {
     envelope(relay_origin, relay_size, 15, "RoyalBlue", 2,
              relay_standoff_height);
     envelope(boost_origin, boost_size, 12, "DarkOrange");
     envelope(mosfet_origin, mosfet_size, 8, "Teal");
     envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
-    envelope(esp32_origin, esp32_size, 8, "DarkSlateGray");
     envelope(dp100_origin, dp100_size, 17.2, "SlateGray", 5);
     // The webcam front body stays below the plate; render its keep-out ghosted.
     color("Black", 0.25)
@@ -398,6 +416,7 @@ module generic_component_preview(show_service_keepouts = true) {
 module component_preview(show_service_keepouts = true) {
     generic_component_preview(show_service_keepouts);
     bpi_model_preview();
+    esp32_model_preview();
 }
 
 // ---- Calibration coupon ----------------------------------------------------
@@ -551,6 +570,19 @@ assert(esp32_usb_service_depth >= 20,
        "ESP32 requires at least 20 mm USB connector clearance below");
 assert(esp32_size.x < esp32_size.y,
        "ESP32 short USB-C edge must face the bottom of the plate");
+assert(esp32_size == esp32_s3_supermini_envelope_size(),
+       str("Fixture and ESP32 physical envelopes disagree: ", esp32_size,
+           " vs ", esp32_s3_supermini_envelope_size()));
+assert(ESP32_MODEL_SCALE == 1.0 &&
+       ESP32_MODEL_ENVELOPE == esp32_s3_supermini_envelope_size(),
+       str("ESP32 model scale/envelope changed: ", ESP32_MODEL_SCALE,
+           " ", ESP32_MODEL_ENVELOPE));
+assert(ESP32_MODEL_USB_EDGE == esp32_s3_supermini_usb_edge() &&
+       ESP32_MODEL_USB_EDGE == "bottom",
+       str("ESP32 USB-C orientation changed: ", ESP32_MODEL_USB_EDGE));
+assert(esp32_s3_supermini_reference_sha256() ==
+       "71e35b41584fda9bfad5da9fd9d21c9369f75a2d6a522343e97bd4de5327ae1d",
+       "ESP32 listing reference hash changed");
 assert(esp32_tie_slot.y >= 3,
        "ESP32 tie slots require the physically requested width allowance");
 assert(esp32_usb_service_width <= esp32_size.x,
@@ -777,9 +809,11 @@ if (PART == "plate") {
     fixture_plate();
 } else if (PART == "presentation_bpi") {
     bpi_model_preview();
+} else if (PART == "presentation_esp32") {
+    esp32_model_preview();
 } else if (PART == "presentation_components") {
-    // Generic measured harness envelopes only. The exact BPI is exported into
-    // material-specific meshes below. Service keep-outs remain analytical.
+    // Generic measured harness envelopes only. Exact BPI and ESP32 models are
+    // exported into material-specific meshes below. Keep-outs stay analytical.
     generic_component_preview(false);
 } else if (PART == "presentation_bpi_pcb") {
     bpi_model_at_fixture_datum()
@@ -795,6 +829,21 @@ if (PART == "plate") {
     bpi_model_at_fixture_datum() bpi_m2_zero_gold();
 } else if (PART == "presentation_bpi_silkscreen") {
     bpi_model_at_fixture_datum() bpi_m2_zero_silkscreen();
+} else if (PART == "presentation_esp32_pcb") {
+    esp32_model_at_fixture_datum()
+        esp32_s3_supermini_pcb(
+            envelope_size = ESP32_MODEL_ENVELOPE,
+            usb_edge = ESP32_MODEL_USB_EDGE);
+} else if (PART == "presentation_esp32_dark") {
+    esp32_model_at_fixture_datum() esp32_s3_supermini_dark_components();
+} else if (PART == "presentation_esp32_metal") {
+    esp32_model_at_fixture_datum() esp32_s3_supermini_metal();
+} else if (PART == "presentation_esp32_gold") {
+    esp32_model_at_fixture_datum() esp32_s3_supermini_gold();
+} else if (PART == "presentation_esp32_antenna") {
+    esp32_model_at_fixture_datum() esp32_s3_supermini_antenna();
+} else if (PART == "presentation_esp32_silkscreen") {
+    esp32_model_at_fixture_datum() esp32_s3_supermini_silkscreen();
 } else if (PART == "presentation_labels") {
     fixture_labels();
 } else if (PART == "fit_coupon") {

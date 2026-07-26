@@ -197,6 +197,11 @@ The installed Banana Pi BPI-M2 Zero V1.0 is carried through as five semantic
 fixture layers, preserving its blue PCB, dark packages/header, metal ports and
 shield, gold contacts, and pale silkscreen in both static renders and the
 interactive handbook GLB.
+The installed ACEIRMC ESP32-S3 SuperMini / HW-747 V0.0.2 is carried through as
+six more semantic fixture layers: black PCB, dark ICs/buttons, metal USB-C and
+switch frames, gold contacts, red ceramic antenna, and pale silkscreen. The
+mesh retains the fixture's physical 18.50 × 23.67 mm envelope with USB-C
+pointing down toward its service corridor.
 The semantic model and static previews split the white placard insert from its
 black raised device-name labels at `placard_insert_thickness`. The production
 nameplate remains one fused STL on its own bed: print white through 2.4 mm,

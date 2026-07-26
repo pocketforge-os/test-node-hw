@@ -49,14 +49,22 @@ the workflow matrix.
 
 Presentation-only meshes expose the populated harness without contaminating
 the production plate. `pocketforge-dut-fixture-components.stl` contains the
-nine remaining interface envelopes (including the under-plate webcam), and
+eight remaining interface envelopes (including the under-plate webcam), and
 `pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
 Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
 into five real-material meshes: blue PCB, dark ICs/header, metal
 shields/ports, gold contacts, and pale silkscreen. Its dedicated close-up is
 `layout-bpi-m2-zero.png`; source evidence and immutable manufacturer-reference
-hashes are recorded in `BPI-M2-ZERO-PROVENANCE.md`. Analytical
-connector/service keep-outs remain editor-only and are excluded.
+hashes are recorded in `BPI-M2-ZERO-PROVENANCE.md`.
+
+The ESP32 is an original populated-board reconstruction of the exact ACEIRMC
+ESP32-S3 SuperMini / HW-747 V0.0.2 listing revision. Six presentation meshes
+preserve its black PCB, dark diagonal ESP32-S3FH4R2 package and switches,
+USB-C/switch metal, plated contacts, red `C3` ceramic antenna, and white
+silkscreen. `layout-esp32-s3-supermini.png` is its dedicated close-up and
+`ESP32-S3-SUPERMINI-PROVENANCE.md` records the saved Amazon reference hashes
+without redistributing listing artwork. Analytical connector/service keep-outs
+remain editor-only and are excluded.
 
 No container is required for this: OpenSCAD is a single distro package, the source is portable, and
 the stdlib-only bounds validator removes Python dependency drift. A container would add substantially
@@ -88,9 +96,11 @@ more machinery than determinism here.
 - The lower USB hub retains its physically proven bottom-edge placement. Its connector side opens
   beyond the plate, while centred 20 × 12 mm cable corridors reserve both narrow ends. The two hub
   bodies are separated only by the roughly 10 mm required for their independent zip-tie slots.
-- The ESP32 is oriented with its 18.5 mm short edge toward the bottom of the plate. A centred 8.5 mm
-  USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots sit 1.5 mm farther inward
-  than the first print—two flanking USB-C and two mirrored on the opposite edge.
+- The ESP32-S3 SuperMini is oriented with its 18.5 mm short edge toward the
+  bottom of the plate and the actual USB-C receptacle points down. A centred
+  8.5 mm USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots
+  sit 1.5 mm farther inward than the first print—two flanking USB-C and two
+  mirrored on the opposite edge.
 - The four-channel opto-isolated relay moves 10 mm left and sits on 26 mm-high, 9 mm-diameter
   standoffs, providing vertical clearance for the adjacent DP100 connections.
 
@@ -125,7 +135,7 @@ centre spacing = far-edge spacing - hole diameter
 | Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes with 5 mm horizontal hole-edge-to-board-edge gaps (6.5 mm X centre insets), plus 1.1 mm top and 0.7 mm bottom gaps | Owner-corrected from physical fit and annotated measurement |
 | MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
 | Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
-| ESP32 | 23.67 × 18.5 mm; short-edge USB-C; four 3 × 3 mm short-edge tie slots | Envelope measured; slot fit owner-corrected after first print |
+| ACEIRMC ESP32-S3 SuperMini HW-747 V0.0.2 | 23.67 × 18.5 mm; 18 plated edge holes at 2.54 mm pitch; USB-C; ESP32-S3FH4R2; BOOT/RST; red ceramic antenna; four 3 × 3 mm short-edge tie slots | Envelope physically measured; population and revision cross-checked to owner-supplied Amazon ASIN B0GS1X97DZ; original repository-native model |
 | Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends; 25 mm top and 18 mm right service | Measured and physically fit |
 | Unpowered USB hub | 105 × 24 mm; bottom connectors off-plate; 20 mm at both narrow ends | Estimated envelope; placement and service physically fit |
 | 4040 frame anchors | Eight 12 × 5.5 mm rounded slots | Tunable; verify actual heavy-duty tie in coupon |
@@ -133,14 +143,16 @@ centre spacing = far-edge spacing - hole diameter
 ## Refinement workflow
 
 1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
-   Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`.
+   Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
+   HW-747 presentation geometry in
+   `esp32-s3-supermini-hw747-v0.0.2.scad`.
 2. Run `make preview validate`.
 3. Reprint only the fit coupon when changing pilot, tie-slot, or webcam-aperture tolerances.
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
 Most preview component blocks remain translucent analytical envelopes rather
-than cosmetic models; the BPI-M2 Zero is the first exact populated-board
-replacement. All preview geometry is omitted from every production STL and
+than cosmetic models; the BPI-M2 Zero and ESP32-S3 SuperMini are exact
+populated-board replacements. All preview geometry is omitted from every production STL and
 exists to expose inaccessible connectors and bad cable paths. The complete
 preview subtree—including the component labels—uses OpenSCAD's `%` background
 modifier. Labels remain visible in the editor but are intentionally absent
@@ -148,7 +160,8 @@ from printable meshes because the lab printer uses a 0.8 mm nozzle. Even a
 manual STL export from the default preview view contains only the printable
 fixture. `make validate` proves that preview and production exports have
 identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
-bounds, and deliberately rejects scale or hole-registration drift. Pairwise
+bounds, proves the ESP32's 18.50 × 23.67 mm installed envelope and bottom USB
+orientation, and deliberately rejects scale/registration/orientation drift. Pairwise
 component spacing is also machine-enforced: every render/export asserts at
 least 3 mm between envelopes; retention slots keep at least 1 mm from
 components and one another; reserved webcam/hub service zones stay clear; and

@@ -25,6 +25,12 @@ FIXTURE_BPI_DARK_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-dark.stl
 FIXTURE_BPI_METAL_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-metal.stl
 FIXTURE_BPI_GOLD_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-gold.stl
 FIXTURE_BPI_SILKSCREEN_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-silkscreen.stl
+FIXTURE_ESP32_PCB_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-pcb.stl
+FIXTURE_ESP32_DARK_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-dark.stl
+FIXTURE_ESP32_METAL_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-metal.stl
+FIXTURE_ESP32_GOLD_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-gold.stl
+FIXTURE_ESP32_ANTENNA_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-antenna.stl
+FIXTURE_ESP32_SILKSCREEN_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-silkscreen.stl
 CRADLE_BODY_STL := ../dut-cradle-v1/build/trimui-smart-pro-family-carrier-body.stl
 CRADLE_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-labels.stl
 CRADLE_S_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-s-labels.stl
@@ -39,6 +45,12 @@ PRESENTATION_FIXTURE_BPI_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-
 PRESENTATION_FIXTURE_BPI_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-metal.stl
 PRESENTATION_FIXTURE_BPI_GOLD_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-gold.stl
 PRESENTATION_FIXTURE_BPI_SILKSCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-silkscreen.stl
+PRESENTATION_FIXTURE_ESP32_PCB_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-pcb.stl
+PRESENTATION_FIXTURE_ESP32_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-dark.stl
+PRESENTATION_FIXTURE_ESP32_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-metal.stl
+PRESENTATION_FIXTURE_ESP32_GOLD_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-gold.stl
+PRESENTATION_FIXTURE_ESP32_ANTENNA_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-antenna.stl
+PRESENTATION_FIXTURE_ESP32_SILKSCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-silkscreen.stl
 PRESENTATION_CRADLE_BODY_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-family-carrier-body.stl
 PRESENTATION_CRADLE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-labels.stl
 PRESENTATION_CRADLE_S_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-labels.stl
@@ -61,6 +73,12 @@ PRESENTATION_ASSETS := \
 	$(PRESENTATION_FIXTURE_BPI_METAL_STL) \
 	$(PRESENTATION_FIXTURE_BPI_GOLD_STL) \
 	$(PRESENTATION_FIXTURE_BPI_SILKSCREEN_STL) \
+	$(PRESENTATION_FIXTURE_ESP32_PCB_STL) \
+	$(PRESENTATION_FIXTURE_ESP32_DARK_STL) \
+	$(PRESENTATION_FIXTURE_ESP32_METAL_STL) \
+	$(PRESENTATION_FIXTURE_ESP32_GOLD_STL) \
+	$(PRESENTATION_FIXTURE_ESP32_ANTENNA_STL) \
+	$(PRESENTATION_FIXTURE_ESP32_SILKSCREEN_STL) \
 	$(PRESENTATION_CRADLE_BODY_STL) \
 	$(PRESENTATION_CRADLE_LABELS_STL) \
 	$(PRESENTATION_CRADLE_S_LABELS_STL) \
@@ -177,6 +195,12 @@ GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-metal.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-gold.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-silkscreen.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-esp32-pcb.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-esp32-dark.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-esp32-metal.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-esp32-gold.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-esp32-antenna.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-esp32-silkscreen.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-body.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-labels.stl \
 	$(GUIDE_LAYER_BUILD)/carrier-hooks.stl \
@@ -353,6 +377,24 @@ $(FIXTURE_BPI_GOLD_STL):
 $(FIXTURE_BPI_SILKSCREEN_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-silkscreen.stl
 
+$(FIXTURE_ESP32_PCB_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-esp32-s3-supermini-pcb.stl
+
+$(FIXTURE_ESP32_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-esp32-s3-supermini-dark.stl
+
+$(FIXTURE_ESP32_METAL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-esp32-s3-supermini-metal.stl
+
+$(FIXTURE_ESP32_GOLD_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-esp32-s3-supermini-gold.stl
+
+$(FIXTURE_ESP32_ANTENNA_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-esp32-s3-supermini-antenna.stl
+
+$(FIXTURE_ESP32_SILKSCREEN_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-esp32-s3-supermini-silkscreen.stl
+
 $(CRADLE_BODY_STL):
 	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-family-carrier-body.stl
 
@@ -387,6 +429,24 @@ $(PRESENTATION_FIXTURE_BPI_GOLD_STL): $(FIXTURE_BPI_GOLD_STL) | $(PRESENTATION_I
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_BPI_SILKSCREEN_STL): $(FIXTURE_BPI_SILKSCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ESP32_PCB_STL): $(FIXTURE_ESP32_PCB_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ESP32_DARK_STL): $(FIXTURE_ESP32_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ESP32_METAL_STL): $(FIXTURE_ESP32_METAL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ESP32_GOLD_STL): $(FIXTURE_ESP32_GOLD_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ESP32_ANTENNA_STL): $(FIXTURE_ESP32_ANTENNA_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_ESP32_SILKSCREEN_STL): $(FIXTURE_ESP32_SILKSCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
 $(PRESENTATION_CRADLE_BODY_STL): $(CRADLE_BODY_STL) | $(PRESENTATION_IMPORT_DIR)
@@ -758,6 +818,24 @@ $(GUIDE_LAYER_BUILD)/fixture-bpi-gold.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BU
 
 $(GUIDE_LAYER_BUILD)/fixture-bpi-silkscreen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_silkscreen"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-esp32-pcb.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_esp32_pcb"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-esp32-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_esp32_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-esp32-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_esp32_metal"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-esp32-gold.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_esp32_gold"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-esp32-antenna.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_esp32_antenna"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-esp32-silkscreen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_esp32_silkscreen"' $<
 
 $(GUIDE_LAYER_BUILD)/carrier-body.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_carrier_body"' $<
