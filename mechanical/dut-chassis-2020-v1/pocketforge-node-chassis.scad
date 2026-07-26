@@ -88,6 +88,18 @@ fixture_components_presentation_mesh =
     "build/imports/pocketforge-dut-fixture-components.stl";
 fixture_labels_presentation_mesh =
     "build/imports/pocketforge-dut-fixture-labels.stl";
+fixture_relay_pcb_presentation_mesh =
+    "build/imports/pocketforge-elegoo-relay-pcb.stl";
+fixture_relay_blue_presentation_mesh =
+    "build/imports/pocketforge-elegoo-relay-blue.stl";
+fixture_relay_dark_presentation_mesh =
+    "build/imports/pocketforge-elegoo-relay-dark.stl";
+fixture_relay_metal_presentation_mesh =
+    "build/imports/pocketforge-elegoo-relay-metal.stl";
+fixture_relay_led_presentation_mesh =
+    "build/imports/pocketforge-elegoo-relay-led.stl";
+fixture_relay_silkscreen_presentation_mesh =
+    "build/imports/pocketforge-elegoo-relay-silkscreen.stl";
 fixture_bpi_pcb_presentation_mesh =
     "build/imports/pocketforge-bpi-m2-zero-pcb.stl";
 fixture_bpi_dark_presentation_mesh =
@@ -1129,6 +1141,24 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
         color([0.08, 0.48, 0.32])
             fixture_mesh_at_installed_datum(
                 fixture_labels_presentation_mesh);
+        color("#0d6f9f")
+            fixture_mesh_at_installed_datum(
+                fixture_relay_pcb_presentation_mesh);
+        color("#1688c5")
+            fixture_mesh_at_installed_datum(
+                fixture_relay_blue_presentation_mesh);
+        color("#15191d")
+            fixture_mesh_at_installed_datum(
+                fixture_relay_dark_presentation_mesh);
+        color("#c5c9cc")
+            fixture_mesh_at_installed_datum(
+                fixture_relay_metal_presentation_mesh);
+        color("#d72828")
+            fixture_mesh_at_installed_datum(
+                fixture_relay_led_presentation_mesh);
+        color("#eef2ed")
+            fixture_mesh_at_installed_datum(
+                fixture_relay_silkscreen_presentation_mesh);
         color("#1769a8")
             fixture_mesh_at_installed_datum(
                 fixture_bpi_pcb_presentation_mesh);
@@ -3750,6 +3780,31 @@ module guide_layer_fixture_labels() {
     fixture_mesh_at_installed_datum(fixture_labels_presentation_mesh);
 }
 
+module guide_layer_fixture_relay_pcb() {
+    fixture_mesh_at_installed_datum(fixture_relay_pcb_presentation_mesh);
+}
+
+module guide_layer_fixture_relay_blue() {
+    fixture_mesh_at_installed_datum(fixture_relay_blue_presentation_mesh);
+}
+
+module guide_layer_fixture_relay_dark() {
+    fixture_mesh_at_installed_datum(fixture_relay_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_relay_metal() {
+    fixture_mesh_at_installed_datum(fixture_relay_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_relay_led() {
+    fixture_mesh_at_installed_datum(fixture_relay_led_presentation_mesh);
+}
+
+module guide_layer_fixture_relay_silkscreen() {
+    fixture_mesh_at_installed_datum(
+        fixture_relay_silkscreen_presentation_mesh);
+}
+
 module guide_layer_fixture_bpi_pcb() {
     fixture_mesh_at_installed_datum(fixture_bpi_pcb_presentation_mesh);
 }
@@ -4104,6 +4159,18 @@ if (PART == "assembly") {
     guide_layer_fixture_components();
 } else if (PART == "guide_layer_fixture_labels") {
     guide_layer_fixture_labels();
+} else if (PART == "guide_layer_fixture_relay_pcb") {
+    guide_layer_fixture_relay_pcb();
+} else if (PART == "guide_layer_fixture_relay_blue") {
+    guide_layer_fixture_relay_blue();
+} else if (PART == "guide_layer_fixture_relay_dark") {
+    guide_layer_fixture_relay_dark();
+} else if (PART == "guide_layer_fixture_relay_metal") {
+    guide_layer_fixture_relay_metal();
+} else if (PART == "guide_layer_fixture_relay_led") {
+    guide_layer_fixture_relay_led();
+} else if (PART == "guide_layer_fixture_relay_silkscreen") {
+    guide_layer_fixture_relay_silkscreen();
 } else if (PART == "guide_layer_fixture_bpi_pcb") {
     guide_layer_fixture_bpi_pcb();
 } else if (PART == "guide_layer_fixture_bpi_dark") {

@@ -7,8 +7,11 @@
  * Export with, for example:
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
- * PART choices: preview, plate, presentation_bpi, presentation_esp32,
- * presentation_c270, presentation_components,
+ * PART choices: preview, plate, presentation_relay, presentation_bpi,
+ * presentation_esp32, presentation_c270, presentation_components,
+ * presentation_relay_pcb, presentation_relay_blue,
+ * presentation_relay_dark, presentation_relay_metal,
+ * presentation_relay_led, presentation_relay_silkscreen,
  * presentation_bpi_pcb, presentation_bpi_dark,
  * presentation_bpi_metal, presentation_bpi_gold,
  * presentation_bpi_silkscreen, presentation_esp32_pcb,
@@ -21,6 +24,7 @@
  */
 
 use <bpi-m2-zero-v1.scad>;
+use <elegoo-4-channel-relay.scad>;
 use <esp32-s3-supermini-hw747-v0.0.2.scad>;
 use <logitech-c270.scad>;
 
@@ -90,6 +94,9 @@ relay_size = [51.85, 72.70];
 relay_hole_diameter = 3.0;
 relay_hole_far_spacing = [48.03, 69.93];
 relay_hole_centres = relay_hole_far_spacing - [relay_hole_diameter, relay_hole_diameter];
+RELAY_MODEL_SCALE = 1.0;
+RELAY_MODEL_HOLE_CENTRES = relay_hole_centres;
+RELAY_MODEL_TERMINAL_EDGE = "+X";
 
 bpi_origin = [14, 84.6];
 bpi_size = [29.90, 65.00];
@@ -383,6 +390,20 @@ module bpi_model_at_fixture_datum() {
         children();
 }
 
+module relay_model_at_fixture_datum() {
+    translate([relay_origin.x, relay_origin.y,
+               plate_thickness + relay_standoff_height + 0.2])
+        // Native listing +Y is the terminal side. Rotate clockwise so that
+        // edge becomes installed +X while retaining the measured envelope.
+        translate([0, elegoo_relay_board_size().x, 0])
+            rotate([0, 0, -90])
+                children();
+}
+
+module relay_model_preview() {
+    relay_model_at_fixture_datum() elegoo_relay_complete();
+}
+
 module bpi_model_preview() {
     bpi_model_at_fixture_datum() bpi_m2_zero_complete();
 }
@@ -407,8 +428,6 @@ module c270_model_preview() {
 }
 
 module generic_component_preview(show_service_keepouts = true) {
-    envelope(relay_origin, relay_size, 15, "RoyalBlue", 2,
-             relay_standoff_height);
     envelope(boost_origin, boost_size, 12, "DarkOrange");
     envelope(mosfet_origin, mosfet_size, 8, "Teal");
     envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
@@ -427,6 +446,7 @@ module generic_component_preview(show_service_keepouts = true) {
 
 module component_preview(show_service_keepouts = true) {
     generic_component_preview(show_service_keepouts);
+    relay_model_preview();
     bpi_model_preview();
     esp32_model_preview();
     c270_model_preview();
@@ -544,6 +564,36 @@ assert(BPI_MODEL_SCALE == 1.0,
        str("BPI model scale/orientation changed: ", BPI_MODEL_SCALE));
 assert(BPI_MODEL_HOLE_CENTRES == bpi_hole_centres,
        str("BPI mounting registration changed: ", BPI_MODEL_HOLE_CENTRES));
+assert(relay_size == elegoo_relay_installed_size(),
+       str("Fixture and ELEGOO relay envelopes disagree: ", relay_size,
+           " vs ", elegoo_relay_installed_size()));
+assert(relay_hole_diameter == elegoo_relay_hole_diameter(),
+       str("Fixture and ELEGOO relay hole diameters disagree: ",
+           relay_hole_diameter, " vs ", elegoo_relay_hole_diameter()));
+assert(relay_hole_centres == elegoo_relay_installed_hole_centres(),
+       str("Fixture and ELEGOO relay mounting registration disagree: ",
+           relay_hole_centres, " vs ",
+           elegoo_relay_installed_hole_centres()));
+assert(RELAY_MODEL_SCALE == 1.0,
+       str("ELEGOO relay model scale/envelope changed: ",
+           RELAY_MODEL_SCALE));
+assert(RELAY_MODEL_HOLE_CENTRES == relay_hole_centres,
+       str("ELEGOO relay mounting registration changed: ",
+           RELAY_MODEL_HOLE_CENTRES));
+assert(RELAY_MODEL_TERMINAL_EDGE == "+X" &&
+       RELAY_MODEL_TERMINAL_EDGE ==
+       elegoo_relay_installed_terminal_edge(),
+       str("ELEGOO relay terminal/header orientation changed: ",
+           RELAY_MODEL_TERMINAL_EDGE));
+assert(elegoo_relay_channel_count() == 4 &&
+       elegoo_relay_terminal_count() == 12,
+       "ELEGOO relay population must retain four channels and 12 terminals");
+assert(elegoo_relay_amazon_main_sha256() ==
+       "a8a405e23244346ee17a98e7b317e86a2b809719e8304e413bd249308405f144",
+       "ELEGOO relay Amazon reference hash changed");
+assert(elegoo_relay_thingiverse_preview_sha256() ==
+       "d967bb2e60d35e36d019f55ab48bb20e838cf1b8e9ab65933090c9585f16ca67",
+       "ELEGOO relay rejected-model reference hash changed");
 assert(bpi_m2_zero_top_dxf_sha256() ==
        "7adbb58ab77addc91a5fc2ee84df689e5db62e7ed2b9b2b12b166684b1632833",
        "BPI top-DXF reference hash changed");
@@ -845,15 +895,29 @@ if (PART == "plate") {
     fixture_plate();
 } else if (PART == "presentation_bpi") {
     bpi_model_preview();
+} else if (PART == "presentation_relay") {
+    relay_model_preview();
 } else if (PART == "presentation_esp32") {
     esp32_model_preview();
 } else if (PART == "presentation_c270") {
     c270_model_preview();
 } else if (PART == "presentation_components") {
-    // Generic measured harness envelopes only. Exact BPI, ESP32, and C270
-    // models are exported into material-specific meshes below. Keep-outs stay
-    // analytical.
+    // Generic measured harness envelopes only. Exact relay, BPI, ESP32, and
+    // C270 models are exported into material-specific meshes below. Keep-outs
+    // stay analytical.
     generic_component_preview(false);
+} else if (PART == "presentation_relay_pcb") {
+    relay_model_at_fixture_datum() elegoo_relay_pcb();
+} else if (PART == "presentation_relay_blue") {
+    relay_model_at_fixture_datum() elegoo_relay_blue();
+} else if (PART == "presentation_relay_dark") {
+    relay_model_at_fixture_datum() elegoo_relay_dark();
+} else if (PART == "presentation_relay_metal") {
+    relay_model_at_fixture_datum() elegoo_relay_metal();
+} else if (PART == "presentation_relay_led") {
+    relay_model_at_fixture_datum() elegoo_relay_led();
+} else if (PART == "presentation_relay_silkscreen") {
+    relay_model_at_fixture_datum() elegoo_relay_silkscreen();
 } else if (PART == "presentation_bpi_pcb") {
     bpi_model_at_fixture_datum()
         bpi_m2_zero_pcb(

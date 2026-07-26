@@ -44,7 +44,9 @@ assumption:
 - ordinary metal M3 nuts measuring 5.36 mm across flats × 2.30 mm thick;
 - face-loaded M5 drop-in T-nuts with low-profile M5 × 10 mm button-head
   screws and washers no larger than 10 mm OD for registration tabs and cable
-  anchors; and
+  anchors;
+- ELEGOO B09ZQS2JRD four-channel 5 V optocoupled relay board, physically
+  fitted at 72.70 × 51.85 mm with Ø3 mm mounting holes; and
 - Logitech C270 HD webcam, reconstructed from Logitech's official product
   views and 55° diagonal FOV around the physically fitted fixture interface.
 
@@ -194,6 +196,12 @@ The presentation imports the authoritative fixture/carrier STLs from their
 sibling CAD projects. The TrimUI Smart Pro visual model is fetched from a
 pinned platform commit and verified by SHA-256. Production STL exports never
 contain presentation-only device geometry or camera-frustum overlays.
+The installed ELEGOO B09ZQS2JRD relay board is carried through as six semantic
+fixture layers: blue PCB, blue relay/terminal bodies, dark optocouplers and
+drivers, metal screws/pins, red status LEDs, and pale markings. Its exact
+51.85 × 72.70 mm installed envelope retains four relay channels, twelve screw
+terminals, the measured mounting registration, and a +X terminal-bank
+orientation.
 The installed Banana Pi BPI-M2 Zero V1.0 is carried through as five semantic
 fixture layers, preserving its blue PCB, dark packages/header, metal ports and
 shield, gold contacts, and pale silkscreen in both static renders and the

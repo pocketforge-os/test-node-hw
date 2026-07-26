@@ -49,7 +49,7 @@ the workflow matrix.
 
 Presentation-only meshes expose the populated harness without contaminating
 the production plate. `pocketforge-dut-fixture-components.stl` contains the
-seven remaining analytical interface envelopes, and
+six remaining analytical interface envelopes, and
 `pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
 Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
 into five real-material meshes: blue PCB, dark ICs/header, metal
@@ -65,6 +65,16 @@ silkscreen. `layout-esp32-s3-supermini.png` is its dedicated close-up and
 `ESP32-S3-SUPERMINI-PROVENANCE.md` records the saved Amazon reference hashes
 without redistributing listing artwork. Analytical connector/service keep-outs
 remain editor-only and are excluded.
+
+The four-channel relay is an original populated-board reconstruction of the
+exact ELEGOO `B09ZQS2JRD` / `US-EL-SM-Relay` listing revision. Six meshes keep
+its blue PCB, blue Songle-style relay cans and screw-terminal bodies, dark
+optocouplers/driver packages, metal screws/pins, red indicators, and pale
+markings distinct. The source retains the owner-fit 51.85 × 72.70 mm installed
+envelope and 45.03 × 66.93 mm hole registration, with the twelve-terminal
+bank facing +X. `layout-elegoo-relay.png` is its close-up and
+`ELEGOO-4-CHANNEL-RELAY-PROVENANCE.md` records the Amazon hashes, misleading
+listing dimensions, and rejected non-matching online models.
 
 The Logitech C270 is likewise an original source-native reconstruction, split
 into five presentation meshes for its dark-gray shell and articulated clip,
@@ -113,8 +123,10 @@ more machinery than determinism here.
   8.5 mm USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots
   sit 1.5 mm farther inward than the first print—two flanking USB-C and two
   mirrored on the opposite edge.
-- The four-channel opto-isolated relay moves 10 mm left and sits on 26 mm-high, 9 mm-diameter
-  standoffs, providing vertical clearance for the adjacent DP100 connections.
+- The four-channel opto-isolated relay moves 10 mm left and sits on 26 mm-high,
+  9 mm-diameter standoffs, providing vertical clearance for the adjacent
+  DP100 connections. Its twelve-position screw-terminal edge faces right
+  (+X), while its logic and relay-power headers face left.
 
 The plate can also be exported along the empty horizontal corridor as 200 × 150 mm lower and
 200 × 97 mm upper sections. Both fit the MK3S without rotation:
@@ -155,7 +167,8 @@ centre spacing = far-edge spacing - hole diameter
 ## Refinement workflow
 
 1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
-   Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
+   exact relay presentation geometry in `elegoo-4-channel-relay.scad`; change
+   only Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
    HW-747 presentation geometry in
    `esp32-s3-supermini-hw747-v0.0.2.scad`; and change only C270 presentation
    geometry in `logitech-c270.scad`.
@@ -164,8 +177,9 @@ centre spacing = far-edge spacing - hole diameter
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
 Most preview component blocks remain translucent analytical envelopes rather
-than cosmetic models; the BPI-M2 Zero, ESP32-S3 SuperMini, and Logitech C270
-are exact visual replacements. All preview geometry is omitted from every production STL and
+than cosmetic models; the ELEGOO relay, BPI-M2 Zero, ESP32-S3 SuperMini, and
+Logitech C270 are exact visual replacements. All preview geometry is omitted
+from every production STL and
 exists to expose inaccessible connectors and bad cable paths. The complete
 preview subtree—including the component labels—uses OpenSCAD's `%` background
 modifier. Labels remain visible in the editor but are intentionally absent
@@ -173,9 +187,11 @@ from printable meshes because the lab printer uses a 0.8 mm nozzle. Even a
 manual STL export from the default preview view contains only the printable
 fixture. `make validate` proves that preview and production exports have
 identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
-bounds, proves the ESP32's 18.50 × 23.67 mm installed envelope and bottom USB
-orientation, proves the C270's 71.00 × 31.55 mm installed face and -Z optical
-orientation, and deliberately rejects scale/registration/orientation drift. Pairwise
+bounds, proves the relay's 51.85 × 72.70 mm installed envelope, four-channel
+population, mounting registration, and +X terminal orientation, proves the
+ESP32's 18.50 × 23.67 mm installed envelope and bottom USB orientation, proves
+the C270's 71.00 × 31.55 mm installed face and -Z optical orientation, and
+deliberately rejects scale/registration/orientation drift. Pairwise
 component spacing is also machine-enforced: every render/export asserts at
 least 3 mm between envelopes; retention slots keep at least 1 mm from
 components and one another; reserved webcam/hub service zones stay clear; and
