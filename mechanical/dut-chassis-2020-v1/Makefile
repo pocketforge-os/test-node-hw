@@ -31,6 +31,11 @@ FIXTURE_ESP32_METAL_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermin
 FIXTURE_ESP32_GOLD_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-gold.stl
 FIXTURE_ESP32_ANTENNA_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-antenna.stl
 FIXTURE_ESP32_SILKSCREEN_STL := ../dut-fixture-v1/build/pocketforge-esp32-s3-supermini-silkscreen.stl
+FIXTURE_C270_SHELL_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-shell.stl
+FIXTURE_C270_DARK_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-dark.stl
+FIXTURE_C270_GLASS_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-glass.stl
+FIXTURE_C270_LED_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-led.stl
+FIXTURE_C270_LABELS_STL := ../dut-fixture-v1/build/pocketforge-logitech-c270-labels.stl
 CRADLE_BODY_STL := ../dut-cradle-v1/build/trimui-smart-pro-family-carrier-body.stl
 CRADLE_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-labels.stl
 CRADLE_S_LABELS_STL := ../dut-cradle-v1/build/trimui-smart-pro-s-labels.stl
@@ -51,6 +56,11 @@ PRESENTATION_FIXTURE_ESP32_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-e
 PRESENTATION_FIXTURE_ESP32_GOLD_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-gold.stl
 PRESENTATION_FIXTURE_ESP32_ANTENNA_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-antenna.stl
 PRESENTATION_FIXTURE_ESP32_SILKSCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-esp32-s3-supermini-silkscreen.stl
+PRESENTATION_FIXTURE_C270_SHELL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-shell.stl
+PRESENTATION_FIXTURE_C270_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-dark.stl
+PRESENTATION_FIXTURE_C270_GLASS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-glass.stl
+PRESENTATION_FIXTURE_C270_LED_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-led.stl
+PRESENTATION_FIXTURE_C270_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-logitech-c270-labels.stl
 PRESENTATION_CRADLE_BODY_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-family-carrier-body.stl
 PRESENTATION_CRADLE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-labels.stl
 PRESENTATION_CRADLE_S_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-labels.stl
@@ -79,6 +89,11 @@ PRESENTATION_ASSETS := \
 	$(PRESENTATION_FIXTURE_ESP32_GOLD_STL) \
 	$(PRESENTATION_FIXTURE_ESP32_ANTENNA_STL) \
 	$(PRESENTATION_FIXTURE_ESP32_SILKSCREEN_STL) \
+	$(PRESENTATION_FIXTURE_C270_SHELL_STL) \
+	$(PRESENTATION_FIXTURE_C270_DARK_STL) \
+	$(PRESENTATION_FIXTURE_C270_GLASS_STL) \
+	$(PRESENTATION_FIXTURE_C270_LED_STL) \
+	$(PRESENTATION_FIXTURE_C270_LABELS_STL) \
 	$(PRESENTATION_CRADLE_BODY_STL) \
 	$(PRESENTATION_CRADLE_LABELS_STL) \
 	$(PRESENTATION_CRADLE_S_LABELS_STL) \
@@ -207,7 +222,11 @@ GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/device-shell.stl \
 	$(GUIDE_LAYER_BUILD)/device-controls.stl \
 	$(GUIDE_LAYER_BUILD)/device-screen.stl \
-	$(GUIDE_LAYER_BUILD)/webcam.stl \
+	$(GUIDE_LAYER_BUILD)/webcam-shell.stl \
+	$(GUIDE_LAYER_BUILD)/webcam-dark.stl \
+	$(GUIDE_LAYER_BUILD)/webcam-glass.stl \
+	$(GUIDE_LAYER_BUILD)/webcam-led.stl \
+	$(GUIDE_LAYER_BUILD)/webcam-labels.stl \
 	$(GUIDE_LAYER_BUILD)/power-strip.stl \
 	$(GUIDE_LAYER_BUILD)/placard-holder.stl \
 	$(GUIDE_LAYER_BUILD)/placard-insert.stl \
@@ -395,6 +414,21 @@ $(FIXTURE_ESP32_ANTENNA_STL):
 $(FIXTURE_ESP32_SILKSCREEN_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-esp32-s3-supermini-silkscreen.stl
 
+$(FIXTURE_C270_SHELL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-logitech-c270-shell.stl
+
+$(FIXTURE_C270_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-logitech-c270-dark.stl
+
+$(FIXTURE_C270_GLASS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-logitech-c270-glass.stl
+
+$(FIXTURE_C270_LED_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-logitech-c270-led.stl
+
+$(FIXTURE_C270_LABELS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-logitech-c270-labels.stl
+
 $(CRADLE_BODY_STL):
 	$(MAKE) -C ../dut-cradle-v1 build/trimui-smart-pro-family-carrier-body.stl
 
@@ -447,6 +481,21 @@ $(PRESENTATION_FIXTURE_ESP32_ANTENNA_STL): $(FIXTURE_ESP32_ANTENNA_STL) | $(PRES
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_ESP32_SILKSCREEN_STL): $(FIXTURE_ESP32_SILKSCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_C270_SHELL_STL): $(FIXTURE_C270_SHELL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_C270_DARK_STL): $(FIXTURE_C270_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_C270_GLASS_STL): $(FIXTURE_C270_GLASS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_C270_LED_STL): $(FIXTURE_C270_LED_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_C270_LABELS_STL): $(FIXTURE_C270_LABELS_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
 $(PRESENTATION_CRADLE_BODY_STL): $(CRADLE_BODY_STL) | $(PRESENTATION_IMPORT_DIR)
@@ -855,8 +904,20 @@ $(GUIDE_LAYER_BUILD)/device-controls.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUI
 $(GUIDE_LAYER_BUILD)/device-screen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_device_screen"' $<
 
-$(GUIDE_LAYER_BUILD)/webcam.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_webcam"' $<
+$(GUIDE_LAYER_BUILD)/webcam-shell.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_webcam_shell"' $<
+
+$(GUIDE_LAYER_BUILD)/webcam-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_webcam_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/webcam-glass.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_webcam_glass"' $<
+
+$(GUIDE_LAYER_BUILD)/webcam-led.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_webcam_led"' $<
+
+$(GUIDE_LAYER_BUILD)/webcam-labels.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_webcam_labels"' $<
 
 $(GUIDE_LAYER_BUILD)/power-strip.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_power_strip"' $<

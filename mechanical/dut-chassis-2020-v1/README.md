@@ -45,7 +45,8 @@ assumption:
 - face-loaded M5 drop-in T-nuts with low-profile M5 × 10 mm button-head
   screws and washers no larger than 10 mm OD for registration tabs and cable
   anchors; and
-- Logitech C270 HD webcam, conservatively modeled from its 55° diagonal FOV.
+- Logitech C270 HD webcam, reconstructed from Logitech's official product
+  views and 55° diagonal FOV around the physically fitted fixture interface.
 
 The outer-frame and stacking load path is aluminum plus metal connectors.
 Printed channel bars, gantry plates, carrier links, and registration tabs are
@@ -202,6 +203,11 @@ six more semantic fixture layers: black PCB, dark ICs/buttons, metal USB-C and
 switch frames, gold contacts, red ceramic antenna, and pale silkscreen. The
 mesh retains the fixture's physical 18.50 × 23.67 mm envelope with USB-C
 pointing down toward its service corridor.
+The installed Logitech C270 is carried through as five semantic layers:
+dark-gray shell/articulated clip, black bezel/lens/cable, lens glass, lime
+activity LED, and pale markings. The physically fitted body stays centered on
+the fixture while its left-offset lens remains registered to the DUT optical
+axis.
 The semantic model and static previews split the white placard insert from its
 black raised device-name labels at `placard_insert_thickness`. The production
 nameplate remains one fused STL on its own bed: print white through 2.4 mm,

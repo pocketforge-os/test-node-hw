@@ -49,7 +49,7 @@ the workflow matrix.
 
 Presentation-only meshes expose the populated harness without contaminating
 the production plate. `pocketforge-dut-fixture-components.stl` contains the
-eight remaining interface envelopes (including the under-plate webcam), and
+seven remaining analytical interface envelopes, and
 `pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
 Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
 into five real-material meshes: blue PCB, dark ICs/header, metal
@@ -65,6 +65,16 @@ silkscreen. `layout-esp32-s3-supermini.png` is its dedicated close-up and
 `ESP32-S3-SUPERMINI-PROVENANCE.md` records the saved Amazon reference hashes
 without redistributing listing artwork. Analytical connector/service keep-outs
 remain editor-only and are excluded.
+
+The Logitech C270 is likewise an original source-native reconstruction, split
+into five presentation meshes for its dark-gray shell and articulated clip,
+black bezel/lens/cable, lens glass, lime activity LED, and pale front
+markings. The body retains the physically fitted 71.00 × 31.55 mm face, while
+the asymmetric lens—not the shell center—defines the optical datum.
+`layout-logitech-c270.png` is its dedicated close-up and
+`LOGITECH-C270-PROVENANCE.md` records Logitech's official dimensions,
+reference hashes, and the rejected online-model candidates without
+redistributing any external geometry.
 
 No container is required for this: OpenSCAD is a single distro package, the source is portable, and
 the stdlib-only bounds validator removes Python dependency drift. A container would add substantially
@@ -88,8 +98,10 @@ more machinery than determinism here.
   and one vertical anchor, aimed toward its two adjacent rails. The 5.5 mm opening is intended for a
   common 4.8 mm heavy-duty cable tie; confirm the actual tie in the fit coupon before printing the
   plate. A 5 mm component keep-out remains around every frame slot for threading access.
-- The webcam is centred left-to-right and kept near the plate centre. A machine-enforced 71 × 20 mm
-  clear strip immediately below it is reserved for the owner's later secondary block.
+- The webcam body is centred left-to-right and kept near the plate centre.
+  Its left-offset C270 lens remains the optical datum. A machine-enforced
+  71 × 20 mm clear strip immediately below it is reserved for the owner's
+  later secondary block.
 - The upper powered USB/Ethernet hub has a 25 mm connector bay above it and an 18 × 12 mm cable
   corridor at its right end. Its lower and left sides reserve no unused cable space. Its two 7 × 2.7 mm
   tie-slot pairs include the extra 0.5 mm width requested after the first physical fit.
@@ -145,14 +157,15 @@ centre spacing = far-edge spacing - hole diameter
 1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
    Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
    HW-747 presentation geometry in
-   `esp32-s3-supermini-hw747-v0.0.2.scad`.
+   `esp32-s3-supermini-hw747-v0.0.2.scad`; and change only C270 presentation
+   geometry in `logitech-c270.scad`.
 2. Run `make preview validate`.
 3. Reprint only the fit coupon when changing pilot, tie-slot, or webcam-aperture tolerances.
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
 Most preview component blocks remain translucent analytical envelopes rather
-than cosmetic models; the BPI-M2 Zero and ESP32-S3 SuperMini are exact
-populated-board replacements. All preview geometry is omitted from every production STL and
+than cosmetic models; the BPI-M2 Zero, ESP32-S3 SuperMini, and Logitech C270
+are exact visual replacements. All preview geometry is omitted from every production STL and
 exists to expose inaccessible connectors and bad cable paths. The complete
 preview subtree—including the component labels—uses OpenSCAD's `%` background
 modifier. Labels remain visible in the editor but are intentionally absent
@@ -161,6 +174,7 @@ manual STL export from the default preview view contains only the printable
 fixture. `make validate` proves that preview and production exports have
 identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
 bounds, proves the ESP32's 18.50 × 23.67 mm installed envelope and bottom USB
+orientation, proves the C270's 71.00 × 31.55 mm installed face and -Z optical
 orientation, and deliberately rejects scale/registration/orientation drift. Pairwise
 component spacing is also machine-enforced: every render/export asserts at
 least 3 mm between envelopes; retention slots keep at least 1 mm from

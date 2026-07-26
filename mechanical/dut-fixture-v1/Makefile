@@ -7,6 +7,8 @@ BPI_SOURCE := bpi-m2-zero-v1.scad
 BPI_PROVENANCE := BPI-M2-ZERO-PROVENANCE.md
 ESP32_SOURCE := esp32-s3-supermini-hw747-v0.0.2.scad
 ESP32_PROVENANCE := ESP32-S3-SUPERMINI-PROVENANCE.md
+C270_SOURCE := logitech-c270.scad
+C270_PROVENANCE := LOGITECH-C270-PROVENANCE.md
 BPI_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-bpi-m2-zero-pcb.stl \
 	$(BUILD)/pocketforge-bpi-m2-zero-dark.stl \
@@ -21,11 +23,19 @@ ESP32_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-esp32-s3-supermini-antenna.stl \
 	$(BUILD)/pocketforge-esp32-s3-supermini-silkscreen.stl
 ESP32_COMPLETE_STL := $(BUILD)/pocketforge-esp32-s3-supermini-complete.stl
+C270_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-logitech-c270-shell.stl \
+	$(BUILD)/pocketforge-logitech-c270-dark.stl \
+	$(BUILD)/pocketforge-logitech-c270-glass.stl \
+	$(BUILD)/pocketforge-logitech-c270-led.stl \
+	$(BUILD)/pocketforge-logitech-c270-labels.stl
+C270_COMPLETE_STL := $(BUILD)/pocketforge-logitech-c270-complete.stl
 
 .PHONY: all lint validate validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-presentation-assets \
 	validate-bpi-model-guard validate-bpi-provenance \
-	validate-esp32-model-guard validate-esp32-provenance preview split clean
+	validate-esp32-model-guard validate-esp32-provenance \
+	validate-c270-model-guard validate-c270-provenance preview split clean
 
 all: $(BUILD)/pocketforge-dut-fixture-v1.stl $(BUILD)/fit-coupon.stl
 
@@ -38,13 +48,13 @@ lint:
 $(BUILD):
 	mkdir -p $@
 
-$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_components"' $<
 
-$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/pocketforge-bpi-m2-zero-pcb.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
@@ -83,28 +93,46 @@ $(BUILD)/pocketforge-esp32-s3-supermini-antenna.stl: $(SOURCE) $(ESP32_SOURCE) |
 $(BUILD)/pocketforge-esp32-s3-supermini-silkscreen.stl: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_esp32_silkscreen"' $<
 
-$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-logitech-c270-complete.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270"' $<
+
+$(BUILD)/pocketforge-logitech-c270-shell.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_shell"' $<
+
+$(BUILD)/pocketforge-logitech-c270-dark.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_dark"' $<
+
+$(BUILD)/pocketforge-logitech-c270-glass.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_glass"' $<
+
+$(BUILD)/pocketforge-logitech-c270-led.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_led"' $<
+
+$(BUILD)/pocketforge-logitech-c270-labels.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_labels"' $<
+
+$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_lower"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_upper"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="joiner"' -D 'SHOW_COMPONENTS=false' $<
 
 split: $(BUILD)/plate-lower.stl $(BUILD)/plate-upper.stl $(BUILD)/joiner.stl
 
-$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho --viewall \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) | $(BUILD)
+$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho \
 		--autocenter --viewall --camera=100,120,400,100,120,0 \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
@@ -119,8 +147,14 @@ $(BUILD)/layout-esp32-s3-supermini.png: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 		--viewall --camera=17,68,65,17,68,8 \
 		-D 'PART="presentation_esp32"' $<
 
+$(BUILD)/layout-logitech-c270.png: $(SOURCE) $(C270_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 --projection=ortho \
+		--viewall --camera=100,85,-130,100,132,-5 \
+		-D 'PART="presentation_c270"' $<
+
 preview: $(BUILD)/layout-preview.png $(BUILD)/layout-top.png \
-	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-esp32-s3-supermini.png
+	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-esp32-s3-supermini.png \
+	$(BUILD)/layout-logitech-c270.png
 
 validate-overlap-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/intentional-overlap.log; mesh=$(BUILD)/intentional-overlap.stl; \
@@ -212,9 +246,47 @@ validate-esp32-provenance: $(ESP32_SOURCE) $(ESP32_PROVENANCE)
 	@grep -Fq 'HW-747 V0.0.2' $(ESP32_PROVENANCE)
 	@echo 'esp32_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
 
+validate-c270-model-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/intentional-c270-face.log; \
+		mesh=$(BUILD)/intentional-c270-face.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_c270_shell"' \
+			-D 'C270_MODEL_FACE=[71.01,31.55]' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional C270 face change was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'C270 model face/fixture keep-out changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-c270-orientation.log; \
+		mesh=$(BUILD)/intentional-c270-orientation.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_c270_glass"' \
+			-D 'C270_MODEL_LENS_DIRECTION="+Z"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional C270 lens reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'C270 lens orientation changed' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'c270_model_guard=pass face=71.00x31.55 lens_direction=-Z lens_plane=-15.00'
+
+validate-c270-provenance: $(C270_SOURCE) $(C270_PROVENANCE)
+	@grep -Fq 'c86bc28778c52877a07cbd6ab03082dfe505215617180eb5064455f139a718ae' \
+		$(C270_SOURCE)
+	@grep -Fq 'ad802bc5705eceb6d75c2eb6ab4219e65e50c97678e1195910ac7b7566cd8d2b' \
+		$(C270_SOURCE)
+	@grep -Fq 'a69c4917c1f2964df2f6dc082827b46958a11e74ae3cda7a142e4d0bc9b4f3d8' \
+		$(C270_SOURCE)
+	@grep -Fq 'c86bc28778c52877a07cbd6ab03082dfe505215617180eb5064455f139a718ae' \
+		$(C270_PROVENANCE)
+	@grep -Fq 'ad802bc5705eceb6d75c2eb6ab4219e65e50c97678e1195910ac7b7566cd8d2b' \
+		$(C270_PROVENANCE)
+	@grep -Fq 'a69c4917c1f2964df2f6dc082827b46958a11e74ae3cda7a142e4d0bc9b4f3d8' \
+		$(C270_PROVENANCE)
+	@grep -Fq 'No Logitech image, third-party mesh, STEP body' $(C270_PROVENANCE)
+	@echo 'c270_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
+
 validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(BUILD)/pocketforge-dut-fixture-labels.stl $(BPI_PRESENTATION_STLS) \
-	$(ESP32_COMPLETE_STL) $(ESP32_PRESENTATION_STLS)
+	$(ESP32_COMPLETE_STL) $(ESP32_PRESENTATION_STLS) \
+	$(C270_COMPLETE_STL) $(C270_PRESENTATION_STLS)
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-components.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-labels.stl
 	$(PYTHON) scripts/stl_bounds.py \
@@ -236,11 +308,21 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-esp32-s3-supermini-gold.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-esp32-s3-supermini-antenna.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-esp32-s3-supermini-silkscreen.stl
-	@echo 'fixture_presentation_assets=pass proxies=8 labels=10 bpi_layers=5 esp32_layers=6'
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 71.00 --max-x 71.00 \
+		--min-size-y 31.55 --max-y 31.55 \
+		$(C270_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-shell.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-glass.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-led.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-labels.stl
+	@echo 'fixture_presentation_assets=pass proxies=7 labels=10 bpi_layers=5 esp32_layers=6 c270_layers=5'
 
 validate: lint all split validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-bpi-model-guard validate-bpi-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
+	validate-c270-model-guard validate-c270-provenance \
 	validate-presentation-assets
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 --allow-rotate $(BUILD)/pocketforge-dut-fixture-v1.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 250 --max-y 210 $(BUILD)/fit-coupon.stl
