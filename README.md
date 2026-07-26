@@ -30,7 +30,8 @@ Each `mechanical/*` project carries its own README with print instructions, para
 ## Building
 
 OpenSCAD renders and meshes are generated from source (`mechanical/**/*.stl` is gitignored); run the
-per-project `Makefile`. CI lints every `.scad` and publishes rendered artifacts on PRs.
+per-project `Makefile`. CI lints every `.scad`, runs the physically qualified cradle regression on
+relevant pull requests, and publishes rendered artifacts from relevant pushed revisions.
 
 ## License
 

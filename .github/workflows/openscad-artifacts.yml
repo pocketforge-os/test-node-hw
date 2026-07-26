@@ -5,6 +5,7 @@ on:
     paths:
       - "**/*.scad"
       - "mechanical/**/Makefile"
+      - "mechanical/**/qualification/**"
       - "mechanical/**/scripts/**"
       - "scripts/lint-openscad.sh"
       - "scripts/test-lint-openscad.sh"
@@ -20,7 +21,7 @@ concurrency:
 
 jobs:
   export:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -52,7 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --yes openscad xvfb
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
 
       - name: Build, preview, and validate
         env:
