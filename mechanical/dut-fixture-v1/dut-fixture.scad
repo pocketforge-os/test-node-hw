@@ -11,7 +11,17 @@
  * presentation_boost, presentation_mosfet, presentation_dp100,
  * presentation_esp32,
  * presentation_c270,
+ * presentation_antenna, presentation_powered_hub,
+ * presentation_unpowered_hub,
  * presentation_components,
+ * presentation_antenna_dark, presentation_antenna_metal,
+ * presentation_antenna_markings,
+ * presentation_vienon_shell, presentation_vienon_dark,
+ * presentation_vienon_metal, presentation_vienon_blue,
+ * presentation_vienon_led,
+ * presentation_smays_shell, presentation_smays_dark,
+ * presentation_smays_metal, presentation_smays_led,
+ * presentation_smays_markings,
  * presentation_boost_pcb, presentation_boost_dark,
  * presentation_boost_adjuster, presentation_boost_metal,
  * presentation_boost_silkscreen,
@@ -43,6 +53,9 @@ use <hiletgo-xl6009.scad>;
 use <ceksezx-mtsd001.scad>;
 use <alientek-dp100.scad>;
 use <logitech-c270.scad>;
+use <eightwood-ewua0205.scad>;
+use <vienon-usb-001.scad>;
+use <smays-microb-hub-8152.scad>;
 
 PART = "preview";
 SHOW_COMPONENTS = true;
@@ -162,9 +175,20 @@ MOSFET_MODEL_BOARD = [34.0, 17.0];
 MOSFET_MODEL_HOLE_CENTRES = mosfet_hole_centres;
 MOSFET_MODEL_TERMINAL_EDGE = "-X";
 
-antenna_origin = [42, 228.5];
-antenna_size = [110.0, 14.3];             // width measured; length provisional
+// Exact Eightwood EWUA0205 paddle. Centre the listing's 114 x 15 mm body on
+// the accepted physical tie datums; only one of the retail pair is installed.
+antenna_origin = [40, 228.5];
+antenna_size = [114.0, 15.0];
+// Keep the accepted printable slots bit-for-bit at the old 110 x 14.3 mm
+// proxy datum while centring the longer exact paddle over the same tie axes.
+antenna_tie_origin = [42, 228.5];
+antenna_tie_size = [110.0, 14.3];
 antenna_tie_x = [25, 85];
+antenna_model_tie_x = [27, 87];
+ANTENNA_MODEL_SCALE = 1.0;
+ANTENNA_MODEL_PANEL = eightwood_ewua0205_panel_size();
+ANTENNA_MODEL_CABLE_EDGE = "+X";
+antenna_install_lift = 0.20;
 // A 0.1 mm inset lets the slots meet the antenna edge while preserving both
 // the relay clearance below and over 2 mm of material at the plate's top edge.
 antenna_tie_edge_gap = -0.1;
@@ -266,10 +290,40 @@ powered_hub_size = [105.07, 24.0];
 powered_hub_tie_slot = [7.0, 2.7];
 // Important measured offsets: 24 mm from one end, 39 mm from the other.
 powered_hub_tie_x = [24.0, powered_hub_size.x - 39.0];
+POWERED_HUB_MODEL_SCALE = 1.0;
+POWERED_HUB_MODEL_BODY = smays_microb_hub_body_size();
+POWERED_HUB_MODEL_USB_EDGE = "+Y";
+POWERED_HUB_MODEL_RJ45_EDGE = "-X";
+POWERED_HUB_MODEL_OTG_EDGE = "+X";
+POWERED_HUB_MODEL_DC_EDGE = "-Y";
+powered_hub_install_lift = 0.20;
 
-unpowered_hub_origin = [63.25, 7.0];
-unpowered_hub_size = [105.0, 24.0];       // owner allowed an estimate
+// Centre the exact 100 x 30 mm Usb-001 body on the physically proven X slot
+// datums and move only its preview envelope 2 mm toward the open plate edge.
+// The production tie slots remain bit-for-bit at their original coordinates.
+unpowered_hub_origin = [65.75, 5.0];
+unpowered_hub_size = [100.0, 30.0];
+unpowered_hub_tie_origin = [63.25, 7.0];
+unpowered_hub_tie_size = [105.0, 24.0];
 unpowered_hub_tie_x = [25.0, 80.0];
+unpowered_hub_model_tie_x = [22.5, 77.5];
+UNPOWERED_HUB_MODEL_SCALE = 1.0;
+UNPOWERED_HUB_MODEL_BODY = vienon_usb001_body_size();
+UNPOWERED_HUB_MODEL_USB_EDGE = "-Y";
+UNPOWERED_HUB_MODEL_UPSTREAM_EDGE = "+X";
+unpowered_hub_install_lift = 0.20;
+
+// The Smays DC plug exits into the six-millimetre inter-hub gap, then bends
+// outward from the plate and crosses above the thinner VIENON hub. A flat 2D
+// keep-out would reject the assembly that physically fits, so preserve the
+// real three-dimensional service volume and its minimum Z clearance.
+powered_hub_dc_service_origin = [
+    powered_hub_origin.x + smays_microb_hub_dc_exit_x() - 7.0,
+    powered_hub_origin.y - 14.0,
+    plate_thickness + unpowered_hub_install_lift +
+    UNPOWERED_HUB_MODEL_BODY.z + 0.5
+];
+powered_hub_dc_service_size = [20.0, 14.0, 7.5];
 
 // ---- Basic geometry --------------------------------------------------------
 module rounded_rect_2d(size, radius) {
@@ -380,13 +434,15 @@ module fixture_cutouts() {
 
     for (feature = dp100_tie_features)
         tie_slot(feature[1], feature[2]);
-    transverse_tie_slots(antenna_origin, antenna_size, antenna_tie_x,
+    transverse_tie_slots(antenna_tie_origin, antenna_tie_size, antenna_tie_x,
                          zip_slot, antenna_tie_edge_gap);
     transverse_tie_slots(esp32_origin, esp32_size, esp32_tie_x,
                          esp32_tie_slot);
     transverse_tie_slots(powered_hub_origin, powered_hub_size, powered_hub_tie_x,
                          powered_hub_tie_slot);
-    transverse_tie_slots(unpowered_hub_origin, unpowered_hub_size, unpowered_hub_tie_x);
+    transverse_tie_slots(unpowered_hub_tie_origin,
+                         unpowered_hub_tie_size,
+                         unpowered_hub_tie_x);
 
     // Webcam is offered from below; only the smaller rear housing protrudes.
     opening = webcam_aperture + [webcam_aperture_clearance, webcam_aperture_clearance];
@@ -440,6 +496,12 @@ module service_keepout_preview(origin, size, colour = "Crimson") {
     color(colour, 0.20)
         translate([origin.x, origin.y, plate_thickness + 0.1])
             rounded_prism([size.x, size.y, 0.8], 1.5);
+}
+
+module service_keepout_volume_preview(origin, size, colour = "DeepPink") {
+    color(colour, 0.22)
+        translate(origin)
+            rounded_prism(size, min(1.5, min(size.x, size.y) / 2));
 }
 
 module bpi_model_at_fixture_datum() {
@@ -520,10 +582,73 @@ module c270_model_preview() {
     c270_model_at_fixture_datum() c270_complete();
 }
 
-module generic_component_preview(show_service_keepouts = true) {
-    envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
-    envelope(powered_hub_origin, powered_hub_size, 15, "WhiteSmoke", 4);
-    envelope(unpowered_hub_origin, unpowered_hub_size, 15, "Black", 4);
+module antenna_model_at_fixture_datum() {
+    translate([antenna_origin.x, antenna_origin.y,
+               plate_thickness + antenna_install_lift])
+        children();
+}
+
+module antenna_model_preview() {
+    antenna_model_at_fixture_datum() eightwood_ewua0205_complete();
+}
+
+module powered_hub_model_at_fixture_datum() {
+    translate([powered_hub_origin.x, powered_hub_origin.y,
+               plate_thickness + powered_hub_install_lift])
+        children();
+}
+
+module powered_hub_model_preview() {
+    powered_hub_model_at_fixture_datum() smays_microb_hub_complete();
+}
+
+module unpowered_hub_model_at_fixture_datum() {
+    translate([unpowered_hub_origin.x, unpowered_hub_origin.y,
+               plate_thickness + unpowered_hub_install_lift])
+        children();
+}
+
+module unpowered_hub_model_preview() {
+    unpowered_hub_model_at_fixture_datum() vienon_usb001_complete();
+}
+
+module transverse_retention_straps(origin, envelope, offsets_x,
+                                   component_height, install_lift = 0.20,
+                                   strap_width = 2.4) {
+    for (x = offsets_x) {
+        // Top span plus short side legs reproduce the installed black ties
+        // without duplicating hidden under-plate geometry.
+        translate([origin.x + x - strap_width / 2,
+                   origin.y - 1.2,
+                   plate_thickness + install_lift + component_height + 0.05])
+            cube([strap_width, envelope.y + 2.4, 0.75]);
+        for (y = [origin.y - 1.2, origin.y + envelope.y + 0.45])
+            translate([origin.x + x - strap_width / 2, y,
+                       plate_thickness + install_lift])
+                cube([strap_width, 0.75, component_height + 0.10]);
+    }
+}
+
+module final_component_retention_preview() {
+    color("#121417") {
+        transverse_retention_straps(
+            antenna_origin, antenna_size, antenna_model_tie_x,
+            ANTENNA_MODEL_PANEL.z, antenna_install_lift, 2.2);
+        transverse_retention_straps(
+            powered_hub_origin, powered_hub_size, powered_hub_tie_x,
+            POWERED_HUB_MODEL_BODY.z, powered_hub_install_lift, 2.7);
+        transverse_retention_straps(
+            unpowered_hub_origin, unpowered_hub_size,
+            unpowered_hub_model_tie_x,
+            UNPOWERED_HUB_MODEL_BODY.z, unpowered_hub_install_lift, 2.4);
+    }
+}
+
+module final_component_preview(show_service_keepouts = true) {
+    antenna_model_preview();
+    powered_hub_model_preview();
+    unpowered_hub_model_preview();
+    final_component_retention_preview();
     if (show_service_keepouts) {
         service_keepout_preview(webcam_below_service_origin,
                                 webcam_below_service_size);
@@ -537,11 +662,13 @@ module generic_component_preview(show_service_keepouts = true) {
                                 dp100_usb_c_service_size, "DodgerBlue");
         for (service = hub_service_envelopes)
             service_keepout_preview(service[1], service[2], "DodgerBlue");
+        service_keepout_volume_preview(powered_hub_dc_service_origin,
+                                       powered_hub_dc_service_size);
     }
 }
 
 module component_preview(show_service_keepouts = true) {
-    generic_component_preview(show_service_keepouts);
+    final_component_preview(show_service_keepouts);
     relay_model_preview();
     bpi_model_preview();
     boost_model_preview();
@@ -737,6 +864,73 @@ assert(c270_qsg_reference_sha256() ==
 assert(c270_modified_step_sha256() ==
        "a69c4917c1f2964df2f6dc082827b46958a11e74ae3cda7a142e4d0bc9b4f3d8",
        "C270 modified-STEP reference hash changed");
+assert(antenna_size ==
+       [ANTENNA_MODEL_PANEL.x, ANTENNA_MODEL_PANEL.y] &&
+       ANTENNA_MODEL_PANEL == [114.0, 15.0, 3.0] &&
+       ANTENNA_MODEL_SCALE == 1.0,
+       str("Eightwood EWUA0205 model scale/envelope changed: ",
+           ANTENNA_MODEL_SCALE, " ", ANTENNA_MODEL_PANEL));
+assert([for (x = antenna_tie_x) antenna_tie_origin.x + x] ==
+       [for (x = antenna_model_tie_x) antenna_origin.x + x] &&
+       antenna_tie_origin == [42, 228.5] &&
+       antenna_tie_size == [110.0, 14.3],
+       "Eightwood presentation moved the accepted printable tie slots");
+assert(ANTENNA_MODEL_CABLE_EDGE ==
+       eightwood_ewua0205_cable_edge() &&
+       ANTENNA_MODEL_CABLE_EDGE == "+X" &&
+       eightwood_ewua0205_installed_count() == 1 &&
+       eightwood_ewua0205_package_count() == 2,
+       "Eightwood antenna count or cable orientation changed");
+assert(eightwood_ewua0205_cable_length() == 300.0 &&
+       eightwood_ewua0205_cable_diameter() == 0.8 &&
+       eightwood_ewua0205_connector_diameter() == 2.33,
+       "Eightwood coax or MHF4 dimensions changed");
+assert(eightwood_ewua0205_hero_sha256() ==
+       "580d541c8ec83de2b863867c440c6d3ef0e778c35498bc6e53e412b1f3de4b15" &&
+       eightwood_ewua0205_dimension_sha256() ==
+       "75dcf6792c609f9e500244ad3f05d4b624a6149340f6061efd288f906b51d473",
+       "Eightwood listing reference hash changed");
+assert(powered_hub_size ==
+       [POWERED_HUB_MODEL_BODY.x, POWERED_HUB_MODEL_BODY.y] &&
+       POWERED_HUB_MODEL_BODY == [105.07, 24.0, 15.0] &&
+       POWERED_HUB_MODEL_SCALE == 1.0,
+       str("Smays hub model scale/envelope changed: ",
+           POWERED_HUB_MODEL_SCALE, " ", POWERED_HUB_MODEL_BODY));
+assert(smays_microb_hub_usb_port_count() == 3 &&
+       POWERED_HUB_MODEL_USB_EDGE == smays_microb_hub_usb_edge() &&
+       POWERED_HUB_MODEL_USB_EDGE == "+Y" &&
+       POWERED_HUB_MODEL_RJ45_EDGE == smays_microb_hub_rj45_edge() &&
+       POWERED_HUB_MODEL_RJ45_EDGE == "-X" &&
+       POWERED_HUB_MODEL_OTG_EDGE == smays_microb_hub_otg_edge() &&
+       POWERED_HUB_MODEL_OTG_EDGE == "+X" &&
+       POWERED_HUB_MODEL_DC_EDGE == smays_microb_hub_dc_edge() &&
+       POWERED_HUB_MODEL_DC_EDGE == "-Y",
+       "Smays USB/RJ45/OTG/DC interface orientation changed");
+assert(smays_microb_hub_owner_photo_sha256() ==
+       "01ecb407d5862a442ac77eb52c60763db44b5067d2c55e2e0d08fc6aed7d51e5" &&
+       smays_microb_hub_dimension_sha256() ==
+       "35268f4c3e4f45a74d5b010440570d1ead0b20dd9a472ae11d9cfb2a803fb16",
+       "Smays owner/listing reference hash changed");
+assert(unpowered_hub_size ==
+       [UNPOWERED_HUB_MODEL_BODY.x, UNPOWERED_HUB_MODEL_BODY.y] &&
+       UNPOWERED_HUB_MODEL_BODY == [100.0, 30.0, 10.0] &&
+       UNPOWERED_HUB_MODEL_SCALE == 1.0,
+       str("VIENON hub model scale/envelope changed: ",
+           UNPOWERED_HUB_MODEL_SCALE, " ", UNPOWERED_HUB_MODEL_BODY));
+assert(vienon_usb001_port_count() == 4 &&
+       vienon_usb001_usb3_port_count() == 1 &&
+       vienon_usb001_usb2_port_count() == 3 &&
+       UNPOWERED_HUB_MODEL_USB_EDGE == vienon_usb001_port_edge() &&
+       UNPOWERED_HUB_MODEL_USB_EDGE == "-Y" &&
+       UNPOWERED_HUB_MODEL_UPSTREAM_EDGE ==
+       vienon_usb001_upstream_edge() &&
+       UNPOWERED_HUB_MODEL_UPSTREAM_EDGE == "+X",
+       "VIENON port population or orientation changed");
+assert(vienon_usb001_hero_sha256() ==
+       "3c751f1dbf784083af1d7ea2ee700e7ddbccd587d77e17dfada458fb3011dc63" &&
+       vienon_usb001_internal_sha256() ==
+       "f5161ac65919ef52bc03edad6fed35815246ff483af24d3269169fc67b3c423a",
+       "VIENON listing reference hash changed");
 assert(relay_origin.x == 20 && relay_standoff_height >= 26 &&
        relay_standoff_outer_diameter >= 9,
        "Relay must retain its DP100 clearance and physically verified tall standoffs");
@@ -880,6 +1074,15 @@ assert(powered_hub_connector_side == "top" &&
 assert(powered_hub_origin.y - (unpowered_hub_origin.y + unpowered_hub_size.y) <= 11 &&
        hub_end_service_width >= 12,
        "USB hubs must retain the compact physical-fit layout and end-cable width");
+assert(powered_hub_origin.y -
+       (unpowered_hub_origin.y + unpowered_hub_size.y) == 6.0,
+       "Exact hubs must retain the photographed six-millimetre body gap");
+assert(powered_hub_dc_service_origin.y +
+       powered_hub_dc_service_size.y == powered_hub_origin.y &&
+       powered_hub_dc_service_origin.z >=
+       plate_thickness + unpowered_hub_install_lift +
+       UNPOWERED_HUB_MODEL_BODY.z + 0.5,
+       "Smays DC plug must rise above the VIENON body before crossing it");
 
 // Transparent preview solids can visually hide intersections. Make layout
 // safety machine-enforced instead: every exported part hard-fails if any two
@@ -929,13 +1132,15 @@ frame_tie_feature_envelopes = [
 ];
 retention_feature_envelopes = concat(
     [for (feature = dp100_tie_features) owned_slot_envelope(feature)],
-    transverse_slot_envelopes("antenna", antenna_origin, antenna_size,
+    transverse_slot_envelopes("antenna", antenna_tie_origin,
+                              antenna_tie_size,
                               antenna_tie_x, zip_slot, antenna_tie_edge_gap),
     transverse_slot_envelopes("esp32", esp32_origin, esp32_size,
                               esp32_tie_x, esp32_tie_slot),
     transverse_slot_envelopes("powered_hub", powered_hub_origin, powered_hub_size,
                               powered_hub_tie_x, powered_hub_tie_slot),
-    transverse_slot_envelopes("usb_hub", unpowered_hub_origin, unpowered_hub_size,
+    transverse_slot_envelopes("usb_hub", unpowered_hub_tie_origin,
+                              unpowered_hub_tie_size,
                               unpowered_hub_tie_x),
     frame_tie_feature_envelopes
 );
@@ -977,11 +1182,12 @@ hub_service_envelopes = concat(
                                 powered_hub_connector_side, powered_hub_tie_x),
     long_side_service_envelopes("usb_hub", unpowered_hub_origin,
                                 unpowered_hub_size, unpowered_hub_long_side_service_depth,
-                                unpowered_hub_connector_side, unpowered_hub_tie_x),
+                                unpowered_hub_connector_side,
+                                unpowered_hub_model_tie_x),
     [end_service_envelope("powered_hub", powered_hub_origin,
+                          powered_hub_size, powered_hub_end_service_depth, "left"),
+     end_service_envelope("powered_hub", powered_hub_origin,
                           powered_hub_size, powered_hub_end_service_depth, "right"),
-     end_service_envelope("usb_hub", unpowered_hub_origin,
-                          unpowered_hub_size, unpowered_hub_end_service_depth, "left"),
      end_service_envelope("usb_hub", unpowered_hub_origin,
                           unpowered_hub_size, unpowered_hub_end_service_depth, "right")]
 );
@@ -1002,6 +1208,22 @@ service_envelopes = concat(
       dp100_usb_c_service_size, "dp100"]],
     hub_service_envelopes
 );
+component_volumes = [
+    ["powered_hub",
+     [powered_hub_origin.x, powered_hub_origin.y,
+      plate_thickness + powered_hub_install_lift],
+     POWERED_HUB_MODEL_BODY],
+    ["usb_hub",
+     [unpowered_hub_origin.x, unpowered_hub_origin.y,
+      plate_thickness + unpowered_hub_install_lift],
+     UNPOWERED_HUB_MODEL_BODY]
+];
+service_volumes = [
+    ["powered_hub_dc_arch",
+     powered_hub_dc_service_origin,
+     powered_hub_dc_service_size,
+     "powered_hub"]
+];
 service_clearance = 1.0;
 
 function envelopes_violate_clearance(a, b, clearance) =
@@ -1009,6 +1231,13 @@ function envelopes_violate_clearance(a, b, clearance) =
       b[1].x + b[2].x + clearance <= a[1].x ||
       a[1].y + a[2].y + clearance <= b[1].y ||
       b[1].y + b[2].y + clearance <= a[1].y);
+function volumes_violate_clearance(a, b, clearance) =
+    !(a[1].x + a[2].x + clearance <= b[1].x ||
+      b[1].x + b[2].x + clearance <= a[1].x ||
+      a[1].y + a[2].y + clearance <= b[1].y ||
+      b[1].y + b[2].y + clearance <= a[1].y ||
+      a[1].z + a[2].z + clearance <= b[1].z ||
+      b[1].z + b[2].z + clearance <= a[1].z);
 
 joiner_fastener_envelopes = [
     for (x = joiner_centres_x)
@@ -1077,6 +1306,12 @@ for (fastener = joiner_fastener_envelopes)
                                             [feature[0], feature[1], feature[2]], 0),
                str("Fastener/retention collision: ", fastener[0],
                    " vs ", feature[0]));
+for (service = service_volumes)
+    for (component = component_volumes)
+        if (service[3] != component[0])
+            assert(!volumes_violate_clearance(service, component, 0.49),
+                   str("3D service-volume collision: ", service[0],
+                       " vs ", component[0]));
 
 if (PART == "plate") {
     fixture_plate();
@@ -1094,11 +1329,51 @@ if (PART == "plate") {
     esp32_model_preview();
 } else if (PART == "presentation_c270") {
     c270_model_preview();
+} else if (PART == "presentation_antenna") {
+    antenna_model_preview();
+} else if (PART == "presentation_powered_hub") {
+    powered_hub_model_preview();
+} else if (PART == "presentation_unpowered_hub") {
+    unpowered_hub_model_preview();
 } else if (PART == "presentation_components") {
-    // Generic measured harness envelopes only. Exact relay, BPI, boost,
-    // MOSFET, DP100, ESP32, and C270 models are exported into
-    // material-specific meshes below. Keep-outs stay analytical.
-    generic_component_preview(false);
+    // Every former proxy now has a material-specific exact model. Preserve
+    // this established semantic layer for the physical black retention ties.
+    final_component_retention_preview();
+} else if (PART == "presentation_antenna_dark") {
+    antenna_model_at_fixture_datum() {
+        eightwood_ewua0205_shell();
+        eightwood_ewua0205_coax();
+    }
+} else if (PART == "presentation_antenna_body") {
+    antenna_model_at_fixture_datum() eightwood_ewua0205_shell();
+} else if (PART == "presentation_antenna_metal") {
+    antenna_model_at_fixture_datum() eightwood_ewua0205_metal();
+} else if (PART == "presentation_antenna_markings") {
+    antenna_model_at_fixture_datum() eightwood_ewua0205_markings();
+} else if (PART == "presentation_vienon_shell") {
+    unpowered_hub_model_at_fixture_datum() vienon_usb001_shell();
+} else if (PART == "presentation_vienon_body") {
+    unpowered_hub_model_at_fixture_datum() vienon_usb001_body();
+} else if (PART == "presentation_vienon_dark") {
+    unpowered_hub_model_at_fixture_datum() vienon_usb001_dark();
+} else if (PART == "presentation_vienon_metal") {
+    unpowered_hub_model_at_fixture_datum() vienon_usb001_metal();
+} else if (PART == "presentation_vienon_blue") {
+    unpowered_hub_model_at_fixture_datum() vienon_usb001_blue();
+} else if (PART == "presentation_vienon_led") {
+    unpowered_hub_model_at_fixture_datum() vienon_usb001_led();
+} else if (PART == "presentation_smays_shell") {
+    powered_hub_model_at_fixture_datum() smays_microb_hub_shell();
+} else if (PART == "presentation_smays_body") {
+    powered_hub_model_at_fixture_datum() smays_microb_hub_body();
+} else if (PART == "presentation_smays_dark") {
+    powered_hub_model_at_fixture_datum() smays_microb_hub_dark();
+} else if (PART == "presentation_smays_metal") {
+    powered_hub_model_at_fixture_datum() smays_microb_hub_metal();
+} else if (PART == "presentation_smays_led") {
+    powered_hub_model_at_fixture_datum() smays_microb_hub_led();
+} else if (PART == "presentation_smays_markings") {
+    powered_hub_model_at_fixture_datum() smays_microb_hub_markings();
 } else if (PART == "presentation_boost_pcb") {
     boost_model_at_fixture_datum() hiletgo_xl6009_pcb();
 } else if (PART == "presentation_boost_dark") {

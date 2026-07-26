@@ -48,7 +48,11 @@ assumption:
 - ELEGOO B09ZQS2JRD four-channel 5 V optocoupled relay board, physically
   fitted at 72.70 × 51.85 mm with Ø3 mm mounting holes; and
 - Logitech C270 HD webcam, reconstructed from Logitech's official product
-  views and 55° diagonal FOV around the physically fitted fixture interface.
+  views and 55° diagonal FOV around the physically fitted fixture interface;
+- Eightwood B0CRDVS774 / EWUA0205 114 × 15 mm MHF4 antenna;
+- VIENON B09MLRPTT2 / Usb-001 100 × 30 × 10 mm four-port USB hub; and
+- Smays B00L32UUJK / microb-hub-8152 powered USB/Ethernet hub, using the
+  owner-fit 105.07 × 24 × 15 mm installed envelope.
 
 The outer-frame and stacking load path is aluminum plus metal connectors.
 Printed channel bars, gantry plates, carrier links, and registration tabs are
@@ -235,6 +239,14 @@ dark-gray shell/articulated clip, black bezel/lens/cable, lens glass, lime
 activity LED, and pale markings. The physically fitted body stays centered on
 the fixture while its left-offset lens remains registered to the DUT optical
 axis.
+The final three component proxies are replaced with thirteen semantic layers.
+The Eightwood EWUA0205 preserves its 114 × 15 mm paddle, routed coax, MHF4
+connector, and markings. The VIENON Usb-001 preserves its 100 × 30 × 10 mm
+black shell, four −Y USB-A ports, blue indicator, and +X fixed lead. The Smays
+microb-hub-8152 preserves its 105.07 × 24 × 15 mm white shell, +Y USB bank,
+−X RJ45, +X OTG lead, −Y DC input, and the installed DC plug/cable rising
+through the six-millimetre inter-hub gap before crossing above the VIENON
+body. The old `fixture-components` layer now contains retention ties only.
 The semantic model and static previews split the white placard insert from its
 black raised device-name labels at `placard_insert_thickness`. The production
 nameplate remains one fused STL on its own bed: print white through 2.4 mm,
