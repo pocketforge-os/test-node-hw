@@ -8,7 +8,11 @@
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
  * PART choices: preview, plate, presentation_relay, presentation_bpi,
- * presentation_esp32, presentation_c270, presentation_components,
+ * presentation_boost, presentation_esp32, presentation_c270,
+ * presentation_components,
+ * presentation_boost_pcb, presentation_boost_dark,
+ * presentation_boost_adjuster, presentation_boost_metal,
+ * presentation_boost_silkscreen,
  * presentation_relay_pcb, presentation_relay_blue,
  * presentation_relay_dark, presentation_relay_metal,
  * presentation_relay_led, presentation_relay_silkscreen,
@@ -26,6 +30,7 @@
 use <bpi-m2-zero-v1.scad>;
 use <elegoo-4-channel-relay.scad>;
 use <esp32-s3-supermini-hw747-v0.0.2.scad>;
+use <hiletgo-xl6009.scad>;
 use <logitech-c270.scad>;
 
 PART = "preview";
@@ -124,6 +129,9 @@ boost_hole_centres = [
     [boost_size.x - boost_hole_side_centre_inset,
      boost_hole_bottom_clearance + boost_hole_radius]
 ];
+BOOST_MODEL_SCALE = 1.0;
+BOOST_MODEL_HOLE_CENTRES = boost_hole_centres;
+BOOST_MODEL_INPUT_EDGE = "-X";
 
 // Board outline was not dimensioned. The 2.2 mm holes and 15.58 mm far-edge
 // spacing were; both holes are shown nearly touching the same board edge.
@@ -408,6 +416,16 @@ module bpi_model_preview() {
     bpi_model_at_fixture_datum() bpi_m2_zero_complete();
 }
 
+module boost_model_at_fixture_datum() {
+    translate([boost_origin.x, boost_origin.y,
+               plate_thickness + standoff_height + 0.2])
+        children();
+}
+
+module boost_model_preview() {
+    boost_model_at_fixture_datum() hiletgo_xl6009_complete();
+}
+
 module esp32_model_at_fixture_datum() {
     translate([esp32_origin.x, esp32_origin.y,
                plate_thickness + esp32_install_lift])
@@ -428,7 +446,6 @@ module c270_model_preview() {
 }
 
 module generic_component_preview(show_service_keepouts = true) {
-    envelope(boost_origin, boost_size, 12, "DarkOrange");
     envelope(mosfet_origin, mosfet_size, 8, "Teal");
     envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
     envelope(dp100_origin, dp100_size, 17.2, "SlateGray", 5);
@@ -448,6 +465,7 @@ module component_preview(show_service_keepouts = true) {
     generic_component_preview(show_service_keepouts);
     relay_model_preview();
     bpi_model_preview();
+    boost_model_preview();
     esp32_model_preview();
     c270_model_preview();
 }
@@ -642,6 +660,20 @@ assert(boost_hole_side_clearance == 5 &&
        boost_hole_top_clearance == 1.1 &&
        boost_hole_bottom_clearance == 0.7,
        "Boost mounting holes do not match their measured edge clearances");
+assert(boost_size == hiletgo_xl6009_board_size() &&
+       BOOST_MODEL_SCALE == 1.0,
+       str("HiLetgo XL6009 model scale/envelope changed: ",
+           BOOST_MODEL_SCALE, " ", boost_size));
+assert(BOOST_MODEL_HOLE_CENTRES == hiletgo_xl6009_hole_centres() &&
+       boost_hole_diameter == hiletgo_xl6009_hole_diameter(),
+       str("HiLetgo XL6009 mounting registration changed: ",
+           BOOST_MODEL_HOLE_CENTRES));
+assert(BOOST_MODEL_INPUT_EDGE == hiletgo_xl6009_input_edge() &&
+       BOOST_MODEL_INPUT_EDGE == "-X",
+       str("HiLetgo XL6009 input/output orientation changed: ",
+           BOOST_MODEL_INPUT_EDGE));
+assert(hiletgo_xl6009_complete_height() == 14.0,
+       "HiLetgo XL6009 populated height changed");
 assert(len(frame_tie_features) == 8,
        "Exactly eight 4040-frame tie anchors are required");
 assert(webcam_centre.x == plate_size.x / 2,
@@ -897,15 +929,27 @@ if (PART == "plate") {
     bpi_model_preview();
 } else if (PART == "presentation_relay") {
     relay_model_preview();
+} else if (PART == "presentation_boost") {
+    boost_model_preview();
 } else if (PART == "presentation_esp32") {
     esp32_model_preview();
 } else if (PART == "presentation_c270") {
     c270_model_preview();
 } else if (PART == "presentation_components") {
-    // Generic measured harness envelopes only. Exact relay, BPI, ESP32, and
-    // C270 models are exported into material-specific meshes below. Keep-outs
-    // stay analytical.
+    // Generic measured harness envelopes only. Exact relay, BPI, boost,
+    // ESP32, and C270 models are exported into material-specific meshes
+    // below. Keep-outs stay analytical.
     generic_component_preview(false);
+} else if (PART == "presentation_boost_pcb") {
+    boost_model_at_fixture_datum() hiletgo_xl6009_pcb();
+} else if (PART == "presentation_boost_dark") {
+    boost_model_at_fixture_datum() hiletgo_xl6009_dark();
+} else if (PART == "presentation_boost_adjuster") {
+    boost_model_at_fixture_datum() hiletgo_xl6009_adjuster();
+} else if (PART == "presentation_boost_metal") {
+    boost_model_at_fixture_datum() hiletgo_xl6009_metal();
+} else if (PART == "presentation_boost_silkscreen") {
+    boost_model_at_fixture_datum() hiletgo_xl6009_silkscreen();
 } else if (PART == "presentation_relay_pcb") {
     relay_model_at_fixture_datum() elegoo_relay_pcb();
 } else if (PART == "presentation_relay_blue") {

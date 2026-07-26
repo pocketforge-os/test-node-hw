@@ -47,6 +47,9 @@
  *   guide_layer_aluminum, guide_layer_connectors,
  *   guide_layer_printed_hardware, guide_layer_fixture_plate,
  *   guide_layer_fixture_components, guide_layer_fixture_labels,
+ *   guide_layer_fixture_boost_pcb, guide_layer_fixture_boost_dark,
+ *   guide_layer_fixture_boost_adjuster, guide_layer_fixture_boost_metal,
+ *   guide_layer_fixture_boost_silkscreen,
  *   guide_layer_fixture_bpi_pcb, guide_layer_fixture_bpi_dark,
  *   guide_layer_fixture_bpi_metal, guide_layer_fixture_bpi_gold,
  *   guide_layer_fixture_bpi_silkscreen,
@@ -100,6 +103,16 @@ fixture_relay_led_presentation_mesh =
     "build/imports/pocketforge-elegoo-relay-led.stl";
 fixture_relay_silkscreen_presentation_mesh =
     "build/imports/pocketforge-elegoo-relay-silkscreen.stl";
+fixture_boost_pcb_presentation_mesh =
+    "build/imports/pocketforge-hiletgo-xl6009-pcb.stl";
+fixture_boost_dark_presentation_mesh =
+    "build/imports/pocketforge-hiletgo-xl6009-dark.stl";
+fixture_boost_adjuster_presentation_mesh =
+    "build/imports/pocketforge-hiletgo-xl6009-adjuster.stl";
+fixture_boost_metal_presentation_mesh =
+    "build/imports/pocketforge-hiletgo-xl6009-metal.stl";
+fixture_boost_silkscreen_presentation_mesh =
+    "build/imports/pocketforge-hiletgo-xl6009-silkscreen.stl";
 fixture_bpi_pcb_presentation_mesh =
     "build/imports/pocketforge-bpi-m2-zero-pcb.stl";
 fixture_bpi_dark_presentation_mesh =
@@ -1159,6 +1172,21 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
         color("#eef2ed")
             fixture_mesh_at_installed_datum(
                 fixture_relay_silkscreen_presentation_mesh);
+        color("#0c559f")
+            fixture_mesh_at_installed_datum(
+                fixture_boost_pcb_presentation_mesh);
+        color("#131820")
+            fixture_mesh_at_installed_datum(
+                fixture_boost_dark_presentation_mesh);
+        color("#176fce")
+            fixture_mesh_at_installed_datum(
+                fixture_boost_adjuster_presentation_mesh);
+        color("#c2c8cd")
+            fixture_mesh_at_installed_datum(
+                fixture_boost_metal_presentation_mesh);
+        color("#eef1eb")
+            fixture_mesh_at_installed_datum(
+                fixture_boost_silkscreen_presentation_mesh);
         color("#1769a8")
             fixture_mesh_at_installed_datum(
                 fixture_bpi_pcb_presentation_mesh);
@@ -3805,6 +3833,28 @@ module guide_layer_fixture_relay_silkscreen() {
         fixture_relay_silkscreen_presentation_mesh);
 }
 
+module guide_layer_fixture_boost_pcb() {
+    fixture_mesh_at_installed_datum(fixture_boost_pcb_presentation_mesh);
+}
+
+module guide_layer_fixture_boost_dark() {
+    fixture_mesh_at_installed_datum(fixture_boost_dark_presentation_mesh);
+}
+
+module guide_layer_fixture_boost_adjuster() {
+    fixture_mesh_at_installed_datum(
+        fixture_boost_adjuster_presentation_mesh);
+}
+
+module guide_layer_fixture_boost_metal() {
+    fixture_mesh_at_installed_datum(fixture_boost_metal_presentation_mesh);
+}
+
+module guide_layer_fixture_boost_silkscreen() {
+    fixture_mesh_at_installed_datum(
+        fixture_boost_silkscreen_presentation_mesh);
+}
+
 module guide_layer_fixture_bpi_pcb() {
     fixture_mesh_at_installed_datum(fixture_bpi_pcb_presentation_mesh);
 }
@@ -4171,6 +4221,16 @@ if (PART == "assembly") {
     guide_layer_fixture_relay_led();
 } else if (PART == "guide_layer_fixture_relay_silkscreen") {
     guide_layer_fixture_relay_silkscreen();
+} else if (PART == "guide_layer_fixture_boost_pcb") {
+    guide_layer_fixture_boost_pcb();
+} else if (PART == "guide_layer_fixture_boost_dark") {
+    guide_layer_fixture_boost_dark();
+} else if (PART == "guide_layer_fixture_boost_adjuster") {
+    guide_layer_fixture_boost_adjuster();
+} else if (PART == "guide_layer_fixture_boost_metal") {
+    guide_layer_fixture_boost_metal();
+} else if (PART == "guide_layer_fixture_boost_silkscreen") {
+    guide_layer_fixture_boost_silkscreen();
 } else if (PART == "guide_layer_fixture_bpi_pcb") {
     guide_layer_fixture_bpi_pcb();
 } else if (PART == "guide_layer_fixture_bpi_dark") {

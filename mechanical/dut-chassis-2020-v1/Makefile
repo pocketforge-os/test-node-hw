@@ -26,6 +26,11 @@ FIXTURE_RELAY_DARK_STL := ../dut-fixture-v1/build/pocketforge-elegoo-relay-dark.
 FIXTURE_RELAY_METAL_STL := ../dut-fixture-v1/build/pocketforge-elegoo-relay-metal.stl
 FIXTURE_RELAY_LED_STL := ../dut-fixture-v1/build/pocketforge-elegoo-relay-led.stl
 FIXTURE_RELAY_SILKSCREEN_STL := ../dut-fixture-v1/build/pocketforge-elegoo-relay-silkscreen.stl
+FIXTURE_BOOST_PCB_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-pcb.stl
+FIXTURE_BOOST_DARK_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-dark.stl
+FIXTURE_BOOST_ADJUSTER_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-adjuster.stl
+FIXTURE_BOOST_METAL_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-metal.stl
+FIXTURE_BOOST_SILKSCREEN_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-silkscreen.stl
 FIXTURE_BPI_PCB_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-pcb.stl
 FIXTURE_BPI_DARK_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-dark.stl
 FIXTURE_BPI_METAL_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-metal.stl
@@ -57,6 +62,11 @@ PRESENTATION_FIXTURE_RELAY_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-el
 PRESENTATION_FIXTURE_RELAY_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-elegoo-relay-metal.stl
 PRESENTATION_FIXTURE_RELAY_LED_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-elegoo-relay-led.stl
 PRESENTATION_FIXTURE_RELAY_SILKSCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-elegoo-relay-silkscreen.stl
+PRESENTATION_FIXTURE_BOOST_PCB_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-pcb.stl
+PRESENTATION_FIXTURE_BOOST_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-dark.stl
+PRESENTATION_FIXTURE_BOOST_ADJUSTER_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-adjuster.stl
+PRESENTATION_FIXTURE_BOOST_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-metal.stl
+PRESENTATION_FIXTURE_BOOST_SILKSCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-silkscreen.stl
 PRESENTATION_FIXTURE_BPI_PCB_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-pcb.stl
 PRESENTATION_FIXTURE_BPI_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-dark.stl
 PRESENTATION_FIXTURE_BPI_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-metal.stl
@@ -96,6 +106,11 @@ PRESENTATION_ASSETS := \
 	$(PRESENTATION_FIXTURE_RELAY_METAL_STL) \
 	$(PRESENTATION_FIXTURE_RELAY_LED_STL) \
 	$(PRESENTATION_FIXTURE_RELAY_SILKSCREEN_STL) \
+	$(PRESENTATION_FIXTURE_BOOST_PCB_STL) \
+	$(PRESENTATION_FIXTURE_BOOST_DARK_STL) \
+	$(PRESENTATION_FIXTURE_BOOST_ADJUSTER_STL) \
+	$(PRESENTATION_FIXTURE_BOOST_METAL_STL) \
+	$(PRESENTATION_FIXTURE_BOOST_SILKSCREEN_STL) \
 	$(PRESENTATION_FIXTURE_BPI_PCB_STL) \
 	$(PRESENTATION_FIXTURE_BPI_DARK_STL) \
 	$(PRESENTATION_FIXTURE_BPI_METAL_STL) \
@@ -229,6 +244,11 @@ GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/fixture-relay-metal.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-relay-led.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-relay-silkscreen.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-boost-pcb.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-boost-dark.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-boost-adjuster.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-boost-metal.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-boost-silkscreen.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-pcb.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-dark.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-metal.stl \
@@ -423,6 +443,21 @@ $(FIXTURE_RELAY_LED_STL):
 $(FIXTURE_RELAY_SILKSCREEN_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-elegoo-relay-silkscreen.stl
 
+$(FIXTURE_BOOST_PCB_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-hiletgo-xl6009-pcb.stl
+
+$(FIXTURE_BOOST_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-hiletgo-xl6009-dark.stl
+
+$(FIXTURE_BOOST_ADJUSTER_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-hiletgo-xl6009-adjuster.stl
+
+$(FIXTURE_BOOST_METAL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-hiletgo-xl6009-metal.stl
+
+$(FIXTURE_BOOST_SILKSCREEN_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-hiletgo-xl6009-silkscreen.stl
+
 $(FIXTURE_BPI_PCB_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-pcb.stl
 
@@ -508,6 +543,21 @@ $(PRESENTATION_FIXTURE_RELAY_LED_STL): $(FIXTURE_RELAY_LED_STL) | $(PRESENTATION
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_RELAY_SILKSCREEN_STL): $(FIXTURE_RELAY_SILKSCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BOOST_PCB_STL): $(FIXTURE_BOOST_PCB_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BOOST_DARK_STL): $(FIXTURE_BOOST_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BOOST_ADJUSTER_STL): $(FIXTURE_BOOST_ADJUSTER_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BOOST_METAL_STL): $(FIXTURE_BOOST_METAL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_BOOST_SILKSCREEN_STL): $(FIXTURE_BOOST_SILKSCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_BPI_PCB_STL): $(FIXTURE_BPI_PCB_STL) | $(PRESENTATION_IMPORT_DIR)
@@ -930,6 +980,21 @@ $(GUIDE_LAYER_BUILD)/fixture-relay-led.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_B
 
 $(GUIDE_LAYER_BUILD)/fixture-relay-silkscreen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_relay_silkscreen"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-boost-pcb.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_boost_pcb"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-boost-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_boost_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-boost-adjuster.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_boost_adjuster"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-boost-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_boost_metal"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-boost-silkscreen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_boost_silkscreen"' $<
 
 $(GUIDE_LAYER_BUILD)/fixture-bpi-pcb.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_pcb"' $<
