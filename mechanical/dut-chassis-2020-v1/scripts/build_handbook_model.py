@@ -21,6 +21,32 @@ LAYER_MATERIALS = {
     "fixture-plate": ("Fixture plate", "#d9dbd6", 0.0, 0.58, 1.0),
     "fixture-components": ("Fixture components", "#20384b", 0.02, 0.52, 1.0),
     "fixture-labels": ("Fixture labels", "#16794f", 0.0, 0.55, 1.0),
+    "fixture-relay-pcb": (
+        "ELEGOO relay blue PCB", "#0d6f9f", 0.0, 0.44, 1.0
+    ),
+    "fixture-relay-blue": (
+        "ELEGOO relay cans and terminal bodies",
+        "#1688c5",
+        0.0,
+        0.38,
+        1.0,
+    ),
+    "fixture-relay-dark": (
+        "ELEGOO relay optocouplers and drivers",
+        "#15191d",
+        0.0,
+        0.34,
+        1.0,
+    ),
+    "fixture-relay-metal": (
+        "ELEGOO relay terminals and pins", "#c5c9cc", 0.76, 0.24, 1.0
+    ),
+    "fixture-relay-led": (
+        "ELEGOO relay status LEDs", "#d72828", 0.0, 0.28, 1.0
+    ),
+    "fixture-relay-silkscreen": (
+        "ELEGOO relay markings", "#eef2ed", 0.0, 0.50, 1.0
+    ),
     "fixture-bpi-pcb": (
         "Banana Pi blue PCB", "#1769a8", 0.0, 0.44, 1.0
     ),

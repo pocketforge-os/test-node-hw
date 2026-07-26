@@ -5,6 +5,8 @@ BUILD := build
 SOURCE := dut-fixture.scad
 BPI_SOURCE := bpi-m2-zero-v1.scad
 BPI_PROVENANCE := BPI-M2-ZERO-PROVENANCE.md
+RELAY_SOURCE := elegoo-4-channel-relay.scad
+RELAY_PROVENANCE := ELEGOO-4-CHANNEL-RELAY-PROVENANCE.md
 ESP32_SOURCE := esp32-s3-supermini-hw747-v0.0.2.scad
 ESP32_PROVENANCE := ESP32-S3-SUPERMINI-PROVENANCE.md
 C270_SOURCE := logitech-c270.scad
@@ -15,6 +17,14 @@ BPI_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-bpi-m2-zero-metal.stl \
 	$(BUILD)/pocketforge-bpi-m2-zero-gold.stl \
 	$(BUILD)/pocketforge-bpi-m2-zero-silkscreen.stl
+RELAY_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-elegoo-relay-pcb.stl \
+	$(BUILD)/pocketforge-elegoo-relay-blue.stl \
+	$(BUILD)/pocketforge-elegoo-relay-dark.stl \
+	$(BUILD)/pocketforge-elegoo-relay-metal.stl \
+	$(BUILD)/pocketforge-elegoo-relay-led.stl \
+	$(BUILD)/pocketforge-elegoo-relay-silkscreen.stl
+RELAY_COMPLETE_STL := $(BUILD)/pocketforge-elegoo-relay-complete.stl
 ESP32_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-esp32-s3-supermini-pcb.stl \
 	$(BUILD)/pocketforge-esp32-s3-supermini-dark.stl \
@@ -34,6 +44,7 @@ C270_COMPLETE_STL := $(BUILD)/pocketforge-logitech-c270-complete.stl
 .PHONY: all lint validate validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-presentation-assets \
 	validate-bpi-model-guard validate-bpi-provenance \
+	validate-relay-model-guard validate-relay-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance preview split clean
 
@@ -48,13 +59,13 @@ lint:
 $(BUILD):
 	mkdir -p $@
 
-$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_components"' $<
 
-$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/pocketforge-bpi-m2-zero-pcb.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
@@ -71,6 +82,27 @@ $(BUILD)/pocketforge-bpi-m2-zero-gold.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
 
 $(BUILD)/pocketforge-bpi-m2-zero-silkscreen.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_bpi_silkscreen"' $<
+
+$(BUILD)/pocketforge-elegoo-relay-complete.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay"' $<
+
+$(BUILD)/pocketforge-elegoo-relay-pcb.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay_pcb"' $<
+
+$(BUILD)/pocketforge-elegoo-relay-blue.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay_blue"' $<
+
+$(BUILD)/pocketforge-elegoo-relay-dark.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay_dark"' $<
+
+$(BUILD)/pocketforge-elegoo-relay-metal.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay_metal"' $<
+
+$(BUILD)/pocketforge-elegoo-relay-led.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay_led"' $<
+
+$(BUILD)/pocketforge-elegoo-relay-silkscreen.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay_silkscreen"' $<
 
 $(BUILD)/pocketforge-esp32-s3-supermini-complete.stl: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_esp32"' $<
@@ -111,28 +143,28 @@ $(BUILD)/pocketforge-logitech-c270-led.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 $(BUILD)/pocketforge-logitech-c270-labels.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_labels"' $<
 
-$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_lower"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_upper"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="joiner"' -D 'SHOW_COMPONENTS=false' $<
 
 split: $(BUILD)/plate-lower.stl $(BUILD)/plate-upper.stl $(BUILD)/joiner.stl
 
-$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho --viewall \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho \
 		--autocenter --viewall --camera=100,120,400,100,120,0 \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
@@ -141,6 +173,11 @@ $(BUILD)/layout-bpi-m2-zero.png: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,1400 --projection=ortho \
 		--viewall --camera=29,60,115,29,117,10 \
 		-D 'PART="presentation_bpi"' $<
+
+$(BUILD)/layout-elegoo-relay.png: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,900 --projection=ortho \
+		--viewall --camera=45,189,110,45,189,28 \
+		-D 'PART="presentation_relay"' $<
 
 $(BUILD)/layout-esp32-s3-supermini.png: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,1400 --projection=ortho \
@@ -153,7 +190,8 @@ $(BUILD)/layout-logitech-c270.png: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 		-D 'PART="presentation_c270"' $<
 
 preview: $(BUILD)/layout-preview.png $(BUILD)/layout-top.png \
-	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-esp32-s3-supermini.png \
+	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-elegoo-relay.png \
+	$(BUILD)/layout-esp32-s3-supermini.png \
 	$(BUILD)/layout-logitech-c270.png
 
 validate-overlap-guard: | $(BUILD)
@@ -215,6 +253,49 @@ validate-bpi-provenance: $(BPI_SOURCE) $(BPI_PROVENANCE)
 	@grep -Fq '9d0815fd9bdb3cb5dd790d8dda1eb132a36802b586dc5eab696c79cea3dc592a' \
 		$(BPI_PROVENANCE)
 	@echo 'bpi_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
+
+validate-relay-model-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/intentional-relay-scale.log; \
+		mesh=$(BUILD)/intentional-relay-scale.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_relay_pcb"' \
+			-D 'RELAY_MODEL_SCALE=1.01' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional relay scale change was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'ELEGOO relay model scale/envelope changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-relay-orientation.log; \
+		mesh=$(BUILD)/intentional-relay-orientation.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_relay_pcb"' \
+			-D 'RELAY_MODEL_TERMINAL_EDGE="-X"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional relay terminal reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'ELEGOO relay terminal/header orientation changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-relay-registration.log; \
+		mesh=$(BUILD)/intentional-relay-registration.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_relay_pcb"' \
+			-D 'RELAY_MODEL_HOLE_CENTRES=[45.04,66.93]' \
+			$(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional relay registration change was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'ELEGOO relay mounting registration changed' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'relay_model_guard=pass envelope=51.85x72.70 holes=45.03x66.93 terminal_edge=+X'
+
+validate-relay-provenance: $(RELAY_SOURCE) $(RELAY_PROVENANCE)
+	@grep -Fq 'a8a405e23244346ee17a98e7b317e86a2b809719e8304e413bd249308405f144' \
+		$(RELAY_SOURCE)
+	@grep -Fq 'd967bb2e60d35e36d019f55ab48bb20e838cf1b8e9ab65933090c9585f16ca67' \
+		$(RELAY_SOURCE)
+	@grep -Fq 'a8a405e23244346ee17a98e7b317e86a2b809719e8304e413bd249308405f144' \
+		$(RELAY_PROVENANCE)
+	@grep -Fq 'd967bb2e60d35e36d019f55ab48bb20e838cf1b8e9ab65933090c9585f16ca67' \
+		$(RELAY_PROVENANCE)
+	@grep -Fq 'No Amazon image, ELEGOO artwork, EDA file' $(RELAY_PROVENANCE)
+	@echo 'relay_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
 
 validate-esp32-model-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/intentional-esp32-scale.log; \
@@ -284,11 +365,27 @@ validate-c270-provenance: $(C270_SOURCE) $(C270_PROVENANCE)
 	@echo 'c270_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
 
 validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
-	$(BUILD)/pocketforge-dut-fixture-labels.stl $(BPI_PRESENTATION_STLS) \
+	$(BUILD)/pocketforge-dut-fixture-labels.stl \
+	$(RELAY_COMPLETE_STL) $(RELAY_PRESENTATION_STLS) \
+	$(BPI_PRESENTATION_STLS) \
 	$(ESP32_COMPLETE_STL) $(ESP32_PRESENTATION_STLS) \
 	$(C270_COMPLETE_STL) $(C270_PRESENTATION_STLS)
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-components.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-dut-fixture-labels.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 51.85 --max-x 51.85 \
+		--min-size-y 72.70 --max-y 72.70 \
+		$(RELAY_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 51.85 --max-x 51.85 \
+		--min-size-y 72.70 --max-y 72.70 \
+		--min-size-z 1.60 --max-z 1.60 \
+		$(BUILD)/pocketforge-elegoo-relay-pcb.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-blue.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-metal.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-led.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-silkscreen.stl
 	$(PYTHON) scripts/stl_bounds.py \
 		--min-size-x 29.90 --max-x 29.90 \
 		--min-size-y 65.00 --max-y 65.00 \
@@ -317,10 +414,11 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-glass.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-led.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-labels.stl
-	@echo 'fixture_presentation_assets=pass proxies=7 labels=10 bpi_layers=5 esp32_layers=6 c270_layers=5'
+	@echo 'fixture_presentation_assets=pass proxies=6 labels=10 relay_layers=6 bpi_layers=5 esp32_layers=6 c270_layers=5'
 
 validate: lint all split validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-bpi-model-guard validate-bpi-provenance \
+	validate-relay-model-guard validate-relay-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance \
 	validate-presentation-assets
