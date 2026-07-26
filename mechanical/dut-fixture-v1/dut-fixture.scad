@@ -298,15 +298,16 @@ POWERED_HUB_MODEL_OTG_EDGE = "+X";
 POWERED_HUB_MODEL_DC_EDGE = "-Y";
 powered_hub_install_lift = 0.20;
 
-// Centre the exact 100 x 30 mm Usb-001 body on the physically proven X slot
-// datums and move only its preview envelope 2 mm toward the open plate edge.
-// The production tie slots remain bit-for-bit at their original coordinates.
-unpowered_hub_origin = [65.75, 5.0];
+// The installed Usb-001 body sits 20 mm left of its original tie-envelope
+// datum so the two existing ties land near its middle and +X end, exactly as
+// shown in the owner's fixture photo. Its Y position remains 2 mm toward the
+// open plate edge. The production tie slots stay bit-for-bit unchanged.
+unpowered_hub_origin = [43.25, 5.0];
 unpowered_hub_size = [100.0, 30.0];
 unpowered_hub_tie_origin = [63.25, 7.0];
 unpowered_hub_tie_size = [105.0, 24.0];
 unpowered_hub_tie_x = [25.0, 80.0];
-unpowered_hub_model_tie_x = [22.5, 77.5];
+unpowered_hub_model_tie_x = [45.0, 100.0];
 UNPOWERED_HUB_MODEL_SCALE = 1.0;
 UNPOWERED_HUB_MODEL_BODY = vienon_usb001_body_size();
 UNPOWERED_HUB_MODEL_USB_EDGE = "-Y";
@@ -1077,6 +1078,13 @@ assert(powered_hub_origin.y - (unpowered_hub_origin.y + unpowered_hub_size.y) <=
 assert(powered_hub_origin.y -
        (unpowered_hub_origin.y + unpowered_hub_size.y) == 6.0,
        "Exact hubs must retain the photographed six-millimetre body gap");
+assert(abs(powered_hub_origin.x - unpowered_hub_origin.x - 23.65) < epsilon,
+       "Exact hubs must retain the photographed X stagger");
+assert(unpowered_hub_origin.x + unpowered_hub_model_tie_x[0] ==
+       unpowered_hub_tie_origin.x + unpowered_hub_tie_x[0] &&
+       unpowered_hub_origin.x + unpowered_hub_model_tie_x[1] ==
+       unpowered_hub_tie_origin.x + unpowered_hub_tie_x[1],
+       "VIENON presentation ties must remain registered to printable slots");
 assert(powered_hub_dc_service_origin.y +
        powered_hub_dc_service_size.y == powered_hub_origin.y &&
        powered_hub_dc_service_origin.z >=
@@ -1163,7 +1171,7 @@ function long_side_service_envelopes(owner, origin, envelope, depth, side,
                   tie_offsets[1] + half_slot],
         ends = [tie_offsets[0] - half_slot,
                 tie_offsets[1] - half_slot, envelope.x])
-        [for (i = [0 : 2])
+        [for (i = [0 : 2]) if (ends[i] > starts[i])
             long_side_service_segment(owner, origin, envelope, depth, side,
                                       i, starts[i], ends[i])];
 function end_service_envelope(owner, origin, envelope, depth, side,
@@ -1193,7 +1201,7 @@ hub_service_envelopes = concat(
 );
 assert(len(powered_hub_tie_x) == 2 && len(unpowered_hub_tie_x) == 2,
        "Long-side hub service segmentation requires two tie offsets per hub");
-assert(len(hub_service_envelopes) == 9,
+assert(len(hub_service_envelopes) == 8,
        "USB hub long-side and end-connector keep-outs are incomplete");
 service_envelopes = concat(
     [["webcam_below_service", webcam_below_service_origin,

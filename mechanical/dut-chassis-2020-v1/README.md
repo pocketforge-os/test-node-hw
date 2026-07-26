@@ -246,7 +246,9 @@ black shell, four −Y USB-A ports, blue indicator, and +X fixed lead. The Smays
 microb-hub-8152 preserves its 105.07 × 24 × 15 mm white shell, +Y USB bank,
 −X RJ45, +X OTG lead, −Y DC input, and the installed DC plug/cable rising
 through the six-millimetre inter-hub gap before crossing above the VIENON
-body. The old `fixture-components` layer now contains retention ties only.
+lead. The black VIENON body sits 23.65 mm left of the white Smays body while
+its presentation ties remain registered to the unchanged printable slots.
+The old `fixture-components` layer now contains retention ties only.
 The semantic model and static previews split the white placard insert from its
 black raised device-name labels at `placard_insert_thickness`. The production
 nameplate remains one fused STL on its own bed: print white through 2.4 mm,
