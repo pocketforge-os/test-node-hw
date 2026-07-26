@@ -1,0 +1,298 @@
+{
+  "schema": "pocketforge-fixture-lock-v1",
+  "canonicalization": "pocketforge-fixture-interface-json-v1",
+  "source": {
+    "repository": "https://github.com/pocketforge-os/platform.git",
+    "revision": "81c853928475fc4292d2744bedbb80f36cfb87fa",
+    "contracts": [
+      {
+        "device_slug": "trimui-smart-pro",
+        "kind": "fixture_interface",
+        "path": "device-models/trimui-smart-pro/fixture-contract.json",
+        "raw_sha256": "da2f54077ce08181d5eaf81eef711d4bc48ed58523d23c87a75cd68d14339259",
+        "resolved_interface_sha256": "637aa67b32e284af2d5ad1b1655e630392e06fa80af1996f498f8d3cdecb20d5"
+      },
+      {
+        "device_slug": "trimui-smart-pro-s",
+        "kind": "shared_chassis_alias",
+        "path": "device-models/trimui-smart-pro-s/fixture-contract.json",
+        "raw_sha256": "b61705b18a4f7389c8ad19c6a3999a8d47f6019feecd6f52e95566e347983c53",
+        "resolved_interface_sha256": "637aa67b32e284af2d5ad1b1655e630392e06fa80af1996f498f8d3cdecb20d5"
+      }
+    ]
+  },
+  "interface": {
+    "schema_version": 1,
+    "interface_revision": 1,
+    "sha256": "637aa67b32e284af2d5ad1b1655e630392e06fa80af1996f498f8d3cdecb20d5",
+    "coordinate_system": {
+      "units": "mm",
+      "handedness": "right_handed",
+      "origin": "rear_left_bottom_nominal_shell_datum",
+      "axes": {
+        "x": "physical_left_to_right",
+        "y": "physical_bottom_to_top",
+        "z": "physical_rear_to_front"
+      }
+    },
+    "fixture_interface": {
+      "envelope": {
+        "xy_bounds_mm": {
+          "min": [
+            0,
+            0
+          ],
+          "max": [
+            188.35,
+            79.77
+          ]
+        },
+        "xy_measurement_uncertainty_mm": null,
+        "overall_depth": {
+          "nominal_mm": 17,
+          "basis": "published_nominal",
+          "measurement_uncertainty_mm": null,
+          "manufacturing_ready": false
+        }
+      },
+      "local_depths": [
+        {
+          "id": "clear_perimeter_edge",
+          "region_refs": [
+            "bottom_left",
+            "bottom_right",
+            "left_datum",
+            "right_datum",
+            "top_left",
+            "top_right"
+          ],
+          "nominal_mm": 10.7,
+          "basis": "fit_derived_proxy",
+          "measurement_uncertainty_mm": null,
+          "manufacturing_ready": false
+        }
+      ],
+      "contact_regions": [
+        {
+          "id": "bottom_left",
+          "shape": {
+            "kind": "edge_interval",
+            "surface": "bottom_edge",
+            "axis": "x",
+            "min_mm": 24,
+            "max_mm": 35
+          },
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "contact_modes": [
+            "padded",
+            "retention",
+            "support"
+          ],
+          "local_depth_ref": "clear_perimeter_edge"
+        },
+        {
+          "id": "bottom_right",
+          "shape": {
+            "kind": "edge_interval",
+            "surface": "bottom_edge",
+            "axis": "x",
+            "min_mm": 153.35,
+            "max_mm": 164.35
+          },
+          "normal": [
+            0,
+            1,
+            0
+          ],
+          "contact_modes": [
+            "padded",
+            "retention",
+            "support"
+          ],
+          "local_depth_ref": "clear_perimeter_edge"
+        },
+        {
+          "id": "left_datum",
+          "shape": {
+            "kind": "edge_interval",
+            "surface": "left_edge",
+            "axis": "y",
+            "min_mm": 34.885,
+            "max_mm": 44.885
+          },
+          "normal": [
+            1,
+            0,
+            0
+          ],
+          "contact_modes": [
+            "datum",
+            "padded",
+            "retention"
+          ],
+          "local_depth_ref": "clear_perimeter_edge"
+        },
+        {
+          "id": "right_datum",
+          "shape": {
+            "kind": "edge_interval",
+            "surface": "right_edge",
+            "axis": "y",
+            "min_mm": 34.885,
+            "max_mm": 44.885
+          },
+          "normal": [
+            -1,
+            0,
+            0
+          ],
+          "contact_modes": [
+            "datum",
+            "padded",
+            "retention"
+          ],
+          "local_depth_ref": "clear_perimeter_edge"
+        },
+        {
+          "id": "top_left",
+          "shape": {
+            "kind": "edge_interval",
+            "surface": "top_edge",
+            "axis": "x",
+            "min_mm": 35.41,
+            "max_mm": 50
+          },
+          "normal": [
+            0,
+            -1,
+            0
+          ],
+          "contact_modes": [
+            "padded",
+            "retention"
+          ],
+          "local_depth_ref": "clear_perimeter_edge"
+        },
+        {
+          "id": "top_right",
+          "shape": {
+            "kind": "edge_interval",
+            "surface": "top_edge",
+            "axis": "x",
+            "min_mm": 138.35,
+            "max_mm": 154.35
+          },
+          "normal": [
+            0,
+            -1,
+            0
+          ],
+          "contact_modes": [
+            "padded",
+            "retention"
+          ],
+          "local_depth_ref": "clear_perimeter_edge"
+        }
+      ],
+      "keepouts": [
+        {
+          "id": "front_display_visibility",
+          "category": "optical",
+          "shape": {
+            "kind": "surface_rectangle",
+            "surface": "front",
+            "axes": [
+              "x",
+              "y"
+            ],
+            "min_mm": [
+              38.375,
+              6
+            ],
+            "max_mm": [
+              149.975,
+              74.6
+            ]
+          },
+          "clearance_mm": 0
+        }
+      ],
+      "access_regions": [
+        {
+          "id": "rear_service",
+          "category": "service",
+          "shape": {
+            "kind": "surface_rectangle",
+            "surface": "rear",
+            "axes": [
+              "x",
+              "y"
+            ],
+            "min_mm": [
+              15.175,
+              13.885
+            ],
+            "max_mm": [
+              173.175,
+              65.885
+            ]
+          },
+          "must_remain_open": true
+        }
+      ],
+      "datums": [
+        {
+          "id": "camera_visibility_target_xy",
+          "kind": "point_2d",
+          "axes": [
+            "x",
+            "y"
+          ],
+          "value_mm": [
+            94.175,
+            39.885
+          ]
+        },
+        {
+          "id": "rear_perimeter_support_plane",
+          "kind": "plane",
+          "normal": [
+            0,
+            0,
+            -1
+          ],
+          "offset_mm": 0
+        },
+        {
+          "id": "shell_center_xy",
+          "kind": "point_2d",
+          "axes": [
+            "x",
+            "y"
+          ],
+          "value_mm": [
+            94.175,
+            39.885
+          ]
+        }
+      ],
+      "clearance_requirements": [
+        {
+          "id": "rear_trigger_and_wiring",
+          "direction": "rearward",
+          "minimum_mm": 11,
+          "from_datum": "rear_perimeter_support_plane",
+          "protects": [
+            "cable",
+            "thermal",
+            "trigger"
+          ]
+        }
+      ]
+    }
+  }
+}
