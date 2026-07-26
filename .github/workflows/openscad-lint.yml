@@ -8,6 +8,7 @@ on:
       - "scripts/test-lint-openscad.sh"
       - "mechanical/dut-fixture-v1/Makefile"
       - "mechanical/dut-cradle-v1/Makefile"
+      - "mechanical/dut-cradle-v1/profiles/**"
       - "mechanical/dut-cradle-v1/qualification/**"
       - "mechanical/dut-cradle-v1/scripts/**"
       - "mechanical/dut-chassis-2020-v1/Makefile"
@@ -45,8 +46,43 @@ jobs:
       - name: Parse and evaluate every OpenSCAD source
         run: xvfb-run --auto-servernum scripts/lint-openscad.sh
 
+      - name: Validate holder profiles and pinned platform fixture source
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          profile="profiles/trimui-smart-pro-family.json"
+          python3 "$cradle/scripts/test_holder_profiles.py"
+          python3 "$cradle/scripts/holder_profiles.py" validate
+          revision="$(
+            python3 "$cradle/scripts/holder_profiles.py" \
+              source-revision --profile "$profile"
+          )"
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          platform_root="$(
+            mktemp -d "$runner_temp/platform-fixture-source.XXXXXX"
+          )"
+          git init --quiet "$platform_root"
+          git -C "$platform_root" remote add origin \
+            "https://github.com/pocketforge-os/platform.git"
+          git -C "$platform_root" fetch --quiet --depth=1 origin "$revision"
+          git -C "$platform_root" checkout --quiet --detach FETCH_HEAD
+          python3 "$cradle/scripts/holder_profiles.py" \
+            verify-source --profile "$profile" \
+            --platform-root "$platform_root"
+
       - name: Verify physically qualified TrimUI geometry
         run: |
           xvfb-run --auto-servernum make \
             -C mechanical/dut-cradle-v1 \
             validate-qualified validate-qualified-mutation
+
+      - name: Rebuild qualified geometry from the declarative profile
+        run: |
+          cradle="mechanical/dut-cradle-v1"
+          profile="profiles/trimui-smart-pro-family.json"
+          xvfb-run --auto-servernum \
+            python3 "$cradle/scripts/holder_profiles.py" \
+              check-qualified --profile "$profile"
+          xvfb-run --auto-servernum \
+            python3 "$cradle/scripts/holder_profiles.py" \
+              check-mutation --profile "$profile"

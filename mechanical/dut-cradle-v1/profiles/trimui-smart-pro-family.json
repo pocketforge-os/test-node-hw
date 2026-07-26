@@ -1,0 +1,176 @@
+{
+  "schema": "pocketforge-holder-profile-v1",
+  "profile_id": "trimui-smart-pro-family",
+  "device_slugs": [
+    "trimui-smart-pro",
+    "trimui-smart-pro-s"
+  ],
+  "fixture": {
+    "lock": "profiles/fixture-locks/trimui-smart-pro-family-v1.json",
+    "interface_sha256": "637aa67b32e284af2d5ad1b1655e630392e06fa80af1996f498f8d3cdecb20d5",
+    "bindings": {
+      "local_depth": "clear_perimeter_edge",
+      "rear_service_access": "rear_service",
+      "camera_target": "camera_visibility_target_xy",
+      "shell_center": "shell_center_xy",
+      "rear_clearance": "rear_trigger_and_wiring"
+    }
+  },
+  "implementation": {
+    "kind": "declarative",
+    "mechanism_family": "perimeter_j_hook_v1",
+    "source": "trimui-smart-pro-family-cradle.scad",
+    "carrier": {
+      "plate_size_mm": [
+        247,
+        200
+      ],
+      "plate_thickness_mm": 3.2,
+      "plate_corner_radius_mm": 4,
+      "rear_service_corner_radius_mm": 8,
+      "frame_tie": {
+        "slot_size_mm": [
+          12,
+          5.5
+        ],
+        "edge_inset_mm": 8,
+        "corner_offset_mm": 19
+      }
+    },
+    "contacts": [
+      {
+        "fixture_contact_id": "bottom_left",
+        "selected_coordinate_mm": 29.5,
+        "designed_play_mm": 0.25
+      },
+      {
+        "fixture_contact_id": "bottom_right",
+        "selected_coordinate_mm": 158.85,
+        "designed_play_mm": 0.25
+      },
+      {
+        "fixture_contact_id": "left_datum",
+        "selected_coordinate_mm": 39.885,
+        "designed_play_mm": 0.6
+      },
+      {
+        "fixture_contact_id": "right_datum",
+        "selected_coordinate_mm": 39.885,
+        "designed_play_mm": 0.6
+      },
+      {
+        "fixture_contact_id": "top_left",
+        "selected_coordinate_mm": 42.705,
+        "designed_play_mm": 0.45
+      },
+      {
+        "fixture_contact_id": "top_right",
+        "selected_coordinate_mm": 146.35,
+        "designed_play_mm": 0.45
+      }
+    ],
+    "retention": {
+      "hook": {
+        "throat_mm": 11.3,
+        "width_mm": 10,
+        "wall_mm": 4,
+        "lip_depth_mm": 2.8,
+        "lip_thickness_mm": 4,
+        "support_depth_mm": 4,
+        "support_thickness_mm": 3.2,
+        "base_outward_mm": 13,
+        "base_inward_mm": 4,
+        "base_height_mm": 4.4,
+        "base_radius_mm": 1.5,
+        "adjustment_mm": 8
+      },
+      "fastener": {
+        "m3_clearance_mm": 3.5,
+        "nut_across_flats_mm": 5.6,
+        "nut_depth_mm": 2.8,
+        "nut_capture_wall_mm": 2.4,
+        "screw_offset_mm": [
+          -8,
+          -3.5
+        ],
+        "key_offset_mm": [
+          -8,
+          3.5
+        ],
+        "key_size_mm": [
+          4,
+          3.2
+        ],
+        "key_clearance_mm": 0.35,
+        "keyway_depth_mm": 1.2
+      }
+    },
+    "presentation": {
+      "device_corner_radius_mm": 35,
+      "screen_proxy_size_mm": [
+        110.8,
+        62.3
+      ],
+      "label_height_mm": 1.2,
+      "label_stroke_growth_mm": 0.85,
+      "title_box_size_mm": [
+        190,
+        24
+      ],
+      "title_box_center_mm": [
+        123.5,
+        176.5
+      ],
+      "title_font_size_mm": 14.4,
+      "orientation_font_size_mm": 9,
+      "carrier_body_color": [
+        0.88,
+        0.88,
+        0.84
+      ],
+      "carrier_label_color": [
+        0.02,
+        0.02,
+        0.02
+      ]
+    }
+  },
+  "artifacts": {
+    "carrier_body": {
+      "source": "trimui-smart-pro-cradle.scad",
+      "part": "plate",
+      "parameters": {
+        "SHOW_LABELS": false
+      }
+    },
+    "fit_coupon": {
+      "source": "trimui-smart-pro-family-cradle.scad",
+      "part": "fit_coupon",
+      "parameters": {}
+    },
+    "j_hook": {
+      "source": "trimui-smart-pro-family-cradle.scad",
+      "part": "hook",
+      "parameters": {}
+    },
+    "j_hook_set": {
+      "source": "trimui-smart-pro-family-cradle.scad",
+      "part": "hook_set",
+      "parameters": {}
+    }
+  },
+  "qualification": {
+    "status": "physically_qualified",
+    "acceptance_ref": "tsp-bcx.21.22",
+    "accepted_on": "2026-07-21",
+    "accepted_geometry_revision": "04959196e12e20d8dddea686f3ff54cedce0590b",
+    "fixture_interface_sha256": "637aa67b32e284af2d5ad1b1655e630392e06fa80af1996f498f8d3cdecb20d5",
+    "geometry_manifest": "qualification/trimui-smart-pro-family-v1.json",
+    "artifact_names": [
+      "carrier_body",
+      "fit_coupon",
+      "j_hook",
+      "j_hook_set"
+    ]
+  }
+}
