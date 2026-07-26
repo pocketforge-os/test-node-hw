@@ -60,7 +60,8 @@ module relay_board_text(label, point, size, rotation = 0,
             linear_extrude(height = height)
                 text(label, size = size, halign = halign,
                      valign = "center",
-                     font = "Liberation Sans:style=Bold");
+                     font = "Liberation Sans:style=Regular",
+                     $fn = 8);
 }
 
 module relay_can_text(label, point, size, rotation = 0) {
@@ -70,7 +71,8 @@ module relay_can_text(label, point, size, rotation = 0) {
             linear_extrude(height = 0.10)
                 text(label, size = size, halign = "center",
                      valign = "center",
-                     font = "Liberation Sans:style=Bold");
+                     font = "Liberation Sans:style=Regular",
+                     $fn = 8);
 }
 
 module elegoo_relay_pcb() {
