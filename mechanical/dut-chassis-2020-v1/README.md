@@ -202,6 +202,12 @@ drivers, metal screws/pins, red status LEDs, and pale markings. Its exact
 51.85 × 72.70 mm installed envelope retains four relay channels, twelve screw
 terminals, the measured mounting registration, and a +X terminal-bank
 orientation.
+The installed HiLetgo B07BNHR4HW / Flying-Fish XL6009 boost module is carried
+through as five semantic fixture layers: blue PCB, dark
+regulator/470-marked inductor/passives, blue W103 adjuster, metal
+capacitors/pads/leads/screw, and pale markings. Its exact 43.16 × 21.23 ×
+14.00 mm installed envelope retains the measured diagonal Ø3 mm mounting
+registration, with IN on −X and OUT on +X.
 The installed Banana Pi BPI-M2 Zero V1.0 is carried through as five semantic
 fixture layers, preserving its blue PCB, dark packages/header, metal ports and
 shield, gold contacts, and pale silkscreen in both static renders and the

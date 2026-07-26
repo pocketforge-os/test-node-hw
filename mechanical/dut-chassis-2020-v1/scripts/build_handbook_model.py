@@ -47,6 +47,29 @@ LAYER_MATERIALS = {
     "fixture-relay-silkscreen": (
         "ELEGOO relay markings", "#eef2ed", 0.0, 0.50, 1.0
     ),
+    "fixture-boost-pcb": (
+        "HiLetgo XL6009 blue PCB", "#0c559f", 0.0, 0.44, 1.0
+    ),
+    "fixture-boost-dark": (
+        "XL6009 regulator, inductor, and passives",
+        "#131820",
+        0.0,
+        0.34,
+        1.0,
+    ),
+    "fixture-boost-adjuster": (
+        "XL6009 blue W103 adjuster", "#176fce", 0.0, 0.38, 1.0
+    ),
+    "fixture-boost-metal": (
+        "XL6009 capacitors, pads, leads, and screw",
+        "#c2c8cd",
+        0.76,
+        0.24,
+        1.0,
+    ),
+    "fixture-boost-silkscreen": (
+        "XL6009 polarity and component markings", "#eef1eb", 0.0, 0.50, 1.0
+    ),
     "fixture-bpi-pcb": (
         "Banana Pi blue PCB", "#1769a8", 0.0, 0.44, 1.0
     ),

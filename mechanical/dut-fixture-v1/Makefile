@@ -7,6 +7,8 @@ BPI_SOURCE := bpi-m2-zero-v1.scad
 BPI_PROVENANCE := BPI-M2-ZERO-PROVENANCE.md
 RELAY_SOURCE := elegoo-4-channel-relay.scad
 RELAY_PROVENANCE := ELEGOO-4-CHANNEL-RELAY-PROVENANCE.md
+BOOST_SOURCE := hiletgo-xl6009.scad
+BOOST_PROVENANCE := HILETGO-XL6009-PROVENANCE.md
 ESP32_SOURCE := esp32-s3-supermini-hw747-v0.0.2.scad
 ESP32_PROVENANCE := ESP32-S3-SUPERMINI-PROVENANCE.md
 C270_SOURCE := logitech-c270.scad
@@ -25,6 +27,13 @@ RELAY_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-elegoo-relay-led.stl \
 	$(BUILD)/pocketforge-elegoo-relay-silkscreen.stl
 RELAY_COMPLETE_STL := $(BUILD)/pocketforge-elegoo-relay-complete.stl
+BOOST_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-hiletgo-xl6009-pcb.stl \
+	$(BUILD)/pocketforge-hiletgo-xl6009-dark.stl \
+	$(BUILD)/pocketforge-hiletgo-xl6009-adjuster.stl \
+	$(BUILD)/pocketforge-hiletgo-xl6009-metal.stl \
+	$(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl
+BOOST_COMPLETE_STL := $(BUILD)/pocketforge-hiletgo-xl6009-complete.stl
 ESP32_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-esp32-s3-supermini-pcb.stl \
 	$(BUILD)/pocketforge-esp32-s3-supermini-dark.stl \
@@ -45,6 +54,7 @@ C270_COMPLETE_STL := $(BUILD)/pocketforge-logitech-c270-complete.stl
 	validate-preview-export validate-presentation-assets \
 	validate-bpi-model-guard validate-bpi-provenance \
 	validate-relay-model-guard validate-relay-provenance \
+	validate-boost-model-guard validate-boost-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance preview split clean
 
@@ -59,13 +69,13 @@ lint:
 $(BUILD):
 	mkdir -p $@
 
-$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_components"' $<
 
-$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/pocketforge-bpi-m2-zero-pcb.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
@@ -103,6 +113,24 @@ $(BUILD)/pocketforge-elegoo-relay-led.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
 
 $(BUILD)/pocketforge-elegoo-relay-silkscreen.stl: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_relay_silkscreen"' $<
+
+$(BUILD)/pocketforge-hiletgo-xl6009-complete.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost"' $<
+
+$(BUILD)/pocketforge-hiletgo-xl6009-pcb.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost_pcb"' $<
+
+$(BUILD)/pocketforge-hiletgo-xl6009-dark.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost_dark"' $<
+
+$(BUILD)/pocketforge-hiletgo-xl6009-adjuster.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost_adjuster"' $<
+
+$(BUILD)/pocketforge-hiletgo-xl6009-metal.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost_metal"' $<
+
+$(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost_silkscreen"' $<
 
 $(BUILD)/pocketforge-esp32-s3-supermini-complete.stl: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_esp32"' $<
@@ -143,28 +171,28 @@ $(BUILD)/pocketforge-logitech-c270-led.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 $(BUILD)/pocketforge-logitech-c270-labels.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_labels"' $<
 
-$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_lower"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_upper"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="joiner"' -D 'SHOW_COMPONENTS=false' $<
 
 split: $(BUILD)/plate-lower.stl $(BUILD)/plate-upper.stl $(BUILD)/joiner.stl
 
-$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho --viewall \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho \
 		--autocenter --viewall --camera=100,120,400,100,120,0 \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
@@ -179,6 +207,11 @@ $(BUILD)/layout-elegoo-relay.png: $(SOURCE) $(RELAY_SOURCE) | $(BUILD)
 		--viewall --camera=45,189,110,45,189,28 \
 		-D 'PART="presentation_relay"' $<
 
+$(BUILD)/layout-hiletgo-xl6009.png: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,800 --projection=ortho \
+		--viewall --camera=170,70,60,170,107,10 \
+		-D 'PART="presentation_boost"' $<
+
 $(BUILD)/layout-esp32-s3-supermini.png: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,1400 --projection=ortho \
 		--viewall --camera=17,68,65,17,68,8 \
@@ -191,6 +224,7 @@ $(BUILD)/layout-logitech-c270.png: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 
 preview: $(BUILD)/layout-preview.png $(BUILD)/layout-top.png \
 	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-elegoo-relay.png \
+	$(BUILD)/layout-hiletgo-xl6009.png \
 	$(BUILD)/layout-esp32-s3-supermini.png \
 	$(BUILD)/layout-logitech-c270.png
 
@@ -297,6 +331,54 @@ validate-relay-provenance: $(RELAY_SOURCE) $(RELAY_PROVENANCE)
 	@grep -Fq 'No Amazon image, ELEGOO artwork, EDA file' $(RELAY_PROVENANCE)
 	@echo 'relay_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
 
+validate-boost-model-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/intentional-boost-scale.log; \
+		mesh=$(BUILD)/intentional-boost-scale.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_boost_pcb"' \
+			-D 'BOOST_MODEL_SCALE=1.01' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional XL6009 scale change was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'HiLetgo XL6009 model scale/envelope changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-boost-orientation.log; \
+		mesh=$(BUILD)/intentional-boost-orientation.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_boost_pcb"' \
+			-D 'BOOST_MODEL_INPUT_EDGE="+X"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional XL6009 IN/OUT reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'HiLetgo XL6009 input/output orientation changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-boost-registration.log; \
+		mesh=$(BUILD)/intentional-boost-registration.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_boost_pcb"' \
+			-D 'BOOST_MODEL_HOLE_CENTRES=[[6.51,18.63],[36.66,2.20]]' \
+			$(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional XL6009 hole drift was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'HiLetgo XL6009 mounting registration changed' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'boost_model_guard=pass envelope=43.16x21.23 holes=diagonal input_edge=-X height=14.00'
+
+validate-boost-provenance: $(BOOST_SOURCE) $(BOOST_PROVENANCE)
+	@grep -Fq '128d0d2eac3f0d467e77d895d95eb716cdc16737294c689b6d9f0a57f89b3284' \
+		$(BOOST_SOURCE)
+	@grep -Fq '4027c0a0f5677449a640507069633a8299516dff8770f56ad484b8fb3ee45e52' \
+		$(BOOST_SOURCE)
+	@grep -Fq '53aa07b5b5a19d188791895feee68050200ffec113aa7e6bb2c0419c497a2d4b' \
+		$(BOOST_SOURCE)
+	@grep -Fq '128d0d2eac3f0d467e77d895d95eb716cdc16737294c689b6d9f0a57f89b3284' \
+		$(BOOST_PROVENANCE)
+	@grep -Fq '4027c0a0f5677449a640507069633a8299516dff8770f56ad484b8fb3ee45e52' \
+		$(BOOST_PROVENANCE)
+	@grep -Fq '53aa07b5b5a19d188791895feee68050200ffec113aa7e6bb2c0419c497a2d4b' \
+		$(BOOST_PROVENANCE)
+	@grep -Fq 'No Amazon image, HiLetgo artwork, third-party mesh, STEP body, or EDA file' \
+		$(BOOST_PROVENANCE)
+	@echo 'boost_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
+
 validate-esp32-model-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/intentional-esp32-scale.log; \
 		mesh=$(BUILD)/intentional-esp32-scale.stl; \
@@ -367,6 +449,7 @@ validate-c270-provenance: $(C270_SOURCE) $(C270_PROVENANCE)
 validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(BUILD)/pocketforge-dut-fixture-labels.stl \
 	$(RELAY_COMPLETE_STL) $(RELAY_PRESENTATION_STLS) \
+	$(BOOST_COMPLETE_STL) $(BOOST_PRESENTATION_STLS) \
 	$(BPI_PRESENTATION_STLS) \
 	$(ESP32_COMPLETE_STL) $(ESP32_PRESENTATION_STLS) \
 	$(C270_COMPLETE_STL) $(C270_PRESENTATION_STLS)
@@ -386,6 +469,20 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-metal.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-led.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-elegoo-relay-silkscreen.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 43.16 --max-x 43.16 \
+		--min-size-y 21.23 --max-y 21.23 \
+		--min-size-z 14.00 --max-z 14.00 \
+		$(BOOST_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 43.16 --max-x 43.16 \
+		--min-size-y 21.23 --max-y 21.23 \
+		--min-size-z 1.60 --max-z 1.60 \
+		$(BUILD)/pocketforge-hiletgo-xl6009-pcb.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-adjuster.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-metal.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl
 	$(PYTHON) scripts/stl_bounds.py \
 		--min-size-x 29.90 --max-x 29.90 \
 		--min-size-y 65.00 --max-y 65.00 \
@@ -414,11 +511,12 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-glass.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-led.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-labels.stl
-	@echo 'fixture_presentation_assets=pass proxies=6 labels=10 relay_layers=6 bpi_layers=5 esp32_layers=6 c270_layers=5'
+	@echo 'fixture_presentation_assets=pass proxies=5 labels=10 relay_layers=6 boost_layers=5 bpi_layers=5 esp32_layers=6 c270_layers=5'
 
 validate: lint all split validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-bpi-model-guard validate-bpi-provenance \
 	validate-relay-model-guard validate-relay-provenance \
+	validate-boost-model-guard validate-boost-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance \
 	validate-presentation-assets

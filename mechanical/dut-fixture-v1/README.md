@@ -49,7 +49,7 @@ the workflow matrix.
 
 Presentation-only meshes expose the populated harness without contaminating
 the production plate. `pocketforge-dut-fixture-components.stl` contains the
-six remaining analytical interface envelopes, and
+five remaining analytical interface envelopes, and
 `pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
 Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
 into five real-material meshes: blue PCB, dark ICs/header, metal
@@ -75,6 +75,16 @@ envelope and 45.03 × 66.93 mm hole registration, with the twelve-terminal
 bank facing +X. `layout-elegoo-relay.png` is its close-up and
 `ELEGOO-4-CHANNEL-RELAY-PROVENANCE.md` records the Amazon hashes, misleading
 listing dimensions, and rejected non-matching online models.
+
+The boost converter is an original reconstruction of the exact HiLetgo
+`B07BNHR4HW` / `Flying-Fish-XL6009` revision, split into five meshes for its
+blue PCB, dark 470-marked inductor/regulator/passives, blue W103 multi-turn
+adjuster, aluminum cans/pads/leads/brass screw, and pale markings. It preserves
+the owner's 43.16 × 21.23 mm fit, diagonal Ø3 mm holes, 14 mm populated
+height, and IN-on-−X / OUT-on-+X orientation. Its close-up is
+`layout-hiletgo-xl6009.png`; `HILETGO-XL6009-PROVENANCE.md` records the
+Amazon hashes, 43 × 21 mm gallery dimension, contradictory 47 × 22 × 13 mm
+prose, and rejected online-model candidates.
 
 The Logitech C270 is likewise an original source-native reconstruction, split
 into five presentation meshes for its dark-gray shell and articulated clip,
@@ -156,7 +166,7 @@ centre spacing = far-edge spacing - hole diameter
 | Webcam | 71 × 31.55 mm keep-out; 44.75 × 19.5 mm minimum aperture; 71 × 20 mm lower clear strip | Physically fit; printable opening gets 0.4 mm clearance |
 | 4-channel relay | 51.85 × 72.70 mm; Ø3 holes; 45.03 × 66.93 mm centres; 26 mm standoffs | Measured; height owner-corrected after physical fit |
 | BPI-M2-Zero V1.0 | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres; H2+, K016 shield, populated 2x20 header, u.FL, mini-HDMI, dual micro-USB, micro-SD, and CSI | Runtime identity, owner photo/calipers, and manufacturer V1.0 DXF cross-check; original repository-native model |
-| Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes with 5 mm horizontal hole-edge-to-board-edge gaps (6.5 mm X centre insets), plus 1.1 mm top and 0.7 mm bottom gaps | Owner-corrected from physical fit and annotated measurement |
+| HiLetgo Flying-Fish XL6009 boost converter | 43.16 × 21.23 × 14 mm; two Ø3 diagonal holes at `[6.50, 18.63]` / `[36.66, 2.20]`; IN at −X and OUT at +X | Owner physical fit plus exact B07BNHR4HW gallery cross-check; original repository-native model |
 | MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
 | Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
 | ACEIRMC ESP32-S3 SuperMini HW-747 V0.0.2 | 23.67 × 18.5 mm; 18 plated edge holes at 2.54 mm pitch; USB-C; ESP32-S3FH4R2; BOOT/RST; red ceramic antenna; four 3 × 3 mm short-edge tie slots | Envelope physically measured; population and revision cross-checked to owner-supplied Amazon ASIN B0GS1X97DZ; original repository-native model |
@@ -168,6 +178,8 @@ centre spacing = far-edge spacing - hole diameter
 
 1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
    exact relay presentation geometry in `elegoo-4-channel-relay.scad`; change
+   only exact boost-converter presentation geometry in
+   `hiletgo-xl6009.scad`; change
    only Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
    HW-747 presentation geometry in
    `esp32-s3-supermini-hw747-v0.0.2.scad`; and change only C270 presentation
@@ -177,8 +189,9 @@ centre spacing = far-edge spacing - hole diameter
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
 Most preview component blocks remain translucent analytical envelopes rather
-than cosmetic models; the ELEGOO relay, BPI-M2 Zero, ESP32-S3 SuperMini, and
-Logitech C270 are exact visual replacements. All preview geometry is omitted
+than cosmetic models; the ELEGOO relay, BPI-M2 Zero, HiLetgo XL6009,
+ESP32-S3 SuperMini, and Logitech C270 are exact visual replacements. All
+preview geometry is omitted
 from every production STL and
 exists to expose inaccessible connectors and bad cable paths. The complete
 preview subtree—including the component labels—uses OpenSCAD's `%` background
@@ -189,6 +202,8 @@ fixture. `make validate` proves that preview and production exports have
 identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
 bounds, proves the relay's 51.85 × 72.70 mm installed envelope, four-channel
 population, mounting registration, and +X terminal orientation, proves the
+boost converter's 43.16 × 21.23 × 14 mm envelope, diagonal mounting
+registration, and −X input orientation, proves the
 ESP32's 18.50 × 23.67 mm installed envelope and bottom USB orientation, proves
 the C270's 71.00 × 31.55 mm installed face and -Z optical orientation, and
 deliberately rejects scale/registration/orientation drift. Pairwise
