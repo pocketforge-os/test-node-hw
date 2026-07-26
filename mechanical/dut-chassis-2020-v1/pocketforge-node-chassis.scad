@@ -57,7 +57,9 @@
  *   guide_layer_carrier_body, guide_layer_carrier_labels,
  *   guide_layer_carrier_hooks, guide_layer_device_shell,
  *   guide_layer_device_controls, guide_layer_device_screen,
- *   guide_layer_webcam, guide_layer_power_strip,
+ *   guide_layer_webcam_shell, guide_layer_webcam_dark,
+ *   guide_layer_webcam_glass, guide_layer_webcam_led,
+ *   guide_layer_webcam_labels, guide_layer_power_strip,
  *   guide_layer_placard_holder, guide_layer_placard_insert,
  *   guide_layer_camera_frustum, guide_cable_tie_anchor_install, cutlist
  */
@@ -108,6 +110,16 @@ fixture_esp32_antenna_presentation_mesh =
     "build/imports/pocketforge-esp32-s3-supermini-antenna.stl";
 fixture_esp32_silkscreen_presentation_mesh =
     "build/imports/pocketforge-esp32-s3-supermini-silkscreen.stl";
+fixture_c270_shell_presentation_mesh =
+    "build/imports/pocketforge-logitech-c270-shell.stl";
+fixture_c270_dark_presentation_mesh =
+    "build/imports/pocketforge-logitech-c270-dark.stl";
+fixture_c270_glass_presentation_mesh =
+    "build/imports/pocketforge-logitech-c270-glass.stl";
+fixture_c270_led_presentation_mesh =
+    "build/imports/pocketforge-logitech-c270-led.stl";
+fixture_c270_labels_presentation_mesh =
+    "build/imports/pocketforge-logitech-c270-labels.stl";
 cradle_body_presentation_mesh =
     "build/imports/trimui-smart-pro-family-carrier-body.stl";
 cradle_s_labels_presentation_mesh =
@@ -203,7 +215,10 @@ gantry_y_limits = [profile_size + profile_size / 2,
 
 // ---- Existing plate interfaces and optical registration -----------------
 fixture_plate_size = [200.0, 247.0, 3.2];
-fixture_webcam_datum = [100.0, 132.0];
+// The owner-fit body remains centred on the plate at X=100, but a real C270
+// lens is 19.20 mm from its left edge rather than at shell centre. Register
+// the actual lens to the shared optical axis.
+fixture_webcam_datum = [83.70, 132.0];
 fixture_slot_inset = [19.0, 8.0];
 
 cradle_plate_size = [247.0, 200.0, 3.2];
@@ -270,6 +285,7 @@ cradle_mount_z = [cradle_origin.z + cradle_slot_inset.y,
 // degree diagonal FOV for widescreen capture, from which H/V FOV are derived.
 camera_model = "Logitech C270 HD";
 camera_installed_keepout = [71.0, 24.0, 31.55]; // [X width, Y depth, Z height]
+camera_body_centre_offset_x = 71.0 / 2 - 19.20;
 camera_lens_y = fixture_plane_y + 15.0;
 camera_diagonal_fov = 55.0;
 camera_capture_aspect = [16.0, 9.0];
@@ -1257,22 +1273,45 @@ module device_preview(detail = PLATE_DETAIL) {
 
 }
 
-module webcam_preview() {
-    // Webcam body is intentionally an installed keep-out envelope; its lens
-    // datum and FOV are the authoritative interfaces for this chassis.
-    color([0.10, 0.10, 0.11, 0.9])
-        translate([optical_datum.x - camera_installed_keepout.x / 2,
-                   fixture_plane_y,
-                   optical_datum.y - camera_installed_keepout.z / 2])
-            cube(camera_installed_keepout);
-    color([0.10, 0.16, 0.22])
-        translate([optical_datum.x, camera_lens_y, optical_datum.y])
-            rotate([-90, 0, 0]) cylinder(d = 12, h = 5);
+module webcam_exact_mesh_preview() {
+    color("#3b4147")
+        fixture_mesh_at_installed_datum(
+            fixture_c270_shell_presentation_mesh);
+    color("#101317")
+        fixture_mesh_at_installed_datum(
+            fixture_c270_dark_presentation_mesh);
+    color("#101d29")
+        fixture_mesh_at_installed_datum(
+            fixture_c270_glass_presentation_mesh);
+    color("#b9d532")
+        fixture_mesh_at_installed_datum(
+            fixture_c270_led_presentation_mesh);
+    color("#eceeea")
+        fixture_mesh_at_installed_datum(
+            fixture_c270_labels_presentation_mesh);
+}
+
+module webcam_preview(detail = PLATE_DETAIL) {
+    if (detail == "mesh") {
+        webcam_exact_mesh_preview();
+    } else {
+        // Lightweight envelope keeps lint and proxy views independent from
+        // generated presentation assets.
+        color([0.10, 0.10, 0.11, 0.9])
+            translate([optical_datum.x + camera_body_centre_offset_x -
+                       camera_installed_keepout.x / 2,
+                       fixture_plane_y,
+                       optical_datum.y - camera_installed_keepout.z / 2])
+                cube(camera_installed_keepout);
+        color([0.10, 0.16, 0.22])
+            translate([optical_datum.x, camera_lens_y, optical_datum.y])
+                rotate([-90, 0, 0]) cylinder(d = 12, h = 5);
+    }
 }
 
 module device_and_camera_preview(detail = PLATE_DETAIL) {
     device_preview(detail);
-    webcam_preview();
+    webcam_preview(detail);
 }
 
 module device_model_mesh_at_installed_datum(mesh_path,
@@ -3369,7 +3408,7 @@ module guide_step_07_mount_fixture() {
     for (x = fixture_mount_x)
         for (z = fixture_crossbar_z)
             installed_fixture_plate_spacer([x, z]);
-    webcam_preview();
+    webcam_preview("mesh");
 }
 
 module guide_step_08_complete() {
@@ -3572,7 +3611,7 @@ module guide_detail_07_optical_axis() {
     color([0.15, 0.16, 0.17, 0.86])
         device_model_mesh_at_installed_datum(
             device_shell_presentation_mesh);
-    webcam_preview();
+    webcam_preview("mesh");
     color([0.18, 0.72, 0.92, 0.20])
         camera_frustum_geometry();
 }
@@ -3783,8 +3822,24 @@ module guide_layer_device_screen() {
         device_screen_presentation_mesh, 0.06);
 }
 
-module guide_layer_webcam() {
-    webcam_preview();
+module guide_layer_webcam_shell() {
+    fixture_mesh_at_installed_datum(fixture_c270_shell_presentation_mesh);
+}
+
+module guide_layer_webcam_dark() {
+    fixture_mesh_at_installed_datum(fixture_c270_dark_presentation_mesh);
+}
+
+module guide_layer_webcam_glass() {
+    fixture_mesh_at_installed_datum(fixture_c270_glass_presentation_mesh);
+}
+
+module guide_layer_webcam_led() {
+    fixture_mesh_at_installed_datum(fixture_c270_led_presentation_mesh);
+}
+
+module guide_layer_webcam_labels() {
+    fixture_mesh_at_installed_datum(fixture_c270_labels_presentation_mesh);
 }
 
 module guide_layer_power_strip() {
@@ -4083,8 +4138,16 @@ if (PART == "assembly") {
     guide_layer_device_controls();
 } else if (PART == "guide_layer_device_screen") {
     guide_layer_device_screen();
-} else if (PART == "guide_layer_webcam") {
-    guide_layer_webcam();
+} else if (PART == "guide_layer_webcam_shell") {
+    guide_layer_webcam_shell();
+} else if (PART == "guide_layer_webcam_dark") {
+    guide_layer_webcam_dark();
+} else if (PART == "guide_layer_webcam_glass") {
+    guide_layer_webcam_glass();
+} else if (PART == "guide_layer_webcam_led") {
+    guide_layer_webcam_led();
+} else if (PART == "guide_layer_webcam_labels") {
+    guide_layer_webcam_labels();
 } else if (PART == "guide_layer_power_strip") {
     guide_layer_power_strip();
 } else if (PART == "guide_layer_placard_holder") {

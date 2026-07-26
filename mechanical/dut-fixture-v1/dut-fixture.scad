@@ -8,18 +8,21 @@
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
  * PART choices: preview, plate, presentation_bpi, presentation_esp32,
- * presentation_components,
+ * presentation_c270, presentation_components,
  * presentation_bpi_pcb, presentation_bpi_dark,
  * presentation_bpi_metal, presentation_bpi_gold,
  * presentation_bpi_silkscreen, presentation_esp32_pcb,
  * presentation_esp32_dark, presentation_esp32_metal,
  * presentation_esp32_gold, presentation_esp32_antenna,
- * presentation_esp32_silkscreen, presentation_labels, fit_coupon,
- * plate_lower, plate_upper, joiner.
+ * presentation_esp32_silkscreen, presentation_c270_shell,
+ * presentation_c270_dark, presentation_c270_glass,
+ * presentation_c270_led, presentation_c270_labels,
+ * presentation_labels, fit_coupon, plate_lower, plate_upper, joiner.
  */
 
 use <bpi-m2-zero-v1.scad>;
 use <esp32-s3-supermini-hw747-v0.0.2.scad>;
+use <logitech-c270.scad>;
 
 PART = "preview";
 SHOW_COMPONENTS = true;
@@ -174,6 +177,10 @@ webcam_aperture_clearance = 0.40;         // total diametral/width clearance
 webcam_aperture_radius = 5.0;
 webcam_centre = [plate_size.x / 2, 132.0];
 webcam_origin = webcam_centre - webcam_keepout / 2;
+webcam_lens_datum = webcam_origin + c270_lens_centre_xy();
+webcam_lens_plane_z = c270_lens_plane_z();
+C270_MODEL_FACE = c270_installed_face_size();
+C270_MODEL_LENS_DIRECTION = c270_lens_direction();
 webcam_below_clearance = 20.0;
 webcam_below_service_origin = [webcam_origin.x,
                                webcam_origin.y - webcam_below_clearance];
@@ -390,6 +397,15 @@ module esp32_model_preview() {
     esp32_model_at_fixture_datum() esp32_s3_supermini_complete();
 }
 
+module c270_model_at_fixture_datum() {
+    translate([webcam_origin.x, webcam_origin.y, 0])
+        children();
+}
+
+module c270_model_preview() {
+    c270_model_at_fixture_datum() c270_complete();
+}
+
 module generic_component_preview(show_service_keepouts = true) {
     envelope(relay_origin, relay_size, 15, "RoyalBlue", 2,
              relay_standoff_height);
@@ -397,10 +413,6 @@ module generic_component_preview(show_service_keepouts = true) {
     envelope(mosfet_origin, mosfet_size, 8, "Teal");
     envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
     envelope(dp100_origin, dp100_size, 17.2, "SlateGray", 5);
-    // The webcam front body stays below the plate; render its keep-out ghosted.
-    color("Black", 0.25)
-        translate([webcam_origin.x, webcam_origin.y, -8])
-            rounded_prism([webcam_keepout.x, webcam_keepout.y, 8], 8);
     envelope(powered_hub_origin, powered_hub_size, 15, "WhiteSmoke", 4);
     envelope(unpowered_hub_origin, unpowered_hub_size, 15, "Black", 4);
     if (show_service_keepouts) {
@@ -417,6 +429,7 @@ module component_preview(show_service_keepouts = true) {
     generic_component_preview(show_service_keepouts);
     bpi_model_preview();
     esp32_model_preview();
+    c270_model_preview();
 }
 
 // ---- Calibration coupon ----------------------------------------------------
@@ -543,6 +556,29 @@ assert(webcam_aperture.x + webcam_aperture_clearance <= webcam_keepout.x &&
 assert(webcam_aperture.x >= webcam_aperture_minimum.x &&
        webcam_aperture.y >= webcam_aperture_minimum.y,
        "Webcam aperture is smaller than the physically measured minimum");
+assert(C270_MODEL_FACE == webcam_keepout,
+       str("C270 model face/fixture keep-out changed: ",
+           C270_MODEL_FACE, " vs ", webcam_keepout));
+assert(C270_MODEL_LENS_DIRECTION == "-Z" &&
+       C270_MODEL_LENS_DIRECTION == c270_lens_direction(),
+       str("C270 lens orientation changed: ", C270_MODEL_LENS_DIRECTION));
+assert(c270_rear_housing_size().x <= webcam_aperture.x &&
+       c270_rear_housing_size().y <= webcam_aperture.y,
+       "C270 rear housing no longer fits the proven fixture aperture");
+assert(webcam_lens_datum ==
+       webcam_origin + c270_lens_centre_xy(),
+       "C270 optical registration changed");
+assert(webcam_lens_plane_z == -15.0,
+       str("C270 accepted lens plane changed: ", webcam_lens_plane_z));
+assert(c270_front_reference_sha256() ==
+       "c86bc28778c52877a07cbd6ab03082dfe505215617180eb5064455f139a718ae",
+       "C270 Logitech front-reference hash changed");
+assert(c270_qsg_reference_sha256() ==
+       "ad802bc5705eceb6d75c2eb6ab4219e65e50c97678e1195910ac7b7566cd8d2b",
+       "C270 Logitech QSG hash changed");
+assert(c270_modified_step_sha256() ==
+       "a69c4917c1f2964df2f6dc082827b46958a11e74ae3cda7a142e4d0bc9b4f3d8",
+       "C270 modified-STEP reference hash changed");
 assert(relay_origin.x == 20 && relay_standoff_height >= 26 &&
        relay_standoff_outer_diameter >= 9,
        "Relay must retain its DP100 clearance and physically verified tall standoffs");
@@ -811,9 +847,12 @@ if (PART == "plate") {
     bpi_model_preview();
 } else if (PART == "presentation_esp32") {
     esp32_model_preview();
+} else if (PART == "presentation_c270") {
+    c270_model_preview();
 } else if (PART == "presentation_components") {
-    // Generic measured harness envelopes only. Exact BPI and ESP32 models are
-    // exported into material-specific meshes below. Keep-outs stay analytical.
+    // Generic measured harness envelopes only. Exact BPI, ESP32, and C270
+    // models are exported into material-specific meshes below. Keep-outs stay
+    // analytical.
     generic_component_preview(false);
 } else if (PART == "presentation_bpi_pcb") {
     bpi_model_at_fixture_datum()
@@ -844,6 +883,16 @@ if (PART == "plate") {
     esp32_model_at_fixture_datum() esp32_s3_supermini_antenna();
 } else if (PART == "presentation_esp32_silkscreen") {
     esp32_model_at_fixture_datum() esp32_s3_supermini_silkscreen();
+} else if (PART == "presentation_c270_shell") {
+    c270_model_at_fixture_datum() c270_shell();
+} else if (PART == "presentation_c270_dark") {
+    c270_model_at_fixture_datum() c270_dark();
+} else if (PART == "presentation_c270_glass") {
+    c270_model_at_fixture_datum() c270_glass();
+} else if (PART == "presentation_c270_led") {
+    c270_model_at_fixture_datum() c270_led();
+} else if (PART == "presentation_c270_labels") {
+    c270_model_at_fixture_datum() c270_labels();
 } else if (PART == "presentation_labels") {
     fixture_labels();
 } else if (PART == "fit_coupon") {

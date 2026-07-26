@@ -60,7 +60,25 @@ LAYER_MATERIALS = {
     "device-shell": ("DUT shell", "#22262b", 0.05, 0.42, 1.0),
     "device-controls": ("DUT controls", "#0f1114", 0.0, 0.38, 1.0),
     "device-screen": ("DUT screen", "#07161f", 0.08, 0.20, 1.0),
-    "webcam": ("Webcam", "#1f394d", 0.0, 0.48, 1.0),
+    "webcam-shell": (
+        "Logitech C270 shell and articulated clip", "#3b4147", 0.0, 0.40, 1.0
+    ),
+    "webcam-dark": (
+        "Logitech C270 bezel, lens barrel, and cable",
+        "#101317",
+        0.0,
+        0.34,
+        1.0,
+    ),
+    "webcam-glass": (
+        "Logitech C270 lens glass", "#101d29", 0.10, 0.18, 1.0
+    ),
+    "webcam-led": (
+        "Logitech C270 activity LED", "#b9d532", 0.0, 0.28, 1.0
+    ),
+    "webcam-labels": (
+        "Logitech C270 markings", "#eceeea", 0.0, 0.52, 1.0
+    ),
     "power-strip": ("Power strip", "#ecece7", 0.0, 0.62, 1.0),
     "placard-holder": ("Placard holder", "#17364f", 0.0, 0.48, 1.0),
     "placard-insert": ("White nameplate body", "#f5f5ed", 0.0, 0.48, 1.0),
