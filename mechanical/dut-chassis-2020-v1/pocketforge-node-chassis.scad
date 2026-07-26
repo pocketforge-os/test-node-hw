@@ -2730,13 +2730,13 @@ module production_batch_02_splice_collars() {
             gantry_splice_full_collar_print();
 }
 
-// Hardware that makes the gantry and both tooling plates adjustable: four
-// keyed gantry joint plates, four fixture spacers, and the four fixed-carrier
-// links (two upper, two lower).
+// Device-independent hardware that makes the gantry and fixture plate
+// adjustable: four keyed gantry joint plates and four fixture spacers.
+// Carrier links moved to the device pack so a retrofit never has to extract
+// them from a shared chassis bed.
 module production_batch_03_movable_mounts() {
     translate([22.0, 25.0, 0]) gantry_joint_plate_set();
     translate([105.0, 15.0, 0]) plate_spacer_set();
-    translate([150.0, 66.0, 0]) rear_carrier_link_set();
 }
 
 // Frame completion hardware: eight stacking registration tabs, the placard's

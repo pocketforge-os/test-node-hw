@@ -961,8 +961,31 @@ class ResolvedProfile:
     lock: Mapping[str, Any]
     lock_state: Mapping[str, Any]
     artifacts: Mapping[str, Any]
+    variants: Mapping[str, Any]
     qualification_manifest: Mapping[str, Any] | None
     openscad_parameters: Mapping[str, Any]
+
+
+def _validate_recipe(
+    root: Path,
+    value: Any,
+    path: str,
+) -> Mapping[str, Any]:
+    recipe = _object(value, path)
+    _keys(recipe, path, {"source", "part", "parameters"})
+    source = _project_path(root, recipe["source"], f"{path}.source")
+    if not source.is_file() or source.suffix != ".scad":
+        _fail(f"{path}.source", "must name an existing OpenSCAD source")
+    _string(recipe["part"], f"{path}.part", pattern=ID_RE)
+    parameters = _object(recipe["parameters"], f"{path}.parameters")
+    for parameter_name, parameter_value in parameters.items():
+        _string(
+            parameter_name,
+            f"{path}.parameters key",
+            pattern=re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$"),
+        )
+        openscad_literal(parameter_value)
+    return recipe
 
 
 def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
@@ -976,6 +999,7 @@ def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
             "schema",
             "profile_id",
             "device_slugs",
+            "device_variants",
             "fixture",
             "implementation",
             "artifacts",
@@ -1000,6 +1024,62 @@ def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
         minimum=1,
         pattern=SLUG_RE,
     )
+    variants: dict[str, Mapping[str, Any]] = {}
+    for index, item in enumerate(
+        _array(document["device_variants"], f"{profile_path}.device_variants")
+    ):
+        variant_path = f"{profile_path}.device_variants[{index}]"
+        variant = _object(item, variant_path)
+        _keys(
+            variant,
+            variant_path,
+            {"device_slug", "display_name", "production_carrier"},
+        )
+        slug = _string(
+            variant["device_slug"],
+            f"{variant_path}.device_slug",
+            pattern=SLUG_RE,
+        )
+        if slug in variants:
+            _fail(f"{variant_path}.device_slug", f"duplicate device {slug!r}")
+        display_name = _string(
+            variant["display_name"],
+            f"{variant_path}.display_name",
+        )
+        if len(display_name) > 64:
+            _fail(f"{variant_path}.display_name", "must be at most 64 characters")
+        carrier = _validate_recipe(
+            root,
+            variant["production_carrier"],
+            f"{variant_path}.production_carrier",
+        )
+        if carrier["part"] != "plate":
+            _fail(
+                f"{variant_path}.production_carrier.part",
+                "must render the production plate",
+            )
+        required_parameters = {
+            "SHOW_DEVICE": False,
+            "SHOW_HOOKS": False,
+            "SHOW_LABELS": True,
+        }
+        for name, expected in required_parameters.items():
+            if carrier["parameters"].get(name) is not expected:
+                _fail(
+                    f"{variant_path}.production_carrier.parameters.{name}",
+                    f"must be {str(expected).lower()}",
+                )
+        if carrier["parameters"].get("DEVICE_LABEL") != display_name:
+            _fail(
+                f"{variant_path}.production_carrier.parameters.DEVICE_LABEL",
+                "must exactly match display_name",
+            )
+        variants[slug] = variant
+    if set(variants) != set(device_slugs):
+        _fail(
+            f"{profile_path}.device_variants",
+            "must map every device slug exactly once",
+        )
 
     fixture_binding = _object(document["fixture"], f"{profile_path}.fixture")
     _keys(
@@ -1275,30 +1355,7 @@ def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
     for artifact_name, value in artifacts.items():
         _string(artifact_name, f"{profile_path}.artifacts key", pattern=ID_RE)
         artifact_path = f"{profile_path}.artifacts.{artifact_name}"
-        artifact = _object(value, artifact_path)
-        _keys(artifact, artifact_path, {"source", "part", "parameters"})
-        source = _project_path(
-            root,
-            artifact["source"],
-            f"{artifact_path}.source",
-        )
-        if not source.is_file() or source.suffix != ".scad":
-            _fail(
-                f"{artifact_path}.source",
-                "must name an existing OpenSCAD source",
-            )
-        _string(artifact["part"], f"{artifact_path}.part")
-        parameters = _object(
-            artifact["parameters"],
-            f"{artifact_path}.parameters",
-        )
-        for parameter_name, parameter_value in parameters.items():
-            _string(
-                parameter_name,
-                f"{artifact_path}.parameters key",
-                pattern=re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$"),
-            )
-            openscad_literal(parameter_value)
+        _validate_recipe(root, value, artifact_path)
 
     manifest: Mapping[str, Any] | None = None
     artifact_names = _string_list(
@@ -1438,6 +1495,7 @@ def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
         lock=lock,
         lock_state=lock_state,
         artifacts=artifacts,
+        variants=variants,
         qualification_manifest=manifest,
         openscad_parameters=parameters,
     )
@@ -1594,28 +1652,34 @@ def openscad_literal(value: Any) -> str:
     )
 
 
-def artifact_command(
+def recipe_parameters(
     resolved: ResolvedProfile,
-    artifact_name: str,
+    recipe: Mapping[str, Any],
+    parameter_overrides: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    parameters = dict(resolved.openscad_parameters)
+    parameters.update(recipe["parameters"])
+    parameters["PART"] = recipe["part"]
+    if parameter_overrides:
+        parameters.update(parameter_overrides)
+    return parameters
+
+
+def recipe_command(
+    resolved: ResolvedProfile,
+    recipe: Mapping[str, Any],
     output: Path,
     *,
     openscad: str,
     parameter_overrides: Mapping[str, Any] | None = None,
 ) -> list[str]:
-    artifact = resolved.artifacts.get(artifact_name)
-    if not isinstance(artifact, dict):
-        raise ProfileError(f"unknown profile artifact: {artifact_name}")
     source = _project_path(
         resolved.root,
-        artifact["source"],
-        f"artifacts.{artifact_name}.source",
+        recipe["source"],
+        "recipe.source",
     )
     output = output.resolve()
-    parameters = dict(resolved.openscad_parameters)
-    parameters.update(artifact["parameters"])
-    parameters["PART"] = artifact["part"]
-    if parameter_overrides:
-        parameters.update(parameter_overrides)
+    parameters = recipe_parameters(resolved, recipe, parameter_overrides)
     command = [
         openscad,
         "--hardwarnings",
@@ -1628,6 +1692,26 @@ def artifact_command(
         command.extend(["-D", f"{name}={openscad_literal(parameters[name])}"])
     command.append(str(source))
     return command
+
+
+def artifact_command(
+    resolved: ResolvedProfile,
+    artifact_name: str,
+    output: Path,
+    *,
+    openscad: str,
+    parameter_overrides: Mapping[str, Any] | None = None,
+) -> list[str]:
+    artifact = resolved.artifacts.get(artifact_name)
+    if not isinstance(artifact, dict):
+        raise ProfileError(f"unknown profile artifact: {artifact_name}")
+    return recipe_command(
+        resolved,
+        artifact,
+        output,
+        openscad=openscad,
+        parameter_overrides=parameter_overrides,
+    )
 
 
 def render_artifact(

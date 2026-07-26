@@ -11,6 +11,7 @@ on:
       - "mechanical/dut-cradle-v1/profiles/**"
       - "mechanical/dut-cradle-v1/qualification/**"
       - "mechanical/dut-cradle-v1/scripts/**"
+      - "mechanical/device-packs/**"
       - "mechanical/dut-chassis-2020-v1/Makefile"
       - "mechanical/dut-chassis-2020-v1/scripts/**"
       - ".github/workflows/openscad-lint.yml"
@@ -21,7 +22,7 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out source
         env:
@@ -86,3 +87,16 @@ jobs:
           xvfb-run --auto-servernum \
             python3 "$cradle/scripts/holder_profiles.py" \
               check-mutation --profile "$profile"
+
+      - name: Test device-pack contracts
+        run: python3 mechanical/device-packs/test_device_pack.py
+
+      - name: Build and verify a real qualified coupon pack
+        run: |
+          set -euo pipefail
+          pack="mechanical/device-packs/build/trimui-smart-pro/coupon"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/build_device_pack.py build \
+              --device trimui-smart-pro --mode coupon
+          python3 mechanical/device-packs/build_device_pack.py verify \
+            --pack "$pack"
