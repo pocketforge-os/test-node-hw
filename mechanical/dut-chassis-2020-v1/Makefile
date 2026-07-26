@@ -31,6 +31,13 @@ FIXTURE_BOOST_DARK_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-dar
 FIXTURE_BOOST_ADJUSTER_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-adjuster.stl
 FIXTURE_BOOST_METAL_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-metal.stl
 FIXTURE_BOOST_SILKSCREEN_STL := ../dut-fixture-v1/build/pocketforge-hiletgo-xl6009-silkscreen.stl
+FIXTURE_DP100_SHELL_STL := ../dut-fixture-v1/build/pocketforge-alientek-dp100-shell.stl
+FIXTURE_DP100_DARK_STL := ../dut-fixture-v1/build/pocketforge-alientek-dp100-dark.stl
+FIXTURE_DP100_CONTROLS_STL := ../dut-fixture-v1/build/pocketforge-alientek-dp100-controls.stl
+FIXTURE_DP100_SCREEN_STL := ../dut-fixture-v1/build/pocketforge-alientek-dp100-screen.stl
+FIXTURE_DP100_ACCENT_STL := ../dut-fixture-v1/build/pocketforge-alientek-dp100-accent.stl
+FIXTURE_DP100_METAL_STL := ../dut-fixture-v1/build/pocketforge-alientek-dp100-metal.stl
+FIXTURE_DP100_MARKINGS_STL := ../dut-fixture-v1/build/pocketforge-alientek-dp100-markings.stl
 FIXTURE_BPI_PCB_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-pcb.stl
 FIXTURE_BPI_DARK_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-dark.stl
 FIXTURE_BPI_METAL_STL := ../dut-fixture-v1/build/pocketforge-bpi-m2-zero-metal.stl
@@ -67,6 +74,13 @@ PRESENTATION_FIXTURE_BOOST_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hi
 PRESENTATION_FIXTURE_BOOST_ADJUSTER_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-adjuster.stl
 PRESENTATION_FIXTURE_BOOST_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-metal.stl
 PRESENTATION_FIXTURE_BOOST_SILKSCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-hiletgo-xl6009-silkscreen.stl
+PRESENTATION_FIXTURE_DP100_SHELL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-alientek-dp100-shell.stl
+PRESENTATION_FIXTURE_DP100_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-alientek-dp100-dark.stl
+PRESENTATION_FIXTURE_DP100_CONTROLS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-alientek-dp100-controls.stl
+PRESENTATION_FIXTURE_DP100_SCREEN_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-alientek-dp100-screen.stl
+PRESENTATION_FIXTURE_DP100_ACCENT_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-alientek-dp100-accent.stl
+PRESENTATION_FIXTURE_DP100_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-alientek-dp100-metal.stl
+PRESENTATION_FIXTURE_DP100_MARKINGS_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-alientek-dp100-markings.stl
 PRESENTATION_FIXTURE_BPI_PCB_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-pcb.stl
 PRESENTATION_FIXTURE_BPI_DARK_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-dark.stl
 PRESENTATION_FIXTURE_BPI_METAL_STL := $(PRESENTATION_IMPORT_DIR)/pocketforge-bpi-m2-zero-metal.stl
@@ -111,6 +125,13 @@ PRESENTATION_ASSETS := \
 	$(PRESENTATION_FIXTURE_BOOST_ADJUSTER_STL) \
 	$(PRESENTATION_FIXTURE_BOOST_METAL_STL) \
 	$(PRESENTATION_FIXTURE_BOOST_SILKSCREEN_STL) \
+	$(PRESENTATION_FIXTURE_DP100_SHELL_STL) \
+	$(PRESENTATION_FIXTURE_DP100_DARK_STL) \
+	$(PRESENTATION_FIXTURE_DP100_CONTROLS_STL) \
+	$(PRESENTATION_FIXTURE_DP100_SCREEN_STL) \
+	$(PRESENTATION_FIXTURE_DP100_ACCENT_STL) \
+	$(PRESENTATION_FIXTURE_DP100_METAL_STL) \
+	$(PRESENTATION_FIXTURE_DP100_MARKINGS_STL) \
 	$(PRESENTATION_FIXTURE_BPI_PCB_STL) \
 	$(PRESENTATION_FIXTURE_BPI_DARK_STL) \
 	$(PRESENTATION_FIXTURE_BPI_METAL_STL) \
@@ -249,6 +270,13 @@ GUIDE_LAYERS := \
 	$(GUIDE_LAYER_BUILD)/fixture-boost-adjuster.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-boost-metal.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-boost-silkscreen.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-dp100-shell.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-dp100-dark.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-dp100-controls.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-dp100-screen.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-dp100-accent.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-dp100-metal.stl \
+	$(GUIDE_LAYER_BUILD)/fixture-dp100-markings.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-pcb.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-dark.stl \
 	$(GUIDE_LAYER_BUILD)/fixture-bpi-metal.stl \
@@ -458,6 +486,27 @@ $(FIXTURE_BOOST_METAL_STL):
 $(FIXTURE_BOOST_SILKSCREEN_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-hiletgo-xl6009-silkscreen.stl
 
+$(FIXTURE_DP100_SHELL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-alientek-dp100-shell.stl
+
+$(FIXTURE_DP100_DARK_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-alientek-dp100-dark.stl
+
+$(FIXTURE_DP100_CONTROLS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-alientek-dp100-controls.stl
+
+$(FIXTURE_DP100_SCREEN_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-alientek-dp100-screen.stl
+
+$(FIXTURE_DP100_ACCENT_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-alientek-dp100-accent.stl
+
+$(FIXTURE_DP100_METAL_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-alientek-dp100-metal.stl
+
+$(FIXTURE_DP100_MARKINGS_STL):
+	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-alientek-dp100-markings.stl
+
 $(FIXTURE_BPI_PCB_STL):
 	$(MAKE) -C ../dut-fixture-v1 build/pocketforge-bpi-m2-zero-pcb.stl
 
@@ -558,6 +607,27 @@ $(PRESENTATION_FIXTURE_BOOST_METAL_STL): $(FIXTURE_BOOST_METAL_STL) | $(PRESENTA
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_BOOST_SILKSCREEN_STL): $(FIXTURE_BOOST_SILKSCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_DP100_SHELL_STL): $(FIXTURE_DP100_SHELL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_DP100_DARK_STL): $(FIXTURE_DP100_DARK_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_DP100_CONTROLS_STL): $(FIXTURE_DP100_CONTROLS_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_DP100_SCREEN_STL): $(FIXTURE_DP100_SCREEN_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_DP100_ACCENT_STL): $(FIXTURE_DP100_ACCENT_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_DP100_METAL_STL): $(FIXTURE_DP100_METAL_STL) | $(PRESENTATION_IMPORT_DIR)
+	cp $< $@
+
+$(PRESENTATION_FIXTURE_DP100_MARKINGS_STL): $(FIXTURE_DP100_MARKINGS_STL) | $(PRESENTATION_IMPORT_DIR)
 	cp $< $@
 
 $(PRESENTATION_FIXTURE_BPI_PCB_STL): $(FIXTURE_BPI_PCB_STL) | $(PRESENTATION_IMPORT_DIR)
@@ -995,6 +1065,27 @@ $(GUIDE_LAYER_BUILD)/fixture-boost-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER
 
 $(GUIDE_LAYER_BUILD)/fixture-boost-silkscreen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_boost_silkscreen"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-dp100-shell.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_dp100_shell"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-dp100-dark.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_dp100_dark"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-dp100-controls.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_dp100_controls"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-dp100-screen.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_dp100_screen"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-dp100-accent.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_dp100_accent"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-dp100-metal.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_dp100_metal"' $<
+
+$(GUIDE_LAYER_BUILD)/fixture-dp100-markings.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_dp100_markings"' $<
 
 $(GUIDE_LAYER_BUILD)/fixture-bpi-pcb.stl: $(GUIDE_MESH_DEPS) | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_fixture_bpi_pcb"' $<

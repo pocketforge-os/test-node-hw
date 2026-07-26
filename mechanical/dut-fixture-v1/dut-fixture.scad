@@ -8,11 +8,16 @@
  *   openscad -o fixture.stl -D 'PART="plate"' dut-fixture.scad
  *
  * PART choices: preview, plate, presentation_relay, presentation_bpi,
- * presentation_boost, presentation_esp32, presentation_c270,
+ * presentation_boost, presentation_dp100, presentation_esp32,
+ * presentation_c270,
  * presentation_components,
  * presentation_boost_pcb, presentation_boost_dark,
  * presentation_boost_adjuster, presentation_boost_metal,
  * presentation_boost_silkscreen,
+ * presentation_dp100_shell, presentation_dp100_dark,
+ * presentation_dp100_controls,
+ * presentation_dp100_screen, presentation_dp100_accent,
+ * presentation_dp100_metal, presentation_dp100_markings,
  * presentation_relay_pcb, presentation_relay_blue,
  * presentation_relay_dark, presentation_relay_metal,
  * presentation_relay_led, presentation_relay_silkscreen,
@@ -31,6 +36,7 @@ use <bpi-m2-zero-v1.scad>;
 use <elegoo-4-channel-relay.scad>;
 use <esp32-s3-supermini-hw747-v0.0.2.scad>;
 use <hiletgo-xl6009.scad>;
+use <alientek-dp100.scad>;
 use <logitech-c270.scad>;
 
 PART = "preview";
@@ -174,6 +180,39 @@ esp32_usb_service_size = [esp32_usb_service_width, esp32_usb_service_depth];
 // Owner-corrected caliper measurement of this physical DP100 revision.
 dp100_origin = [89.5, 162];
 dp100_size = [94.6, 62.2];
+DP100_MODEL_SCALE = 1.0;
+DP100_MODEL_BODY = [dp100_size.x, dp100_size.y, 17.2];
+DP100_MODEL_BANANA_EDGE = "-X";
+DP100_MODEL_USB_EDGE = "+X";
+DP100_MODEL_CONTROLS_EDGE = "-Y";
+dp100_install_lift = 0.20;
+dp100_banana_service_depth = 6.0;
+dp100_usb_service_depth = 15.0;
+dp100_banana_service_origin = [
+    dp100_origin.x - alientek_dp100_banana_projection() -
+    dp100_banana_service_depth,
+    dp100_origin.y + 10.0
+];
+dp100_banana_service_size = [
+    dp100_banana_service_depth,
+    dp100_size.y - 20.0
+];
+dp100_usb_service_origin = [
+    dp100_origin.x + dp100_size.x,
+    dp100_origin.y + 12.0
+];
+dp100_usb_service_size = [
+    dp100_usb_service_depth,
+    14.0
+];
+dp100_usb_c_service_origin = [
+    dp100_origin.x + dp100_size.x,
+    dp100_origin.y + 41.8
+];
+dp100_usb_c_service_size = [
+    dp100_usb_service_depth,
+    10.4
+];
 // The owner sketch has exactly one slot on each short side. The vertical
 // offsets are measured down from the top edge in that sketch.
 dp100_tie_features = [
@@ -426,6 +465,16 @@ module boost_model_preview() {
     boost_model_at_fixture_datum() hiletgo_xl6009_complete();
 }
 
+module dp100_model_at_fixture_datum() {
+    translate([dp100_origin.x, dp100_origin.y,
+               plate_thickness + dp100_install_lift])
+        children();
+}
+
+module dp100_model_preview() {
+    dp100_model_at_fixture_datum() alientek_dp100_complete();
+}
+
 module esp32_model_at_fixture_datum() {
     translate([esp32_origin.x, esp32_origin.y,
                plate_thickness + esp32_install_lift])
@@ -448,7 +497,6 @@ module c270_model_preview() {
 module generic_component_preview(show_service_keepouts = true) {
     envelope(mosfet_origin, mosfet_size, 8, "Teal");
     envelope(antenna_origin, antenna_size, 4, "DimGray", 4);
-    envelope(dp100_origin, dp100_size, 17.2, "SlateGray", 5);
     envelope(powered_hub_origin, powered_hub_size, 15, "WhiteSmoke", 4);
     envelope(unpowered_hub_origin, unpowered_hub_size, 15, "Black", 4);
     if (show_service_keepouts) {
@@ -456,6 +504,12 @@ module generic_component_preview(show_service_keepouts = true) {
                                 webcam_below_service_size);
         service_keepout_preview(esp32_usb_service_origin,
                                 esp32_usb_service_size, "DodgerBlue");
+        service_keepout_preview(dp100_banana_service_origin,
+                                dp100_banana_service_size, "Goldenrod");
+        service_keepout_preview(dp100_usb_service_origin,
+                                dp100_usb_service_size, "DodgerBlue");
+        service_keepout_preview(dp100_usb_c_service_origin,
+                                dp100_usb_c_service_size, "DodgerBlue");
         for (service = hub_service_envelopes)
             service_keepout_preview(service[1], service[2], "DodgerBlue");
     }
@@ -466,6 +520,7 @@ module component_preview(show_service_keepouts = true) {
     relay_model_preview();
     bpi_model_preview();
     boost_model_preview();
+    dp100_model_preview();
     esp32_model_preview();
     c270_model_preview();
 }
@@ -564,6 +619,15 @@ assert(envelope_inside_plate(esp32_origin, esp32_size), "ESP32 envelope exceeds 
 assert(envelope_inside_plate(esp32_usb_service_origin, esp32_usb_service_size),
        "ESP32 USB service keep-out exceeds plate");
 assert(envelope_inside_plate(dp100_origin, dp100_size), "DP100 envelope exceeds plate");
+assert(envelope_inside_plate(dp100_banana_service_origin,
+                             dp100_banana_service_size),
+       "DP100 banana-output service keep-out exceeds plate");
+assert(envelope_inside_plate(dp100_usb_service_origin,
+                             dp100_usb_service_size),
+       "DP100 USB-A service keep-out exceeds plate");
+assert(envelope_inside_plate(dp100_usb_c_service_origin,
+                             dp100_usb_c_service_size),
+       "DP100 USB-C service keep-out exceeds plate");
 assert(envelope_inside_plate(webcam_origin, webcam_keepout), "Webcam keep-out exceeds plate");
 assert(envelope_inside_plate(webcam_below_service_origin, webcam_below_service_size),
        "Webcam below-clearance exceeds plate");
@@ -674,6 +738,37 @@ assert(BOOST_MODEL_INPUT_EDGE == hiletgo_xl6009_input_edge() &&
            BOOST_MODEL_INPUT_EDGE));
 assert(hiletgo_xl6009_complete_height() == 14.0,
        "HiLetgo XL6009 populated height changed");
+assert(dp100_size == [alientek_dp100_body_size().x,
+                      alientek_dp100_body_size().y] &&
+       DP100_MODEL_BODY == alientek_dp100_body_size() &&
+       DP100_MODEL_SCALE == 1.0,
+       str("ALIENTEK DP100 model scale/envelope changed: ",
+           DP100_MODEL_SCALE, " ", DP100_MODEL_BODY));
+assert(alientek_dp100_overall_size() == [100.4, 62.2, 17.2] &&
+       abs(dp100_size.x + alientek_dp100_banana_projection() -
+           alientek_dp100_overall_size().x) < epsilon,
+       "ALIENTEK DP100 nominal-vs-installed length reconciliation changed");
+assert(DP100_MODEL_BANANA_EDGE == alientek_dp100_banana_edge() &&
+       DP100_MODEL_BANANA_EDGE == "-X" &&
+       DP100_MODEL_USB_EDGE == alientek_dp100_usb_edge() &&
+       DP100_MODEL_USB_EDGE == "+X" &&
+       DP100_MODEL_CONTROLS_EDGE == alientek_dp100_controls_edge() &&
+       DP100_MODEL_CONTROLS_EDGE == "-Y",
+       str("ALIENTEK DP100 connector/control orientation changed: ",
+           DP100_MODEL_BANANA_EDGE, " ", DP100_MODEL_USB_EDGE, " ",
+           DP100_MODEL_CONTROLS_EDGE));
+assert(dp100_origin.x - alientek_dp100_banana_projection() >= 0 &&
+       dp100_origin.x + dp100_size.x + dp100_usb_service_depth <= plate_size.x,
+       "ALIENTEK DP100 terminal or USB access exceeds the fixture plate");
+assert(alientek_dp100_amazon_reference_sha256() ==
+       "d1cc4a01bcb721d4008ab76b5ed69d7946b5a39c68044a902c942d604a63ae0f",
+       "ALIENTEK DP100 Amazon reference hash changed");
+assert(alientek_dp100_manual_sha256() ==
+       "8878f9aa3be219964c41ad3a4e679526bea54946a262fc61f35ed965d7e5f97b",
+       "ALIENTEK DP100 manual hash changed");
+assert(alientek_dp100_manual_appearance_sha256() ==
+       "b159077910e492e4b89ae799d4b1a33a58099f083935db80fc7cc7690488ad0f",
+       "ALIENTEK DP100 appearance-diagram hash changed");
 assert(len(frame_tie_features) == 8,
        "Exactly eight 4040-frame tie anchors are required");
 assert(webcam_centre.x == plate_size.x / 2,
@@ -844,7 +939,13 @@ service_envelopes = concat(
     [["webcam_below_service", webcam_below_service_origin,
       webcam_below_service_size, "webcam"],
      ["esp32_usb_service", esp32_usb_service_origin,
-      esp32_usb_service_size, "esp32"]],
+      esp32_usb_service_size, "esp32"],
+     ["dp100_banana_service", dp100_banana_service_origin,
+      dp100_banana_service_size, "dp100"],
+     ["dp100_usb_a_service", dp100_usb_service_origin,
+      dp100_usb_service_size, "dp100"],
+     ["dp100_usb_c_service", dp100_usb_c_service_origin,
+      dp100_usb_c_service_size, "dp100"]],
     hub_service_envelopes
 );
 service_clearance = 1.0;
@@ -931,6 +1032,8 @@ if (PART == "plate") {
     relay_model_preview();
 } else if (PART == "presentation_boost") {
     boost_model_preview();
+} else if (PART == "presentation_dp100") {
+    dp100_model_preview();
 } else if (PART == "presentation_esp32") {
     esp32_model_preview();
 } else if (PART == "presentation_c270") {
@@ -950,6 +1053,20 @@ if (PART == "plate") {
     boost_model_at_fixture_datum() hiletgo_xl6009_metal();
 } else if (PART == "presentation_boost_silkscreen") {
     boost_model_at_fixture_datum() hiletgo_xl6009_silkscreen();
+} else if (PART == "presentation_dp100_shell") {
+    dp100_model_at_fixture_datum() alientek_dp100_shell();
+} else if (PART == "presentation_dp100_dark") {
+    dp100_model_at_fixture_datum() alientek_dp100_dark();
+} else if (PART == "presentation_dp100_controls") {
+    dp100_model_at_fixture_datum() alientek_dp100_controls();
+} else if (PART == "presentation_dp100_screen") {
+    dp100_model_at_fixture_datum() alientek_dp100_screen();
+} else if (PART == "presentation_dp100_accent") {
+    dp100_model_at_fixture_datum() alientek_dp100_accent();
+} else if (PART == "presentation_dp100_metal") {
+    dp100_model_at_fixture_datum() alientek_dp100_metal();
+} else if (PART == "presentation_dp100_markings") {
+    dp100_model_at_fixture_datum() alientek_dp100_markings();
 } else if (PART == "presentation_relay_pcb") {
     relay_model_at_fixture_datum() elegoo_relay_pcb();
 } else if (PART == "presentation_relay_blue") {

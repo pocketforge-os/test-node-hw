@@ -9,6 +9,8 @@ RELAY_SOURCE := elegoo-4-channel-relay.scad
 RELAY_PROVENANCE := ELEGOO-4-CHANNEL-RELAY-PROVENANCE.md
 BOOST_SOURCE := hiletgo-xl6009.scad
 BOOST_PROVENANCE := HILETGO-XL6009-PROVENANCE.md
+DP100_SOURCE := alientek-dp100.scad
+DP100_PROVENANCE := ALIENTEK-DP100-PROVENANCE.md
 ESP32_SOURCE := esp32-s3-supermini-hw747-v0.0.2.scad
 ESP32_PROVENANCE := ESP32-S3-SUPERMINI-PROVENANCE.md
 C270_SOURCE := logitech-c270.scad
@@ -34,6 +36,15 @@ BOOST_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-hiletgo-xl6009-metal.stl \
 	$(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl
 BOOST_COMPLETE_STL := $(BUILD)/pocketforge-hiletgo-xl6009-complete.stl
+DP100_PRESENTATION_STLS := \
+	$(BUILD)/pocketforge-alientek-dp100-shell.stl \
+	$(BUILD)/pocketforge-alientek-dp100-dark.stl \
+	$(BUILD)/pocketforge-alientek-dp100-controls.stl \
+	$(BUILD)/pocketforge-alientek-dp100-screen.stl \
+	$(BUILD)/pocketforge-alientek-dp100-accent.stl \
+	$(BUILD)/pocketforge-alientek-dp100-metal.stl \
+	$(BUILD)/pocketforge-alientek-dp100-markings.stl
+DP100_COMPLETE_STL := $(BUILD)/pocketforge-alientek-dp100-complete.stl
 ESP32_PRESENTATION_STLS := \
 	$(BUILD)/pocketforge-esp32-s3-supermini-pcb.stl \
 	$(BUILD)/pocketforge-esp32-s3-supermini-dark.stl \
@@ -55,6 +66,7 @@ C270_COMPLETE_STL := $(BUILD)/pocketforge-logitech-c270-complete.stl
 	validate-bpi-model-guard validate-bpi-provenance \
 	validate-relay-model-guard validate-relay-provenance \
 	validate-boost-model-guard validate-boost-provenance \
+	validate-dp100-model-guard validate-dp100-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance preview split clean
 
@@ -69,13 +81,13 @@ lint:
 $(BUILD):
 	mkdir -p $@
 
-$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-v1.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-components.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_components"' $<
 
-$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/pocketforge-dut-fixture-labels.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/pocketforge-bpi-m2-zero-pcb.stl: $(SOURCE) $(BPI_SOURCE) | $(BUILD)
@@ -132,6 +144,30 @@ $(BUILD)/pocketforge-hiletgo-xl6009-metal.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUI
 $(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_boost_silkscreen"' $<
 
+$(BUILD)/pocketforge-alientek-dp100-complete.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100"' $<
+
+$(BUILD)/pocketforge-alientek-dp100-shell.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100_shell"' $<
+
+$(BUILD)/pocketforge-alientek-dp100-dark.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100_dark"' $<
+
+$(BUILD)/pocketforge-alientek-dp100-controls.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100_controls"' $<
+
+$(BUILD)/pocketforge-alientek-dp100-screen.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100_screen"' $<
+
+$(BUILD)/pocketforge-alientek-dp100-accent.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100_accent"' $<
+
+$(BUILD)/pocketforge-alientek-dp100-metal.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100_metal"' $<
+
+$(BUILD)/pocketforge-alientek-dp100-markings.stl: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_dp100_markings"' $<
+
 $(BUILD)/pocketforge-esp32-s3-supermini-complete.stl: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_esp32"' $<
 
@@ -171,28 +207,28 @@ $(BUILD)/pocketforge-logitech-c270-led.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 $(BUILD)/pocketforge-logitech-c270-labels.stl: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_c270_labels"' $<
 
-$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/fit-coupon.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/preview-export.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-lower.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_lower"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/plate-upper.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate_upper"' -D 'SHOW_COMPONENTS=false' $<
 
-$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/joiner.stl: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="joiner"' -D 'SHOW_COMPONENTS=false' $<
 
 split: $(BUILD)/plate-lower.stl $(BUILD)/plate-upper.stl $(BUILD)/joiner.stl
 
-$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-preview.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho --viewall \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
 
-$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
+$(BUILD)/layout-top.png: $(SOURCE) $(BPI_SOURCE) $(RELAY_SOURCE) $(BOOST_SOURCE) $(DP100_SOURCE) $(ESP32_SOURCE) $(C270_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 --projection=ortho \
 		--autocenter --viewall --camera=100,120,400,100,120,0 \
 		-D 'PART="preview"' -D 'SHOW_COMPONENTS=true' $<
@@ -212,6 +248,11 @@ $(BUILD)/layout-hiletgo-xl6009.png: $(SOURCE) $(BOOST_SOURCE) | $(BUILD)
 		--viewall --camera=170,70,60,170,107,10 \
 		-D 'PART="presentation_boost"' $<
 
+$(BUILD)/layout-alientek-dp100.png: $(SOURCE) $(DP100_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 --projection=ortho \
+		--viewall --camera=137,125,100,137,193,12 \
+		-D 'PART="presentation_dp100"' $<
+
 $(BUILD)/layout-esp32-s3-supermini.png: $(SOURCE) $(ESP32_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1000,1400 --projection=ortho \
 		--viewall --camera=17,68,65,17,68,8 \
@@ -225,6 +266,7 @@ $(BUILD)/layout-logitech-c270.png: $(SOURCE) $(C270_SOURCE) | $(BUILD)
 preview: $(BUILD)/layout-preview.png $(BUILD)/layout-top.png \
 	$(BUILD)/layout-bpi-m2-zero.png $(BUILD)/layout-elegoo-relay.png \
 	$(BUILD)/layout-hiletgo-xl6009.png \
+	$(BUILD)/layout-alientek-dp100.png \
 	$(BUILD)/layout-esp32-s3-supermini.png \
 	$(BUILD)/layout-logitech-c270.png
 
@@ -379,6 +421,63 @@ validate-boost-provenance: $(BOOST_SOURCE) $(BOOST_PROVENANCE)
 		$(BOOST_PROVENANCE)
 	@echo 'boost_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
 
+validate-dp100-model-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/intentional-dp100-scale.log; \
+		mesh=$(BUILD)/intentional-dp100-scale.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_dp100_shell"' \
+			-D 'DP100_MODEL_SCALE=1.01' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional DP100 scale change was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'ALIENTEK DP100 model scale/envelope changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-dp100-nominal-body.log; \
+		mesh=$(BUILD)/intentional-dp100-nominal-body.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_dp100_shell"' \
+			-D 'DP100_MODEL_BODY=[100.4,62.2,17.2]' \
+			$(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: nominal DP100 length replaced measured body length' >&2; exit 1; \
+		fi; \
+		grep -q 'ALIENTEK DP100 model scale/envelope changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-dp100-orientation.log; \
+		mesh=$(BUILD)/intentional-dp100-orientation.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_dp100_metal"' \
+			-D 'DP100_MODEL_BANANA_EDGE="+X"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional DP100 connector reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'ALIENTEK DP100 connector/control orientation changed' $$log; \
+		rm -f $$log $$mesh
+	@set -eu; log=$(BUILD)/intentional-dp100-controls.log; \
+		mesh=$(BUILD)/intentional-dp100-controls.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="presentation_dp100_controls"' \
+			-D 'DP100_MODEL_CONTROLS_EDGE="+Y"' $(SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: intentional DP100 control-face reversal was not rejected' >&2; exit 1; \
+		fi; \
+		grep -q 'ALIENTEK DP100 connector/control orientation changed' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'dp100_model_guard=pass body=94.60x62.20x17.20 overall=100.40 banana=-X usb=+X controls=-Y'
+
+validate-dp100-provenance: $(DP100_SOURCE) $(DP100_PROVENANCE)
+	@grep -Fq 'd1cc4a01bcb721d4008ab76b5ed69d7946b5a39c68044a902c942d604a63ae0f' \
+		$(DP100_SOURCE)
+	@grep -Fq '8878f9aa3be219964c41ad3a4e679526bea54946a262fc61f35ed965d7e5f97b' \
+		$(DP100_SOURCE)
+	@grep -Fq 'b159077910e492e4b89ae799d4b1a33a58099f083935db80fc7cc7690488ad0f' \
+		$(DP100_SOURCE)
+	@grep -Fq 'd1cc4a01bcb721d4008ab76b5ed69d7946b5a39c68044a902c942d604a63ae0f' \
+		$(DP100_PROVENANCE)
+	@grep -Fq '8878f9aa3be219964c41ad3a4e679526bea54946a262fc61f35ed965d7e5f97b' \
+		$(DP100_PROVENANCE)
+	@grep -Fq 'b159077910e492e4b89ae799d4b1a33a58099f083935db80fc7cc7690488ad0f' \
+		$(DP100_PROVENANCE)
+	@grep -Fq 'No Amazon image, ALIENTEK artwork, manual page, third-party mesh, STEP body' \
+		$(DP100_PROVENANCE)
+	@echo 'dp100_provenance=pass external_geometry=not_redistributed reference_hashes=pinned'
+
 validate-esp32-model-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/intentional-esp32-scale.log; \
 		mesh=$(BUILD)/intentional-esp32-scale.stl; \
@@ -450,6 +549,7 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(BUILD)/pocketforge-dut-fixture-labels.stl \
 	$(RELAY_COMPLETE_STL) $(RELAY_PRESENTATION_STLS) \
 	$(BOOST_COMPLETE_STL) $(BOOST_PRESENTATION_STLS) \
+	$(DP100_COMPLETE_STL) $(DP100_PRESENTATION_STLS) \
 	$(BPI_PRESENTATION_STLS) \
 	$(ESP32_COMPLETE_STL) $(ESP32_PRESENTATION_STLS) \
 	$(C270_COMPLETE_STL) $(C270_PRESENTATION_STLS)
@@ -484,6 +584,22 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-metal.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-hiletgo-xl6009-silkscreen.stl
 	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 100.40 --max-x 100.40 \
+		--min-size-y 62.20 --max-y 62.20 \
+		--min-size-z 17.20 --max-z 17.20 \
+		$(DP100_COMPLETE_STL)
+	$(PYTHON) scripts/stl_bounds.py \
+		--min-size-x 94.60 --max-x 94.60 \
+		--min-size-y 62.20 --max-y 62.20 \
+		--min-size-z 17.20 --max-z 17.20 \
+		$(BUILD)/pocketforge-alientek-dp100-shell.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-alientek-dp100-dark.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-alientek-dp100-controls.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-alientek-dp100-screen.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-alientek-dp100-accent.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-alientek-dp100-metal.stl
+	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-alientek-dp100-markings.stl
+	$(PYTHON) scripts/stl_bounds.py \
 		--min-size-x 29.90 --max-x 29.90 \
 		--min-size-y 65.00 --max-y 65.00 \
 		--min-size-z 1.60 --max-z 1.60 \
@@ -511,12 +627,13 @@ validate-presentation-assets: $(BUILD)/pocketforge-dut-fixture-components.stl \
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-glass.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-led.stl
 	$(PYTHON) scripts/stl_bounds.py $(BUILD)/pocketforge-logitech-c270-labels.stl
-	@echo 'fixture_presentation_assets=pass proxies=5 labels=10 relay_layers=6 boost_layers=5 bpi_layers=5 esp32_layers=6 c270_layers=5'
+	@echo 'fixture_presentation_assets=pass proxies=4 labels=10 relay_layers=6 boost_layers=5 dp100_layers=7 bpi_layers=5 esp32_layers=6 c270_layers=5'
 
 validate: lint all split validate-overlap-guard validate-service-guard \
 	validate-preview-export validate-bpi-model-guard validate-bpi-provenance \
 	validate-relay-model-guard validate-relay-provenance \
 	validate-boost-model-guard validate-boost-provenance \
+	validate-dp100-model-guard validate-dp100-provenance \
 	validate-esp32-model-guard validate-esp32-provenance \
 	validate-c270-model-guard validate-c270-provenance \
 	validate-presentation-assets
