@@ -105,6 +105,10 @@ class HolderProfileTests(unittest.TestCase):
             set(self.profile["device_slugs"]),
             set(resolved.lock_state["contracts"]),
         )
+        self.assertEqual(
+            set(self.profile["device_slugs"]),
+            set(resolved.variants),
+        )
 
     def test_compiler_maps_locked_contacts_to_accepted_carrier_poses(self) -> None:
         poses = {
@@ -197,6 +201,34 @@ class HolderProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(profiles.ProfileError, "finite number"):
             self.validate_temp(wrong_type, self.lock)
 
+        missing_variant = copy.deepcopy(self.profile)
+        missing_variant["device_variants"].pop()
+        with self.assertRaisesRegex(
+            profiles.ProfileError,
+            "must map every device slug exactly once",
+        ):
+            self.validate_temp(missing_variant, self.lock)
+
+        preview_carrier = copy.deepcopy(self.profile)
+        preview_carrier["device_variants"][0]["production_carrier"][
+            "parameters"
+        ]["SHOW_DEVICE"] = True
+        with self.assertRaisesRegex(
+            profiles.ProfileError,
+            "SHOW_DEVICE.*must be false",
+        ):
+            self.validate_temp(preview_carrier, self.lock)
+
+        wrong_label = copy.deepcopy(self.profile)
+        wrong_label["device_variants"][0]["production_carrier"]["parameters"][
+            "DEVICE_LABEL"
+        ] = "Wrong label"
+        with self.assertRaisesRegex(
+            profiles.ProfileError,
+            "must exactly match display_name",
+        ):
+            self.validate_temp(wrong_label, self.lock)
+
     def test_contact_outside_locked_range_and_bad_binding_are_rejected(self) -> None:
         outside = copy.deepcopy(self.profile)
         outside["implementation"]["contacts"][0]["selected_coordinate_mm"] = 23.999
@@ -249,6 +281,11 @@ class HolderProfileTests(unittest.TestCase):
         profile = copy.deepcopy(self.profile)
         lock = copy.deepcopy(self.lock)
         profile["device_slugs"] = ["trimui-smart-pro"]
+        profile["device_variants"] = [
+            variant
+            for variant in profile["device_variants"]
+            if variant["device_slug"] == "trimui-smart-pro"
+        ]
         qualification = profile["qualification"]
         qualification["status"] = "unqualified"
         qualification["acceptance_ref"] = None
@@ -385,6 +422,27 @@ class HolderProfileTests(unittest.TestCase):
         ]
         self.assertEqual(definitions, sorted(definitions))
         self.assertIn("hook_throat=11.3", definitions)
+
+        variant = self.resolved.variants["trimui-smart-pro-s"]
+        variant_command = profiles.recipe_command(
+            self.resolved,
+            variant["production_carrier"],
+            output,
+            openscad="openscad",
+        )
+        variant_definitions = [
+            variant_command[index + 1]
+            for index, token in enumerate(variant_command[:-1])
+            if token == "-D"
+        ]
+        self.assertIn("SHOW_LABELS=true", variant_definitions)
+        self.assertIn(
+            'DEVICE_LABEL="TrimUI Smart Pro S"',
+            variant_definitions,
+        )
+        self.assertTrue(
+            variant_command[-1].endswith("trimui-smart-pro-s-cradle.scad")
+        )
 
     def test_source_pin_verification_checks_raw_bytes_and_alias_semantics(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

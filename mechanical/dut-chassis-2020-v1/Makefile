@@ -213,14 +213,18 @@ PRESENTATION_ASSETS := \
 	$(PRESENTATION_DEVICE_CONTROLS_STL) \
 	$(PRESENTATION_DEVICE_SCREEN_STL)
 
-PRODUCTION_BATCHES := \
+CHASSIS_CORE_BATCHES := \
 	$(BUILD)/production-batch-01-ironed-interfaces.stl \
 	$(BUILD)/production-batch-02-splice-collars.stl \
 	$(BUILD)/production-batch-03-movable-mounts.stl \
 	$(BUILD)/production-batch-04-frame-hardware.stl \
-	$(BUILD)/production-batch-05-placard-holder.stl \
+	$(BUILD)/production-batch-05-placard-holder.stl
+
+DEVICE_EXAMPLE_BATCHES := \
 	$(BUILD)/production-batch-06-device-nameplate.stl \
 	$(BUILD)/production-batch-07-wire-management.stl
+
+PRODUCTION_BATCHES := $(CHASSIS_CORE_BATCHES) $(DEVICE_EXAMPLE_BATCHES)
 
 CALIBRATION := $(BUILD)/production-batch-00-calibration.stl
 
@@ -387,7 +391,8 @@ GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
 
 .NOTPARALLEL:
 
-.PHONY: all batches calibration replacements lint preview presentation-assets \
+.PHONY: all batches core-batches device-example-batches calibration \
+	replacements lint preview presentation-assets \
 	guide-static guide-batch-models guide-layers guide-model handbook-assets \
 	cutlist refresh-cut-list \
 	validate-cut-list-sync validate validate-margin-guard \
@@ -398,7 +403,11 @@ GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
 
 all: batches replacements cutlist
 
-batches: $(PRODUCTION_BATCHES)
+batches: core-batches
+
+core-batches: $(CHASSIS_CORE_BATCHES)
+
+device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
 calibration: $(CALIBRATION)
 
@@ -1679,7 +1688,7 @@ validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES) \
 		$(BUILD)/cable-tie-anchor.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 8 \
 		$(BUILD)/production-batch-07-wire-management.stl
-	@echo 'production_batches=pass count=7 optional_calibration=pass registration_tabs=8 cable_anchors=8'
+	@echo 'production_batches=pass common_core=5 device_examples=2 optional_calibration=pass registration_tabs=8 cable_anchors=8'
 
 validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
@@ -1697,7 +1706,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass production_batches=7 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=24 cable_anchors=8'
+	@echo 'chassis_validation=pass common_core_batches=5 device_example_batches=2 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=24 cable_anchors=8'
 
 clean:
 	rm -rf $(BUILD)

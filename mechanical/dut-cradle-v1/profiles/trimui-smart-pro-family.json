@@ -5,6 +5,36 @@
     "trimui-smart-pro",
     "trimui-smart-pro-s"
   ],
+  "device_variants": [
+    {
+      "device_slug": "trimui-smart-pro",
+      "display_name": "TrimUI Smart Pro",
+      "production_carrier": {
+        "source": "trimui-smart-pro-cradle.scad",
+        "part": "plate",
+        "parameters": {
+          "DEVICE_LABEL": "TrimUI Smart Pro",
+          "SHOW_DEVICE": false,
+          "SHOW_HOOKS": false,
+          "SHOW_LABELS": true
+        }
+      }
+    },
+    {
+      "device_slug": "trimui-smart-pro-s",
+      "display_name": "TrimUI Smart Pro S",
+      "production_carrier": {
+        "source": "trimui-smart-pro-s-cradle.scad",
+        "part": "plate",
+        "parameters": {
+          "DEVICE_LABEL": "TrimUI Smart Pro S",
+          "SHOW_DEVICE": false,
+          "SHOW_HOOKS": false,
+          "SHOW_LABELS": true
+        }
+      }
+    }
+  ],
   "fixture": {
     "lock": "profiles/fixture-locks/trimui-smart-pro-family-v1.json",
     "interface_sha256": "637aa67b32e284af2d5ad1b1655e630392e06fa80af1996f498f8d3cdecb20d5",

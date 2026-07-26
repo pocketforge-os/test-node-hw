@@ -72,15 +72,11 @@ def canonical(point: Point) -> Point:
     return tuple(round(value, 6) for value in point)  # type: ignore[return-value]
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("stl", type=Path)
-    parser.add_argument("--expected-components", type=int, required=True)
-    args = parser.parse_args()
-
-    facets = triangles(args.stl)
+def inspect_topology(path: Path) -> dict[str, int]:
+    """Return stable 1e-6 mm edge-incidence and component metrics."""
+    facets = triangles(path)
     if not facets:
-        raise SystemExit(f"empty STL: {args.stl}")
+        raise ValueError(f"empty STL: {path}")
 
     normalized = [
         tuple(canonical(point) for point in triangle)
@@ -89,9 +85,10 @@ def main() -> int:
     edge_counts: Counter[tuple[Point, Point]] = Counter()
     vertex_owner: dict[Point, int] = {}
     components = DisjointSet(len(normalized))
+    degenerate_facets = 0
     for index, triangle in enumerate(normalized):
         if len(set(triangle)) != 3:
-            raise SystemExit(f"degenerate facet {index}: {triangle}")
+            degenerate_facets += 1
         for point in triangle:
             previous = vertex_owner.setdefault(point, index)
             components.union(index, previous)
@@ -102,31 +99,49 @@ def main() -> int:
         ):
             edge_counts[tuple(sorted((start, finish)))] += 1
 
-    invalid_edges = [
-        (edge, count) for edge, count in edge_counts.items() if count != 2
-    ]
-    if invalid_edges:
-        examples = ", ".join(
-            f"{edge}:{count}" for edge, count in invalid_edges[:3]
-        )
-        raise SystemExit(
-            "mesh is not closed edge-manifold: "
-            f"invalid_edges={len(invalid_edges)} examples={examples}"
-        )
-
+    invalid_edges = sum(count != 2 for count in edge_counts.values())
     component_count = len(
         {components.find(index) for index in range(len(normalized))}
     )
-    if component_count != args.expected_components:
+    return {
+        "facets": len(normalized),
+        "edges": len(edge_counts),
+        "components": component_count,
+        "invalid_edges": invalid_edges,
+        "degenerate_facets": degenerate_facets,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("stl", type=Path)
+    parser.add_argument("--expected-components", type=int, required=True)
+    args = parser.parse_args()
+
+    try:
+        result = inspect_topology(args.stl)
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
+        raise SystemExit(str(exc)) from exc
+    if result["degenerate_facets"]:
         raise SystemExit(
-            f"component_count={component_count} "
+            f"mesh has degenerate facets: {result['degenerate_facets']}"
+        )
+    if result["invalid_edges"]:
+        raise SystemExit(
+            "mesh is not closed edge-manifold: "
+            f"invalid_edges={result['invalid_edges']}"
+        )
+
+    if result["components"] != args.expected_components:
+        raise SystemExit(
+            f"component_count={result['components']} "
             f"expected={args.expected_components}"
         )
 
     print(
         "stl_topology=pass "
-        f"file={args.stl} facets={len(normalized)} "
-        f"edges={len(edge_counts)} components={component_count}"
+        f"file={args.stl} facets={result['facets']} "
+        f"edges={result['edges']} components={result['components']}"
     )
     return 0
 

@@ -12,7 +12,7 @@ holder uses only committed data, code and a pinned toolchain.
 | Semantic device `.scad`, skins | `platform/device-models` | Yes | Visual/UI identity and simulator controls; never assumed to be tolerance geometry |
 | `fixture-contract.json` | `platform/device-models/<slug>` | Yes | Evidence-backed envelope, contact regions, keep-outs, datums, uncertainty and qualification scope |
 | Fixture lock | `profiles/fixture-locks/` | Yes | Exact platform Git revision, raw contract hashes and resolved interface payload used by this repo |
-| Holder profile | `profiles/<family>.json` | Yes | Selected contact poses, carrier/frame choices, retention/fastener parameters, artifact recipes and qualification link |
+| Holder profile | `profiles/<family>.json` | Yes | Selected contact poses, exact device-to-carrier mapping, carrier/frame choices, retention/fastener parameters, artifact recipes and qualification link |
 | Reusable mechanism | `lib/*.scad` plus the named template | Yes | Parametric carrier/hook implementation |
 | Qualification manifest | `qualification/` | Yes | Normalized fingerprints and physical-acceptance provenance for fit-bearing meshes |
 | STL, previews, print packs | build/CI/release output | **No source commit** | Generated distribution artifacts; raw SHA-256 belongs in a pack manifest/release |
@@ -47,6 +47,9 @@ compares normalized geometry with the physically accepted manifest:
 - fit coupon.
 
 Labels are presentation data and remain outside the carrier-body fingerprint.
+Each `device_variants` entry still maps its slug to one exact wrapper and
+display name, so pack generation cannot silently substitute the Smart Pro S
+carrier label for a Smart Pro.
 
 ## Commands
 
@@ -98,14 +101,23 @@ records and OpenSCAD source. `render` writes only the explicit output path.
    mechanism family, contact IDs and exact poses inside the locked contact
    intervals. Keep presentation choices separate from retention fields.
 5. Run render-free validation and inspect the compiled OpenSCAD command.
-6. Generate the low-filament coupon first. A future device-pack command will
-   automate `coupon`, `retrofit` and `full` batches; until then use `render`
-   only for named artifacts.
-7. Print and physically check the coupon/contacts, then the carrier. Record
+6. Add one `device_variants` row per `device_slugs` entry. The production
+   recipe must select `PART="plate"`, suppress preview DUT/hooks, and retain
+   labels.
+7. Generate the low-filament coupon first:
+
+   ```sh
+   python3 ../device-packs/build_device_pack.py build \
+     --device <device-slug> --mode coupon
+   ```
+
+8. Print and physically check the coupon/contacts, then the carrier. Record
    explicit owner acceptance in a new qualification manifest before changing
    the profile status to `physically_qualified`.
-8. Once qualified, every profile, shared-mechanism or toolchain PR must
-   regenerate and compare that device's protected meshes.
+9. Once qualified, generate `retrofit` or `full` through the pack builder.
+   Never hand-select an old carrier, label, and hook set.
+10. Every profile, shared-mechanism or toolchain PR must regenerate and
+    compare that device's protected meshes.
 
 This common path is data authoring plus physical validation, not an LLM
 activity. Photos and calipers still require judgment, but regeneration does

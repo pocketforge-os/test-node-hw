@@ -78,18 +78,23 @@ make refresh-cut-list
 
 ## Canonical print workflow
 
-New chassis builds use these stable outputs:
+The chassis source owns five device-independent core beds. The device-pack
+builder combines them with the one carrier variant selected by the device
+profile; do not manually mix a carrier label, hook set, and device slug.
 
 | Batch | Output | Contents | Slicer exception |
 | --- | --- | --- | --- |
 | 00 | `production-batch-00-calibration.stl` | Rail key, channel-bar candidates, placard slide | Conditional after a process, material, printer, or extrusion change |
 | 01 | `production-batch-01-ironed-interfaces.stl` | 28 short channel bars and four long splice bars | Iron topmost surfaces |
 | 02 | `production-batch-02-splice-collars.stl` | Two full-wrap gantry collars | Print upright as exported |
-| 03 | `production-batch-03-movable-mounts.stl` | Gantry plates, fixture spacers, carrier links | None |
+| 03 | `production-batch-03-movable-mounts.stl` | Gantry plates and fixture spacers | None |
 | 04 | `production-batch-04-frame-hardware.stl` | Eight 18 × 92 × 4 mm registration tabs, placard mounts, power-strip blocks | None |
 | 05 | `production-batch-05-placard-holder.stl` | Reusable placard holder | None |
-| 06 | `production-batch-06-device-nameplate.stl` | Device-name plate only | Print white; change to black at 2.4 mm |
-| 07 | `production-batch-07-wire-management.stl` | Eight rail-mounted zip-tie anchors | None |
+
+Carrier links, the labeled carrier, six hooks, device nameplate, and eight
+starter wire anchors are device-pack outputs. The chassis still exposes its
+nameplate and anchor beds as development examples, but they are not canonical
+inputs for a newly onboarded device.
 
 All exported geometry is already in a support-free orientation and fits the
 conservative 247 × 207 mm Prusa printable envelope. The accepted process is
@@ -97,10 +102,18 @@ ABS, 0.8 mm nozzle, 0.4 mm layers, at least three perimeters, at least four
 top/bottom layers, 20–30% infill, supports disabled, and 100% scale. Do not
 auto-orient or auto-arrange a production batch.
 
-Build all production batches:
+Build the five shared chassis-core batches:
 
 ```sh
 make batches
+```
+
+Build a deterministic full pack from the repository root:
+
+```sh
+python3 mechanical/device-packs/build_device_pack.py build \
+  --device trimui-smart-pro \
+  --mode full
 ```
 
 Build the optional calibration bed:
@@ -114,6 +127,9 @@ Individual, stable replacement-part exports remain available through:
 ```sh
 make replacements
 ```
+
+See [`../device-packs/README.md`](../device-packs/README.md) for coupon,
+retrofit, full-pack, qualification, and generated-artifact policy.
 
 ## Captive M3 channel bars
 
