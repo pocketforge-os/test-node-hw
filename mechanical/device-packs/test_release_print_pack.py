@@ -467,7 +467,7 @@ class PublisherTests(unittest.TestCase):
                 repository=publisher.DEFAULT_REPOSITORY,
                 tag=self.identity.tag,
                 commit=COMMIT,
-                now=now + publisher.dt.timedelta(minutes=20),
+                now=now + publisher.dt.timedelta(hours=1),
             )
 
         with tempfile.TemporaryDirectory(prefix="pf-publisher-test-") as temp:

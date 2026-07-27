@@ -187,7 +187,7 @@ gh workflow run publish-print-pack.yml \
 `authorize` requires a clean checkout at the current remote `main`, reads the
 live immutable-release setting with administration access, and writes a
 non-secret Actions-variable proof bound to the exact repository, tag, and
-commit. The proof expires after 20 minutes. The release workflow receives no
+commit. The proof expires after one hour. The release workflow receives no
 administration credential and has no permission to mint or refresh that proof.
 
 After validating the authorization, the workflow creates a draft, uploads the
