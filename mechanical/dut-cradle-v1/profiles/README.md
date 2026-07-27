@@ -175,9 +175,11 @@ that `perimeter_j_hook_v1` cannot express. Use `implementation.kind =
 
 A custom profile cannot claim physical qualification. After its geometry works,
 promote the reusable portions to a named declarative mechanism, migrate the
-profile, run coupon/full physical acceptance, and only then qualify it. This is
-where a repo-owned holder-design skill can accelerate first-pass CAD; the
-merged result must still become deterministic source plus data.
+profile, run coupon/full physical acceptance, and only then qualify it. The
+repo-owned
+[`design-dut-holder`](../../../.agents/skills/design-dut-holder/SKILL.md)
+skill can accelerate first-pass CAD; the merged result must still become
+deterministic source plus data.
 
 ## Intentional upstream or holder changes
 

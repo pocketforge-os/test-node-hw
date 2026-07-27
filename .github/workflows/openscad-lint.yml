@@ -8,6 +8,7 @@ on:
       - "scripts/test-lint-openscad.sh"
       - "scripts/handbook_cad_refresh_plan.py"
       - "scripts/test_handbook_cad_refresh_plan.py"
+      - ".agents/skills/design-dut-holder/**"
       - "mechanical/dut-fixture-v1/Makefile"
       - "mechanical/dut-cradle-v1/Makefile"
       - "mechanical/dut-cradle-v1/profiles/**"
@@ -114,6 +115,14 @@ jobs:
 
       - name: Test handbook CAD refresh authorization
         run: python3 scripts/test_handbook_cad_refresh_plan.py
+
+      - name: Test the DUT holder design skill contract
+        run: |
+          set -euo pipefail
+          skill=".agents/skills/design-dut-holder"
+          python3 -m unittest discover \
+            -s "${skill}/scripts" -p 'test_*.py' -v
+          python3 "${skill}/scripts/validate_holder_workflow.py" contract
 
       - name: Parse and evaluate every OpenSCAD source
         run: xvfb-run --auto-servernum scripts/lint-openscad.sh
