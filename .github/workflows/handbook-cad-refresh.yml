@@ -1,12 +1,9 @@
 name: Refresh handbook CAD pin
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "mechanical/**"
-      - ".github/workflows/handbook-cad-refresh.yml"
-      - "scripts/pf-secret"
+  workflow_run:
+    workflows: ["OpenSCAD artifacts"]
+    types: [completed]
   workflow_dispatch: {}
 
 # Only a protected-main run can satisfy the AWS role's OIDC subject condition.
@@ -36,13 +33,72 @@ jobs:
           git checkout --detach FETCH_HEAD
           git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
 
+      - name: Interpret the artifact completion or manual recovery event
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PATH: ${{ github.event_path }}
+          EVENT_REPOSITORY: ${{ github.repository }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          plan="${RUNNER_TEMP:?RUNNER_TEMP is required}/handbook-cad-refresh-plan.json"
+          python3 scripts/handbook_cad_refresh_plan.py plan \
+            --event-name "${EVENT_NAME}" \
+            --event-path "${EVENT_PATH}" \
+            --repository "${EVENT_REPOSITORY}" \
+            --ref "${EVENT_REF}" \
+            --sha "${EVENT_SHA}" \
+            --output "${plan}"
+          authorized="$(jq -r '.authorized' "${plan}")"
+          reason="$(jq -r '.reason' "${plan}")"
+          echo "authorized=${authorized}" >>"${GITHUB_OUTPUT}"
+          echo "reason=${reason}" >>"${GITHUB_OUTPUT}"
+          echo "plan_path=${plan}" >>"${GITHUB_OUTPUT}"
+          echo "handbook_cad_refresh_event=${authorized} reason=${reason}"
+
+      - name: Require the tested commit to remain exact current main
+        if: steps.plan.outputs.authorized == 'true'
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_PATH: ${{ steps.plan.outputs.plan_path }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          current_main="$(
+            gh api "repos/${SOURCE_REPOSITORY}/commits/main" --jq '.sha'
+          )"
+          authorization="$(
+            mktemp \
+              "${RUNNER_TEMP:?RUNNER_TEMP is required}/handbook-cad-authorization.XXXXXX"
+          )"
+          python3 scripts/handbook_cad_refresh_plan.py authorize-current \
+            --plan "${PLAN_PATH}" \
+            --current-main "${current_main}" \
+            --output "${authorization}"
+          authorized="$(jq -r '.authorized' "${authorization}")"
+          reason="$(jq -r '.reason' "${authorization}")"
+          echo "authorized=${authorized}" >>"${GITHUB_OUTPUT}"
+          echo "reason=${reason}" >>"${GITHUB_OUTPUT}"
+          if [[ "${authorized}" == "true" ]]; then
+            source_sha="$(jq -r '.source.revision' "${authorization}")"
+            git fetch --quiet --depth=1 origin "${source_sha}"
+            [[ "$(git rev-parse FETCH_HEAD^{commit})" == "${source_sha}" ]]
+            echo "source_sha=${source_sha}" >>"${GITHUB_OUTPUT}"
+          fi
+          echo "handbook_cad_refresh_current=${authorized} reason=${reason}"
+
       - name: Assume the main-only handbook refresh role
+        if: steps.current.outputs.authorized == 'true'
         uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
         with:
           role-to-assume: arn:aws:iam::611492472006:role/pf-ci-handbook-refresh
           aws-region: us-east-1
 
       - name: Read the GitHub App credential through pf-secret
+        if: steps.current.outputs.authorized == 'true'
         id: app-credential
         env:
           PF_SECRET_BACKEND: aws-secrets
@@ -65,6 +121,7 @@ jobs:
           } >>"${GITHUB_OUTPUT}"
 
       - name: Mint a repository-scoped GitHub App token
+        if: steps.current.outputs.authorized == 'true'
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
@@ -78,10 +135,12 @@ jobs:
           permission-pull-requests: write
 
       - name: Advance the handbook gitlink and open or update its PR
+        if: steps.current.outputs.authorized == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           SOURCE_REPOSITORY: ${{ github.repository }}
-          TARGET_SHA: ${{ github.sha }}
+          TARGET_SHA: ${{ steps.current.outputs.source_sha }}
+          AUTHORIZATION_REASON: ${{ steps.plan.outputs.reason }}
         run: |
           set -euo pipefail
 
@@ -157,10 +216,10 @@ jobs:
           {
             printf '%s\n\n' '## Summary'
             printf '%s\n\n' \
-              "Automated CAD dependency refresh: advance the exact test-node-hw gitlink to \`${TARGET_SHA}\` immediately after its merge to \`main\`."
+              "Automated CAD dependency refresh: advance the exact test-node-hw gitlink to \`${TARGET_SHA}\` after authorization \`${AUTHORIZATION_REASON}\`."
             printf '%s\n\n' '## Test plan'
             printf '%s\n\n' \
-              "- [x] Trusted source-main automation verified that the only changed path is \`cad/test-node-hw\`, and the pinned commit is the current \`pocketforge-os/test-node-hw\` \`main\` commit."
+              "- [x] Trusted automation authorized the exact current \`pocketforge-os/test-node-hw\` \`main\` commit from a successful OpenSCAD artifact run or explicit manual recovery, and verified the only changed path is \`cad/test-node-hw\`."
             printf '%s\n\n' '## Related PRs'
             printf '%s\n' "${source_pr}"
           } >"${body_file}"

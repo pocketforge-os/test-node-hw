@@ -33,6 +33,12 @@ OpenSCAD renders and meshes are generated from source (`mechanical/**/*.stl` is 
 per-project `Makefile`. CI lints every `.scad`, runs the physically qualified cradle regression on
 relevant pull requests, and publishes rendered artifacts from relevant pushed revisions.
 
+The handbook CAD submodule advances only after the exact current `main`
+revision completes the full `OpenSCAD artifacts` push workflow successfully.
+Failed, cancelled, branch, pull-request, stale, or unrelated workflow events
+stop before refresh credentials are read. A manual recovery dispatch is
+available, but it is likewise restricted to exact current `main`.
+
 ## License
 
 TBD (open-hardware — recommend CERN-OHL-S/W or TAPR OHL).
