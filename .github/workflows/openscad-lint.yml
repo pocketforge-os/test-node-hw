@@ -29,6 +29,7 @@ jobs:
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       fixture_matrix: ${{ steps.plan.outputs.fixture_matrix }}
+      fixture_candidate_count: ${{ steps.plan.outputs.fixture_candidate_count }}
     steps:
       - name: Check out source and exact PR base
         env:
@@ -67,6 +68,11 @@ jobs:
           python3 "${intake}" validate-candidates
           fixture_matrix="$(python3 "${intake}" matrix)"
           echo "fixture_matrix=${fixture_matrix}" >>"${GITHUB_OUTPUT}"
+          fixture_candidate_count="$(
+            jq -r '.include | length' <<<"${fixture_matrix}"
+          )"
+          echo "fixture_candidate_count=${fixture_candidate_count}" \
+            >>"${GITHUB_OUTPUT}"
 
       - name: Upload the qualification plan
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -138,6 +144,10 @@ jobs:
   fixture_candidate:
     name: fixture candidate (${{ matrix.profile_id }})
     needs: qualification_plan
+    # GitHub reports an empty dynamic matrix as a failed dependency. Evaluate
+    # this job-level guard before matrix expansion so the ordinary zero-candidate
+    # state is an explicit skip while every non-empty matrix stays fail-closed.
+    if: ${{ needs.qualification_plan.outputs.fixture_candidate_count != '0' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     strategy:

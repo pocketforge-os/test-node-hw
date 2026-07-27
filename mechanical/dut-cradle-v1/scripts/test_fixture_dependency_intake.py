@@ -29,6 +29,10 @@ WORKFLOW_PATH = (
     ROOT.parent.parent
     / ".github/workflows/fixture-dependency-intake.yml"
 )
+LINT_WORKFLOW_PATH = (
+    ROOT.parent.parent
+    / ".github/workflows/openscad-lint.yml"
+)
 
 
 def git(root: Path, *arguments: str) -> str:
@@ -439,6 +443,33 @@ class FixtureDependencyIntakeTests(unittest.TestCase):
         self.assertIn("unexpected file on remote automation branch", text)
         self.assertIn("became non-draft before push", text)
         self.assertNotIn("gh pr merge", text)
+
+    def test_zero_candidate_matrix_is_an_explicit_successful_noop(self) -> None:
+        text = LINT_WORKFLOW_PATH.read_text(encoding="utf-8")
+        output = (
+            "fixture_candidate_count: "
+            "${{ steps.plan.outputs.fixture_candidate_count }}"
+        )
+        guard = (
+            "if: ${{ needs.qualification_plan.outputs."
+            "fixture_candidate_count != '0' }}"
+        )
+        self.assertIn(output, text)
+        self.assertIn("jq -r '.include | length'", text)
+        self.assertIn(
+            'echo "fixture_candidate_count=${fixture_candidate_count}"',
+            text,
+        )
+        job = text.split("\n  fixture_candidate:\n", 1)[1].split(
+            "\n  qualification:\n",
+            1,
+        )[0]
+        self.assertIn(guard, job)
+        self.assertLess(job.index(guard), job.index("strategy:"))
+        self.assertIn(
+            '"${FIXTURE_CANDIDATE_RESULT}" == "skipped"',
+            text,
+        )
 
 
 if __name__ == "__main__":
