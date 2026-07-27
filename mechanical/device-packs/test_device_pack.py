@@ -382,6 +382,33 @@ class DevicePackTests(unittest.TestCase):
             for source_input in document["inputs"]:
                 self.assertFalse(Path(source_input["path"]).is_absolute())
                 self.assertRegex(source_input["sha256"], r"^[0-9a-f]{64}$")
+            self.assertEqual(packs.PACK_SCHEMA, document["schema"])
+            qualification = document["qualification"]
+            self.assertEqual(
+                "mechanical/dut-cradle-v1/qualification/"
+                "trimui-smart-pro-family-v1.json",
+                qualification["manifest"]["path"],
+            )
+            self.assertRegex(
+                qualification["manifest"]["sha256"], r"^[0-9a-f]{64}$"
+            )
+            self.assertEqual(
+                qualification["accepted_geometry_revision"],
+                qualification["accepted_source_revision"],
+            )
+            fixture = document["fixture"]
+            self.assertEqual(
+                "mechanical/dut-cradle-v1/profiles/fixture-locks/"
+                "trimui-smart-pro-family-v1.json",
+                fixture["lock"]["path"],
+            )
+            self.assertEqual(
+                qualification["fixture_interface_sha256"],
+                fixture["interface_sha256"],
+            )
+            self.assertRegex(
+                fixture["platform_source"]["revision"], r"^[0-9a-f]{40}$"
+            )
 
     def test_manifest_and_checksum_tampering_are_detected(self) -> None:
         with tempfile.TemporaryDirectory(prefix="pf-pack-test-") as temp:

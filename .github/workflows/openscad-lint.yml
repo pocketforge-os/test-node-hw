@@ -15,6 +15,7 @@ on:
       - "mechanical/dut-chassis-2020-v1/Makefile"
       - "mechanical/dut-chassis-2020-v1/scripts/**"
       - ".github/workflows/openscad-lint.yml"
+      - ".github/workflows/publish-print-pack.yml"
 
 permissions:
   contents: read
@@ -111,7 +112,9 @@ jobs:
             matrix --kind qualified-devices
 
       - name: Test device-pack contracts
-        run: python3 mechanical/device-packs/test_device_pack.py
+        run: |
+          python3 -m unittest discover \
+            -s mechanical/device-packs -p 'test_*.py' -v
 
       - name: Build and verify a real qualified coupon pack
         run: |
@@ -215,6 +218,64 @@ jobs:
           compression-level: 9
           retention-days: 30
 
+  release_bundle:
+    name: deterministic qualified release bundle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Prove two real dual-device builds are byte-identical
+        run: |
+          set -euo pipefail
+          profile="trimui-smart-pro-family"
+          tag="$(
+            python3 mechanical/device-packs/release_print_pack.py identity \
+              --profile-id "${profile}"
+          )"
+          bundle="mechanical/device-packs/build/releases/${tag}"
+          first="${RUNNER_TEMP:?RUNNER_TEMP is required}/release-first.sha256"
+          second="${RUNNER_TEMP}/release-second.sha256"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/release_print_pack.py build \
+              --profile-id "${profile}" --output "${bundle}"
+          find "${bundle}" -maxdepth 1 -type f -print0 |
+            sort -z | xargs -0 sha256sum >"${first}"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/release_print_pack.py build \
+              --profile-id "${profile}" --output "${bundle}" --replace
+          find "${bundle}" -maxdepth 1 -type f -print0 |
+            sort -z | xargs -0 sha256sum >"${second}"
+          diff -u "${first}" "${second}"
+          python3 mechanical/device-packs/release_print_pack.py verify \
+            --bundle "${bundle}"
+
+      - name: Upload ephemeral release evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qualified-print-pack-${{ github.event.pull_request.head.sha }}
+          path: mechanical/device-packs/build/releases/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
   # Preserve the existing required status-check name while making it depend on
   # every dynamically discovered qualification job.
   lint:
@@ -224,6 +285,7 @@ jobs:
       - qualification_plan
       - static
       - qualification
+      - release_bundle
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -232,10 +294,12 @@ jobs:
           PLAN_RESULT: ${{ needs.qualification_plan.result }}
           STATIC_RESULT: ${{ needs.static.result }}
           QUALIFICATION_RESULT: ${{ needs.qualification.result }}
+          RELEASE_BUNDLE_RESULT: ${{ needs.release_bundle.result }}
         run: |
           set -euo pipefail
           [[ "${PLAN_RESULT}" == "success" ]]
           [[ "${STATIC_RESULT}" == "success" ]]
           [[ "${QUALIFICATION_RESULT}" == "success" \
             || "${QUALIFICATION_RESULT}" == "skipped" ]]
+          [[ "${RELEASE_BUNDLE_RESULT}" == "success" ]]
           echo "openscad_lint=pass qualification_matrix=pass"

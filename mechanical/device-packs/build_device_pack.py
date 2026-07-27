@@ -46,7 +46,7 @@ from mesh_fingerprint import (  # noqa: E402
 )
 
 
-PACK_SCHEMA = "pocketforge-device-print-pack-v1"
+PACK_SCHEMA = "pocketforge-device-print-pack-v2"
 LAYOUT_SCHEMA = "pocketforge-device-pack-layout-v1"
 REPOSITORY_URL = "https://github.com/pocketforge-os/test-node-hw"
 MODES = ("coupon", "retrofit", "full")
@@ -107,6 +107,17 @@ def _reject_constant(token: str) -> None:
     raise PackError(f"JSON contains non-finite number {token}")
 
 
+def _reject_duplicate_keys(
+    pairs: Sequence[tuple[str, Any]],
+) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise PackError(f"JSON contains duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
 def _load_json(path: Path) -> Any:
     try:
         return json.loads(
@@ -114,6 +125,7 @@ def _load_json(path: Path) -> Any:
             parse_float=Decimal,
             parse_int=Decimal,
             parse_constant=_reject_constant,
+            object_pairs_hook=_reject_duplicate_keys,
         )
     except OSError as exc:
         raise PackError(f"cannot read {path}: {exc}") from exc
@@ -875,19 +887,65 @@ def _toolchain_record(root: Path, layout: ResolvedLayout) -> dict[str, str]:
 
 
 def _qualification_record(
+    root: Path,
     profile: holder_profiles.ResolvedProfile,
 ) -> dict[str, Any]:
     qualification = profile.document["qualification"]
+    manifest_record: dict[str, Any] | None = None
+    accepted_source_revision: str | None = None
+    characterized_source_revision: str | None = None
+    manifest_status: str | None = None
+    if profile.qualification_manifest is not None:
+        manifest_path = (
+            profile.root / qualification["geometry_manifest"]
+        ).resolve()
+        manifest_qualification = _object(
+            profile.qualification_manifest["qualification"],
+            "qualification manifest.qualification",
+        )
+        manifest_record = {
+            "path": _relative(root, manifest_path),
+            "sha256": _sha256(manifest_path),
+            "schema": profile.qualification_manifest["schema"],
+        }
+        accepted_source_revision = manifest_qualification[
+            "accepted_source_revision"
+        ]
+        characterized_source_revision = manifest_qualification[
+            "characterized_source_revision"
+        ]
+        manifest_status = manifest_qualification["status"]
     return {
         "status": qualification["status"],
+        "manifest_status": manifest_status,
+        "manifest": manifest_record,
         "acceptance_ref": qualification["acceptance_ref"],
         "accepted_on": qualification["accepted_on"],
         "accepted_geometry_revision": qualification[
             "accepted_geometry_revision"
         ],
+        "accepted_source_revision": accepted_source_revision,
+        "characterized_source_revision": characterized_source_revision,
         "fixture_interface_sha256": qualification[
             "fixture_interface_sha256"
         ],
+    }
+
+
+def _fixture_record(
+    root: Path,
+    profile: holder_profiles.ResolvedProfile,
+) -> dict[str, Any]:
+    lock_path = (profile.root / profile.document["fixture"]["lock"]).resolve()
+    source = _object(profile.lock["source"], "fixture lock.source")
+    return {
+        "lock": {
+            "path": _relative(root, lock_path),
+            "sha256": _sha256(lock_path),
+            "schema": profile.lock["schema"],
+        },
+        "interface_sha256": profile.document["fixture"]["interface_sha256"],
+        "platform_source": _json_safe(source),
     }
 
 
@@ -922,7 +980,8 @@ def _manifest_header(
             "path": _relative(root, layout.path),
             "sha256": _sha256(layout.path),
         },
-        "qualification": _qualification_record(profile),
+        "qualification": _qualification_record(root, profile),
+        "fixture": _fixture_record(root, profile),
         "production_eligible": production_eligible,
         "nonproduction_reasons": list(reasons),
         "overrides": list(overrides),
@@ -1193,6 +1252,7 @@ def _read_pack_manifest(pack: Path) -> Mapping[str, Any]:
             "profile",
             "layout",
             "qualification",
+            "fixture",
             "production_eligible",
             "nonproduction_reasons",
             "overrides",
