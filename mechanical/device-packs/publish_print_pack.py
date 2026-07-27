@@ -258,19 +258,6 @@ class GitHubClient:
             raise PublishError("resolved-commit response is invalid")
         return value["sha"]
 
-    def latest_release(self) -> Mapping[str, Any] | None:
-        try:
-            value = self._api(
-                "GET", f"/repos/{self.repository}/releases/latest"
-            )
-        except ApiError as exc:
-            if exc.status == 404:
-                return None
-            raise
-        if not isinstance(value, dict):
-            raise PublishError("latest-release response is invalid")
-        return value
-
     def download_public_asset(self, url: str) -> bytes:
         parsed = urllib.parse.urlparse(url)
         if parsed.scheme != "https" or parsed.hostname != "github.com":
@@ -642,9 +629,9 @@ def _verify_published_state(
         raise PublishError(
             f"release tag resolves to {resolved}, expected {commit}"
         )
-    latest = client.latest_release()
-    if latest is not None and latest.get("tag_name") == tag:
-        raise PublishError("qualified print-pack release was marked latest")
+    # Do not consult /releases/latest here. GitHub designates the only
+    # published full release as latest even when both mutations requested
+    # make_latest=false. Consumers and reconciliation use the immutable tag.
     _verify_downloads(client, remote, expected)
 
 

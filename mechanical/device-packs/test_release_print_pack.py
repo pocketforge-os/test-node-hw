@@ -349,9 +349,6 @@ class FakeGitHub:
         self.assertEqual(ref, self.release["tag_name"])
         return str(self.release["target_commitish"])
 
-    def latest_release(self) -> None:
-        return None
-
     def download_public_asset(self, url: str) -> bytes:
         return self.payloads[url]
 
@@ -423,6 +420,10 @@ class PublisherTests(unittest.TestCase):
             self.assertEqual(1, client.publish_count)
             self.assertTrue(client.release["immutable"])
 
+            # GitHub designates the repository's only published full release
+            # as latest even when both mutations requested make_latest=false.
+            # That moving repository pointer is not part of release identity.
+            client.release["isLatest"] = True
             publisher.publish_bundle(
                 self.root,
                 bundle,
@@ -432,6 +433,45 @@ class PublisherTests(unittest.TestCase):
             )
             self.assertEqual(4, client.upload_count)
             self.assertEqual(1, client.publish_count)
+
+    def test_release_mutations_never_request_the_latest_designation(
+        self,
+    ) -> None:
+        client = publisher.GitHubClient(
+            publisher.DEFAULT_REPOSITORY, "test-token"
+        )
+        calls: list[
+            tuple[str, str, dict[str, object] | None]
+        ] = []
+
+        def fake_api(
+            method: str,
+            path: str,
+            document: dict[str, object] | None = None,
+        ) -> dict[str, object]:
+            calls.append((method, path, copy.deepcopy(document)))
+            return {"id": 7}
+
+        with mock.patch.object(client, "_api", side_effect=fake_api):
+            client.create_draft(
+                tag=self.identity.tag,
+                commit=COMMIT,
+                title=releases.release_title(self.identity),
+                body=releases.release_body(self.identity, COMMIT),
+            )
+            client.publish_release(7)
+
+        self.assertEqual(2, len(calls))
+        draft_document = calls[0][2]
+        publish_document = calls[1][2]
+        self.assertIsNotNone(draft_document)
+        self.assertIsNotNone(publish_document)
+        assert draft_document is not None
+        assert publish_document is not None
+        self.assertEqual("false", draft_document["make_latest"])
+        self.assertEqual("false", publish_document["make_latest"])
+        self.assertTrue(draft_document["draft"])
+        self.assertFalse(publish_document["draft"])
 
     def test_short_lived_admin_proof_is_exact_and_skips_admin_api(self) -> None:
         now = publisher.dt.datetime(
