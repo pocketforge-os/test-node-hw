@@ -194,10 +194,14 @@ After validating the authorization, the workflow creates a draft, uploads the
 complete asset set, verifies GitHub's reported SHA-256 and size for every asset,
 and only then publishes. It finally requires `immutable=true`, resolves the
 protected tag to the exact manifest commit, downloads and hashes every asset,
-and confirms the release was not selected as the moving latest release. An
-exact rerun is a no-op; any expired/mismatched authorization or conflicting
-draft, tag, target, or asset fails closed. Published assets are never
-overwritten or deleted by this tooling.
+and verifies the release attestation when the runner's GitHub CLI supports it.
+Both release mutations send `make_latest=false`, so a print pack never replaces
+an existing latest release by request. GitHub nevertheless designates the
+repository's only published full release as latest; that moving repository
+pointer is neither release identity nor a publication postcondition. An exact
+rerun is a no-op even in that sole-release case. Any expired/mismatched
+authorization or conflicting draft, tag, target, or asset fails closed.
+Published assets are never overwritten or deleted by this tooling.
 
 To consume a release, name the qualification tag explicitly:
 
@@ -210,4 +214,5 @@ gh release download "$tag" \
 
 For full source-aware validation, check out the commit recorded in
 `release-manifest.json` and run `release_print_pack.py verify` against the
-download directory. Do not script against GitHub's “latest” release.
+download directory. Always name the versioned qualification tag; do not script
+against GitHub's “latest” release or its UI badge.
