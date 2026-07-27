@@ -1,21 +1,23 @@
 {
   "schema": "pocketforge-device-pack-layout-v1",
-  "layout_id": "chassis-core-v1",
+  "layout_id": "chassis-topbar-v1",
   "toolchain_lock": "mechanical/dut-cradle-v1/qualification/cad-toolchain.json",
   "input_paths": [
     "mechanical/dut-chassis-2020-v1/lib/pf-2020.scad",
+    "mechanical/dut-chassis-2020-v1/CUT_LIST_TOPBAR.md",
     "mechanical/device-packs/device-layouts.json"
   ],
   "qualification": {
-    "status": "physically_qualified",
-    "acceptance_ref": "tsp-t1zd.1#legacy-baseline-evidence",
-    "accepted_on": "2026-07-27",
+    "status": "candidate",
+    "acceptance_ref": "tsp-t1zd.2",
+    "accepted_on": null,
     "device_slugs": [
-      "trimui-smart-pro"
+      "trimui-smart-pro-s"
     ],
     "scope": [
-      "Pre-existing working TrimUI Smart Pro chassis topology and exact normalized production-bed geometry.",
-      "Outer frame, two-upright fixture gantry, fixture plate mounts, carrier links, placard hardware, and wire anchors."
+      "Single 306 mm adjustable fixture top bar replacing the legacy split-upright gantry.",
+      "Two keyed upper hangers, two complementary lower backstays, and the 18-bar top-bar preload batch.",
+      "Unchanged qualified outer frame, fixture plate, carrier interface, placard hardware, and wire anchors."
     ]
   },
   "artifacts": [
@@ -29,7 +31,9 @@
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
       "part": "production_batch_00_calibration",
-      "parameters": {},
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
       "expected_normalized_sha256": "9677650b5e925f78c2c7de8166e699a54461f0f3543c64de332e5872daf185d9",
       "print": {
@@ -43,70 +47,81 @@
       }
     },
     {
-      "id": "chassis_core_01_ironed_interfaces",
+      "id": "chassis_topbar_01_ironed_interfaces",
       "output": "chassis/core-01-ironed-interfaces.stl",
-      "role": "Common chassis channel bars and splice bars",
+      "role": "Eighteen accepted short channel bars for the top-bar chassis",
       "scope": "common",
       "modes": [
         "full"
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
-      "part": "production_batch_01_ironed_interfaces",
-      "parameters": {},
+      "part": "production_batch_topbar_01_ironed_interfaces",
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
-      "expected_normalized_sha256": "548e8a4bacf7e44721bc1284e1823a038cce499d571c08c14f06fa65a0be42ef",
+      "expected_normalized_sha256": "d177762a2ec60d4769a29177ac705c34af00e0074bf38cb68a6ad1daa0867664",
       "print": {
         "material": "ABS",
         "scale_percent": 100,
         "supports": false,
         "auto_orient": false,
         "notes": [
-          "Enable ironing on topmost surfaces."
+          "Enable ironing on topmost surfaces.",
+          "Load 12 active bars and park six replacements before closing rail ends."
         ]
       }
     },
     {
-      "id": "chassis_core_02_splice_collars",
-      "output": "chassis/core-02-splice-collars.stl",
-      "role": "Common chassis gantry splice collars",
+      "id": "chassis_topbar_02_upper_hangers",
+      "output": "chassis/core-02-upper-hangers.stl",
+      "role": "Two keyed upper hangers from the top bar to the fixture plate",
       "scope": "common",
       "modes": [
         "full"
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
-      "part": "production_batch_02_splice_collars",
-      "parameters": {},
+      "part": "production_batch_topbar_02_upper_hangers",
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
-      "expected_normalized_sha256": "99c52f74f7129e8c29f91563b753ada49610e419848668915a45166492709268",
+      "expected_normalized_sha256": "adc5c0d8a5a198e8cfc4642b22409f62cb75f098e86b70d4b7de57d82d690594",
       "print": {
         "material": "ABS",
         "scale_percent": 100,
         "supports": false,
         "auto_orient": false,
         "notes": [
-          "Print upright in the exported orientation."
+          "Print the exported keyed faces upward.",
+          "The reduced lower ends are the plate-side halves of the upper lap joints."
         ]
       }
     },
     {
-      "id": "chassis_core_03_movable_mounts",
-      "output": "chassis/core-03-movable-mounts.stl",
-      "role": "Common chassis gantry plates and fixture spacers",
+      "id": "chassis_topbar_03_lower_backstays",
+      "output": "chassis/core-03-lower-backstays.stl",
+      "role": "Two full-height lower backstays for the fixture plate",
       "scope": "common",
       "modes": [
         "full"
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
-      "part": "production_batch_03_movable_mounts",
-      "parameters": {},
+      "part": "production_batch_topbar_03_lower_backstays",
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
-      "expected_normalized_sha256": "1ad8ac70a3eb94051e5a0e241e09ca342b1312b05923a17efa80cf5131d4e92f",
+      "expected_normalized_sha256": "90501e02506179c71d1912569a23671aec890def6268a5fbeacfbac036524195",
       "print": {
         "material": "ABS",
         "scale_percent": 100,
         "supports": false,
         "auto_orient": false,
-        "notes": []
+        "notes": [
+          "Do not auto-orient; each 244 mm backstay is already aligned to the 247 mm bed axis.",
+          "Flip each backstay at installation so its bed-facing upper half-lap sits behind the upper hanger lap."
+        ]
       }
     },
     {
@@ -119,7 +134,9 @@
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
       "part": "production_batch_04_frame_hardware",
-      "parameters": {},
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
       "expected_normalized_sha256": "911d249f2b8e7120b46d86c9a25f85a4a1edbf64944c05615911681a01e0cb25",
       "print": {
@@ -140,7 +157,9 @@
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
       "part": "production_batch_05_placard_holder",
-      "parameters": {},
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
       "expected_normalized_sha256": "01cdd01b5043aae5fca4bac793abfd9952035b420d4fcb928c6805feb787d854",
       "print": {
@@ -162,7 +181,9 @@
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
       "part": "rear_carrier_link_set",
-      "parameters": {},
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
       "expected_normalized_sha256": "c63737d66ebc6df5d08543e44c22de57acbc7c05d36dd4733628125edb5aa27e",
       "print": {
@@ -186,7 +207,9 @@
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
       "part": "production_batch_06_device_nameplate",
-      "parameters": {},
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {
         "DEVICE_LABEL": "device.display_name"
       },
@@ -211,7 +234,9 @@
       ],
       "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
       "part": "production_batch_07_wire_management",
-      "parameters": {},
+      "parameters": {
+        "CHASSIS_VARIANT": "topbar_v1"
+      },
       "parameter_bindings": {},
       "expected_normalized_sha256": "dd40ffd1b0903eccaf5cd44fec9c1454466473160a59c7f44c49846ec706c4ee",
       "print": {

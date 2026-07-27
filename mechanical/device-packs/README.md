@@ -2,8 +2,10 @@
 
 Device print packs turn one reviewed holder profile into the exact STL set for
 fit testing, retrofitting an existing node, or building a complete new node.
-The selection is data-driven: a device slug must map to one labeled production
-carrier in its holder profile before a pack can be built.
+The selection is data-driven in two independent dimensions: a device slug must
+map to one labeled production carrier in its holder profile and to one chassis
+layout in `device-layouts.json` before a pack can be built. The builder rejects
+a caller-supplied layout that disagrees with that registry.
 
 ## Source and generated artifacts
 
@@ -11,7 +13,7 @@ Commit the inputs:
 
 - semantic device and fixture contracts;
 - holder profiles, qualification records, and OpenSCAD sources;
-- the chassis-core layout;
+- the device-to-layout registry and qualified/candidate chassis layouts;
 - generator and regression tests; and
 - documentation.
 
@@ -37,7 +39,7 @@ matches an accepted or regression-locked mesh.
 | --- | --- | --- |
 | `coupon` | Validate a new or changed physical fit cheaply | Qualified holder fit coupon |
 | `retrofit` | Change the DUT on an existing chassis | Coupon, selected labeled carrier, six-hook set, four carrier links, device nameplate, eight wire anchors |
-| `full` | Build a complete test node | Retrofit pack, optional process-calibration bed, and shared chassis beds 01–05 |
+| `full` | Build a complete test node | Retrofit pack, optional process-calibration bed, and the selected layout's chassis beds 01–05 |
 
 The calibration bed is included in a full export so the pack is complete, but
 it only needs printing after the printer, material, process, or extrusion
@@ -70,6 +72,22 @@ python3 mechanical/device-packs/build_device_pack.py build \
   --mode full
 ```
 
+The TrimUI Smart Pro remains mapped to the physically proven two-upright
+gantry. The TrimUI Smart Pro S is mapped to the material-reduced top-bar
+candidate. Generate that candidate explicitly for printing and review with:
+
+```sh
+python3 mechanical/device-packs/build_device_pack.py build \
+  --device trimui-smart-pro-s \
+  --mode full \
+  --allow-unqualified
+```
+
+Its clean-source manifest must report `production_eligible=false`,
+`nonproduction_reasons=["layout_unqualified"]`, and
+`layout.qualification.acceptance_ref="tsp-t1zd.2"`. There is no flag that maps
+the Pro S back to the legacy layout or maps the base model onto the candidate.
+
 Outputs default to
 `mechanical/device-packs/build/<device>/<mode>/`. Existing output is never
 overwritten implicitly. Use `--replace` only to atomically replace a directory
@@ -88,10 +106,13 @@ The qualified toolchain is OpenSCAD 2021.01 as pinned in
 
 ## Qualification and prototype gates
 
-A coupon may be generated before physical qualification; it is always marked
-non-production while the profile is unqualified. `retrofit` and `full` refuse
-an unqualified profile unless `--allow-unqualified` is explicitly supplied,
-and that override is permanently recorded as non-production provenance.
+A coupon may be generated before holder qualification; it is always marked
+non-production. `retrofit` and `full` refuse unqualified holder geometry unless
+`--allow-unqualified` is explicitly supplied. A `full` pack additionally
+requires a physically qualified chassis layout. Candidate layouts also require
+`--allow-unqualified` and record `layout_unqualified` permanently. A retrofit
+that contains no candidate chassis-core bed may still be production-eligible
+when its holder and every emitted artifact remain qualified.
 
 A dirty source tree is refused for every mode unless `--allow-dirty` is
 supplied. A dirty pack is always non-production. These escape hatches support
@@ -103,34 +124,50 @@ acceptance, and then update the holder qualification record in a reviewed
 change. Ordinary builds re-render and compare every fit-bearing qualified mesh
 before emitting a pack.
 
+Qualified chassis layouts are immutable by layout ID. CI compares every
+qualified layout file and its registered device mappings with the pull
+request's base revision; change geometry under a new candidate layout ID
+instead of editing a proven version. Promotion is staged: candidate geometry
+must land first, be printed and accepted, and a later change may update only
+its `qualification` record. CI also renders every production full pack on the
+pull request, so changing shared OpenSCAD source without reproducing every
+accepted normalized fingerprint fails before merge.
+
 ## Adding a device
 
 1. Finish the semantic device model and fixture interface.
 2. Add or update a strict holder profile. Map every supported device slug to
    exactly one `production_carrier` source and display name.
-3. Reuse the declarative perimeter-hook mechanism when its contact and
+3. Add exactly one entry to `device-layouts.json`. Reuse a physically
+   qualified layout only when its recorded device scope actually covers the
+   new slug; otherwise add a candidate source-owned layout with a tracked
+   physical acceptance reference.
+4. Reuse the declarative perimeter-hook mechanism when its contact and
    clearance constraints fit. If the device needs a new retention mechanism,
    add source and tests first; that engineering step can still be agent-assisted
    but must end in the same data contract.
-4. Generate and physically test the `coupon` pack.
-5. Record explicit owner acceptance and lock the fit-bearing normalized
+5. Generate and physically test the `coupon` pack.
+6. Record explicit owner acceptance and lock the fit-bearing normalized
    geometry.
-6. Generate `retrofit` or `full`; do not hand-select STLs from old build
+7. Generate a non-production `full` candidate, physically qualify any new
+   chassis topology, and promote only its accepted normalized fingerprints.
+8. Generate `retrofit` or `full`; do not hand-select STLs from old build
    directories.
 
 A device-model or holder change changes an input hash. Fit-bearing drift also
 fails the accepted normalized-geometry checks. Chassis link geometry has its
-own exact regression lock. CI builds a real coupon on pull requests and a
-complete ephemeral pack for every dynamically discovered qualified device on
-each relevant pushed revision, so stale generated output cannot make a source
-change look complete.
+own exact regression lock. CI builds a real coupon plus complete ephemeral
+packs for every registered qualified or candidate layout on pull requests and
+repeats those packs on each relevant pushed revision, so stale generated
+output cannot make a source change look complete.
 
-The static normalized hashes in `layouts/chassis-core-v1.json` characterize
-the established chassis beds and make any later edit explicit in review. They
-are regression baselines, not a claim of new physical qualification. The
-holder qualification manifest remains the authoritative physical-fit record;
-changing either kind of lock requires understanding the geometry change, not
-blindly recording a new digest.
+The static normalized hashes in `layouts/chassis-core-v1.json` freeze the
+working base chassis. `layouts/chassis-topbar-v1.json` separately freezes the
+Pro S candidate beds. Shared Batch 04, Batch 05, carrier-link, calibration, and
+wire-anchor hashes are identical across both layouts; only top-bar Batches
+01–03 are new. These are regression baselines, not automatic physical
+qualification. Changing a lock requires understanding the geometry change,
+not blindly recording a new digest.
 
 ## Immutable production releases
 
@@ -142,6 +179,12 @@ included as its own `device-pack-<device-slug>.zip`. A source-only refactor
 does not replace or republish an accepted release. Geometry that needs renewed
 physical acceptance gets a new `vN` qualification manifest and therefore a new
 release tag.
+
+Release generation resolves the same per-device registry and refuses if any
+selected layout is still a candidate. It also refuses to force mixed layouts
+through the original single-layout release schema. The tracked Pro S physical
+gate owns the later versioned mixed-layout release lane; the immutable
+`print-pack-trimui-smart-pro-family-v1` release remains untouched.
 
 Each canonical, uncompressed ZIP has fixed metadata, sorted safe paths, and one
 `device-pack-<device-slug>/` root. The release also carries:

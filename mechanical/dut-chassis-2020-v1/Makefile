@@ -2,6 +2,7 @@ OPENSCAD ?= openscad
 OPENSCAD_FLAGS := --hardwarnings --check-parameters=true --check-parameter-ranges=true
 PYTHON ?= python3
 BUILD := build
+TOPBAR_BUILD := $(BUILD)/topbar
 GUIDE_BUILD := $(BUILD)/handbook
 GUIDE_LAYER_BUILD := $(GUIDE_BUILD)/layers
 GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
@@ -11,6 +12,7 @@ BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
 TOPOLOGY := scripts/check_stl_topology.py
 TARGET_CONTRACT_TEST := scripts/test_makefile_targets.py
 CUT_LIST := CUT_LIST.md
+TOPBAR_CUT_LIST := CUT_LIST_TOPBAR.md
 GUIDE_MODEL_SCRIPT := scripts/build_handbook_model.py
 GUIDE_BATCH_MODEL_SCRIPT := scripts/build_handbook_batch_model.py
 GUIDE_MODEL_REQUIREMENTS := scripts/handbook-model-requirements.txt
@@ -221,6 +223,27 @@ CHASSIS_CORE_BATCHES := \
 	$(BUILD)/production-batch-04-frame-hardware.stl \
 	$(BUILD)/production-batch-05-placard-holder.stl
 
+TOPBAR_CORE_BATCHES := \
+	$(TOPBAR_BUILD)/production-batch-01-ironed-interfaces.stl \
+	$(TOPBAR_BUILD)/production-batch-02-upper-hangers.stl \
+	$(TOPBAR_BUILD)/production-batch-03-lower-backstays.stl \
+	$(TOPBAR_BUILD)/production-batch-04-frame-hardware.stl \
+	$(TOPBAR_BUILD)/production-batch-05-placard-holder.stl
+
+TOPBAR_REPLACEMENT_PARTS := \
+	$(TOPBAR_BUILD)/topbar-upper-hanger.stl \
+	$(TOPBAR_BUILD)/topbar-upper-hanger-pair.stl \
+	$(TOPBAR_BUILD)/topbar-lower-backstay.stl \
+	$(TOPBAR_BUILD)/topbar-lower-backstay-pair.stl
+
+TOPBAR_REVIEW := \
+	$(TOPBAR_BUILD)/layout-assembly.png \
+	$(TOPBAR_BUILD)/layout-front.png \
+	$(TOPBAR_BUILD)/layout-suspension-detail.png \
+	$(TOPBAR_BUILD)/layout-preload.png \
+	$(TOPBAR_BUILD)/layout-upper-hangers.png \
+	$(TOPBAR_BUILD)/layout-lower-backstays.png
+
 DEVICE_EXAMPLE_BATCHES := \
 	$(BUILD)/production-batch-06-device-nameplate.stl \
 	$(BUILD)/production-batch-07-wire-management.stl
@@ -392,15 +415,18 @@ GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
 
 .NOTPARALLEL:
 
-.PHONY: all batches core-batches device-example-batches calibration \
+.PHONY: all batches core-batches topbar topbar-batches topbar-preview \
+	topbar-replacements device-example-batches calibration \
 	replacements lint preview presentation-assets \
 	guide-static guide-batch-models guide-layers guide-model handbook-assets \
-	cutlist refresh-cut-list \
-	validate-cut-list-sync validate validate-margin-guard \
+	cutlist refresh-cut-list topbar-cutlist refresh-topbar-cut-list \
+	validate-cut-list-sync validate-topbar-cut-list-sync \
+	validate validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-cable-anchor-guard \
-	validate-production-batches validate-target-contract clean
+	validate-production-batches validate-topbar-batches \
+	validate-topbar-guard validate-target-contract clean
 
 all: batches replacements cutlist
 
@@ -408,13 +434,22 @@ batches: core-batches
 
 core-batches: $(CHASSIS_CORE_BATCHES)
 
+topbar: topbar-batches topbar-replacements topbar-preview topbar-cutlist
+
+topbar-batches: $(TOPBAR_CORE_BATCHES)
+
+topbar-replacements: $(TOPBAR_REPLACEMENT_PARTS)
+
+topbar-preview: $(TOPBAR_REVIEW)
+
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
 calibration: $(CALIBRATION)
 
 replacements: $(REPLACEMENT_PARTS)
 
-$(BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) $(GUIDE_BATCH_LAYER_BUILD) \
+$(BUILD) $(TOPBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
+$(GUIDE_BATCH_LAYER_BUILD) \
 $(GUIDE_MODEL_BUILD) $(PRESENTATION_IMPORT_DIR):
 	mkdir -p $@
 
@@ -465,6 +500,26 @@ $(BUILD)/rear-carrier-link-bottom.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 
 $(BUILD)/rear-carrier-link-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="rear_carrier_link_set"' $<
+
+$(TOPBAR_BUILD)/topbar-upper-hanger.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="topbar_upper_hanger"' $<
+
+$(TOPBAR_BUILD)/topbar-upper-hanger-pair.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="topbar_upper_hanger_pair"' $<
+
+$(TOPBAR_BUILD)/topbar-lower-backstay.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="topbar_lower_backstay"' $<
+
+$(TOPBAR_BUILD)/topbar-lower-backstay-pair.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="topbar_lower_backstay_pair"' $<
 
 $(BUILD)/gantry-joint-plate.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="gantry_joint_plate"' $<
@@ -517,6 +572,31 @@ $(BUILD)/production-batch-02-splice-collars.stl: $(SOURCE) lib/pf-2020.scad | $(
 
 $(BUILD)/production-batch-03-movable-mounts.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_03_movable_mounts"' $<
+
+$(TOPBAR_BUILD)/production-batch-01-ironed-interfaces.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="production_batch_topbar_01_ironed_interfaces"' $<
+
+$(TOPBAR_BUILD)/production-batch-02-upper-hangers.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="production_batch_topbar_02_upper_hangers"' $<
+
+$(TOPBAR_BUILD)/production-batch-03-lower-backstays.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="production_batch_topbar_03_lower_backstays"' $<
+
+$(TOPBAR_BUILD)/production-batch-04-frame-hardware.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="production_batch_04_frame_hardware"' $<
+
+$(TOPBAR_BUILD)/production-batch-05-placard-holder.stl: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="production_batch_05_placard_holder"' $<
 
 $(BUILD)/production-batch-04-frame-hardware.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="production_batch_04_frame_hardware"' $<
@@ -924,6 +1004,47 @@ $(BUILD)/layout-front.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
 		--projection=ortho --camera=200,-500,220,200,200,220 \
 		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
+
+$(TOPBAR_BUILD)/layout-assembly.png: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --viewall \
+		--camera=560,-650,470,173,179,184 \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
+
+$(TOPBAR_BUILD)/layout-front.png: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --viewall \
+		--camera=173,-600,184,173,179,184 \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
+
+$(TOPBAR_BUILD)/layout-suspension-detail.png: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1300,1500 \
+		--projection=ortho --viewall \
+		--camera=260,-330,410,0,60,210 \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="guide_topbar_suspension_detail"' $<
+
+$(TOPBAR_BUILD)/layout-preload.png: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,800 \
+		--projection=ortho --camera=153,0,520,153,0,0 \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="guide_topbar_preload"' $<
+
+$(TOPBAR_BUILD)/layout-upper-hangers.png: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,900 \
+		--projection=ortho --viewall \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="production_batch_topbar_02_upper_hangers"' $<
+
+$(TOPBAR_BUILD)/layout-lower-backstays.png: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,700 \
+		--projection=ortho --viewall \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="production_batch_topbar_03_lower_backstays"' $<
 
 $(BUILD)/layout-stacked.png: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1600 \
@@ -1475,6 +1596,32 @@ validate-cut-list-sync: cutlist
 	}
 	@echo 'cut_list_sync=pass artifact=$(CUT_LIST)'
 
+$(TOPBAR_BUILD)/cutlist.log: $(SOURCE) lib/pf-2020.scad | $(TOPBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(TOPBAR_BUILD)/cutlist.csg \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'PART="cutlist"' $< \
+		>$(TOPBAR_BUILD)/cutlist.stdout 2>$@
+
+$(TOPBAR_BUILD)/cut-list.csv $(TOPBAR_BUILD)/cut-list.md &: \
+		$(TOPBAR_BUILD)/cutlist.log scripts/cutlist.py
+	$(PYTHON) scripts/cutlist.py --input $(TOPBAR_BUILD)/cutlist.log \
+		--csv $(TOPBAR_BUILD)/cut-list.csv \
+		--markdown $(TOPBAR_BUILD)/cut-list.md
+
+topbar-cutlist: $(TOPBAR_BUILD)/cut-list.csv \
+		$(TOPBAR_BUILD)/cut-list.md
+
+refresh-topbar-cut-list: topbar-cutlist
+	cp $(TOPBAR_BUILD)/cut-list.md $(TOPBAR_CUT_LIST)
+
+validate-topbar-cut-list-sync: topbar-cutlist
+	@cmp -s $(TOPBAR_BUILD)/cut-list.md $(TOPBAR_CUT_LIST) || { \
+		echo 'ERROR: CUT_LIST_TOPBAR.md is stale; run make refresh-topbar-cut-list' >&2; \
+		diff -u $(TOPBAR_CUT_LIST) $(TOPBAR_BUILD)/cut-list.md || true; \
+		exit 1; \
+	}
+	@echo 'topbar_cut_list_sync=pass artifact=$(TOPBAR_CUT_LIST)'
+
 validate-margin-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-margin.log; mesh=$(BUILD)/invalid-margin.stl; \
 		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="placard_spacer"' \
@@ -1691,6 +1838,56 @@ validate-production-batches: $(CALIBRATION) $(PRODUCTION_BATCHES) \
 		$(BUILD)/production-batch-07-wire-management.stl
 	@echo 'production_batches=pass common_core=5 device_examples=2 optional_calibration=pass registration_tabs=8 cable_anchors=8'
 
+validate-topbar-batches: $(TOPBAR_CORE_BATCHES) \
+		$(TOPBAR_REPLACEMENT_PARTS) \
+		$(BUILD)/production-batch-04-frame-hardware.stl \
+		$(BUILD)/production-batch-05-placard-holder.stl
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 5 \
+		$(TOPBAR_BUILD)/production-batch-01-ironed-interfaces.stl
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 7 \
+		$(TOPBAR_BUILD)/production-batch-02-upper-hangers.stl
+	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 5 \
+		$(TOPBAR_BUILD)/production-batch-03-lower-backstays.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 18 \
+		$(TOPBAR_BUILD)/production-batch-01-ironed-interfaces.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 2 \
+		$(TOPBAR_BUILD)/production-batch-02-upper-hangers.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 2 \
+		$(TOPBAR_BUILD)/production-batch-03-lower-backstays.stl
+	$(PYTHON) $(BOUNDS) \
+		--equivalent-to $(BUILD)/production-batch-04-frame-hardware.stl \
+		$(TOPBAR_BUILD)/production-batch-04-frame-hardware.stl
+	$(PYTHON) $(BOUNDS) \
+		--equivalent-to $(BUILD)/production-batch-05-placard-holder.stl \
+		$(TOPBAR_BUILD)/production-batch-05-placard-holder.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 \
+		$(TOPBAR_BUILD)/topbar-upper-hanger.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 \
+		$(TOPBAR_BUILD)/topbar-lower-backstay.stl
+	@echo 'topbar_batches=pass core=5 captive_bars=18 upper_hangers=2 lower_backstays=2 shared_batches=04,05'
+
+validate-topbar-guard: | $(TOPBAR_BUILD)
+	@set -eu; variant_log=$(TOPBAR_BUILD)/invalid-variant.log; \
+	variant_mesh=$(TOPBAR_BUILD)/invalid-variant.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$variant_mesh \
+		-D 'CHASSIS_VARIANT="unknown"' \
+		-D 'PART="topbar_upper_hanger"' $(SOURCE) \
+		>$$variant_log 2>&1; then \
+		echo 'ERROR: unknown chassis variant was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'Unknown chassis variant' $$variant_log; \
+	bed_log=$(TOPBAR_BUILD)/invalid-backstay-bed.log; \
+	bed_mesh=$(TOPBAR_BUILD)/invalid-backstay-bed.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$bed_mesh \
+		-D 'CHASSIS_VARIANT="topbar_v1"' \
+		-D 'topbar_hanger_end_margin=9' \
+		-D 'PART="topbar_lower_backstay_pair"' $(SOURCE) \
+		>$$bed_log 2>&1; then \
+		echo 'ERROR: overlong top-bar backstay was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'must fit the 247 x 207 mm print bed' $$bed_log; \
+	echo 'topbar_guard=pass rejected_unknown_variant=unknown rejected_backstay_length=249mm'
+
 validate-target-contract:
 	$(PYTHON) $(TARGET_CONTRACT_TEST)
 
@@ -1698,8 +1895,9 @@ validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-cable-anchor-guard \
-	validate-production-batches validate-target-contract \
-	validate-cut-list-sync
+	validate-production-batches validate-topbar-batches \
+	validate-topbar-guard validate-target-contract \
+	validate-cut-list-sync validate-topbar-cut-list-sync
 	printf '%s  %s\n' '$(DEVICE_MODEL_SHA256)' \
 		'$(PRESENTATION_DEVICE_SCAD)' | sha256sum -c -
 	grep -q '^outer_vertical_rail,4,360.00,1440.00' $(BUILD)/cut-list.csv
@@ -1710,7 +1908,13 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm' $(BUILD)/cut-list.md
 	grep -q 'Stock bars required: \*\*6\*\*' $(BUILD)/cut-list.md
-	@echo 'chassis_validation=pass common_core_batches=5 device_example_batches=2 stock_bars=6 handbook_major_steps=8 handbook_detail_panels=24 cable_anchors=8'
+	grep -q '^fixture_topbar,1,306.00,306.00' $(TOPBAR_BUILD)/cut-list.csv
+	! grep -q '^fixture_gantry_' $(TOPBAR_BUILD)/cut-list.csv
+	grep -q 'Finished extrusion: 4242.00 mm' $(TOPBAR_BUILD)/cut-list.md
+	grep -q 'Fixture-support savings: 962.00 mm (75.87%)' $(TOPBAR_BUILD)/cut-list.md
+	grep -q 'Three finished bars plus three kerfs consume 927.60 mm and leave \*\*72.40 mm\*\*' $(TOPBAR_BUILD)/cut-list.md
+	grep -q 'Bar 5: fixture_topbar 306.00; kerf-inclusive consumed 309.20 mm; remainder 690.80 mm' $(TOPBAR_BUILD)/cut-list.md
+	@echo 'chassis_validation=pass legacy_core_batches=5 topbar_candidate_core_batches=5 device_example_batches=2 legacy_stock_bars=6 topbar_stock_bars=5 topbar_savings_mm=962 handbook_major_steps=8 handbook_detail_panels=24 cable_anchors=8'
 
 clean:
 	rm -rf $(BUILD)

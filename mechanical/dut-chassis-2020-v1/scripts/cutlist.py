@@ -11,7 +11,17 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-ECHO_RE = re.compile(r'^ECHO:\s+"(?P<payload>PF(?:CUT|STOCK|FRAME)\|.*)"\s*$')
+ECHO_RE = re.compile(
+    r'^ECHO:\s+"(?P<payload>PF(?:CUT|STOCK|FRAME|VARIANT)\|.*)"\s*$'
+)
+
+VARIANT_STATUS = {
+    "legacy_gantry": "physically_proven_frozen_baseline",
+    "topbar_v1": "candidate_requires_physical_qualification",
+}
+LEGACY_FINISHED_TOTAL_MM = 5204.0
+LEGACY_FIXTURE_EXTRUSION_MM = 1268.0
+TOPBAR_FIXTURE_EXTRUSION_MM = 306.0
 
 
 @dataclass(frozen=True)
@@ -50,6 +60,8 @@ def parse_echoes(
     str,
     tuple[float, float, float],
     tuple[float, float, float],
+    str,
+    str,
 ]:
     rows: list[tuple[str, int, float, str]] = []
     stock_length = 0.0
@@ -57,6 +69,8 @@ def parse_echoes(
     topology = ""
     frame_outer = (0.0, 0.0, 0.0)
     frame_clear = (0.0, 0.0, 0.0)
+    variant = ""
+    qualification_status = ""
 
     for raw_line in path.read_text(encoding="utf-8").splitlines():
         match = ECHO_RE.match(raw_line.strip())
@@ -72,6 +86,9 @@ def parse_echoes(
         elif fields[0] == "PFFRAME" and len(fields) == 7:
             frame_outer = tuple(float(value) for value in fields[1:4])
             frame_clear = tuple(float(value) for value in fields[4:7])
+        elif fields[0] == "PFVARIANT" and len(fields) == 3:
+            variant = fields[1]
+            qualification_status = fields[2]
 
     if not rows:
         raise SystemExit(f"cutlist=fail reason=no_PFCUT_echoes input={path}")
@@ -79,7 +96,25 @@ def parse_echoes(
         raise SystemExit(f"cutlist=fail reason=invalid_PFSTOCK input={path}")
     if min(frame_outer) <= 0 or min(frame_clear) <= 0:
         raise SystemExit(f"cutlist=fail reason=invalid_PFFRAME input={path}")
-    return rows, stock_length, kerf, topology, frame_outer, frame_clear
+    if variant not in VARIANT_STATUS:
+        raise SystemExit(
+            f"cutlist=fail reason=invalid_PFVARIANT variant={variant!r} input={path}"
+        )
+    if qualification_status != VARIANT_STATUS[variant]:
+        raise SystemExit(
+            "cutlist=fail reason=variant_status_mismatch "
+            f"variant={variant} status={qualification_status!r} input={path}"
+        )
+    return (
+        rows,
+        stock_length,
+        kerf,
+        topology,
+        frame_outer,
+        frame_clear,
+        variant,
+        qualification_status,
+    )
 
 
 def _first_fit_decreasing(
@@ -181,6 +216,70 @@ def pack(rows: list[tuple[str, int, float, str]], stock_length: float, kerf: flo
     return upper
 
 
+def pack_topbar_for_reusable_offcut(
+    rows: list[tuple[str, int, float, str]],
+    stock_length: float,
+    kerf: float,
+) -> list[StockBar]:
+    """Keep the fifth-stick remainder as one useful top-bar-sized offcut.
+
+    Many five-stick packings consume the same aluminum.  Four identical outer
+    frame groups plus a top-bar-only fifth stick leave one 690.8 mm remainder
+    instead of fragmenting it across several medium pieces.  Fail closed if
+    the variant's cut contract changes rather than silently emitting a less
+    reusable assignment.
+    """
+
+    expected = {
+        "outer_vertical_rail": (4, 360.0),
+        "outer_depth_rail": (4, 318.0),
+        "outer_width_rail": (4, 306.0),
+        "fixture_topbar": (1, 306.0),
+    }
+    actual = {name: (quantity, length) for name, quantity, length, _ in rows}
+    if actual != expected:
+        raise SystemExit(
+            "cutlist=fail reason=topbar_reuse_contract_changed "
+            f"expected={expected!r} actual={actual!r}"
+        )
+
+    notes = {name: note for name, _, _, note in rows}
+    # Four outer-frame repetitions plus one top-bar-only stick.
+    bars = [StockBar(number, stock_length, kerf) for number in range(1, 6)]
+    for index in range(4):
+        for name in (
+            "outer_vertical_rail",
+            "outer_depth_rail",
+            "outer_width_rail",
+        ):
+            bars[index].cuts.append(
+                Cut(name, expected[name][1], notes[name], index + 1)
+            )
+    bars[4].cuts.append(
+        Cut("fixture_topbar", expected["fixture_topbar"][1],
+            notes["fixture_topbar"], 1)
+    )
+
+    if any(bar.remaining < -1e-9 for bar in bars):
+        raise SystemExit(
+            "cutlist=fail reason=topbar_reuse_assignment_exceeds_stock"
+        )
+    lower_bound = math.ceil(
+        sum(
+            quantity * (length + kerf)
+            for _, quantity, length, _ in rows
+        )
+        / stock_length
+        - 1e-12
+    )
+    if lower_bound != len(bars):
+        raise SystemExit(
+            "cutlist=fail reason=topbar_reuse_assignment_not_minimal "
+            f"lower_bound={lower_bound} assigned={len(bars)}"
+        )
+    return bars
+
+
 def write_csv(path: Path, rows: list[tuple[str, int, float, str]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle)
@@ -198,13 +297,61 @@ def write_markdown(
     topology: str,
     frame_outer: tuple[float, float, float],
     frame_clear: tuple[float, float, float],
+    variant: str,
+    qualification_status: str,
 ) -> None:
     finished_total = sum(quantity * length for _, quantity, length, _ in rows)
     stock_total = len(bars) * stock_length
     kerf_total = sum(len(bar.cuts) for bar in bars) * kerf
     waste_total = stock_total - finished_total - kerf_total
 
-    lines = [
+    if variant == "topbar_v1":
+        fixture_savings = (
+            LEGACY_FIXTURE_EXTRUSION_MM - TOPBAR_FIXTURE_EXTRUSION_MM
+        )
+        whole_chassis_savings = LEGACY_FINISHED_TOTAL_MM - finished_total
+        offcut_minimum = TOPBAR_FIXTURE_EXTRUSION_MM + kerf
+        known_offcut = 356.4
+        known_offcut_remainder = known_offcut - offcut_minimum
+        outer_bar_consumed = 360.0 + 318.0 + 306.0 + 3 * kerf
+        outer_bar_remainder = stock_length - outer_bar_consumed
+        lines = [
+            "# PocketForge 2020 chassis cut list — top-bar variant",
+            "",
+            f"- Chassis variant: `{variant}`",
+            "- Qualification: **candidate; physical print, fit, loaded-sag, and camera checks are still required**",
+            f"- Join topology: `{topology}`",
+            f"- External assembled envelope (W × D × H): {frame_outer[0]:.2f} × {frame_outer[1]:.2f} × {frame_outer[2]:.2f} mm",
+            f"- Clear internal envelope (W × D × H): {frame_clear[0]:.2f} × {frame_clear[1]:.2f} × {frame_clear[2]:.2f} mm",
+            f"- Stock: {stock_length:.2f} mm bars",
+            f"- Conservative kerf allowance: {kerf:.2f} mm per finished piece",
+            f"- Stock bars required with no reusable offcut: **{len(bars)}**",
+            "- Fresh stock required with the retained 356.40 mm offcut: **4 bars**",
+            f"- Finished extrusion: {finished_total:.2f} mm",
+            f"- Finished-extrusion savings versus legacy gantry: {whole_chassis_savings:.2f} mm ({whole_chassis_savings / LEGACY_FINISHED_TOTAL_MM * 100:.2f}%)",
+            f"- Fixture-support savings: {fixture_savings:.2f} mm ({fixture_savings / LEGACY_FIXTURE_EXTRUSION_MM * 100:.2f}%)",
+            f"- Kerf allowance: {kerf_total:.2f} mm",
+            f"- Remaining stock/offcuts when starting from five full bars: {waste_total:.2f} mm",
+            "",
+            "Finished lengths are measured aluminum cuts. This candidate preserves the proven outer frame and replaces the complete two-upright/two-crossbar fixture gantry with one continuous top bar. The bar remains movable on the upper depth rails. Never splice the top bar, and do not cut the legacy upright halves or second crossbar for this variant.",
+            "",
+            "## Scrap-first plan",
+            "",
+            f"Cut the 306.00 mm `fixture_topbar` from any straight, undamaged 2020 offcut measuring at least **{offcut_minimum:.2f} mm** before buying another stick. The retained **{known_offcut:.2f} mm** offcut from the proven legacy six-stick assignment qualifies and leaves **{known_offcut_remainder:.2f} mm** after one finished cut plus kerf.",
+            "",
+            f"With that offcut, buy only four fresh 1 m sticks. Each fresh stick yields one 360 mm post, one 318 mm depth rail, and one 306 mm width rail: {outer_bar_consumed:.2f} mm kerf-inclusive consumed and {outer_bar_remainder:.2f} mm remaining. If no qualifying offcut exists, the exact bounded assignment below proves that five full sticks suffice.",
+            "",
+            "## Batch top-bar route",
+            "",
+            f"If the fifth stick must be new, cut **three** 306.00 mm top bars together rather than stranding its large single-build remainder. Three finished bars plus three kerfs consume {3 * (TOPBAR_FIXTURE_EXTRUSION_MM + kerf):.2f} mm and leave **{stock_length - 3 * (TOPBAR_FIXTURE_EXTRUSION_MM + kerf):.2f} mm**. Use one now and label the other two for the next two chassis; each later chassis then needs only its four tightly packed outer-frame sticks.",
+            "",
+            "## Finished pieces",
+            "",
+            "| Part | Qty | Length (mm) | Total (mm) | Purpose |",
+            "|---|---:|---:|---:|---|",
+        ]
+    else:
+        lines = [
         "# PocketForge 2020 chassis cut list",
         "",
         f"- Join topology: `{topology}`",
@@ -233,17 +380,31 @@ def write_markdown(
         "",
         "| Part | Qty | Length (mm) | Total (mm) | Purpose |",
         "|---|---:|---:|---:|---|",
-    ]
+        ]
     lines.extend(
         f"| `{name}` | {quantity} | {length:.2f} | {quantity * length:.2f} | {note} |"
         for name, quantity, length, note in rows
     )
-    lines.extend(["", "## 1 m stock assignment", ""])
+    assignment_heading = (
+        "## 1 m stock assignment — no reusable offcut"
+        if variant == "topbar_v1"
+        else "## 1 m stock assignment"
+    )
+    lines.extend(["", assignment_heading, ""])
     for bar in bars:
         pieces = ", ".join(f"{cut.name} {cut.length:.2f}" for cut in bar.cuts)
         lines.append(
             f"- Bar {bar.number}: {pieces}; kerf-inclusive consumed "
             f"{bar.consumed:.2f} mm; remainder {bar.remaining:.2f} mm"
+        )
+    if variant == "topbar_v1":
+        lines.extend(
+            [
+                "",
+                "## Qualification boundary",
+                "",
+                f"`{qualification_status}` is deliberate. These dimensions and print beds may be generated for a prototype, but this cut list does not make the topology production-qualified. Promote it only after the tracked physical acceptance gate records print fit, fastener engagement, loaded plate stability, camera alignment, and owner approval.",
+            ]
         )
     lines.append("")
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -256,10 +417,21 @@ def main() -> None:
     parser.add_argument("--markdown", required=True, type=Path)
     args = parser.parse_args()
 
-    rows, stock_length, kerf, topology, frame_outer, frame_clear = parse_echoes(
-        args.input
+    (
+        rows,
+        stock_length,
+        kerf,
+        topology,
+        frame_outer,
+        frame_clear,
+        variant,
+        qualification_status,
+    ) = parse_echoes(args.input)
+    bars = (
+        pack_topbar_for_reusable_offcut(rows, stock_length, kerf)
+        if variant == "topbar_v1"
+        else pack(rows, stock_length, kerf)
     )
-    bars = pack(rows, stock_length, kerf)
     args.csv.parent.mkdir(parents=True, exist_ok=True)
     write_csv(args.csv, rows)
     write_markdown(
@@ -271,10 +443,13 @@ def main() -> None:
         topology,
         frame_outer,
         frame_clear,
+        variant,
+        qualification_status,
     )
     print(
         f"cutlist=pass parts={sum(row[1] for row in rows)} "
-        f"stock_bars={len(bars)} stock_length_mm={stock_length:.2f}"
+        f"stock_bars={len(bars)} stock_length_mm={stock_length:.2f} "
+        f"variant={variant} qualification={qualification_status}"
     )
 
 

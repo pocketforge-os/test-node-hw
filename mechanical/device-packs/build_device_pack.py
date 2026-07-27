@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -48,12 +49,17 @@ from mesh_fingerprint import (  # noqa: E402
 
 PACK_SCHEMA = "pocketforge-device-print-pack-v2"
 LAYOUT_SCHEMA = "pocketforge-device-pack-layout-v1"
+LAYOUT_REGISTRY_SCHEMA = "pocketforge-device-layout-registry-v1"
 REPOSITORY_URL = "https://github.com/pocketforge-os/test-node-hw"
 MODES = ("coupon", "retrofit", "full")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
+DEVICE_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SCAD_INCLUDE_RE = re.compile(r"^\s*(?:include|use)\s*<([^>]+)>", re.MULTILINE)
 STL_SERIALIZATION = CANONICAL_ASCII_STL_SCHEMA
+DEFAULT_LAYOUT_REGISTRY = Path(
+    "mechanical/device-packs/device-layouts.json"
+)
 
 
 class PackError(ValueError):
@@ -82,6 +88,7 @@ class ResolvedLayout:
     toolchain_lock: Path
     input_paths: tuple[Path, ...]
     artifacts: tuple[LayoutArtifact, ...]
+    qualification: Mapping[str, Any]
 
 
 @dataclass(frozen=True)
@@ -248,6 +255,61 @@ def _validate_print_contract(value: Any, field: str) -> Mapping[str, Any]:
     return contract
 
 
+def _validate_layout_qualification(
+    value: Any, field: str
+) -> Mapping[str, Any]:
+    qualification = _object(value, field)
+    _strict_keys(
+        qualification,
+        field,
+        {
+            "status",
+            "acceptance_ref",
+            "accepted_on",
+            "device_slugs",
+            "scope",
+        },
+    )
+    status = _string(qualification["status"], f"{field}.status")
+    if status not in {"candidate", "physically_qualified"}:
+        raise PackError(f"{field}.status is unsupported: {status!r}")
+    _string(qualification["acceptance_ref"], f"{field}.acceptance_ref")
+    accepted_on = qualification["accepted_on"]
+    if status == "physically_qualified":
+        if not isinstance(accepted_on, str) or not re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}", accepted_on
+        ):
+            raise PackError(
+                f"{field}.accepted_on must be YYYY-MM-DD when qualified"
+            )
+        try:
+            date.fromisoformat(accepted_on)
+        except ValueError as exc:
+            raise PackError(
+                f"{field}.accepted_on is not a real calendar date"
+            ) from exc
+    elif accepted_on is not None:
+        raise PackError(f"{field}.accepted_on must be null while candidate")
+
+    device_slugs = _array(
+        qualification["device_slugs"], f"{field}.device_slugs"
+    )
+    if not device_slugs or len(set(device_slugs)) != len(device_slugs):
+        raise PackError(f"{field}.device_slugs must be non-empty and unique")
+    for index, slug in enumerate(device_slugs):
+        if not isinstance(slug, str) or not DEVICE_SLUG_RE.fullmatch(slug):
+            raise PackError(
+                f"{field}.device_slugs[{index}] is not a valid device slug"
+            )
+
+    scope = _array(qualification["scope"], f"{field}.scope")
+    if not scope:
+        raise PackError(f"{field}.scope must be non-empty")
+    for index, statement in enumerate(scope):
+        _string(statement, f"{field}.scope[{index}]")
+    return qualification
+
+
 def load_layout(root: Path, path: Path) -> ResolvedLayout:
     root = root.resolve()
     path = path.resolve()
@@ -259,7 +321,14 @@ def load_layout(root: Path, path: Path) -> ResolvedLayout:
     _strict_keys(
         document,
         str(path),
-        {"schema", "layout_id", "toolchain_lock", "input_paths", "artifacts"},
+        {
+            "schema",
+            "layout_id",
+            "toolchain_lock",
+            "input_paths",
+            "qualification",
+            "artifacts",
+        },
     )
     if document["schema"] != LAYOUT_SCHEMA:
         raise PackError(f"{path}.schema must be {LAYOUT_SCHEMA!r}")
@@ -378,13 +447,280 @@ def load_layout(root: Path, path: Path) -> ResolvedLayout:
         )
     if not artifacts:
         raise PackError(f"{path}.artifacts must not be empty")
+    qualification = _validate_layout_qualification(
+        document["qualification"], f"{path}.qualification"
+    )
     return ResolvedLayout(
         path=path,
         layout_id=layout_id,
         toolchain_lock=toolchain_lock,
         input_paths=input_paths,
         artifacts=tuple(artifacts),
+        qualification=qualification,
     )
+
+
+def load_layout_registry(root: Path, path: Path) -> Mapping[str, Path]:
+    root = root.resolve()
+    path = path.resolve()
+    try:
+        path.relative_to(root)
+    except ValueError as exc:
+        raise PackError("layout registry must be inside the repository") from exc
+    document = _object(_load_json(path), str(path))
+    _strict_keys(document, str(path), {"schema", "devices"})
+    if document["schema"] != LAYOUT_REGISTRY_SCHEMA:
+        raise PackError(
+            f"{path}.schema must be {LAYOUT_REGISTRY_SCHEMA!r}"
+        )
+    devices = _object(document["devices"], f"{path}.devices")
+    if not devices:
+        raise PackError(f"{path}.devices must not be empty")
+    resolved: dict[str, Path] = {}
+    for slug, raw in devices.items():
+        if not isinstance(slug, str) or not DEVICE_SLUG_RE.fullmatch(slug):
+            raise PackError(f"{path}.devices has invalid slug {slug!r}")
+        field = f"{path}.devices.{slug}"
+        record = _object(raw, field)
+        _strict_keys(record, field, {"layout"})
+        resolved[slug] = _repo_path(
+            root, record["layout"], f"{field}.layout"
+        )
+    return resolved
+
+
+def guard_qualified_layouts(
+    root: Path,
+    base_root: Path,
+    *,
+    registry_path: Path = DEFAULT_LAYOUT_REGISTRY,
+) -> tuple[int, int, int]:
+    """Protect qualified layouts and require staged candidate promotion.
+
+    A physically qualified layout is immutable by version: any geometry,
+    parameter, print-contract, or even formatting change must be introduced
+    under a new candidate layout ID.  Candidate-to-qualified promotion may
+    change only the qualification record, ensuring the physically inspected
+    candidate and the promoted source contract are identical.
+
+    Layouts that predate the qualification field are admitted once as a
+    bootstrap.  After that bootstrap lands, the ordinary immutable rule
+    protects them on every later pull request.
+    """
+
+    root = root.resolve()
+    base_root = base_root.resolve()
+    if not base_root.is_dir():
+        raise PackError(
+            f"qualified-layout base root is not a directory: {base_root}"
+        )
+    registry = (
+        registry_path.resolve()
+        if registry_path.is_absolute()
+        else (root / registry_path).resolve()
+    )
+    mappings = load_layout_registry(root, registry)
+    layouts_relative = Path("mechanical/device-packs/layouts")
+    base_layouts = base_root / layouts_relative
+    if not base_layouts.is_dir():
+        raise PackError(
+            "qualified-layout base is missing mechanical/device-packs/layouts"
+        )
+
+    locked = 0
+    for base_path in sorted(base_layouts.glob("*.json")):
+        base_document = _object(_load_json(base_path), str(base_path))
+        qualification = base_document.get("qualification")
+        if (
+            not isinstance(qualification, dict)
+            or qualification.get("status") != "physically_qualified"
+        ):
+            continue
+        layout_id = _string(
+            base_document.get("layout_id"), f"{base_path}.layout_id"
+        )
+        relative = base_path.relative_to(base_root)
+        head_path = root / relative
+        if not head_path.is_file():
+            raise PackError(
+                f"qualified layout {layout_id!r} was removed; qualified "
+                "layout versions are immutable"
+            )
+        if base_path.read_bytes() != head_path.read_bytes():
+            raise PackError(
+                f"qualified layout {layout_id!r} changed; create a new "
+                "candidate layout ID instead of editing a physically "
+                "qualified version"
+            )
+        device_slugs = _array(
+            qualification.get("device_slugs"),
+            f"{base_path}.qualification.device_slugs",
+        )
+        for index, slug_value in enumerate(device_slugs):
+            slug = _string(
+                slug_value,
+                f"{base_path}.qualification.device_slugs[{index}]",
+            )
+            registered = mappings.get(slug)
+            if registered != head_path.resolve():
+                registered_text = (
+                    "<unmapped>"
+                    if registered is None
+                    else _relative(root, registered)
+                )
+                raise PackError(
+                    f"qualified device {slug!r} was remapped from "
+                    f"{relative.as_posix()!r} to {registered_text!r}; "
+                    "the proven device/layout mapping is immutable"
+                )
+        locked += 1
+
+    promotions = 0
+    bootstraps = 0
+    for head_path in sorted(set(mappings.values())):
+        head_layout = load_layout(root, head_path)
+        if head_layout.qualification["status"] != "physically_qualified":
+            continue
+        relative = head_path.relative_to(root)
+        base_path = base_root / relative
+        if not base_path.is_file():
+            raise PackError(
+                f"new layout {head_layout.layout_id!r} cannot begin as "
+                "physically qualified; land it as a candidate first"
+            )
+        base_document = _object(_load_json(base_path), str(base_path))
+        base_qualification = base_document.get("qualification")
+        if (
+            isinstance(base_qualification, dict)
+            and base_qualification.get("status") == "physically_qualified"
+        ):
+            continue
+        if (
+            isinstance(base_qualification, dict)
+            and base_qualification.get("status") == "candidate"
+        ):
+            head_document = _object(_load_json(head_path), str(head_path))
+            base_contract = {
+                key: value
+                for key, value in base_document.items()
+                if key != "qualification"
+            }
+            head_contract = {
+                key: value
+                for key, value in head_document.items()
+                if key != "qualification"
+            }
+            if base_contract != head_contract:
+                raise PackError(
+                    f"layout {head_layout.layout_id!r} changed its source "
+                    "contract while being promoted; land candidate geometry "
+                    "first, physically accept that exact revision, then "
+                    "change only qualification"
+                )
+            promotions += 1
+            continue
+        if base_qualification is None:
+            bootstraps += 1
+            continue
+        raise PackError(
+            f"layout {head_layout.layout_id!r} has unsupported qualification "
+            "transition to physically_qualified"
+        )
+
+    print(
+        "qualified_layout_guard=pass "
+        f"locked={locked} promotions={promotions} bootstraps={bootstraps}"
+    )
+    return locked, promotions, bootstraps
+
+
+def resolve_device_layout(
+    root: Path,
+    device_slug: str,
+    *,
+    registry_path: Path = DEFAULT_LAYOUT_REGISTRY,
+    requested_layout: Path | None = None,
+) -> ResolvedLayout:
+    root = root.resolve()
+    if not DEVICE_SLUG_RE.fullmatch(device_slug):
+        raise PackError(f"invalid device slug: {device_slug!r}")
+    registry = (
+        registry_path.resolve()
+        if registry_path.is_absolute()
+        else (root / registry_path).resolve()
+    )
+    mappings = load_layout_registry(root, registry)
+    registered = mappings.get(device_slug)
+    if registered is None:
+        choices = ", ".join(sorted(mappings))
+        raise PackError(
+            f"device {device_slug!r} has no registered chassis layout; "
+            f"choose one of: {choices}"
+        )
+    if requested_layout is not None:
+        requested = (
+            requested_layout.resolve()
+            if requested_layout.is_absolute()
+            else (root / requested_layout).resolve()
+        )
+        if requested != registered:
+            raise PackError(
+                f"requested layout {_relative(root, requested)!r} does not "
+                f"match registered layout {_relative(root, registered)!r} "
+                f"for {device_slug}"
+            )
+    layout = load_layout(root, registered)
+    if registry not in layout.input_paths:
+        raise PackError(
+            f"layout {_relative(root, registered)!r} must list registry "
+            f"{_relative(root, registry)!r} in input_paths"
+        )
+    if device_slug not in layout.qualification["device_slugs"]:
+        raise PackError(
+            f"layout {layout.layout_id!r} qualification does not cover "
+            f"device {device_slug!r}"
+        )
+    return layout
+
+
+def device_layout_matrix(
+    root: Path,
+    profile: holder_profiles.ResolvedProfile,
+    *,
+    registry_path: Path = DEFAULT_LAYOUT_REGISTRY,
+    kind: str,
+) -> dict[str, list[dict[str, str]]]:
+    if kind not in {
+        "production-devices",
+        "candidate-layout-devices",
+    }:
+        raise PackError(f"unsupported device layout matrix kind: {kind!r}")
+    holder_status = profile.document["qualification"]["status"]
+    include: list[dict[str, str]] = []
+    for slug in sorted(profile.variants):
+        layout = resolve_device_layout(
+            root, slug, registry_path=registry_path
+        )
+        layout_status = layout.qualification["status"]
+        production_ready = (
+            holder_status == "physically_qualified"
+            and layout_status == "physically_qualified"
+        )
+        selected = (
+            production_ready
+            if kind == "production-devices"
+            else layout_status != "physically_qualified"
+        )
+        if selected:
+            include.append(
+                {
+                    "device_slug": slug,
+                    "layout_id": layout.layout_id,
+                    "layout_status": layout_status,
+                    "holder_status": holder_status,
+                }
+            )
+    return {"include": include}
 
 
 def _qualification_expected(
@@ -481,6 +817,11 @@ def build_plan(
         raise PackError(
             f"device {device_slug!r} is not mapped by profile "
             f"{profile.document['profile_id']!r}; choose one of: {choices}"
+        )
+    if device_slug not in layout.qualification["device_slugs"]:
+        raise PackError(
+            f"layout {layout.layout_id!r} qualification does not cover "
+            f"device {device_slug!r}"
         )
 
     items = [
@@ -607,35 +948,50 @@ def source_state(root: Path) -> SourceState:
 
 def _policy(
     profile: holder_profiles.ResolvedProfile,
+    layout: ResolvedLayout,
     mode: str,
     state: SourceState,
     *,
     allow_dirty: bool,
     allow_unqualified: bool,
 ) -> tuple[bool, list[str], list[str]]:
-    qualified = (
+    holder_qualified = (
         profile.document["qualification"]["status"] == "physically_qualified"
+    )
+    layout_qualified = (
+        layout.qualification["status"] == "physically_qualified"
     )
     if state.dirty and not allow_dirty:
         raise PackError(
             "source tree is dirty; commit the source or pass --allow-dirty "
             "for a non-production pack"
         )
-    if not qualified and mode != "coupon" and not allow_unqualified:
+    holder_blocks = not holder_qualified and mode != "coupon"
+    layout_blocks = not layout_qualified and mode == "full"
+    if (holder_blocks or layout_blocks) and not allow_unqualified:
+        requirements = []
+        if holder_blocks:
+            requirements.append("holder geometry")
+        if layout_blocks:
+            requirements.append("chassis layout")
         raise PackError(
-            f"{mode} packs require physically qualified holder geometry; "
+            f"{mode} packs require physically qualified "
+            f"{' and '.join(requirements)}; "
             "pass --allow-unqualified only for a non-production prototype"
         )
 
-    overrides: list[str] = []
+    overrides: set[str] = set()
     reasons: list[str] = []
     if state.dirty:
-        overrides.append("allow_dirty")
+        overrides.add("allow_dirty")
         reasons.append("dirty_source")
-    if not qualified:
+    if not holder_qualified:
         if mode != "coupon":
-            overrides.append("allow_unqualified")
+            overrides.add("allow_unqualified")
         reasons.append("holder_unqualified")
+    if not layout_qualified and mode == "full":
+        overrides.add("allow_unqualified")
+        reasons.append("layout_unqualified")
     if mode == "coupon":
         reasons.append("coupon_only")
     production_eligible = not reasons
@@ -979,6 +1335,7 @@ def _manifest_header(
             "id": layout.layout_id,
             "path": _relative(root, layout.path),
             "sha256": _sha256(layout.path),
+            "qualification": _json_safe(layout.qualification),
         },
         "qualification": _qualification_record(root, profile),
         "fixture": _fixture_record(root, profile),
@@ -1180,6 +1537,7 @@ def build_pack(
     current_state = state if state is not None else source_state(root)
     production_eligible, overrides, reasons = _policy(
         profile,
+        layout,
         mode,
         current_state,
         allow_dirty=allow_dirty,
@@ -1348,9 +1706,11 @@ def verify_pack(root: Path, pack: Path) -> None:
     layout_path = _repo_path(
         root, layout_record.get("path"), "manifest.layout.path"
     )
-    profile = holder_profiles.validate_profile(CRADLE_ROOT, profile_path)
-    layout = load_layout(root, layout_path)
     device_slug = _string(device_record.get("slug"), "manifest.device.slug")
+    profile = holder_profiles.validate_profile(CRADLE_ROOT, profile_path)
+    layout = resolve_device_layout(
+        root, device_slug, requested_layout=layout_path
+    )
     mode = _string(manifest["mode"], "manifest.mode")
     plan = build_plan(root, profile, layout, device_slug, mode)
 
@@ -1362,6 +1722,7 @@ def verify_pack(root: Path, pack: Path) -> None:
         )
     production_eligible, overrides, reasons = _policy(
         profile,
+        layout,
         mode,
         state,
         allow_dirty=state.dirty,
@@ -1402,12 +1763,21 @@ def _resolve_cli_path(root: Path, path: Path) -> Path:
 
 
 def _load_cli_contracts(
-    root: Path, profile_path: Path, layout_path: Path
+    root: Path,
+    profile_path: Path,
+    device_slug: str,
+    registry_path: Path,
+    layout_path: Path | None,
 ) -> tuple[holder_profiles.ResolvedProfile, ResolvedLayout]:
     profile = holder_profiles.validate_profile(
         CRADLE_ROOT, _resolve_cli_path(root, profile_path)
     )
-    layout = load_layout(root, _resolve_cli_path(root, layout_path))
+    layout = resolve_device_layout(
+        root,
+        device_slug,
+        registry_path=registry_path,
+        requested_layout=layout_path,
+    )
     return profile, layout
 
 
@@ -1430,7 +1800,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     build_parser.add_argument(
         "--layout",
         type=Path,
-        default=Path("mechanical/device-packs/layouts/chassis-core-v1.json"),
+        help=(
+            "Optional assertion of the registered layout path; mismatched "
+            "device/layout combinations are rejected"
+        ),
+    )
+    build_parser.add_argument(
+        "--layout-registry",
+        type=Path,
+        default=DEFAULT_LAYOUT_REGISTRY,
     )
     build_parser.add_argument("--output", type=Path)
     build_parser.add_argument("--openscad", default="openscad")
@@ -1438,15 +1816,47 @@ def main(argv: Sequence[str] | None = None) -> int:
     build_parser.add_argument("--allow-dirty", action="store_true")
     build_parser.add_argument("--allow-unqualified", action="store_true")
 
+    matrix_parser = subparsers.add_parser("matrix")
+    matrix_parser.add_argument(
+        "--kind",
+        choices=("production-devices", "candidate-layout-devices"),
+        required=True,
+    )
+    matrix_parser.add_argument(
+        "--profile",
+        type=Path,
+        default=Path(
+            "mechanical/dut-cradle-v1/profiles/"
+            "trimui-smart-pro-family.json"
+        ),
+    )
+    matrix_parser.add_argument(
+        "--layout-registry",
+        type=Path,
+        default=DEFAULT_LAYOUT_REGISTRY,
+    )
+
     verify_parser = subparsers.add_parser("verify")
     verify_parser.add_argument("--pack", type=Path, required=True)
+
+    guard_parser = subparsers.add_parser("guard-qualified-layouts")
+    guard_parser.add_argument("--base-root", type=Path, required=True)
+    guard_parser.add_argument(
+        "--layout-registry",
+        type=Path,
+        default=DEFAULT_LAYOUT_REGISTRY,
+    )
 
     args = parser.parse_args(argv)
     root = args.root.resolve()
     try:
         if args.command == "build":
             profile, layout = _load_cli_contracts(
-                root, args.profile, args.layout
+                root,
+                args.profile,
+                args.device,
+                args.layout_registry,
+                args.layout,
             )
             output = args.output
             if output is None:
@@ -1472,9 +1882,32 @@ def main(argv: Sequence[str] | None = None) -> int:
                 allow_dirty=args.allow_dirty,
                 allow_unqualified=args.allow_unqualified,
             )
+        elif args.command == "matrix":
+            profile = holder_profiles.validate_profile(
+                CRADLE_ROOT, _resolve_cli_path(root, args.profile)
+            )
+            matrix = device_layout_matrix(
+                root,
+                profile,
+                registry_path=args.layout_registry,
+                kind=args.kind,
+            )
+            print(
+                json.dumps(
+                    matrix,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            )
         elif args.command == "verify":
             pack = args.pack if args.pack.is_absolute() else root / args.pack
             verify_pack(root, pack)
+        elif args.command == "guard-qualified-layouts":
+            guard_qualified_layouts(
+                root,
+                args.base_root,
+                registry_path=args.layout_registry,
+            )
         else:  # pragma: no cover - argparse enforces the command set.
             raise PackError(f"unsupported command: {args.command}")
     except (

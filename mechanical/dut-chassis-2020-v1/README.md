@@ -3,7 +3,8 @@
 Parametric OpenSCAD source for the reusable mechanical frame around one
 PocketForge test node. The chassis carries:
 
-- a movable electronics/webcam fixture on a two-upright gantry;
+- a movable electronics/webcam fixture on either the proven two-upright
+  gantry or the material-reduced single top bar;
 - a fixed device-specific DUT carrier on the shared optical axis;
 - an operator-side power strip and replaceable device placard; and
 - non-load-bearing stacking registration tabs and repositionable cable
@@ -13,8 +14,28 @@ The handheld is the **device under test (DUT)**. This surrounding assembly is
 the **test-node chassis**.
 
 The fleet-standard envelope is **346 W × 358 D × approximately 368 H mm**,
-with **306 W × 318 D × 328 H mm** clear inside. One chassis uses six nominal
-1 m sticks of 20 × 20 mm extrusion.
+with **306 W × 318 D × 328 H mm** clear inside. The proven gantry chassis uses
+six nominal 1 m sticks of 20 × 20 mm extrusion. The top-bar candidate uses
+five when starting from new stock, or four new sticks plus the retained
+356.4 mm legacy offcut.
+
+## Chassis topology selection
+
+`CHASSIS_VARIANT="legacy_gantry"` remains the OpenSCAD default and its
+production meshes are regression-frozen. Device-pack generation selects the
+topology from `../device-packs/device-layouts.json`; do not choose it by hand.
+
+| Device | Layout | Fixture support | Status |
+| --- | --- | --- | --- |
+| TrimUI Smart Pro | `chassis-core-v1` | Four 164 mm upright halves + two 306 mm crossbars | Physically proven and frozen |
+| TrimUI Smart Pro S | `chassis-topbar-v1` | One movable 306 mm top bar + printed hanger/backstay pairs | Candidate pending `tsp-t1zd.2` |
+
+Both layouts preserve the same outer frame, fixture plate, plate Y/Z datum,
+camera optical relationship, DUT carrier, placard, power strip, stacking
+hardware, and wire anchors. In the top-bar layout, each keyed upper hanger
+clamps to the bar and shares the plate's existing upper slot with a
+complementary lower-backstay half-lap. The backstay continues to the existing
+lower slot. Two 2.5 mm lap halves reconstruct the proven 5 mm plate gap.
 
 ## Coordinate contract
 
@@ -26,7 +47,7 @@ Avoid “front” and “back”; those reverse with the observer.
 - Left and right: viewed by an operator looking through the chassis toward the
   DUT.
 
-The electronics fixture defaults to gantry centerline `Y=75`. The fixed DUT
+The electronics fixture support defaults to centerline `Y=75`. The fixed DUT
 carrier is on the device-side width rails. The power strip is inside the lower
 operator-side width rail. The placard hangs below the upper operator-side width
 rail.
@@ -55,11 +76,12 @@ assumption:
   owner-fit 105.07 × 24 × 15 mm installed envelope.
 
 The outer-frame and stacking load path is aluminum plus metal connectors.
-Printed channel bars, gantry plates, carrier links, and registration tabs are
-light-duty alignment/mounting parts. Never substitute a printed connector into
-the outer-frame or vertical stacking load path.
+Printed channel bars, gantry plates, top-bar hangers/backstays, carrier links,
+and registration tabs are light-duty alignment/mounting parts. Never
+substitute a printed connector into the outer-frame or vertical stacking load
+path.
 
-## Aluminum cut list
+## Aluminum cut list — proven gantry
 
 | Part | Quantity | Finished length |
 | --- | ---: | ---: |
@@ -76,11 +98,28 @@ The generated, connector-aware six-stick assignment is committed in
 make refresh-cut-list
 ```
 
+The scrap-first top-bar assignment is committed separately in
+[`CUT_LIST_TOPBAR.md`](CUT_LIST_TOPBAR.md). It removes **962 mm** of finished
+fixture-support extrusion (1268 → 306 mm), an 18.49% reduction across the
+complete chassis. Regenerate and check it with:
+
+```sh
+make topbar-cutlist
+make validate-topbar-cut-list-sync
+```
+
+If no qualifying offcut exists, batch the fifth fresh stick into three 306 mm
+top bars (927.6 mm including kerfs, 72.4 mm remainder). Use one now and reserve
+two for the next chassis builds; each of those then needs only four fresh
+outer-frame sticks.
+
 ## Canonical print workflow
 
-The chassis source owns five device-independent core beds. The device-pack
-builder combines them with the one carrier variant selected by the device
-profile; do not manually mix a carrier label, hook set, and device slug.
+The chassis source owns five device-independent core beds per layout. The
+table below is the proven gantry set. The device-pack builder combines the
+registered layout with the one carrier variant selected by the device profile;
+do not manually mix a chassis topology, carrier label, hook set, and device
+slug.
 
 | Batch | Output | Contents | Slicer exception |
 | --- | --- | --- | --- |
@@ -106,6 +145,27 @@ Build the five shared chassis-core batches:
 
 ```sh
 make batches
+```
+
+Build the five Pro S candidate core beds without changing the legacy outputs:
+
+```sh
+make topbar
+make validate-topbar-batches
+```
+
+Candidate Batches 01–03 contain 18 short channel bars, two keyed upper
+hangers, and two 244 mm lower backstays. Batches 04–05 are
+normalized-geometry identical to the proven layout. `make topbar` also
+regenerates the cut list and six review views under `build/topbar/`. Generate
+the complete device-selected candidate through the pack builder, not by mixing
+these files manually:
+
+```sh
+python3 mechanical/device-packs/build_device_pack.py build \
+  --device trimui-smart-pro-s \
+  --mode full \
+  --allow-unqualified
 ```
 
 Build a deterministic full pack from the repository root:
@@ -148,6 +208,11 @@ Batch 01 provides 28 short bars: 22 use-now mount positions and six parked
 replacement bars. The authoritative rail/face preload map is in the handbook
 assembly guide. Do not close a rail end until that map balances to 28.
 
+Top-bar Batch 01 instead provides exactly 18: ten active outer-width-rail
+locations, two active keyed-hanger locations, four parked depth-rail spares,
+and two parked top-bar spares. It contains no long splice bar. Keep the two
+inventories separate.
+
 ## Stacking registration tabs
 
 Batch 04 contains eight identical **18 × 92 × 4 mm** tabs, two for each upper
@@ -184,7 +249,31 @@ canonical eight-piece bed is intentionally separate so it can be repeated or
 omitted without reprinting frame hardware; individual and eight-piece
 replacement exports are also available.
 
-## Fixture-upright splice
+## Top-bar fixture suspension candidate
+
+Join the continuous 306 mm bar between the two upper depth rails with two
+accepted concealed metal L-connectors. Never splice this bar. Before closing
+its ends, load two active and two blue-tagged spare short M3 bars into the
+operator-facing groove.
+
+At each fixture-plate side:
+
+1. seat the upper hanger's 16 × 6.43 mm key in the top-bar groove and clamp its
+   round hole to one active short bar;
+2. place the hanger's 2.5 mm lower lap directly against the plate's existing
+   upper slot;
+3. flip the lower backstay from its print orientation so its 2.5 mm upper lap
+   fills the rail-side half of that joint;
+4. clamp the three-layer upper joint with an ordinary M3 fastener, wide
+   washers, and a metal locknut; and
+5. clamp the backstay's lower round hole through the existing lower plate slot.
+
+The source and normalized fingerprints are frozen for repeatable candidate
+prints, but this topology is not production-qualified until `tsp-t1zd.2`
+records fit, real loaded sag/racking, camera alignment, and explicit owner
+acceptance.
+
+## Fixture-upright splice — proven gantry only
 
 Each 328 mm gantry upright uses two 164 mm aluminum halves, one accepted
 full-wrap collar, and two collar-specific double-nut bars:
