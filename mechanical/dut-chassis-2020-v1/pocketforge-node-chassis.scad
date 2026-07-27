@@ -240,11 +240,11 @@ cradle_labels_presentation_mesh = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
 cradle_hooks_presentation_mesh =
     "build/imports/trimui-smart-pro-family-installed-hooks.stl";
 device_shell_presentation_mesh =
-    "build/imports/trimui-smart-pro-device-shell.stl";
+    "build/imports/trimui-smart-pro-s-device-shell.stl";
 device_controls_presentation_mesh =
-    "build/imports/trimui-smart-pro-device-controls.stl";
+    "build/imports/trimui-smart-pro-s-device-controls.stl";
 device_screen_presentation_mesh =
-    "build/imports/trimui-smart-pro-device-screen.stl";
+    "build/imports/trimui-smart-pro-s-device-screen.stl";
 
 $fn = 48;
 epsilon = 0.02;
