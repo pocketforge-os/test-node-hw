@@ -42,9 +42,13 @@ jobs:
       - name: Require immutable releases before generating assets
         env:
           GH_TOKEN: ${{ github.token }}
+          PF_PRINT_PACK_IMMUTABILITY_PROOF: >-
+            ${{ vars.PF_PRINT_PACK_IMMUTABILITY_PROOF }}
+          PROFILE_ID: ${{ inputs.profile_id }}
         run: |
           set -euo pipefail
-          python3 mechanical/device-packs/publish_print_pack.py preflight
+          python3 mechanical/device-packs/publish_print_pack.py preflight \
+            --profile-id "${PROFILE_ID}"
 
       - name: Install the qualified OpenSCAD toolchain
         run: |
@@ -82,6 +86,8 @@ jobs:
         env:
           BUNDLE: ${{ steps.identity.outputs.bundle }}
           GH_TOKEN: ${{ github.token }}
+          PF_PRINT_PACK_IMMUTABILITY_PROOF: >-
+            ${{ vars.PF_PRINT_PACK_IMMUTABILITY_PROOF }}
         run: |
           set -euo pipefail
           python3 mechanical/device-packs/publish_print_pack.py publish \

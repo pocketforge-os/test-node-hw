@@ -170,14 +170,34 @@ under the ignored `mechanical/device-packs/build/` tree; neither ZIPs nor
 release metadata are committed.
 
 Publication runs only through the main-only `Publish qualified print pack`
-workflow. Before creating a release, it requires repository release
-immutability to already be enabled. It creates a draft, uploads the complete
-asset set, verifies GitHub's reported SHA-256 and size for every asset, and only
-then publishes. It finally requires `immutable=true`, resolves the protected
-tag to the exact manifest commit, downloads and hashes every asset, and confirms
-the release was not selected as the moving latest release. An exact rerun is a
-no-op; any conflicting draft, tag, target, or asset fails closed. Published
-assets are never overwritten or deleted by this tooling.
+workflow. GitHub deliberately withholds the repository immutability setting
+from the workflow's ordinary contents token. An administrator therefore runs a
+separate authorization immediately before dispatch:
+
+```sh
+PF_RELEASE_ADMIN_TOKEN="$(gh auth token)" \
+  python3 mechanical/device-packs/publish_print_pack.py authorize \
+    --profile-id trimui-smart-pro-family
+
+gh workflow run publish-print-pack.yml \
+  --repo pocketforge-os/test-node-hw \
+  --ref main -f profile_id=trimui-smart-pro-family
+```
+
+`authorize` requires a clean checkout at the current remote `main`, reads the
+live immutable-release setting with administration access, and writes a
+non-secret Actions-variable proof bound to the exact repository, tag, and
+commit. The proof expires after 20 minutes. The release workflow receives no
+administration credential and has no permission to mint or refresh that proof.
+
+After validating the authorization, the workflow creates a draft, uploads the
+complete asset set, verifies GitHub's reported SHA-256 and size for every asset,
+and only then publishes. It finally requires `immutable=true`, resolves the
+protected tag to the exact manifest commit, downloads and hashes every asset,
+and confirms the release was not selected as the moving latest release. An
+exact rerun is a no-op; any expired/mismatched authorization or conflicting
+draft, tag, target, or asset fails closed. Published assets are never
+overwritten or deleted by this tooling.
 
 To consume a release, name the qualification tag explicitly:
 

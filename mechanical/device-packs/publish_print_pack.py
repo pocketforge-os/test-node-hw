@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import datetime as dt
 import hashlib
 import json
 import os
@@ -30,6 +32,10 @@ MAX_ERROR_BODY = 4096
 ASSET_DIGEST_POLLS = 12
 IMMUTABLE_POLLS = 12
 POLL_SECONDS = 5.0
+IMMUTABILITY_PROOF_SCHEMA = "pocketforge-immutable-release-proof-v1"
+IMMUTABILITY_PROOF_VARIABLE = "PF_PRINT_PACK_IMMUTABILITY_PROOF"
+IMMUTABILITY_PROOF_TTL = dt.timedelta(minutes=20)
+IMMUTABILITY_PROOF_CLOCK_SKEW = dt.timedelta(minutes=2)
 
 
 class PublishError(RuntimeError):
@@ -129,6 +135,23 @@ class GitHubClient:
         if not isinstance(value, dict):
             raise PublishError("immutable-release setting response is invalid")
         return value
+
+    def set_actions_variable(self, name: str, value: str) -> None:
+        if not re.fullmatch(r"^[A-Z][A-Z0-9_]{0,99}$", name):
+            raise PublishError(f"invalid Actions variable name: {name!r}")
+        path = f"/repos/{self.repository}/actions/variables/{name}"
+        try:
+            self._api("GET", path)
+        except ApiError as exc:
+            if exc.status != 404:
+                raise
+            self._api(
+                "POST",
+                f"/repos/{self.repository}/actions/variables",
+                {"name": name, "value": value},
+            )
+        else:
+            self._api("PATCH", path, {"name": name, "value": value})
 
     def release_by_tag(self, tag: str) -> Mapping[str, Any] | None:
         try:
@@ -273,6 +296,176 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _timestamp(value: dt.datetime) -> str:
+    if value.tzinfo is None:
+        raise PublishError("immutability proof time must be timezone-aware")
+    return (
+        value.astimezone(dt.timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
+
+
+def _parse_timestamp(value: Any, field: str) -> dt.datetime:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        raise PublishError(f"immutability proof {field} is invalid")
+    try:
+        parsed = dt.datetime.fromisoformat(value.removesuffix("Z") + "+00:00")
+    except ValueError as exc:
+        raise PublishError(
+            f"immutability proof {field} is invalid"
+        ) from exc
+    if parsed.microsecond:
+        raise PublishError(
+            f"immutability proof {field} must use whole seconds"
+        )
+    return parsed
+
+
+def create_immutability_proof(
+    *,
+    repository: str,
+    tag: str,
+    commit: str,
+    now: dt.datetime | None = None,
+) -> str:
+    checked_at = (
+        now.astimezone(dt.timezone.utc)
+        if now is not None
+        else dt.datetime.now(dt.timezone.utc)
+    ).replace(microsecond=0)
+    document = {
+        "schema": IMMUTABILITY_PROOF_SCHEMA,
+        "repository": repository,
+        "tag": tag,
+        "commit": commit,
+        "enabled": True,
+        "checked_at": _timestamp(checked_at),
+        "expires_at": _timestamp(checked_at + IMMUTABILITY_PROOF_TTL),
+    }
+    payload = json.dumps(
+        document, separators=(",", ":"), sort_keys=True
+    ).encode("utf-8")
+    return base64.urlsafe_b64encode(payload).rstrip(b"=").decode("ascii")
+
+
+def validate_immutability_proof(
+    proof: str,
+    *,
+    repository: str,
+    tag: str,
+    commit: str,
+    now: dt.datetime | None = None,
+) -> Mapping[str, Any]:
+    if not isinstance(proof, str) or not proof or len(proof) > 4096:
+        raise PublishError("immutability proof is missing or oversized")
+    if not re.fullmatch(r"^[A-Za-z0-9_-]+$", proof):
+        raise PublishError("immutability proof is not canonical base64url")
+    padding = "=" * (-len(proof) % 4)
+    try:
+        payload = base64.b64decode(
+            proof + padding, altchars=b"-_", validate=True
+        )
+        document = json.loads(payload)
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise PublishError("immutability proof is malformed") from exc
+    if not isinstance(document, dict):
+        raise PublishError("immutability proof must contain an object")
+    expected_fields = {
+        "schema",
+        "repository",
+        "tag",
+        "commit",
+        "enabled",
+        "checked_at",
+        "expires_at",
+    }
+    if set(document) != expected_fields:
+        raise PublishError("immutability proof fields are invalid")
+    canonical = base64.urlsafe_b64encode(
+        json.dumps(
+            document, separators=(",", ":"), sort_keys=True
+        ).encode("utf-8")
+    ).rstrip(b"=").decode("ascii")
+    if canonical != proof:
+        raise PublishError("immutability proof encoding is noncanonical")
+    expected = {
+        "schema": IMMUTABILITY_PROOF_SCHEMA,
+        "repository": repository,
+        "tag": tag,
+        "commit": commit,
+        "enabled": True,
+    }
+    for field, value in expected.items():
+        if document.get(field) != value:
+            raise PublishError(
+                f"immutability proof {field} does not match publication"
+            )
+    checked_at = _parse_timestamp(document["checked_at"], "checked_at")
+    expires_at = _parse_timestamp(document["expires_at"], "expires_at")
+    current = (
+        now.astimezone(dt.timezone.utc)
+        if now is not None
+        else dt.datetime.now(dt.timezone.utc)
+    ).replace(microsecond=0)
+    if checked_at > current + IMMUTABILITY_PROOF_CLOCK_SKEW:
+        raise PublishError("immutability proof was checked in the future")
+    if expires_at - checked_at != IMMUTABILITY_PROOF_TTL:
+        raise PublishError("immutability proof has an invalid lifetime")
+    if current >= expires_at:
+        raise PublishError("immutability proof has expired")
+    return document
+
+
+def authorize_workflow(
+    root: Path,
+    profile_id: str,
+    client: GitHubClient,
+    *,
+    now: dt.datetime | None = None,
+) -> Mapping[str, Any]:
+    root = root.resolve()
+    state = releases.packs.source_state(root)
+    if state.dirty:
+        raise PublishError(
+            "workflow authorization requires a clean source checkout"
+        )
+    profile = releases.resolve_profile(root, profile_id)
+    identity = releases.release_identity(profile)
+    remote_main = client.resolved_commit("main")
+    if remote_main != state.commit:
+        raise PublishError(
+            f"local commit {state.commit} is not current remote main "
+            f"{remote_main}"
+        )
+    setting = client.immutable_setting()
+    if setting.get("enabled") is not True:
+        raise PublishError(
+            "repository immutable releases must be enabled before authorization"
+        )
+    proof = create_immutability_proof(
+        repository=client.repository,
+        tag=identity.tag,
+        commit=state.commit,
+        now=now,
+    )
+    client.set_actions_variable(IMMUTABILITY_PROOF_VARIABLE, proof)
+    document = validate_immutability_proof(
+        proof,
+        repository=client.repository,
+        tag=identity.tag,
+        commit=state.commit,
+        now=now,
+    )
+    print(
+        "print_pack_publish_authorize=pass "
+        f"repository={client.repository} tag={identity.tag} "
+        f"commit={state.commit} expires_at={document['expires_at']}"
+    )
+    return document
 
 
 def expected_assets(
@@ -465,6 +658,8 @@ def publish_bundle(
     *,
     bundle_verifier: BundleVerifier = releases.verify_release_bundle,
     sleeper: Sleeper = time.sleep,
+    immutability_proof: str | None = None,
+    now: dt.datetime | None = None,
 ) -> str:
     root = root.resolve()
     bundle = bundle.expanduser().resolve()
@@ -505,10 +700,20 @@ def publish_bundle(
     body = releases.release_body(identity, commit)
     assets = expected_assets(bundle, manifest)
 
-    setting = client.immutable_setting()
-    if setting.get("enabled") is not True:
-        raise PublishError(
-            "repository immutable releases must be enabled before publication"
+    if immutability_proof is None:
+        setting = client.immutable_setting()
+        if setting.get("enabled") is not True:
+            raise PublishError(
+                "repository immutable releases must be enabled before "
+                "publication"
+            )
+    else:
+        validate_immutability_proof(
+            immutability_proof,
+            repository=client.repository,
+            tag=tag,
+            commit=commit,
+            now=now,
         )
 
     release = client.release_by_tag(tag)
@@ -601,23 +806,52 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    authorize = subparsers.add_parser("authorize")
+    authorize.add_argument("--profile-id", required=True)
+    authorize.add_argument("--token-env", default="PF_RELEASE_ADMIN_TOKEN")
+
     preflight = subparsers.add_parser("preflight")
+    preflight.add_argument("--profile-id", required=True)
+    preflight.add_argument(
+        "--immutability-proof",
+        default=os.environ.get(IMMUTABILITY_PROOF_VARIABLE, ""),
+    )
     preflight.add_argument("--token-env", default="GH_TOKEN")
 
     publish = subparsers.add_parser("publish")
     publish.add_argument("--bundle", type=Path, required=True)
+    publish.add_argument(
+        "--immutability-proof",
+        default=os.environ.get(IMMUTABILITY_PROOF_VARIABLE, ""),
+    )
     publish.add_argument("--token-env", default="GH_TOKEN")
 
     args = parser.parse_args(argv)
     try:
         token = os.environ.get(args.token_env, "")
         client = GitHubClient(args.repository, token)
-        if args.command == "preflight":
-            setting = client.immutable_setting()
-            if setting.get("enabled") is not True:
-                raise PublishError(
-                    "repository immutable releases are not enabled"
+        if args.command == "authorize":
+            authorize_workflow(
+                args.root, args.profile_id, client
+            )
+        elif args.command == "preflight":
+            if args.immutability_proof:
+                state = releases.packs.source_state(args.root)
+                identity = releases.release_identity(
+                    releases.resolve_profile(args.root, args.profile_id)
                 )
+                validate_immutability_proof(
+                    args.immutability_proof,
+                    repository=args.repository,
+                    tag=identity.tag,
+                    commit=state.commit,
+                )
+            else:
+                setting = client.immutable_setting()
+                if setting.get("enabled") is not True:
+                    raise PublishError(
+                        "repository immutable releases are not enabled"
+                    )
             print(
                 "print_pack_publish_preflight=pass "
                 f"repository={args.repository} immutable=true"
@@ -628,7 +862,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.bundle.is_absolute()
                 else args.root / args.bundle
             )
-            publish_bundle(args.root, bundle, client)
+            publish_bundle(
+                args.root,
+                bundle,
+                client,
+                immutability_proof=args.immutability_proof or None,
+            )
         else:  # pragma: no cover
             raise PublishError(f"unsupported command: {args.command}")
     except (

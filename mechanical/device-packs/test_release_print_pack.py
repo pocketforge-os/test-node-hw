@@ -274,9 +274,15 @@ class FakeGitHub:
         self.orphan_tag = False
         self.upload_count = 0
         self.publish_count = 0
+        self.setting_checks = 0
+        self.variables: dict[str, str] = {}
 
     def immutable_setting(self) -> dict[str, object]:
+        self.setting_checks += 1
         return {"enabled": self.enabled}
+
+    def set_actions_variable(self, name: str, value: str) -> None:
+        self.variables[name] = value
 
     def release_by_tag(self, tag: str) -> dict[str, object] | None:
         if self.release is None or self.release["tag_name"] != tag:
@@ -337,6 +343,8 @@ class FakeGitHub:
         return copy.deepcopy(self.release)
 
     def resolved_commit(self, ref: str) -> str:
+        if ref == "main":
+            return COMMIT
         assert self.release is not None
         self.assertEqual(ref, self.release["tag_name"])
         return str(self.release["target_commitish"])
@@ -425,6 +433,88 @@ class PublisherTests(unittest.TestCase):
             self.assertEqual(4, client.upload_count)
             self.assertEqual(1, client.publish_count)
 
+    def test_short_lived_admin_proof_is_exact_and_skips_admin_api(self) -> None:
+        now = publisher.dt.datetime(
+            2026, 7, 27, 0, 0, tzinfo=publisher.dt.timezone.utc
+        )
+        proof = publisher.create_immutability_proof(
+            repository=publisher.DEFAULT_REPOSITORY,
+            tag=self.identity.tag,
+            commit=COMMIT,
+            now=now,
+        )
+        document = publisher.validate_immutability_proof(
+            proof,
+            repository=publisher.DEFAULT_REPOSITORY,
+            tag=self.identity.tag,
+            commit=COMMIT,
+            now=now + publisher.dt.timedelta(minutes=1),
+        )
+        self.assertTrue(document["enabled"])
+        with self.assertRaisesRegex(
+            publisher.PublishError, "commit does not match"
+        ):
+            publisher.validate_immutability_proof(
+                proof,
+                repository=publisher.DEFAULT_REPOSITORY,
+                tag=self.identity.tag,
+                commit="b" * 40,
+                now=now,
+            )
+        with self.assertRaisesRegex(publisher.PublishError, "expired"):
+            publisher.validate_immutability_proof(
+                proof,
+                repository=publisher.DEFAULT_REPOSITORY,
+                tag=self.identity.tag,
+                commit=COMMIT,
+                now=now + publisher.dt.timedelta(minutes=20),
+            )
+
+        with tempfile.TemporaryDirectory(prefix="pf-publisher-test-") as temp:
+            bundle, manifest = self._bundle(Path(temp))
+            client = FakeGitHub()
+            client.enabled = False
+            publisher.publish_bundle(
+                self.root,
+                bundle,
+                client,
+                bundle_verifier=lambda root, path: manifest,
+                sleeper=lambda seconds: None,
+                immutability_proof=proof,
+                now=now,
+            )
+            self.assertEqual(0, client.setting_checks)
+            self.assertEqual(1, client.publish_count)
+
+    def test_authorization_checks_live_setting_and_remote_main(self) -> None:
+        now = publisher.dt.datetime(
+            2026, 7, 27, 0, 0, tzinfo=publisher.dt.timezone.utc
+        )
+        client = FakeGitHub()
+        with mock.patch.object(
+            releases.packs,
+            "source_state",
+            return_value=releases.packs.SourceState(COMMIT, False),
+        ):
+            document = publisher.authorize_workflow(
+                self.root,
+                PROFILE_ID,
+                client,
+                now=now,
+            )
+        self.assertEqual(1, client.setting_checks)
+        proof = client.variables[publisher.IMMUTABILITY_PROOF_VARIABLE]
+        self.assertEqual(
+            document,
+            publisher.validate_immutability_proof(
+                proof,
+                repository=publisher.DEFAULT_REPOSITORY,
+                tag=self.identity.tag,
+                commit=COMMIT,
+                now=now,
+            ),
+        )
+
     def test_disabled_immutability_fails_before_remote_mutation(self) -> None:
         with tempfile.TemporaryDirectory(prefix="pf-publisher-test-") as temp:
             bundle, manifest = self._bundle(Path(temp))
@@ -508,6 +598,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         )
         self.assertIn("cancel-in-progress: false", text)
         self.assertIn("openscad=2021.01-6build4", text)
+        self.assertIn("vars.PF_PRINT_PACK_IMMUTABILITY_PROOF", text)
         self.assertNotIn("actions/upload-artifact", text)
         preflight = text.index("publish_print_pack.py preflight")
         build = text.index("release_print_pack.py build")
