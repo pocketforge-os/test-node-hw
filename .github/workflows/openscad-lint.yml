@@ -15,6 +15,7 @@ on:
       - "mechanical/dut-chassis-2020-v1/Makefile"
       - "mechanical/dut-chassis-2020-v1/scripts/**"
       - ".github/workflows/openscad-lint.yml"
+      - ".github/workflows/fixture-dependency-intake.yml"
       - ".github/workflows/publish-print-pack.yml"
 
 permissions:
@@ -27,6 +28,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      fixture_matrix: ${{ steps.plan.outputs.fixture_matrix }}
     steps:
       - name: Check out source and exact PR base
         env:
@@ -60,6 +62,11 @@ jobs:
             --output "${plan_path}"
           matrix="$(jq -c '.matrix' "${plan_path}")"
           echo "matrix=${matrix}" >>"${GITHUB_OUTPUT}"
+          cradle="mechanical/dut-cradle-v1"
+          intake="${cradle}/scripts/fixture_dependency_intake.py"
+          python3 "${intake}" validate-candidates
+          fixture_matrix="$(python3 "${intake}" matrix)"
+          echo "fixture_matrix=${fixture_matrix}" >>"${GITHUB_OUTPUT}"
 
       - name: Upload the qualification plan
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -110,6 +117,8 @@ jobs:
             matrix --kind qualified-profiles
           python3 "${cradle}/scripts/qualification_ci.py" \
             matrix --kind qualified-devices
+          python3 "${cradle}/scripts/fixture_dependency_intake.py" \
+            validate-candidates
 
       - name: Test device-pack contracts
         run: |
@@ -125,6 +134,51 @@ jobs:
               --device trimui-smart-pro --mode coupon
           python3 mechanical/device-packs/build_device_pack.py verify \
             --pack "$pack"
+
+  fixture_candidate:
+    name: fixture candidate (${{ matrix.profile_id }})
+    needs: qualification_plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.qualification_plan.outputs.fixture_matrix) }}
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin \
+            "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Verify the candidate against its exact platform source
+        env:
+          RECEIPT_PATH: ${{ matrix.receipt_path }}
+          PLATFORM_REVISION: ${{ matrix.platform_revision }}
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          platform_root="$(
+            mktemp -d "${runner_temp}/platform-fixture-candidate.XXXXXX"
+          )"
+          git init --quiet "${platform_root}"
+          git -C "${platform_root}" remote add origin \
+            "https://github.com/pocketforge-os/platform.git"
+          git -C "${platform_root}" fetch --quiet --depth=1 \
+            origin "${PLATFORM_REVISION}"
+          git -C "${platform_root}" checkout --quiet --detach FETCH_HEAD
+          python3 "${cradle}/scripts/fixture_dependency_intake.py" \
+            verify-source \
+            --receipt "${RECEIPT_PATH}" \
+            --platform-root "${platform_root}"
 
   qualification:
     name: qualification (${{ matrix.profile_id }})
@@ -284,6 +338,7 @@ jobs:
     needs:
       - qualification_plan
       - static
+      - fixture_candidate
       - qualification
       - release_bundle
     runs-on: ubuntu-24.04
@@ -293,12 +348,15 @@ jobs:
         env:
           PLAN_RESULT: ${{ needs.qualification_plan.result }}
           STATIC_RESULT: ${{ needs.static.result }}
+          FIXTURE_CANDIDATE_RESULT: ${{ needs.fixture_candidate.result }}
           QUALIFICATION_RESULT: ${{ needs.qualification.result }}
           RELEASE_BUNDLE_RESULT: ${{ needs.release_bundle.result }}
         run: |
           set -euo pipefail
           [[ "${PLAN_RESULT}" == "success" ]]
           [[ "${STATIC_RESULT}" == "success" ]]
+          [[ "${FIXTURE_CANDIDATE_RESULT}" == "success" \
+            || "${FIXTURE_CANDIDATE_RESULT}" == "skipped" ]]
           [[ "${QUALIFICATION_RESULT}" == "success" \
             || "${QUALIFICATION_RESULT}" == "skipped" ]]
           [[ "${RELEASE_BUNDLE_RESULT}" == "success" ]]

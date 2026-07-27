@@ -1,0 +1,348 @@
+name: Intake platform fixture dependencies
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch: {}
+
+# The planner runs only trusted protected-main code. Write authority arrives
+# later through a repository-scoped GitHub App token and only when a candidate
+# exists; the workflow's own token remains read-only.
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: fixture-dependency-intake
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the exact trusted test-node-hw main revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "${GITHUB_REF}" == "refs/heads/main" ]] || {
+            echo "fixture intake must be dispatched from main" >&2
+            exit 1
+          }
+          [[ "${SOURCE_SHA}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "invalid test-node-hw source revision: ${SOURCE_SHA}" >&2
+            exit 1
+          }
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${SOURCE_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin \
+            "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Export upstream state and stage only deterministic candidates
+        id: plan
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          cradle="mechanical/dut-cradle-v1"
+          intake="${cradle}/scripts/fixture_dependency_intake.py"
+          platform_repository="https://github.com/pocketforge-os/platform.git"
+          platform_head="$(
+            git ls-remote "${platform_repository}" refs/heads/main |
+              awk 'NR == 1 {print $1}'
+          )"
+          [[ "${platform_head}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "cannot resolve platform main" >&2
+            exit 1
+          }
+          platform_root="$(
+            mktemp -d "${runner_temp}/platform-fixture-intake.XXXXXX"
+          )"
+          git init --quiet "${platform_root}"
+          git -C "${platform_root}" remote add origin "${platform_repository}"
+          # The exporter deliberately resolves the last first-parent fixture
+          # state, which may predate visual-only main commits. Keep that history.
+          git -C "${platform_root}" fetch --quiet origin "${platform_head}"
+          git -C "${platform_root}" checkout --quiet --detach FETCH_HEAD
+
+          snapshot="${runner_temp}/platform-fixture-dependencies.json"
+          plan="${runner_temp}/fixture-update-plan.json"
+          python3 \
+            "${platform_root}/device-models/export_fixture_snapshot.py" \
+            export --output "${snapshot}"
+          python3 \
+            "${platform_root}/device-models/export_fixture_snapshot.py" \
+            verify --snapshot "${snapshot}"
+          python3 "${intake}" plan \
+            --snapshot "${snapshot}" --output "${plan}"
+          python3 "${intake}" stage --snapshot "${snapshot}"
+          python3 "${intake}" validate-candidates
+
+          expected="${runner_temp}/fixture-intake-expected-paths"
+          actual="${runner_temp}/fixture-intake-actual-paths"
+          : >"${expected}"
+          while IFS= read -r relative; do
+            case "${relative}" in
+              profiles/fixture-locks/candidates/*.json|\
+              qualification/fixture-updates/*.json) ;;
+              *)
+                echo "planner returned an unsafe path: ${relative}" >&2
+                exit 1
+                ;;
+            esac
+            full_path="${cradle}/${relative}"
+            printf '%s\n' "${full_path}" >>"${expected}"
+            git add -- "${full_path}"
+          done < <(jq -r '.write_paths[]' "${plan}")
+          sort -o "${expected}" "${expected}"
+          git diff --cached --name-only | sort >"${actual}"
+          diff -u "${expected}" "${actual}"
+          git diff --quiet
+
+          write_count="$(jq -r '.write_paths | length' "${plan}")"
+          if [[ "${write_count}" -gt 0 ]]; then
+            has_changes=true
+          else
+            has_changes=false
+          fi
+          echo "has_changes=${has_changes}" >>"${GITHUB_OUTPUT}"
+          echo "platform_head=${platform_head}" >>"${GITHUB_OUTPUT}"
+          echo "snapshot_revision=$(
+            jq -r '.snapshot.revision' "${plan}"
+          )" >>"${GITHUB_OUTPUT}"
+          echo "plan_path=${plan}" >>"${GITHUB_OUTPUT}"
+          echo "fixture_intake=${has_changes} writes=${write_count}"
+
+      - name: Assume the main-only fixture intake role
+        if: steps.plan.outputs.has_changes == 'true'
+        uses: aws-actions/configure-aws-credentials@254c19bd240aabef8777f48595e9d2d7b972184b # v6.2.1
+        with:
+          role-to-assume: arn:aws:iam::611492472006:role/pf-ci-handbook-refresh
+          aws-region: us-east-1
+
+      - name: Read the GitHub App credential through pf-secret
+        if: steps.plan.outputs.has_changes == 'true'
+        id: app-credential
+        env:
+          PF_SECRET_BACKEND: aws-secrets
+        run: |
+          set -euo pipefail
+          meta="$(scripts/pf-secret get github/agent-app-meta)"
+          client_id="$(jq -er '.client_id' <<<"${meta}")"
+          private_key="$(scripts/pf-secret get github/agent-app-key)"
+
+          while IFS= read -r line; do
+            echo "::add-mask::${line}"
+          done <<<"${private_key}"
+
+          delimiter="PF_KEY_$(openssl rand -hex 16)"
+          {
+            echo "client-id=${client_id}"
+            echo "private-key<<${delimiter}"
+            printf '%s\n' "${private_key}"
+            echo "${delimiter}"
+          } >>"${GITHUB_OUTPUT}"
+
+      - name: Mint a test-node-hw-scoped GitHub App token
+        if: steps.plan.outputs.has_changes == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          client-id: ${{ steps.app-credential.outputs.client-id }}
+          private-key: ${{ steps.app-credential.outputs.private-key }}
+          owner: pocketforge-os
+          repositories: test-node-hw
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open or refresh exactly one draft holder candidate PR
+        if: steps.plan.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SOURCE_SHA: ${{ github.sha }}
+          PLATFORM_HEAD: ${{ steps.plan.outputs.platform_head }}
+          SNAPSHOT_REVISION: ${{ steps.plan.outputs.snapshot_revision }}
+          PLAN_PATH: ${{ steps.plan.outputs.plan_path }}
+        run: |
+          set -euo pipefail
+          branch="automation/fixture-dependency-intake"
+          cradle="mechanical/dut-cradle-v1"
+          trusted_intake="${GITHUB_WORKSPACE}/${cradle}/scripts/fixture_dependency_intake.py"
+
+          source_main="$(
+            gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq '.sha'
+          )"
+          [[ "${source_main}" == "${SOURCE_SHA}" ]] || {
+            echo "source test-node-hw main advanced; refusing stale mutation" >&2
+            echo "planned=${SOURCE_SHA} current=${source_main}" >&2
+            exit 1
+          }
+          platform_main="$(
+            git ls-remote \
+              "https://github.com/pocketforge-os/platform.git" \
+              refs/heads/main |
+              awk 'NR == 1 {print $1}'
+          )"
+          [[ "${platform_main}" == "${PLATFORM_HEAD}" ]] || {
+            echo "upstream platform main advanced; refusing stale mutation" >&2
+            echo "planned=${PLATFORM_HEAD} current=${platform_main}" >&2
+            exit 1
+          }
+
+          gh auth setup-git
+          remote_head="$(
+            git ls-remote --heads origin "refs/heads/${branch}" |
+              awk 'NR == 1 {print $1}'
+          )"
+          pr_json="$(
+            gh pr list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --head "${branch}" \
+              --base main \
+              --state open \
+              --json number,isDraft,url
+          )"
+          pr_count="$(jq 'length' <<<"${pr_json}")"
+          if [[ -n "${remote_head}" ]]; then
+            [[ "${remote_head}" =~ ^[0-9a-f]{40}$ ]] || {
+              echo "invalid remote automation branch revision" >&2
+              exit 1
+            }
+            [[ "${pr_count}" -eq 1 ]] || {
+              echo "remote automation branch must own exactly one open PR" >&2
+              exit 1
+            }
+            jq -e '.[0].isDraft == true' <<<"${pr_json}" >/dev/null || {
+              echo "non-draft conflicting fixture intake PR; refusing update" >&2
+              exit 1
+            }
+            git fetch --quiet origin \
+              "${remote_head}:refs/remotes/origin/fixture-intake-existing"
+            mapfile -t remote_paths < <(
+              gh api --paginate \
+                "repos/${GITHUB_REPOSITORY}/pulls/$(
+                  jq -r '.[0].number' <<<"${pr_json}"
+                )/files" \
+                --jq '.[].filename'
+            )
+            for path in "${remote_paths[@]}"; do
+              case "${path}" in
+                "${cradle}"/profiles/fixture-locks/candidates/*.json|\
+                "${cradle}"/qualification/fixture-updates/*.json) ;;
+                *)
+                  echo "unexpected file on remote automation branch: ${path}" >&2
+                  exit 1
+                  ;;
+              esac
+            done
+            remote_parent="$(
+              mktemp -d \
+                "${RUNNER_TEMP:?RUNNER_TEMP is required}/fixture-intake-remote.XXXXXX"
+            )"
+            remote_root="${remote_parent}/tree"
+            git worktree add --quiet --detach "${remote_root}" "${remote_head}"
+            python3 "${trusted_intake}" \
+              --root "${remote_root}/${cradle}" validate-candidates
+            git worktree remove --force "${remote_root}"
+          else
+            [[ "${pr_count}" -eq 0 ]] || {
+              echo "open fixture intake PR has no matching remote branch" >&2
+              exit 1
+            }
+          fi
+
+          git config user.name "pocketforge-agent[bot]"
+          git config user.email \
+            "299760760+pocketforge-agent[bot]@users.noreply.github.com"
+          profiles="$(
+            jq -r \
+              '[.profiles[] | select(.status == "candidate_update") |
+                .profile_id] | join(", ")' \
+              "${PLAN_PATH}"
+          )"
+          git commit -m \
+            "cad: stage fixture candidates from ${SNAPSHOT_REVISION:0:12}"
+
+          if [[ -n "${remote_head}" ]] && \
+            [[ "$(git rev-parse 'HEAD^{tree}')" == \
+               "$(git rev-parse "${remote_head}^{tree}")" ]]; then
+            echo "fixture_intake=no_remote_change profiles=${profiles}"
+            exit 0
+          fi
+
+          source_main="$(
+            gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq '.sha'
+          )"
+          [[ "${source_main}" == "${SOURCE_SHA}" ]] || {
+            echo "source test-node-hw main advanced before push" >&2
+            exit 1
+          }
+          platform_main="$(
+            git ls-remote \
+              "https://github.com/pocketforge-os/platform.git" \
+              refs/heads/main |
+              awk 'NR == 1 {print $1}'
+          )"
+          [[ "${platform_main}" == "${PLATFORM_HEAD}" ]] || {
+            echo "upstream platform main advanced before push" >&2
+            exit 1
+          }
+          if [[ "${pr_count}" -eq 1 ]]; then
+            pr_number="$(jq -r '.[0].number' <<<"${pr_json}")"
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" \
+              --jq '.draft' | grep -qx true || {
+                echo "fixture intake PR became non-draft before push" >&2
+                exit 1
+              }
+          fi
+
+          if [[ -n "${remote_head}" ]]; then
+            git push \
+              --force-with-lease="refs/heads/${branch}:${remote_head}" \
+              origin "HEAD:refs/heads/${branch}"
+          else
+            git push origin "HEAD:refs/heads/${branch}"
+          fi
+
+          body_file="$(mktemp)"
+          {
+            printf '%s\n\n' '## Summary'
+            printf '%s\n\n' \
+              "Stage deterministic fixture-interface candidates for ${profiles} from exact platform revision \`${SNAPSHOT_REVISION}\`."
+            printf '%s\n\n' \
+              'This draft changes no active profile, accepted fixture lock, holder geometry, or physical qualification. It remains `awaiting_holder_design`.'
+            printf '%s\n\n' '## Test plan'
+            printf '%s\n' \
+              '- [x] Trusted platform main exported and verified its canonical fixture dependency snapshot.'
+            printf '%s\n' \
+              '- [x] The intake planner validated every profile and staged only new candidate locks and receipts.'
+            printf '%s\n\n' \
+              '- [x] The staged Git diff exactly matched the planner-owned path list.'
+            printf '%s\n\n' '## Related PRs'
+            printf '%s\n' \
+              "https://github.com/pocketforge-os/platform/commit/${SNAPSHOT_REVISION}"
+          } >"${body_file}"
+
+          if [[ "${pr_count}" -eq 1 ]]; then
+            jq -n \
+              --arg title "cad: intake platform fixture candidates" \
+              --rawfile body "${body_file}" \
+              '{title: $title, body: $body}' |
+              gh api --method PATCH \
+                "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" \
+                --input -
+          else
+            gh pr create \
+              --repo "${GITHUB_REPOSITORY}" \
+              --head "${branch}" \
+              --base main \
+              --draft \
+              --title "cad: intake platform fixture candidates" \
+              --body-file "${body_file}"
+          fi
