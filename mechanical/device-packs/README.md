@@ -26,6 +26,24 @@ definition, raw STL hashes, representation-independent mesh fingerprints,
 bounds, volume, triangle count, and topology. `SHA256SUMS` covers every STL.
 Neither file contains timestamps or absolute build paths.
 
+The handbook's browser generator follows the same rule. It publishes a
+source-only browser bundle—not rendered STLs—made directly from the canonical
+holder-profile and device-layout registries:
+
+```sh
+python3 mechanical/device-packs/export_browser_bundle.py build
+python3 mechanical/device-packs/export_browser_bundle.py verify
+```
+
+`catalog.json` contains every registered device, all three pack modes, the
+exact resolved artifact plan and OpenSCAD definitions, qualification state,
+print contract, and accepted normalized fingerprint where one exists. The
+bundle also contains the complete hashed `.scad` include closure and
+`SHA256SUMS`. It contains no STL. A browser can therefore render one selected
+part or a complete pack locally without maintaining a second device list.
+Adding a device to a valid holder profile and `device-layouts.json`
+automatically adds it to the next catalog export.
+
 OpenSCAD facet ordering is not byte-stable across otherwise identical runs.
 The builder therefore rewrites each render as a canonical ASCII STL with exact
 renderer coordinates, deterministic facet ordering/start vertices, and

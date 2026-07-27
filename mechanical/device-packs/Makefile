@@ -6,7 +6,7 @@ PROFILE_ID ?= trimui-smart-pro-family
 PACK_FLAGS ?=
 PACK := build/$(DEVICE)/$(MODE)
 
-.PHONY: build verify release release-verify test
+.PHONY: build verify browser-bundle browser-verify release release-verify test
 
 build:
 	cd ../.. && $(PYTHON) mechanical/device-packs/build_device_pack.py build \
@@ -16,6 +16,16 @@ build:
 verify:
 	cd ../.. && $(PYTHON) mechanical/device-packs/build_device_pack.py verify \
 		--pack 'mechanical/device-packs/$(PACK)'
+
+browser-bundle:
+	cd ../.. && $(PYTHON) \
+		mechanical/device-packs/export_browser_bundle.py build \
+		--output mechanical/device-packs/build/browser
+
+browser-verify:
+	cd ../.. && $(PYTHON) \
+		mechanical/device-packs/export_browser_bundle.py verify \
+		--bundle mechanical/device-packs/build/browser
 
 release:
 	cd ../.. && $(PYTHON) mechanical/device-packs/release_print_pack.py build \
