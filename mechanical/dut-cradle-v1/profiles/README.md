@@ -12,6 +12,7 @@ holder uses only committed data, code and a pinned toolchain.
 | Semantic device `.scad`, skins | `platform/device-models` | Yes | Visual/UI identity and simulator controls; never assumed to be tolerance geometry |
 | `fixture-contract.json` | `platform/device-models/<slug>` | Yes | Evidence-backed envelope, contact regions, keep-outs, datums, uncertainty and qualification scope |
 | Fixture lock | `profiles/fixture-locks/` | Yes | Exact platform Git revision, raw contract hashes and resolved interface payload used by this repo |
+| Candidate lock + intake receipt | automation draft only | Yes, on the draft branch | Exact changed upstream payload plus an `awaiting_holder_design` work receipt; cannot drive production |
 | Holder profile | `profiles/<family>.json` | Yes | Selected contact poses, exact device-to-carrier mapping, carrier/frame choices, retention/fastener parameters, artifact recipes and qualification link |
 | Reusable mechanism | `lib/*.scad` plus the named template | Yes | Parametric carrier/hook implementation |
 | Qualification manifest | `qualification/` | Yes | Normalized fingerprints and physical-acceptance provenance for fit-bearing meshes |
@@ -105,6 +106,15 @@ python3 scripts/qualification_ci.py check-mutation \
   --base-root /tmp/pr-base/mechanical/dut-cradle-v1 \
   --profile-id trimui-smart-pro-family \
   --output build/qualification-ci/trimui-smart-pro-family/mutation
+
+# Inspect a verified platform dependency snapshot without writing source files.
+python3 scripts/fixture_dependency_intake.py plan \
+  --snapshot /tmp/platform-fixture-dependencies.json \
+  --output /tmp/fixture-update-plan.json
+
+# Validate every candidate lock/receipt discovered on an automation draft.
+python3 scripts/fixture_dependency_intake.py validate-candidates
+python3 scripts/fixture_dependency_intake.py matrix
 ```
 
 Normal commands are read-only with respect to profiles, locks, qualification
@@ -196,3 +206,50 @@ place, removing a qualified profile from discovery, or combining invalidation
 and renewed qualification in one PR fails CI. Raw STL SHA-256 proves
 distribution-file integrity; normalized mesh identity protects geometry;
 neither replaces physical fit.
+
+## Automatic upstream intake
+
+The scheduled/manual
+[`fixture-dependency-intake.yml`](../../../.github/workflows/fixture-dependency-intake.yml)
+workflow runs only code checked out from protected `test-node-hw` `main`. It
+clones exact current platform `main`, asks platform's own exporter to generate
+and verify its canonical fixture snapshot, and plans every holder profile by
+its subscribed device slugs.
+
+The decision boundary is the resolved fixture-interface hash:
+
+- visual-model, skin, render, label, and camera changes produce no snapshot
+  change;
+- raw contract/evidence or source-revision changes with the same resolved
+  interface produce a deterministic `no_change`; and
+- one changed resolved interface produces a new candidate lock under
+  `profiles/fixture-locks/candidates/` plus an exact update receipt under
+  `qualification/fixture-updates/`.
+
+The candidate uses the separate
+`pocketforge-fixture-candidate-lock-v1` schema. It preserves the complete
+upstream payload without claiming that the current holder mechanism can
+consume it. Its `pocketforge-fixture-update-receipt-v1` record pins the active
+profile, devices, accepted lock/hash/interface, platform revision and raw
+contracts, candidate interface revision/hash, candidate path/hash, and state
+`awaiting_holder_design`.
+
+Automation never changes `profiles/<family>.json`, an accepted lock,
+OpenSCAD, a qualification record, or a print pack. It opens or refreshes one
+draft PR on `automation/fixture-dependency-intake`; the same candidate is a
+byte/tree no-op. A newer interface may replace that draft with
+`--force-with-lease`, but unexpected paths, a non-draft PR, a concurrent
+branch update, or either repository advancing after the plan fails closed.
+Write credentials are read through `pf-secret` only after a real candidate is
+staged.
+
+OpenSCAD CI discovers every receipt rather than maintaining a workflow
+allowlist. Each candidate gets an exact platform-revision verification job;
+an unreferenced lock, missing device, alias divergence, stale raw hash,
+malformed receipt, or changed candidate payload cannot hide on the draft.
+
+The draft is an input to holder design, not a release. A holder designer must
+review the new contact/keep-out contract, select or implement an appropriate
+mechanism, create the normal versioned active lock and geometry-change record,
+invalidate the old qualification, and print/accept the new geometry through
+the existing two-PR lifecycle. No candidate receipt is physical acceptance.

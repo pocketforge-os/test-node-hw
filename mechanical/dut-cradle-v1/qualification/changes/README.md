@@ -16,6 +16,16 @@ The lifecycle is deliberately two PRs:
    changes the same record to `physically_accepted` with the new acceptance
    reference, date, manifest path, and manifest SHA-256.
 
+An upstream fixture change may arrive one step earlier as an automation draft
+containing a `pocketforge-fixture-candidate-lock-v1` file and
+`pocketforge-fixture-update-receipt-v1` record in
+`qualification/fixture-updates/`. That draft is only a pinned design inbox.
+Its `awaiting_holder_design` state does not invalidate or alter the accepted
+profile. Holder design must first review the changed interface, choose or add
+the mechanism, promote the exact source/interface into a normal versioned
+fixture lock, and create the geometry-change record described below. Only that
+intentional design transition begins the physical-acceptance lifecycle.
+
 An awaiting candidate may be refined across additional PRs. Its change ID,
 accepted baseline, intent, and scopes stay fixed; its candidate fixture and
 toolchain hashes advance with the reviewed candidate. Requalification binds to
