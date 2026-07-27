@@ -9,6 +9,13 @@ from pathlib import Path
 PROJECT = Path(__file__).resolve().parents[1]
 CORE_BATCHES = tuple(range(1, 6))
 DEVICE_EXAMPLE_BATCHES = (6, 7)
+TOPBAR_CORE_OUTPUTS = (
+    "topbar/production-batch-01-ironed-interfaces.stl",
+    "topbar/production-batch-02-upper-hangers.stl",
+    "topbar/production-batch-03-lower-backstays.stl",
+    "topbar/production-batch-04-frame-hardware.stl",
+    "topbar/production-batch-05-placard-holder.stl",
+)
 
 
 def dry_run(target: str) -> str:
@@ -63,12 +70,27 @@ def reject(output: str, batches: tuple[int, ...], target: str) -> None:
         )
 
 
+def require_names(output: str, names: tuple[str, ...], target: str) -> None:
+    missing = [name for name in names if name not in output]
+    if missing:
+        raise SystemExit(
+            f"{target} omits required outputs: {', '.join(missing)}"
+        )
+
+
 def main() -> int:
     core = dry_run("batches")
+    topbar = dry_run("topbar-batches")
     handbook = dry_run("handbook-assets")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
+    if "topbar/production-batch-" in core:
+        raise SystemExit("batches includes candidate top-bar outputs")
+    require_names(topbar, TOPBAR_CORE_OUTPUTS, "topbar-batches")
+    reject(topbar, DEVICE_EXAMPLE_BATCHES, "topbar-batches")
+    if "production-batch-02-splice-collars.stl" in topbar:
+        raise SystemExit("topbar-batches includes legacy gantry splice collars")
     require(
         handbook,
         CORE_BATCHES + DEVICE_EXAMPLE_BATCHES,
@@ -76,7 +98,8 @@ def main() -> int:
     )
     print(
         "makefile_target_contract=pass "
-        "core_batches=5 handbook_device_examples=2"
+        "legacy_core_batches=5 topbar_candidate_core_batches=5 "
+        "handbook_device_examples=2"
     )
     return 0
 

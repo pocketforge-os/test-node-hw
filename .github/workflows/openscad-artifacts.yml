@@ -24,11 +24,14 @@ concurrency:
 
 jobs:
   device_pack_plan:
-    name: qualified device-pack plan
+    name: device-pack layout plan
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
-      matrix: ${{ steps.plan.outputs.matrix }}
+      production_matrix: ${{ steps.plan.outputs.production_matrix }}
+      production_count: ${{ steps.plan.outputs.production_count }}
+      candidate_matrix: ${{ steps.plan.outputs.candidate_matrix }}
+      candidate_count: ${{ steps.plan.outputs.candidate_count }}
     steps:
       - name: Check out source
         env:
@@ -64,19 +67,36 @@ jobs:
           mkdir -p "${base_repo}"
           git archive "${BEFORE_SHA}" mechanical/dut-cradle-v1 |
             tar -x -C "${base_repo}"
+          git archive "${BEFORE_SHA}" mechanical/device-packs |
+            tar -x -C "${base_repo}"
           python3 mechanical/dut-cradle-v1/scripts/qualification_ci.py plan \
             --base-root "${base_repo}/mechanical/dut-cradle-v1" \
             --output "${plan_path}"
+          python3 mechanical/device-packs/build_device_pack.py \
+            guard-qualified-layouts --base-root "${base_repo}"
 
-      - name: Discover every physically qualified device
+      - name: Separate production-qualified and candidate layouts
         id: plan
         run: |
           set -euo pipefail
-          matrix="$(
-            python3 mechanical/dut-cradle-v1/scripts/qualification_ci.py \
-              matrix --kind qualified-devices
+          production_matrix="$(
+            python3 mechanical/device-packs/build_device_pack.py matrix \
+              --kind production-devices
           )"
-          echo "matrix=${matrix}" >>"${GITHUB_OUTPUT}"
+          candidate_matrix="$(
+            python3 mechanical/device-packs/build_device_pack.py matrix \
+              --kind candidate-layout-devices
+          )"
+          candidate_count="$(
+            jq -r '.include | length' <<<"${candidate_matrix}"
+          )"
+          production_count="$(
+            jq -r '.include | length' <<<"${production_matrix}"
+          )"
+          echo "production_matrix=${production_matrix}" >>"${GITHUB_OUTPUT}"
+          echo "production_count=${production_count}" >>"${GITHUB_OUTPUT}"
+          echo "candidate_matrix=${candidate_matrix}" >>"${GITHUB_OUTPUT}"
+          echo "candidate_count=${candidate_count}" >>"${GITHUB_OUTPUT}"
 
   export:
     runs-on: ubuntu-24.04
@@ -148,11 +168,12 @@ jobs:
   device-pack:
     name: device-pack (${{ matrix.device_slug }})
     needs: device_pack_plan
+    if: ${{ needs.device_pack_plan.outputs.production_count != '0' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.device_pack_plan.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.device_pack_plan.outputs.production_matrix) }}
     steps:
       - name: Check out source
         env:
@@ -190,6 +211,69 @@ jobs:
         with:
           name: device-pack-${{ matrix.device_slug }}-${{ github.sha }}
           path: mechanical/device-packs/build/${{ matrix.device_slug }}/full/
+          if-no-files-found: error
+          compression-level: 9
+          retention-days: 30
+
+  device-pack-candidate:
+    name: device-pack candidate (${{ matrix.device_slug }})
+    needs: device_pack_plan
+    if: ${{ needs.device_pack_plan.outputs.candidate_count != '0' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.device_pack_plan.outputs.candidate_matrix) }}
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Build and verify the non-production candidate pack
+        env:
+          DEVICE_SLUG: ${{ matrix.device_slug }}
+          LAYOUT_ID: ${{ matrix.layout_id }}
+        run: |
+          set -euo pipefail
+          pack="mechanical/device-packs/build/${DEVICE_SLUG}/full"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/build_device_pack.py build \
+              --device "${DEVICE_SLUG}" --mode full --allow-unqualified
+          xvfb-run --auto-servernum \
+            make -C mechanical/dut-chassis-2020-v1 topbar-preview
+          python3 mechanical/device-packs/build_device_pack.py verify \
+            --pack "$pack"
+          jq -e \
+            --arg layout_id "${LAYOUT_ID}" \
+            '.production_eligible == false
+             and ((.nonproduction_reasons | index("layout_unqualified")) != null)
+             and ((.overrides | index("allow_unqualified")) != null)
+             and .layout.id == $layout_id
+             and .layout.qualification.status == "candidate"' \
+            "${pack}/manifest.json"
+
+      - name: Upload deterministic candidate evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: device-pack-candidate-${{ matrix.device_slug }}-${{ github.sha }}
+          path: |
+            mechanical/device-packs/build/${{ matrix.device_slug }}/full/
+            mechanical/dut-chassis-2020-v1/build/topbar/layout-*.png
           if-no-files-found: error
           compression-level: 9
           retention-days: 30

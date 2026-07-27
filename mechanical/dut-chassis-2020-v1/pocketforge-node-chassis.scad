@@ -17,6 +17,8 @@
  *   registration_tab_set, gantry_joint_plate, gantry_joint_plate_set,
  *   rear_carrier_link_top, rear_carrier_link_bottom,
  *   rear_carrier_link_fit_pair, rear_carrier_link_set,
+ *   topbar_upper_hanger, topbar_upper_hanger_pair,
+ *   topbar_lower_backstay, topbar_lower_backstay_pair,
  *   gantry_splice_internal_bar,
  *   gantry_splice_full_collar,
  *   gantry_splice_full_collar_internal_bar,
@@ -35,6 +37,10 @@
  *   production_batch_06_device_nameplate_labels,
  *   production_batch_06_device_nameplate_preview,
  *   production_batch_07_wire_management,
+ *   production_batch_topbar_01_ironed_interfaces,
+ *   production_batch_topbar_02_upper_hangers,
+ *   production_batch_topbar_03_lower_backstays,
+ *   guide_topbar_suspension_detail, guide_topbar_preload,
  *   guide_step_01_splice_uprights, guide_step_02_build_gantry,
  *   guide_step_03_open_frame, guide_step_04_install_gantry,
  *   guide_step_05_close_frame, guide_step_06_mount_carrier,
@@ -91,6 +97,10 @@
 include <lib/pf-2020.scad>;
 
 PART = "assembly";
+// The default is the physically proven TrimUI Smart Pro chassis and is
+// intentionally frozen.  The material-reduced topology must be requested
+// explicitly by a device-pack layout or a development render.
+CHASSIS_VARIANT = "legacy_gantry"; // legacy_gantry or topbar_v1
 EXAMPLE_DEVICE_VARIANT = "smart_pro"; // smart_pro or smart_pro_s
 DEVICE_LABEL = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
                "TrimUI Smart Pro S" : "TrimUI Smart Pro";
@@ -311,6 +321,22 @@ gantry_upright_x = [profile_size / 2,
 gantry_y_limits = [profile_size + profile_size / 2,
                    frame_outer.y - profile_size - profile_size / 2];
 
+// The Pro S material-reduced variant replaces all four split upright pieces
+// and both gantry crossbars with one width-wise top bar.  The bar occupies the
+// same adjustable Y datum as the proven fixture gantry and joins the two upper
+// depth rails with the same accepted concealed metal L-connectors.  It is not
+// part of the outer-frame or vertical stacking load path.
+fixture_topbar_length = structural_x_length;
+fixture_topbar_z = outer_rail_z.y;
+topbar_join_topology =
+    "three_way_cap_flush_side_butt_B08C9Q2TGW_measured_plus_single_adjustable_topbar_B08D6T9CGN";
+legacy_fixture_extrusion =
+    gantry_upright_segment_count * 2 * gantry_upright_segment_length +
+    2 * gantry_crossbar_length;
+topbar_fixture_extrusion = fixture_topbar_length;
+topbar_extrusion_savings =
+    legacy_fixture_extrusion - topbar_fixture_extrusion;
+
 // ---- Existing plate interfaces and optical registration -----------------
 fixture_plate_size = [200.0, 247.0, 3.2];
 // The owner-fit body remains centred on the plate at X=100, but a real C270
@@ -345,6 +371,7 @@ plate_mount_gap = 5.0;
 // fixed to the wall-side frame.
 fixture_default_gantry_y = 75.0;
 fixture_gantry_y = fixture_default_gantry_y;
+fixture_topbar_y = fixture_gantry_y;
 rear_carrier_rail_y = frame_outer.y - profile_size / 2;
 rear_carrier_service_gap = profile_size + plate_mount_gap;
 
@@ -436,6 +463,37 @@ rear_carrier_bottom_length = rear_carrier_bottom_span +
                              2 * rear_carrier_link_end_margin;
 rear_carrier_top_length = rear_carrier_top_span +
                           2 * rear_carrier_link_end_margin;
+
+// Pro S top-bar fixture suspension.  Two upper hangers key into the top-bar
+// groove and carry the fixture plate at its existing upper slots.  Two lower
+// backstays continue to the existing lower slots, turning each side into one
+// full-height backing strap rather than leaving the plate on two pivoting
+// screws.  The 247 mm printer axis cannot safely hold each complete strap, so
+// the parts overlap at the upper plate fastener.  Both lap halves print on
+// the bed; the lower backstay is flipped at installation so the two 2.5 mm
+// halves reconstruct the same 5 mm rail-to-plate gap.
+topbar_hanger_width = 22.0;
+topbar_hanger_end_margin = 6.5;
+topbar_hanger_corner_radius = 3.0;
+topbar_hanger_thickness = plate_mount_gap;
+topbar_hanger_lap_thickness = topbar_hanger_thickness / 2;
+topbar_hanger_lap_length = 2 * topbar_hanger_end_margin;
+topbar_hanger_key_length = 16.0;
+topbar_upper_span = fixture_topbar_z - fixture_crossbar_z.y;
+topbar_lower_span = fixture_crossbar_z.y - fixture_crossbar_z.x;
+topbar_upper_hanger_length =
+    topbar_upper_span + 2 * topbar_hanger_end_margin;
+topbar_lower_backstay_length =
+    topbar_lower_span + 2 * topbar_hanger_end_margin;
+topbar_lower_batch_gap = 6.0;
+
+// Ten outer-width-rail locations remain active.  The two keyed hangers add
+// one active location each.  Four depth-rail spares and two top-bar spares
+// remain parked before the rail ends close.
+topbar_m3_slide_nut_required_count = 12;
+topbar_m3_slide_nut_spare_count = 6;
+topbar_m3_slide_nut_set_count =
+    topbar_m3_slide_nut_required_count + topbar_m3_slide_nut_spare_count;
 // Physical ABS coupon result with the lab's 0.8 mm nozzle: 6.43 mm slides
 // cleanly; 6.63 mm is too large and 6.23 mm is the loose snap-in fallback.
 slot_key_clearance = 0.30;
@@ -751,6 +809,9 @@ cradle_margins = [cradle_origin.x - inner_min.x,
 assert(EXAMPLE_DEVICE_VARIANT == "smart_pro" ||
        EXAMPLE_DEVICE_VARIANT == "smart_pro_s",
        str("Unknown example device variant: ", EXAMPLE_DEVICE_VARIANT));
+assert(CHASSIS_VARIANT == "legacy_gantry" ||
+       CHASSIS_VARIANT == "topbar_v1",
+       str("Unknown chassis variant: ", CHASSIS_VARIANT));
 assert(frame_outer == [structural_x_length + 2 * profile_size,
                        structural_y_length + 2 * profile_size,
                        structural_z_length +
@@ -768,6 +829,10 @@ assert(min(cradle_margins) >= minimum_routing_margin,
 assert(fixture_gantry_y >= gantry_y_limits.x &&
        fixture_gantry_y <= gantry_y_limits.y,
        str("Fixture gantry Y is outside legal travel: ", fixture_gantry_y));
+assert(fixture_topbar_y >= gantry_y_limits.x &&
+       fixture_topbar_y <= gantry_y_limits.y,
+       str("Fixture top bar Y is outside legal travel: ",
+           fixture_topbar_y));
 assert(fixture_plane_y - fixture_plate_size.z >= 0,
        "Fixture board must not project beyond the human-side frame plane");
 assert(fixture_human_service_depth >= 30.0,
@@ -783,6 +848,16 @@ assert(rear_carrier_link_thickness >= plate_mount_gap,
 assert(gantry_upright_segment_count == 2 &&
        2 * gantry_upright_segment_length == gantry_upright_length,
        "Each movable gantry upright must be two equal offcut segments");
+assert(fixture_topbar_length == structural_x_length &&
+       fixture_topbar_z == outer_rail_z.y,
+       "Top-bar variant must use one standard-width rail at the upper datum");
+assert(fixture_topbar_y - profile_size / 2 -
+           topbar_hanger_thickness == fixture_plane_y,
+       "Top-bar hangers must preserve the proven fixture plate plane");
+assert(legacy_fixture_extrusion == 1268.0 &&
+       topbar_fixture_extrusion == 306.0 &&
+       topbar_extrusion_savings == 962.0,
+       "Top-bar material delta must remain 1268 - 306 = 962 mm");
 assert(gantry_splice_length < gantry_upright_segment_length,
        "Upright splice must leave exposed aluminum on both segments");
 assert(min([for (z = fixture_crossbar_z)
@@ -799,6 +874,34 @@ assert(rear_carrier_bottom_span > rear_carrier_link_adjustment &&
 assert(rear_carrier_link_key_length > m3_clearance &&
        slot_key_width > m3_clearance,
        "Rear carrier rail key must retain printable material around M3");
+assert(topbar_upper_span > 0 && topbar_lower_span > 0,
+       "Top-bar hanger spans must remain positive");
+assert(topbar_hanger_lap_length ==
+           2 * topbar_hanger_end_margin &&
+       2 * topbar_hanger_lap_thickness ==
+           topbar_hanger_thickness,
+       "Top-bar lap halves must reconstruct one full-thickness strap");
+assert(topbar_hanger_lap_length >= m3_clearance + 8.0,
+       "Top-bar lap needs at least 4 mm of material around the M3 joint");
+assert(topbar_hanger_key_length > m3_clearance &&
+       topbar_hanger_key_length <= topbar_hanger_width - 4.0,
+       "Top-bar rail key must retain printable side walls");
+assert(topbar_lower_backstay_length <= 247.0 &&
+       2 * topbar_hanger_width + topbar_lower_batch_gap <= 207.0,
+       "Top-bar lower-backstay pair must fit the 247 x 207 mm print bed");
+assert(min(fixture_mount_x) -
+           topbar_hanger_width / 2 >= profile_size &&
+       max(fixture_mount_x) +
+           topbar_hanger_width / 2 <=
+               frame_outer.x - profile_size,
+       "Top-bar hangers must land on the continuous crossbar span");
+assert(fixture_crossbar_z.y + topbar_hanger_end_margin <
+           fixture_topbar_z - profile_size / 2,
+       "Upper fixture slots need clear strap between plate and top bar");
+assert(topbar_m3_slide_nut_required_count == 12 &&
+       topbar_m3_slide_nut_spare_count == 6 &&
+       topbar_m3_slide_nut_set_count == 18,
+       "Top-bar preload contract must remain 12 active plus 6 parked bars");
 assert(optical_distance > 0, "Camera must remain in front of the DUT");
 assert(camera_assumed_hfov >= required_hfov,
        str("Estimated horizontal FOV is too narrow; required ", required_hfov));
@@ -1084,6 +1187,21 @@ module fixture_gantry(tint = [0.72, 0.74, 0.77]) {
             extrusion(gantry_crossbar_length, "x", tint);
 }
 
+module fixture_topbar(tint = [0.72, 0.74, 0.77]) {
+    // One ordinary 306 mm rail spans between the upper depth rails.  Its
+    // concealed metal end connectors slide in those rails, retaining the
+    // proven camera-distance adjustment without two uprights or a lower bar.
+    translate([profile_size, fixture_topbar_y, fixture_topbar_z])
+        extrusion(fixture_topbar_length, "x", tint);
+}
+
+module fixture_support(tint = [0.72, 0.74, 0.77]) {
+    if (CHASSIS_VARIANT == "topbar_v1")
+        fixture_topbar(tint);
+    else
+        fixture_gantry(tint);
+}
+
 module three_way_end_connector_proxy(x_right = false,
                                      y_rear = false,
                                      top = false) {
@@ -1162,9 +1280,11 @@ module gantry_l_connector_proxy(y, z, right = false, down = false) {
 
 module connector_proxies() {
     outer_corner_connector_proxies();
-    gantry_crossbar_connector_proxies();
-    gantry_joint_plate_previews();
-    gantry_splice_previews();
+    fixture_connector_proxies();
+    if (CHASSIS_VARIANT == "legacy_gantry") {
+        gantry_joint_plate_previews();
+        gantry_splice_previews();
+    }
 }
 
 module outer_corner_connector_proxies(top_values = [false, true]) {
@@ -1180,6 +1300,45 @@ module gantry_crossbar_connector_proxies() {
             gantry_l_connector_proxy(
                 fixture_gantry_y, z, right,
                 z == fixture_crossbar_z.y);
+}
+
+module fixture_topbar_connector_proxy(right = false) {
+    // Presentation proxy for one concealed B08D6T9CGN connector beneath the
+    // top bar/depth-rail intersection.  The supplied metal connector, not a
+    // printed corner, carries this joint.
+    connector_length = 26.0;
+    connector_width = 9.5;
+    connector_thickness = 3.0;
+    x_joint = right ? frame_outer.x - profile_size : profile_size;
+
+    color([0.10, 0.10, 0.11]) {
+        translate([
+            x_joint + (right ? -connector_length : 0),
+            fixture_topbar_y - connector_width / 2,
+            fixture_topbar_z - profile_size / 2 - connector_thickness
+        ])
+            cube([connector_length, connector_width,
+                  connector_thickness]);
+        translate([
+            x_joint - connector_width / 2,
+            fixture_topbar_y,
+            fixture_topbar_z - profile_size / 2 - connector_thickness
+        ])
+            cube([connector_width, connector_length,
+                  connector_thickness]);
+    }
+}
+
+module fixture_topbar_connector_proxies() {
+    for (right = [false, true])
+        fixture_topbar_connector_proxy(right);
+}
+
+module fixture_connector_proxies() {
+    if (CHASSIS_VARIANT == "topbar_v1")
+        fixture_topbar_connector_proxies();
+    else
+        gantry_crossbar_connector_proxies();
 }
 
 module installed_gantry_joint_plate(y, top = false, right = false) {
@@ -1425,6 +1584,40 @@ module installed_fixture_plate_spacer(point) {
             cube([spacer_size.x, plate_spacer_thickness, spacer_size.y]);
 }
 
+module installed_topbar_upper_hanger(x) {
+    center_z = (fixture_topbar_z + fixture_crossbar_z.y) / 2;
+
+    color([0.95, 0.53, 0.12])
+        multmatrix([
+            [1, 0, 0, x],
+            [0, 0, 1, fixture_plane_y],
+            [0, 1, 0, center_z],
+            [0, 0, 0, 1]
+        ]) topbar_upper_hanger();
+}
+
+module installed_topbar_lower_backstay(x) {
+    center_z = (fixture_crossbar_z.y + fixture_crossbar_z.x) / 2;
+
+    // Flip the print-Z direction so this part's bed-facing half-lap occupies
+    // the rail-side half of the shared 5 mm upper joint.
+    color([0.95, 0.53, 0.12])
+        multmatrix([
+            [1, 0, 0, x],
+            [0, 0, -1,
+             fixture_plane_y + topbar_hanger_thickness],
+            [0, 1, 0, center_z],
+            [0, 0, 0, 1]
+        ]) topbar_lower_backstay();
+}
+
+module topbar_fixture_mount_previews() {
+    for (x = fixture_mount_x) {
+        installed_topbar_upper_hanger(x);
+        installed_topbar_lower_backstay(x);
+    }
+}
+
 module installed_rear_carrier_link(x, plate_z, rail_z) {
     span = abs(rail_z - plate_z);
     center_z = (rail_z + plate_z) / 2;
@@ -1445,9 +1638,12 @@ module installed_rear_carrier_link(x, plate_z, rail_z) {
 }
 
 module plate_mount_previews() {
-    for (x = fixture_mount_x)
-        for (z = fixture_crossbar_z)
-            installed_fixture_plate_spacer([x, z]);
+    if (CHASSIS_VARIANT == "topbar_v1")
+        topbar_fixture_mount_previews();
+    else
+        for (x = fixture_mount_x)
+            for (z = fixture_crossbar_z)
+                installed_fixture_plate_spacer([x, z]);
 
     for (x = cradle_mount_x)
         for (index = [0, 1])
@@ -2014,6 +2210,109 @@ module rear_carrier_link_set() {
 module rear_carrier_link_fit_pair() {
     translate([0, 0, 0]) rear_carrier_link_top();
     translate([24.0, 0, 0]) rear_carrier_link_bottom();
+}
+
+module topbar_hanger_outline(length) {
+    pf_rounded_rect_2d([topbar_hanger_width, length],
+                       topbar_hanger_corner_radius);
+}
+
+module topbar_hanger_full_region(length, lap_at_top = false) {
+    intersection() {
+        topbar_hanger_outline(length);
+        if (lap_at_top)
+            translate([
+                -topbar_hanger_width,
+                -length / 2 - epsilon
+            ])
+                square([
+                    2 * topbar_hanger_width,
+                    length - topbar_hanger_lap_length + epsilon
+                ]);
+        else
+            translate([
+                -topbar_hanger_width,
+                -length / 2 + topbar_hanger_lap_length
+            ])
+                square([
+                    2 * topbar_hanger_width,
+                    length
+                ]);
+    }
+}
+
+// Upper half of one full-height fixture strap.  The keyed round hole clamps
+// to the top-bar groove; the lower round hole shares the fixture plate's
+// existing upper slot with the complementary lower-backstay lap.
+module topbar_upper_hanger() {
+    rail_hole_y = topbar_upper_span / 2;
+    plate_hole_y = -topbar_upper_span / 2;
+
+    difference() {
+        union() {
+            linear_extrude(height = topbar_hanger_lap_thickness)
+                topbar_hanger_outline(topbar_upper_hanger_length);
+            translate([0, 0, topbar_hanger_lap_thickness])
+                linear_extrude(
+                    height = topbar_hanger_thickness -
+                             topbar_hanger_lap_thickness)
+                    topbar_hanger_full_region(
+                        topbar_upper_hanger_length, false);
+            translate([0, rail_hole_y,
+                       topbar_hanger_thickness - epsilon])
+                linear_extrude(height = slot_key_height + epsilon)
+                    pf_rounded_rect_2d(
+                        [topbar_hanger_key_length, slot_key_width], 1.0);
+        }
+
+        for (hole_y = [rail_hole_y, plate_hole_y])
+            translate([0, hole_y, -epsilon])
+                cylinder(d = m3_clearance,
+                         h = topbar_hanger_thickness +
+                             slot_key_height + 2 * epsilon,
+                         $fn = 28);
+    }
+}
+
+// Lower half of one full-height fixture strap.  Its upper lap prints on the
+// bed and is flipped toward the rail during installation.  The two holes use
+// the fixture plate's unchanged upper and lower corner slots.
+module topbar_lower_backstay() {
+    upper_hole_y = topbar_lower_span / 2;
+    lower_hole_y = -topbar_lower_span / 2;
+
+    difference() {
+        union() {
+            linear_extrude(height = topbar_hanger_lap_thickness)
+                topbar_hanger_outline(topbar_lower_backstay_length);
+            translate([0, 0, topbar_hanger_lap_thickness])
+                linear_extrude(
+                    height = topbar_hanger_thickness -
+                             topbar_hanger_lap_thickness)
+                    topbar_hanger_full_region(
+                        topbar_lower_backstay_length, true);
+        }
+
+        for (hole_y = [upper_hole_y, lower_hole_y])
+            translate([0, hole_y, -epsilon])
+                cylinder(d = m3_clearance,
+                         h = topbar_hanger_thickness + 2 * epsilon,
+                         $fn = 28);
+    }
+}
+
+module topbar_upper_hanger_pair() {
+    for (copy = [0, 1])
+        translate([copy * (topbar_hanger_width +
+                           topbar_lower_batch_gap), 0, 0])
+            topbar_upper_hanger();
+}
+
+module topbar_lower_backstay_pair() {
+    for (copy = [0, 1])
+        translate([copy * (topbar_hanger_width +
+                           topbar_lower_batch_gap), 0, 0])
+            topbar_lower_backstay();
 }
 
 module placard_spacer() {
@@ -2739,6 +3038,30 @@ module production_batch_03_movable_mounts() {
     translate([105.0, 15.0, 0]) plate_spacer_set();
 }
 
+// Material-reduced top-bar core.  These three beds replace legacy Batches
+// 01-03 only; Batches 04-05 and every device-specific artifact stay shared.
+// Eighteen accepted short channel bars cover 12 active locations and six
+// parked replacements.  No upright-splice bars are present.
+module production_batch_topbar_01_ironed_interfaces() {
+    for (index = [0 : topbar_m3_slide_nut_set_count - 1])
+        translate([17.0 + (index % 6) *
+                              (m3_slide_nut_length + 4.0),
+                   8.0 + floor(index / 6) * 15.0, 0])
+            m3_slide_nut_carrier();
+}
+
+module production_batch_topbar_02_upper_hangers() {
+    translate([14.0, 40.0, 0])
+        topbar_upper_hanger_pair();
+}
+
+module production_batch_topbar_03_lower_backstays() {
+    translate([topbar_lower_backstay_length / 2 + 1.5,
+               42.0, 0])
+        rotate([0, 0, -90])
+            topbar_lower_backstay_pair();
+}
+
 // Frame completion hardware: eight stacking registration tabs, the placard's
 // two risers and keyed spacers, and the two power-strip blocks.
 module production_batch_04_frame_hardware() {
@@ -3124,6 +3447,116 @@ module guide_preload_channel_bar() {
     // Direction arrow sits above the slot so it cannot be confused with a
     // printable or retained component.
     guide_arrow_x(-28.0, 48.0, profile_size + 12.0);
+}
+
+// Candidate-review close-up of one complete top-bar suspension stack.  The
+// fixture-board strip uses the unchanged 3.2 mm plate thickness and both
+// existing upper/lower slot heights.  Only a short segment of the aluminum
+// bar is drawn so the keyed hanger and complementary 2.5 + 2.5 mm lap remain
+// legible; this scene never contributes to a printable export.
+module guide_topbar_suspension_detail() {
+    detail_x = 0.0;
+    // A deliberately narrow representative strip exposes both orange edges
+    // of the 22 mm backstay; the real plate continues laterally.
+    plate_strip_width = 14.0;
+    topbar_segment_length = 92.0;
+    plate_front_y = fixture_plane_y - fixture_plate_size.z;
+
+    translate([
+        -topbar_segment_length / 2,
+        fixture_topbar_y,
+        fixture_topbar_z
+    ])
+        extrusion(topbar_segment_length, "x",
+                  [0.70, 0.72, 0.75, 0.68]);
+
+    color([0.86, 0.87, 0.84, 0.72])
+        translate([
+            -plate_strip_width / 2,
+            plate_front_y,
+            fixture_origin.z
+        ])
+            cube([
+                plate_strip_width,
+                fixture_plate_size.z,
+                fixture_plate_size.y
+            ]);
+
+    installed_topbar_upper_hanger(detail_x);
+    installed_topbar_lower_backstay(detail_x);
+
+    for (z = fixture_crossbar_z)
+        color([0.58, 0.61, 0.64])
+            translate([
+                detail_x,
+                plate_front_y - 3.0,
+                z
+            ])
+                rotate([-90, 0, 0])
+                    cylinder(d = 6.0,
+                             h = topbar_hanger_thickness +
+                                 fixture_plate_size.z + 6.0,
+                             $fn = 28);
+
+    guide_label_xz("ONE CONTINUOUS 306 MM TOP BAR",
+                   [0.0, plate_front_y - 5.0,
+                    fixture_topbar_z + 33.0], 7.0);
+    guide_label_xz("SHARED UPPER SLOT  /  2.5 + 2.5 MM LAP",
+                   [130.0, plate_front_y - 5.0,
+                    fixture_crossbar_z.y + 20.0], 6.5);
+    guide_segment(
+        [74.0, plate_front_y - 5.0,
+         fixture_crossbar_z.y + 18.0],
+        [12.0, plate_front_y - 5.0,
+         fixture_crossbar_z.y],
+        2.2, guide_spare_tint);
+    guide_label_xz("UNCHANGED LOWER PLATE SLOT",
+                   [105.0, plate_front_y - 5.0,
+                    fixture_crossbar_z.x - 15.0], 6.5);
+    guide_segment(
+        [58.0, plate_front_y - 5.0,
+         fixture_crossbar_z.x - 13.0],
+        [10.0, plate_front_y - 5.0,
+         fixture_crossbar_z.x],
+        2.2, guide_spare_tint);
+}
+
+// Exact top-bar preload view. Two ordinary short bars become the active
+// hanger threads; two otherwise-identical bars receive removable blue tape
+// and stay parked near the open ends. The remaining top-bar-layout inventory
+// is called out explicitly so the complete Batch 01 count stays auditable.
+module guide_topbar_preload() {
+    rail_y = 0.0;
+    rail_z = profile_size / 2;
+    marker_y = rail_y - profile_size / 2 - 3.0;
+    active_offsets =
+        [for (x = fixture_mount_x) x - profile_size];
+    spare_offsets = [28.0, structural_x_length - 28.0];
+
+    translate([0.0, rail_y, rail_z])
+        extrusion(structural_x_length, "x",
+                  [0.70, 0.72, 0.75, 0.58]);
+
+    for (x = active_offsets)
+        guide_preload_marker([x, marker_y, rail_z], "x");
+    for (x = spare_offsets)
+        guide_preload_marker([x, marker_y, rail_z], "x",
+                             guide_new_tint, true);
+
+    guide_label("TOP BAR  /  2 ACTIVE HANGER BARS",
+                [structural_x_length / 2, -42.0,
+                 profile_size + 1.0], 9.0);
+    guide_label("BLUE TAPE ON 2 = PARKED TOP-BAR SPARES",
+                [structural_x_length / 2, 42.0,
+                 profile_size + 1.0], 8.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("BATCH 01 TOTAL: 12 ACTIVE + 6 PARKED = 18",
+                [structural_x_length / 2, 68.0,
+                 profile_size + 1.0], 9.0,
+                [0, 0, 0], guide_check_tint);
+    guide_label("OTHER RAILS: 10 ACTIVE WIDTH + 4 PARKED DEPTH",
+                [structural_x_length / 2, 88.0,
+                 profile_size + 1.0], 7.0);
 }
 
 // Symbolic bar markers for the whole-frame preload map. Their orientation
@@ -3929,17 +4362,19 @@ module guide_detail_08_stacking_corner() {
 // semantic nodes in the GLB, and converts millimetres to metres.
 module guide_layer_aluminum() {
     outer_frame();
-    fixture_gantry();
+    fixture_support();
 }
 
 module guide_layer_connectors() {
     outer_corner_connector_proxies();
-    gantry_crossbar_connector_proxies();
+    fixture_connector_proxies();
 }
 
 module guide_layer_printed_hardware() {
-    gantry_joint_plate_previews();
-    gantry_splice_previews();
+    if (CHASSIS_VARIANT == "legacy_gantry") {
+        gantry_joint_plate_previews();
+        gantry_splice_previews();
+    }
     plate_mount_previews();
     installed_registration_guides();
     power_strip_mounts_preview();
@@ -4241,6 +4676,10 @@ module guide_layer_camera_frustum() {
 }
 
 module cutlist_echo() {
+    echo(str("PFVARIANT|", CHASSIS_VARIANT, "|",
+             CHASSIS_VARIANT == "topbar_v1" ?
+                 "candidate_requires_physical_qualification" :
+                 "physically_proven_frozen_baseline"));
     echo(str("PFFRAME|", frame_outer.x, "|", frame_outer.y, "|",
              frame_outer.z, "|", frame_clear.x, "|", frame_clear.y, "|",
              frame_clear.z));
@@ -4250,18 +4689,25 @@ module cutlist_echo() {
              "|butts between vertical-post side faces"));
     echo(str("PFCUT|outer_depth_rail|4|", structural_y_length,
              "|butts between vertical-post side faces"));
-    echo(str("PFCUT|fixture_gantry_upright_half|4|",
-             gantry_upright_segment_length,
-             "|two halves plus reinforced splice form each fixture upright"));
-    echo(str("PFCUT|fixture_gantry_crossbar|2|", gantry_crossbar_length,
-             "|two height-adjustable fixture crossbars"));
+    if (CHASSIS_VARIANT == "topbar_v1")
+        echo(str("PFCUT|fixture_topbar|1|", fixture_topbar_length,
+                 "|single depth-adjustable fixture suspension bar"));
+    else {
+        echo(str("PFCUT|fixture_gantry_upright_half|4|",
+                 gantry_upright_segment_length,
+                 "|two halves plus reinforced splice form each fixture upright"));
+        echo(str("PFCUT|fixture_gantry_crossbar|2|",
+                 gantry_crossbar_length,
+                 "|two height-adjustable fixture crossbars"));
+    }
     echo(str("PFSTOCK|", stock_length, "|", cut_kerf,
-             "|", join_topology));
+             "|", CHASSIS_VARIANT == "topbar_v1" ?
+                 topbar_join_topology : join_topology));
 }
 
 module assembly(plate_detail = PLATE_DETAIL) {
     outer_frame();
-    fixture_gantry();
+    fixture_support();
     if (SHOW_CONNECTOR_PROXIES) connector_proxies();
     if (SHOW_PLATES) {
         fixture_plate_preview(plate_detail);
@@ -4356,6 +4802,14 @@ if (PART == "assembly") {
     rear_carrier_link_fit_pair();
 } else if (PART == "rear_carrier_link_set") {
     rear_carrier_link_set();
+} else if (PART == "topbar_upper_hanger") {
+    topbar_upper_hanger();
+} else if (PART == "topbar_upper_hanger_pair") {
+    topbar_upper_hanger_pair();
+} else if (PART == "topbar_lower_backstay") {
+    topbar_lower_backstay();
+} else if (PART == "topbar_lower_backstay_pair") {
+    topbar_lower_backstay_pair();
 } else if (PART == "gantry_joint_plate") {
     gantry_joint_plate();
 } else if (PART == "gantry_joint_plate_set") {
@@ -4394,6 +4848,16 @@ if (PART == "assembly") {
     production_batch_02_splice_collars();
 } else if (PART == "production_batch_03_movable_mounts") {
     production_batch_03_movable_mounts();
+} else if (PART == "production_batch_topbar_01_ironed_interfaces") {
+    production_batch_topbar_01_ironed_interfaces();
+} else if (PART == "production_batch_topbar_02_upper_hangers") {
+    production_batch_topbar_02_upper_hangers();
+} else if (PART == "production_batch_topbar_03_lower_backstays") {
+    production_batch_topbar_03_lower_backstays();
+} else if (PART == "guide_topbar_suspension_detail") {
+    guide_topbar_suspension_detail();
+} else if (PART == "guide_topbar_preload") {
+    guide_topbar_preload();
 } else if (PART == "production_batch_04_frame_hardware") {
     production_batch_04_frame_hardware();
 } else if (PART == "production_batch_05_placard_holder") {

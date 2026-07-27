@@ -767,14 +767,27 @@ def build_release_bundle(
         )
     profile = resolve_profile(root, profile_id)
     identity = release_identity(profile)
-    layout = packs.load_layout(
-        root,
-        root
-        / "mechanical"
-        / "device-packs"
-        / "layouts"
-        / "chassis-core-v1.json",
-    )
+    layouts = {
+        slug: packs.resolve_device_layout(root, slug)
+        for slug in sorted(profile.variants)
+    }
+    unqualified_layouts = [
+        f"{slug}={layout.layout_id} ({layout.qualification['acceptance_ref']})"
+        for slug, layout in layouts.items()
+        if layout.qualification["status"] != "physically_qualified"
+    ]
+    if unqualified_layouts:
+        raise ReleaseError(
+            "release bundles require physically qualified registered chassis "
+            "layouts; candidate layouts: " + ", ".join(unqualified_layouts)
+        )
+    layout_ids = {layout.layout_id for layout in layouts.values()}
+    if len(layout_ids) != 1:
+        raise ReleaseError(
+            "release schema v1 cannot encode mixed per-device chassis "
+            "layouts; mint the versioned mixed-layout release lane before "
+            f"publication: {sorted(layout_ids)}"
+        )
     if output is None:
         output = (
             root
@@ -805,6 +818,7 @@ def build_release_bundle(
         source_pack: Mapping[str, Any] | None = None
         archive_names: list[str] = []
         for slug in sorted(profile.variants):
+            layout = layouts[slug]
             pack = work / slug
             packs.build_pack(
                 root,

@@ -63,6 +63,95 @@ def no_contract_check(
     del profile, layout, openscad
 
 
+def write_layout_guard_tree(
+    root: Path,
+    *,
+    status: str,
+    role: str = "Deterministic test artifact",
+) -> Path:
+    layout_path = (
+        root
+        / "mechanical"
+        / "device-packs"
+        / "layouts"
+        / "demo-v1.json"
+    )
+    registry_path = (
+        root / "mechanical" / "device-packs" / "device-layouts.json"
+    )
+    source_path = root / "mechanical" / "demo.scad"
+    toolchain_path = root / "mechanical" / "toolchain.json"
+    layout_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path.write_text("cube([1, 1, 1]);\n", encoding="utf-8")
+    toolchain_path.write_text("{}\n", encoding="utf-8")
+    registry_path.write_text(
+        json.dumps(
+            {
+                "schema": packs.LAYOUT_REGISTRY_SCHEMA,
+                "devices": {
+                    "device-demo": {
+                        "layout": (
+                            "mechanical/device-packs/layouts/demo-v1.json"
+                        )
+                    }
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    layout_path.write_text(
+        json.dumps(
+            {
+                "schema": packs.LAYOUT_SCHEMA,
+                "layout_id": "demo-v1",
+                "toolchain_lock": "mechanical/toolchain.json",
+                "input_paths": [
+                    "mechanical/device-packs/device-layouts.json"
+                ],
+                "qualification": {
+                    "status": status,
+                    "acceptance_ref": "test-acceptance",
+                    "accepted_on": (
+                        "2026-07-27"
+                        if status == "physically_qualified"
+                        else None
+                    ),
+                    "device_slugs": ["device-demo"],
+                    "scope": ["Test-only layout guard contract."],
+                },
+                "artifacts": [
+                    {
+                        "id": "demo_artifact",
+                        "output": "chassis/demo.stl",
+                        "role": role,
+                        "scope": "common",
+                        "modes": ["full"],
+                        "source": "mechanical/demo.scad",
+                        "part": "demo",
+                        "parameters": {},
+                        "parameter_bindings": {},
+                        "expected_normalized_sha256": "a" * 64,
+                        "print": {
+                            "material": "ABS",
+                            "scale_percent": 100,
+                            "supports": False,
+                            "auto_orient": False,
+                            "notes": [],
+                        },
+                    }
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return layout_path
+
+
 class DevicePackTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -83,6 +172,16 @@ class DevicePackTests(unittest.TestCase):
             packs.CRADLE_ROOT, cls.profile_path
         )
         cls.layout = packs.load_layout(cls.root, cls.layout_path)
+        cls.topbar_layout_path = (
+            cls.root
+            / "mechanical"
+            / "device-packs"
+            / "layouts"
+            / "chassis-topbar-v1.json"
+        )
+        cls.topbar_layout = packs.load_layout(
+            cls.root, cls.topbar_layout_path
+        )
 
     def test_modes_have_exact_membership(self) -> None:
         expected = {
@@ -137,16 +236,123 @@ class DevicePackTests(unittest.TestCase):
                     )
 
     def test_static_layout_geometry_is_regression_locked(self) -> None:
-        for artifact in self.layout.artifacts:
-            with self.subTest(artifact=artifact.artifact_id):
-                if artifact.parameter_bindings:
-                    self.assertEqual("device_nameplate", artifact.artifact_id)
-                    self.assertIsNone(artifact.expected_normalized_sha256)
-                else:
-                    self.assertRegex(
-                        artifact.expected_normalized_sha256 or "",
-                        r"^[0-9a-f]{64}$",
-                    )
+        for layout in (self.layout, self.topbar_layout):
+            for artifact in layout.artifacts:
+                with self.subTest(
+                    layout=layout.layout_id,
+                    artifact=artifact.artifact_id,
+                ):
+                    if artifact.parameter_bindings:
+                        self.assertEqual(
+                            "device_nameplate", artifact.artifact_id
+                        )
+                        self.assertIsNone(
+                            artifact.expected_normalized_sha256
+                        )
+                    else:
+                        self.assertRegex(
+                            artifact.expected_normalized_sha256 or "",
+                            r"^[0-9a-f]{64}$",
+                        )
+
+    def test_device_registry_selects_layout_and_rejects_mismatch(self) -> None:
+        pro = packs.resolve_device_layout(
+            self.root, "trimui-smart-pro"
+        )
+        pro_s = packs.resolve_device_layout(
+            self.root, "trimui-smart-pro-s"
+        )
+        self.assertEqual("chassis-core-v1", pro.layout_id)
+        self.assertEqual("physically_qualified", pro.qualification["status"])
+        self.assertEqual("chassis-topbar-v1", pro_s.layout_id)
+        self.assertEqual("candidate", pro_s.qualification["status"])
+        with self.assertRaisesRegex(
+            packs.PackError, "does not match registered layout"
+        ):
+            packs.resolve_device_layout(
+                self.root,
+                "trimui-smart-pro-s",
+                requested_layout=self.layout_path,
+            )
+
+    def test_layout_matrix_separates_production_and_candidate_devices(
+        self,
+    ) -> None:
+        production = packs.device_layout_matrix(
+            self.root,
+            self.profile,
+            kind="production-devices",
+        )
+        candidate = packs.device_layout_matrix(
+            self.root,
+            self.profile,
+            kind="candidate-layout-devices",
+        )
+        self.assertEqual(
+            [
+                {
+                    "device_slug": "trimui-smart-pro",
+                    "layout_id": "chassis-core-v1",
+                    "layout_status": "physically_qualified",
+                    "holder_status": "physically_qualified",
+                }
+            ],
+            production["include"],
+        )
+        self.assertEqual(
+            [
+                {
+                    "device_slug": "trimui-smart-pro-s",
+                    "layout_id": "chassis-topbar-v1",
+                    "layout_status": "candidate",
+                    "holder_status": "physically_qualified",
+                }
+            ],
+            candidate["include"],
+        )
+
+    def test_topbar_full_mode_replaces_only_legacy_core_01_to_03(
+        self,
+    ) -> None:
+        plan = packs.build_plan(
+            self.root,
+            self.profile,
+            self.topbar_layout,
+            "trimui-smart-pro-s",
+            "full",
+        )
+        ids = {item.artifact_id for item in plan}
+        self.assertEqual(12, len(plan))
+        self.assertTrue(
+            {
+                "chassis_topbar_01_ironed_interfaces",
+                "chassis_topbar_02_upper_hangers",
+                "chassis_topbar_03_lower_backstays",
+            }
+            <= ids
+        )
+        self.assertFalse(
+            {
+                "chassis_core_01_ironed_interfaces",
+                "chassis_core_02_splice_collars",
+                "chassis_core_03_movable_mounts",
+            }
+            & ids
+        )
+        self.assertTrue(
+            {
+                "chassis_core_04_frame_hardware",
+                "chassis_core_05_placard_holder",
+                "device_carrier_links",
+                "device_wire_anchors",
+            }
+            <= ids
+        )
+        for item in plan:
+            if item.source.name == "pocketforge-node-chassis.scad":
+                self.assertEqual(
+                    "topbar_v1", item.parameters["CHASSIS_VARIANT"]
+                )
 
     def test_device_slug_selects_exact_wrapper_and_label(self) -> None:
         pro = packs.build_plan(
@@ -159,7 +365,7 @@ class DevicePackTests(unittest.TestCase):
         pro_s = packs.build_plan(
             self.root,
             self.profile,
-            self.layout,
+            self.topbar_layout,
             "trimui-smart-pro-s",
             "retrofit",
         )
@@ -235,11 +441,108 @@ class DevicePackTests(unittest.TestCase):
         with self.assertRaisesRegex(packs.PackError, "safe relative"):
             packs.load_layout(self.root, self._write_layout(escaped))
 
+    def test_layout_qualification_is_strict_and_calendar_valid(self) -> None:
+        original = json.loads(self.layout_path.read_text(encoding="utf-8"))
+
+        impossible_date = copy.deepcopy(original)
+        impossible_date["qualification"]["accepted_on"] = "2026-02-30"
+        with self.assertRaisesRegex(packs.PackError, "real calendar date"):
+            packs.load_layout(
+                self.root, self._write_layout(impossible_date)
+            )
+
+        premature_acceptance = copy.deepcopy(original)
+        premature_acceptance["qualification"]["status"] = "candidate"
+        with self.assertRaisesRegex(
+            packs.PackError, "must be null while candidate"
+        ):
+            packs.load_layout(
+                self.root, self._write_layout(premature_acceptance)
+            )
+
+        duplicate_scope = copy.deepcopy(original)
+        duplicate_scope["qualification"]["device_slugs"].append(
+            "trimui-smart-pro"
+        )
+        with self.assertRaisesRegex(packs.PackError, "non-empty and unique"):
+            packs.load_layout(
+                self.root, self._write_layout(duplicate_scope)
+            )
+
+    def test_qualified_layout_guard_locks_and_stages_promotions(self) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="pf-layout-head-"
+        ) as head_temp, tempfile.TemporaryDirectory(
+            prefix="pf-layout-base-"
+        ) as base_temp:
+            head = Path(head_temp)
+            base = Path(base_temp)
+            write_layout_guard_tree(head, status="physically_qualified")
+            write_layout_guard_tree(base, status="physically_qualified")
+            self.assertEqual(
+                (1, 0, 0),
+                packs.guard_qualified_layouts(head, base),
+            )
+
+            write_layout_guard_tree(
+                head,
+                status="physically_qualified",
+                role="Changed after physical acceptance",
+            )
+            with self.assertRaisesRegex(
+                packs.PackError, "qualified layout .* changed"
+            ):
+                packs.guard_qualified_layouts(head, base)
+
+        with tempfile.TemporaryDirectory(
+            prefix="pf-layout-head-"
+        ) as head_temp, tempfile.TemporaryDirectory(
+            prefix="pf-layout-base-"
+        ) as base_temp:
+            head = Path(head_temp)
+            base = Path(base_temp)
+            write_layout_guard_tree(head, status="physically_qualified")
+            write_layout_guard_tree(base, status="candidate")
+            self.assertEqual(
+                (0, 1, 0),
+                packs.guard_qualified_layouts(head, base),
+            )
+
+            write_layout_guard_tree(
+                head,
+                status="physically_qualified",
+                role="Changed during promotion",
+            )
+            with self.assertRaisesRegex(
+                packs.PackError, "changed its source contract"
+            ):
+                packs.guard_qualified_layouts(head, base)
+
+        with tempfile.TemporaryDirectory(
+            prefix="pf-layout-head-"
+        ) as head_temp, tempfile.TemporaryDirectory(
+            prefix="pf-layout-base-"
+        ) as base_temp:
+            head = Path(head_temp)
+            base = Path(base_temp)
+            write_layout_guard_tree(head, status="physically_qualified")
+            (
+                base
+                / "mechanical"
+                / "device-packs"
+                / "layouts"
+            ).mkdir(parents=True)
+            with self.assertRaisesRegex(
+                packs.PackError, "cannot begin as physically qualified"
+            ):
+                packs.guard_qualified_layouts(head, base)
+
     def test_policy_requires_explicit_nonproduction_overrides(self) -> None:
         clean = packs.SourceState("a" * 40, False)
         dirty = packs.SourceState("a" * 40, True)
         eligible, overrides, reasons = packs._policy(
             self.profile,
+            self.layout,
             "full",
             clean,
             allow_dirty=False,
@@ -252,6 +555,7 @@ class DevicePackTests(unittest.TestCase):
         with self.assertRaisesRegex(packs.PackError, "source tree is dirty"):
             packs._policy(
                 self.profile,
+                self.layout,
                 "full",
                 dirty,
                 allow_dirty=False,
@@ -259,6 +563,7 @@ class DevicePackTests(unittest.TestCase):
             )
         eligible, overrides, reasons = packs._policy(
             self.profile,
+            self.layout,
             "full",
             dirty,
             allow_dirty=True,
@@ -278,6 +583,7 @@ class DevicePackTests(unittest.TestCase):
         with self.assertRaisesRegex(packs.PackError, "require physically qualified"):
             packs._policy(
                 unqualified,
+                self.layout,
                 "retrofit",
                 clean,
                 allow_dirty=False,
@@ -285,6 +591,7 @@ class DevicePackTests(unittest.TestCase):
             )
         eligible, overrides, reasons = packs._policy(
             unqualified,
+            self.layout,
             "retrofit",
             clean,
             allow_dirty=False,
@@ -296,6 +603,7 @@ class DevicePackTests(unittest.TestCase):
 
         eligible, overrides, reasons = packs._policy(
             unqualified,
+            self.layout,
             "coupon",
             clean,
             allow_dirty=False,
@@ -304,6 +612,41 @@ class DevicePackTests(unittest.TestCase):
         self.assertFalse(eligible)
         self.assertEqual([], overrides)
         self.assertEqual(["coupon_only", "holder_unqualified"], reasons)
+
+        with self.assertRaisesRegex(
+            packs.PackError, "chassis layout"
+        ):
+            packs._policy(
+                self.profile,
+                self.topbar_layout,
+                "full",
+                clean,
+                allow_dirty=False,
+                allow_unqualified=False,
+            )
+        eligible, overrides, reasons = packs._policy(
+            self.profile,
+            self.topbar_layout,
+            "full",
+            clean,
+            allow_dirty=False,
+            allow_unqualified=True,
+        )
+        self.assertFalse(eligible)
+        self.assertEqual(["allow_unqualified"], overrides)
+        self.assertEqual(["layout_unqualified"], reasons)
+
+        eligible, overrides, reasons = packs._policy(
+            self.profile,
+            self.topbar_layout,
+            "retrofit",
+            clean,
+            allow_dirty=False,
+            allow_unqualified=False,
+        )
+        self.assertTrue(eligible)
+        self.assertEqual([], overrides)
+        self.assertEqual([], reasons)
 
     def _build_fake_pack(
         self, output: Path, *, replace_output: bool = False
@@ -408,6 +751,15 @@ class DevicePackTests(unittest.TestCase):
             )
             self.assertRegex(
                 fixture["platform_source"]["revision"], r"^[0-9a-f]{40}$"
+            )
+            layout = document["layout"]
+            self.assertEqual(
+                "physically_qualified",
+                layout["qualification"]["status"],
+            )
+            self.assertEqual(
+                ["trimui-smart-pro"],
+                layout["qualification"]["device_slugs"],
             )
 
     def test_manifest_and_checksum_tampering_are_detected(self) -> None:

@@ -100,6 +100,26 @@ class ReleaseArchiveTests(unittest.TestCase):
             self.identity.qualification_path.name,
         )
 
+    def test_release_build_rejects_candidate_registered_layout(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="pf-release-test-") as temp:
+            with mock.patch.object(
+                releases.packs,
+                "source_state",
+                return_value=releases.packs.SourceState(COMMIT, False),
+            ):
+                with self.assertRaisesRegex(
+                    releases.ReleaseError,
+                    "physically qualified registered chassis layouts.*"
+                    "chassis-topbar-v1.*tsp-t1zd.2",
+                ):
+                    releases.build_release_bundle(
+                        self.root,
+                        profile_id=PROFILE_ID,
+                        output=Path(temp) / self.identity.tag,
+                        openscad="unused-openscad",
+                        replace=False,
+                    )
+
     def test_canonical_archives_are_byte_identical_and_verifiable(self) -> None:
         with tempfile.TemporaryDirectory(prefix="pf-release-test-") as temp:
             root = Path(temp)
