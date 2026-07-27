@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Protect the chassis-core and legacy handbook target boundary."""
+"""Protect production batches and the canonical top-bar handbook scene."""
 
 from __future__ import annotations
 
@@ -15,6 +15,15 @@ TOPBAR_CORE_OUTPUTS = (
     "topbar/production-batch-03-lower-backstays.stl",
     "topbar/production-batch-04-frame-hardware.stl",
     "topbar/production-batch-05-placard-holder.stl",
+)
+GUIDE_LAYER_COUNT = 70
+GUIDE_SCENE_DEFINES = (
+    """-D 'CHASSIS_VARIANT="topbar_v1"'""",
+    """-D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"'""",
+)
+DEVICE_MODEL_COMMIT = "80662c40bd7d878a19127899760bdafb1f149173"
+DEVICE_MODEL_SHA256 = (
+    "0d5c8153639537d5e70941492ad2cc930f5fb1c93f3694e9a160f5770693224d"
 )
 
 
@@ -96,10 +105,52 @@ def main() -> int:
         CORE_BATCHES + DEVICE_EXAMPLE_BATCHES,
         "handbook-assets",
     )
+    guide_layer_lines = [
+        line for line in handbook.splitlines() if 'PART="guide_layer_' in line
+    ]
+    if len(guide_layer_lines) != GUIDE_LAYER_COUNT:
+        raise SystemExit(
+            "handbook semantic layer count changed: "
+            f"{len(guide_layer_lines)} != {GUIDE_LAYER_COUNT}"
+        )
+    for line in guide_layer_lines:
+        missing_defines = [
+            define for define in GUIDE_SCENE_DEFINES if define not in line
+        ]
+        if missing_defines:
+            raise SystemExit(
+                "handbook layer is not locked to the Smart Pro S top-bar "
+                f"scene: {line}"
+            )
+    hero_lines = [
+        line for line in handbook.splitlines() if "build/handbook/hero.png" in line
+    ]
+    if len(hero_lines) != 1 or any(
+        define not in hero_lines[0] for define in GUIDE_SCENE_DEFINES
+    ):
+        raise SystemExit(
+            "handbook hero is not locked to the Smart Pro S top-bar scene"
+        )
+    for required in (
+        "device-models/trimui-smart-pro-s/trimui-smart-pro-s.scad",
+        DEVICE_MODEL_COMMIT,
+        DEVICE_MODEL_SHA256,
+        "--device-slug trimui-smart-pro-s",
+        "--chassis-variant topbar_v1",
+        "--device-registry ../device-packs/device-layouts.json",
+        "--layout-record ../device-packs/layouts/chassis-topbar-v1.json",
+    ):
+        if required not in handbook:
+            raise SystemExit(
+                f"handbook scene omits source/provenance contract: {required}"
+            )
+    if "device-models/trimui-smart-pro/trimui-smart-pro.scad" in handbook:
+        raise SystemExit("handbook scene still fetches the base Smart Pro model")
     print(
         "makefile_target_contract=pass "
         "legacy_core_batches=5 topbar_candidate_core_batches=5 "
-        "handbook_device_examples=2"
+        "handbook_device_examples=2 handbook_scene=smart-pro-s-topbar "
+        f"semantic_layers={GUIDE_LAYER_COUNT}"
     )
     return 0
 

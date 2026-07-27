@@ -19,6 +19,14 @@ GUIDE_MODEL_REQUIREMENTS := scripts/handbook-model-requirements.txt
 GUIDE_MODEL := $(GUIDE_MODEL_BUILD)/pocketforge-test-node.glb
 GUIDE_MODEL_PROVENANCE := $(GUIDE_MODEL_BUILD)/pocketforge-test-node.provenance.json
 SOURCE_REPOSITORY := https://github.com/pocketforge-os/test-node-hw
+GUIDE_DEVICE_SLUG := trimui-smart-pro-s
+GUIDE_CHASSIS_VARIANT := topbar_v1
+GUIDE_EXAMPLE_DEVICE_VARIANT := smart_pro_s
+GUIDE_DEVICE_REGISTRY := ../device-packs/device-layouts.json
+GUIDE_LAYOUT_RECORD := ../device-packs/layouts/chassis-topbar-v1.json
+GUIDE_SCENE_DEFINES := \
+	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
+	-D 'EXAMPLE_DEVICE_VARIANT="$(GUIDE_EXAMPLE_DEVICE_VARIANT)"'
 
 FIXTURE_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl
 FIXTURE_COMPONENTS_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-components.stl
@@ -143,13 +151,13 @@ PRESENTATION_CRADLE_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-la
 PRESENTATION_CRADLE_S_LABELS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-labels.stl
 PRESENTATION_CRADLE_HOOKS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-family-installed-hooks.stl
 
-DEVICE_MODEL_COMMIT := 59bba8e022b7ec107c88b4099820d4faf81e08dd
-DEVICE_MODEL_SHA256 := 75f9455ab6d2fe799630cf3a0da52964ec5013da7cfa72e6c1dc634e2f6104e4
-DEVICE_MODEL_URL := https://raw.githubusercontent.com/pocketforge-os/platform/$(DEVICE_MODEL_COMMIT)/device-models/trimui-smart-pro/trimui-smart-pro.scad
-PRESENTATION_DEVICE_SCAD := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-device-model.scad
-PRESENTATION_DEVICE_SHELL_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-device-shell.stl
-PRESENTATION_DEVICE_CONTROLS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-device-controls.stl
-PRESENTATION_DEVICE_SCREEN_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-device-screen.stl
+DEVICE_MODEL_COMMIT := 80662c40bd7d878a19127899760bdafb1f149173
+DEVICE_MODEL_SHA256 := 0d5c8153639537d5e70941492ad2cc930f5fb1c93f3694e9a160f5770693224d
+DEVICE_MODEL_URL := https://raw.githubusercontent.com/pocketforge-os/platform/$(DEVICE_MODEL_COMMIT)/device-models/trimui-smart-pro-s/trimui-smart-pro-s.scad
+PRESENTATION_DEVICE_SCAD := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-device-model.scad
+PRESENTATION_DEVICE_SHELL_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-device-shell.stl
+PRESENTATION_DEVICE_CONTROLS_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-device-controls.stl
+PRESENTATION_DEVICE_SCREEN_STL := $(PRESENTATION_IMPORT_DIR)/trimui-smart-pro-s-device-screen.stl
 
 PRESENTATION_ASSETS := \
 	$(PRESENTATION_FIXTURE_STL) \
@@ -412,6 +420,12 @@ GUIDE_LAYERS := \
 GUIDE_CAMERA := --projection=ortho --camera=560,-650,470,173,179,184
 GUIDE_IMAGE := --imgsize=1400,1100 --viewall $(GUIDE_CAMERA)
 GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
+
+# The public full-chassis scene is the current Smart Pro S top-bar layout.
+# `private` prevents these presentation-only selections from leaking into
+# prerequisite production/device exports.
+$(GUIDE_LAYERS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
+$(GUIDE_BUILD)/hero.png: private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
 
 .NOTPARALLEL:
 
@@ -1553,13 +1567,23 @@ guide-batch-models: $(GUIDE_BATCH_MODELS)
 guide-layers: $(GUIDE_LAYERS)
 
 $(GUIDE_MODEL) $(GUIDE_MODEL_PROVENANCE) &: $(GUIDE_LAYERS) \
-		$(GUIDE_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) | $(GUIDE_MODEL_BUILD)
+		$(GUIDE_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) \
+		$(GUIDE_DEVICE_REGISTRY) $(GUIDE_LAYOUT_RECORD) \
+		$(PRESENTATION_DEVICE_SCAD) | $(GUIDE_MODEL_BUILD)
 	$(PYTHON) $(GUIDE_MODEL_SCRIPT) \
 		--layers $(GUIDE_LAYER_BUILD) \
 		--output $(GUIDE_MODEL) \
 		--provenance $(GUIDE_MODEL_PROVENANCE) \
 		--repository-root ../.. \
-		--source-repository $(SOURCE_REPOSITORY)
+		--source-repository $(SOURCE_REPOSITORY) \
+		--device-slug $(GUIDE_DEVICE_SLUG) \
+		--chassis-variant $(GUIDE_CHASSIS_VARIANT) \
+		--device-registry $(GUIDE_DEVICE_REGISTRY) \
+		--layout-record $(GUIDE_LAYOUT_RECORD) \
+		--device-model-source $(PRESENTATION_DEVICE_SCAD) \
+		--device-model-url $(DEVICE_MODEL_URL) \
+		--device-model-commit $(DEVICE_MODEL_COMMIT) \
+		--device-model-sha256 $(DEVICE_MODEL_SHA256)
 
 guide-model: $(GUIDE_MODEL) $(GUIDE_MODEL_PROVENANCE)
 

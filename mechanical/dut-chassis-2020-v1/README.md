@@ -302,9 +302,9 @@ They are for the light fixture gantry only.
 - `Makefile`: the supported export and validation interface.
 
 The presentation imports the authoritative fixture/carrier STLs from their
-sibling CAD projects. The TrimUI Smart Pro visual model is fetched from a
-pinned platform commit and verified by SHA-256. Production STL exports never
-contain presentation-only device geometry or camera-frustum overlays.
+sibling CAD projects. The accepted TrimUI Smart Pro S visual model is fetched
+from a pinned platform commit and verified by SHA-256. Production STL exports
+never contain presentation-only device geometry or camera-frustum overlays.
 The installed ELEGOO B09ZQS2JRD relay board is carried through as six semantic
 fixture layers: blue PCB, blue relay/terminal bodies, dark optocouplers and
 drivers, metal screws/pins, red status LEDs, and pale markings. Its exact
@@ -376,8 +376,8 @@ That command:
   and
 - verifies the pinned device model.
 
-Generate the handbook's static scenes, eight interactive print beds, and
-semantic full-chassis model:
+Generate the handbook's source scenes, interactive print beds, and semantic
+full-chassis model:
 
 ```sh
 python3 -m venv /tmp/pf-chassis-model-venv
@@ -392,7 +392,16 @@ preventing stale CAD visuals from being published. Every protected-`main`
 change under `mechanical/**` also triggers `handbook-cad-refresh.yml`, which
 advances the handbook's exact CAD gitlink through its own reviewed PR.
 
-The static scene set includes one completed-state render for each major
+The canonical `pocketforge-test-node.glb` and `hero.png` are always generated
+with `CHASSIS_VARIANT="topbar_v1"` and
+`EXAMPLE_DEVICE_VARIANT="smart_pro_s"`. The GLB retains separate semantic
+layers for the actual handheld shell/controls/screen, carrier and hooks,
+populated fixture components, webcam and field of view, frame and suspension,
+power strip, placard, and registration hardware. Its provenance binds the
+device slug, layout record, candidate acceptance reference, pinned device
+model commit/hash, every layer hash, and the final model hash.
+
+The source scene set also includes one completed-state render for each major
 assembly section plus focused panels for hidden splice hardware, concealed
 gantry connectors, captive-nut preparation, exact per-rail preload counts,
 the physical identity and lifecycle of parked replacement bars, rail

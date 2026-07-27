@@ -232,6 +232,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--provenance", type=Path, required=True)
     parser.add_argument("--repository-root", type=Path, required=True)
     parser.add_argument("--source-repository", required=True)
+    parser.add_argument("--device-slug", required=True)
+    parser.add_argument("--chassis-variant", required=True)
+    parser.add_argument("--device-registry", type=Path, required=True)
+    parser.add_argument("--layout-record", type=Path, required=True)
+    parser.add_argument("--device-model-source", type=Path, required=True)
+    parser.add_argument("--device-model-url", required=True)
+    parser.add_argument("--device-model-commit", required=True)
+    parser.add_argument("--device-model-sha256", required=True)
     parser.add_argument(
         "--require-clean",
         action="store_true",
@@ -276,6 +284,78 @@ def load_layer(path: Path, layer_name: str) -> trimesh.Trimesh:
     return loaded
 
 
+def load_scene_contract(
+    arguments: argparse.Namespace, repository_root: Path
+) -> dict:
+    registry_path = arguments.device_registry.resolve()
+    layout_path = arguments.layout_record.resolve()
+    device_model_path = arguments.device_model_source.resolve()
+    for path in (registry_path, layout_path, device_model_path):
+        if not path.is_file():
+            raise FileNotFoundError(path)
+
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    layout = json.loads(layout_path.read_text(encoding="utf-8"))
+    layout_relative = layout_path.relative_to(repository_root).as_posix()
+    registered_layout = (
+        registry.get("devices", {})
+        .get(arguments.device_slug, {})
+        .get("layout")
+    )
+    if registered_layout != layout_relative:
+        raise ValueError(
+            f"{arguments.device_slug} selects {registered_layout!r}, "
+            f"not {layout_relative!r}"
+        )
+
+    layout_id = layout.get("layout_id")
+    if not isinstance(layout_id, str) or not layout_id:
+        raise ValueError("layout record has no layout_id")
+    qualification = layout.get("qualification", {})
+    if arguments.device_slug not in qualification.get("device_slugs", []):
+        raise ValueError(
+            f"{arguments.device_slug} is outside {layout_id} qualification scope"
+        )
+    artifact_variants = {
+        artifact.get("parameters", {}).get("CHASSIS_VARIANT")
+        for artifact in layout.get("artifacts", [])
+    }
+    if artifact_variants != {arguments.chassis_variant}:
+        raise ValueError(
+            f"{layout_id} artifact variants {artifact_variants!r} do not "
+            f"match {arguments.chassis_variant!r}"
+        )
+
+    actual_device_model_sha256 = digest(device_model_path)
+    if actual_device_model_sha256 != arguments.device_model_sha256:
+        raise ValueError(
+            "device model SHA-256 mismatch: "
+            f"{actual_device_model_sha256} != "
+            f"{arguments.device_model_sha256}"
+        )
+
+    return {
+        "device_slug": arguments.device_slug,
+        "chassis_variant": arguments.chassis_variant,
+        "layout_id": layout_id,
+        "layout_record": layout_relative,
+        "layout_sha256": digest(layout_path),
+        "device_registry": registry_path.relative_to(
+            repository_root
+        ).as_posix(),
+        "device_registry_sha256": digest(registry_path),
+        "qualification": {
+            "status": qualification.get("status"),
+            "acceptance_ref": qualification.get("acceptance_ref"),
+        },
+        "device_model": {
+            "source_repository": arguments.device_model_url,
+            "source_commit": arguments.device_model_commit,
+            "source_sha256": actual_device_model_sha256,
+        },
+    }
+
+
 def main() -> None:
     arguments = parse_args()
     repository_root = arguments.repository_root.resolve()
@@ -283,6 +363,7 @@ def main() -> None:
     dirty = bool(git(repository_root, "status", "--porcelain"))
     if arguments.require_clean and dirty:
         raise SystemExit("refusing to publish handbook model from a dirty worktree")
+    scene_contract = load_scene_contract(arguments, repository_root)
 
     scene = trimesh.Scene()
     layer_digests: dict[str, str] = {}
@@ -346,10 +427,11 @@ def main() -> None:
         )
 
     provenance = {
-        "schema": 1,
+        "schema": 2,
         "source_repository": arguments.source_repository,
         "source_revision": revision,
         "source_dirty": dirty,
+        "scene": scene_contract,
         "coordinate_transform": "OpenSCAD mm Z-up -> glTF m Y-up",
         "semantic_layers": list(LAYER_MATERIALS),
         "layer_sha256": layer_digests,
@@ -364,6 +446,9 @@ def main() -> None:
     print(
         "handbook_model=pass "
         f"layers={len(LAYER_MATERIALS)} "
+        f"device={scene_contract['device_slug']} "
+        f"layout={scene_contract['layout_id']} "
+        f"variant={scene_contract['chassis_variant']} "
         f"nameplate_materials={','.join(sorted(expected_nameplate_materials))!r} "
         f"sha256={provenance['model_sha256']} "
         f"dirty={str(dirty).lower()}"
