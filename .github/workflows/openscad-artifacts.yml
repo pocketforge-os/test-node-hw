@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "**/*.scad"
+      - ".agents/skills/design-dut-holder/**"
       - "mechanical/**/Makefile"
       - "mechanical/**/profiles/**"
       - "mechanical/**/qualification/**"

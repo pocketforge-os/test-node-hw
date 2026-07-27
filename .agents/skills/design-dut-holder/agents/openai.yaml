@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design DUT Holder"
+  short_description: "Design and qualify reproducible DUT holders"
+  default_prompt: "Use $design-dut-holder to design, validate, and qualify a source-owned holder for this device."
