@@ -340,10 +340,21 @@ def validate_catalog(catalog: Mapping[str, Any]) -> None:
             if not isinstance(mode_record, dict):
                 raise BrowserBundleError(f"{mode_field} must be an object")
             artifacts = mode_record.get("artifacts")
-            expected_count = {"coupon": 1, "retrofit": 6, "full": 12}[mode]
-            if not isinstance(artifacts, list) or len(artifacts) != expected_count:
+            if not isinstance(artifacts, list):
                 raise BrowserBundleError(
-                    f"{mode_field}.artifacts must contain {expected_count} rows"
+                    f"{mode_field}.artifacts must be an array"
+                )
+            if mode == "coupon" and len(artifacts) != 1:
+                raise BrowserBundleError(
+                    f"{mode_field}.artifacts must contain one row"
+                )
+            if mode == "retrofit" and len(artifacts) != 6:
+                raise BrowserBundleError(
+                    f"{mode_field}.artifacts must contain six rows"
+                )
+            if mode == "full" and len(artifacts) <= 6:
+                raise BrowserBundleError(
+                    f"{mode_field}.artifacts must extend the retrofit plan"
                 )
             artifact_ids: set[str] = set()
             outputs: set[str] = set()
@@ -413,6 +424,14 @@ def validate_catalog(catalog: Mapping[str, Any]) -> None:
                     raise BrowserBundleError(
                         f"{artifact_field}.expected_normalized_sha256 is invalid"
                     )
+        retrofit_ids = {
+            artifact["id"] for artifact in modes["retrofit"]["artifacts"]
+        }
+        full_ids = {artifact["id"] for artifact in modes["full"]["artifacts"]}
+        if not retrofit_ids < full_ids:
+            raise BrowserBundleError(
+                f"{field}.modes.full must strictly extend retrofit artifacts"
+            )
 
 
 def _bundle_files(bundle: Path) -> list[Path]:

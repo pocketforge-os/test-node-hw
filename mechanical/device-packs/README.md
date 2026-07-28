@@ -57,7 +57,7 @@ matches an accepted or regression-locked mesh.
 | --- | --- | --- |
 | `coupon` | Validate a new or changed physical fit cheaply | Qualified holder fit coupon |
 | `retrofit` | Change the DUT on an existing chassis | Coupon, selected labeled carrier, six-hook set, four carrier links, device nameplate, eight wire anchors |
-| `full` | Build a complete test node | Retrofit pack, optional process-calibration bed, and the selected layout's chassis beds 01–05 |
+| `full` | Build a complete test node | Retrofit pack, optional process-calibration bed, and every core bed owned by the selected chassis layout |
 
 The calibration bed is included in a full export so the pack is complete, but
 it only needs printing after the printer, material, process, or extrusion
@@ -91,7 +91,7 @@ python3 mechanical/device-packs/build_device_pack.py build \
 ```
 
 The TrimUI Smart Pro remains mapped to the physically proven two-upright
-gantry. The TrimUI Smart Pro S is mapped to the material-reduced top-bar
+gantry. The TrimUI Smart Pro S is mapped to the material-reduced dual-bar
 candidate. Generate that candidate explicitly for printing and review with:
 
 ```sh
@@ -180,10 +180,10 @@ repeats those packs on each relevant pushed revision, so stale generated
 output cannot make a source change look complete.
 
 The static normalized hashes in `layouts/chassis-core-v1.json` freeze the
-working base chassis. `layouts/chassis-topbar-v1.json` separately freezes the
+working base chassis. `layouts/chassis-dualbar-v1.json` separately freezes the
 Pro S candidate beds. Shared Batch 04, Batch 05, carrier-link, calibration, and
-wire-anchor hashes are identical across both layouts; only top-bar Batches
-01–03 are new. These are regression baselines, not automatic physical
+wire-anchor hashes are identical across both layouts; only dual-bar Batches
+01–02 are new. These are regression baselines, not automatic physical
 qualification. Changing a lock requires understanding the geometry change,
 not blindly recording a new digest.
 

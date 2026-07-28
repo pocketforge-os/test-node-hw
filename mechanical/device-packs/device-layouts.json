@@ -5,7 +5,7 @@
       "layout": "mechanical/device-packs/layouts/chassis-core-v1.json"
     },
     "trimui-smart-pro-s": {
-      "layout": "mechanical/device-packs/layouts/chassis-topbar-v1.json"
+      "layout": "mechanical/device-packs/layouts/chassis-dualbar-v1.json"
     }
   }
 }
