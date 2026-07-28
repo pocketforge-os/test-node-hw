@@ -895,10 +895,12 @@ def build_plan(
     ids = [item.artifact_id for item in ordered]
     if len(outputs) != len(set(outputs)) or len(ids) != len(set(ids)):
         raise PackError("profile and layout produce duplicate artifact IDs or paths")
-    expected_counts = {"coupon": 1, "retrofit": 6, "full": 12}
-    if len(ordered) != expected_counts[mode]:
+    profile_count = 3 if mode in {"retrofit", "full"} else 1
+    layout_count = sum(mode in artifact.modes for artifact in layout.artifacts)
+    expected_count = profile_count + layout_count
+    if len(ordered) != expected_count:
         raise PackError(
-            f"{mode} layout must contain exactly {expected_counts[mode]} "
+            f"{mode} layout must contain exactly {expected_count} "
             f"artifacts, found {len(ordered)}"
         )
     for item in ordered:

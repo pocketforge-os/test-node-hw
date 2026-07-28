@@ -4,7 +4,7 @@ Parametric OpenSCAD source for the reusable mechanical frame around one
 PocketForge test node. The chassis carries:
 
 - a movable electronics/webcam fixture on either the proven two-upright
-  gantry or the material-reduced single top bar;
+  gantry or the material-reduced matched upper/lower bar pair;
 - a fixed device-specific DUT carrier on the shared optical axis;
 - an operator-side power strip and replaceable device placard; and
 - non-load-bearing stacking registration tabs and repositionable cable
@@ -15,7 +15,7 @@ the **test-node chassis**.
 
 The fleet-standard envelope is **346 W × 358 D × approximately 368 H mm**,
 with **306 W × 318 D × 328 H mm** clear inside. The proven gantry chassis uses
-six nominal 1 m sticks of 20 × 20 mm extrusion. The top-bar candidate uses
+six nominal 1 m sticks of 20 × 20 mm extrusion. The dual-bar candidate uses
 five when starting from new stock, or four new sticks plus the retained
 356.4 mm legacy offcut.
 
@@ -28,14 +28,14 @@ topology from `../device-packs/device-layouts.json`; do not choose it by hand.
 | Device | Layout | Fixture support | Status |
 | --- | --- | --- | --- |
 | TrimUI Smart Pro | `chassis-core-v1` | Four 164 mm upright halves + two 306 mm crossbars | Physically proven and frozen |
-| TrimUI Smart Pro S | `chassis-topbar-v1` | One movable 306 mm top bar + printed hanger/backstay pairs | Candidate pending `tsp-t1zd.2` |
+| TrimUI Smart Pro S | `chassis-dualbar-v1` | Two movable 306 mm fixture bars + four identical printed links | Candidate pending `tsp-t1zd.2` |
 
 Both layouts preserve the same outer frame, fixture plate, plate Y/Z datum,
 camera optical relationship, DUT carrier, placard, power strip, stacking
-hardware, and wire anchors. In the top-bar layout, each keyed upper hanger
-clamps to the bar and shares the plate's existing upper slot with a
-complementary lower-backstay half-lap. The backstay continues to the existing
-lower slot. Two 2.5 mm lap halves reconstruct the proven 5 mm plate gap.
+hardware, and wire anchors. In the dual-bar layout, a continuous bar spans the
+lower depth rails and another spans the upper depth rails. Four identical
+71.5 mm keyed links join those bars directly to the plate's existing upper and
+lower slots.
 
 ## Coordinate contract
 
@@ -64,8 +64,9 @@ assumption:
 - BLCCLOY B08D6T9CGN concealed metal L-connectors;
 - ordinary metal M3 nuts measuring 5.36 mm across flats × 2.30 mm thick;
 - face-loaded M5 drop-in T-nuts with low-profile M5 × 10 mm button-head
-  screws and washers no larger than 10 mm OD for registration tabs and cable
-  anchors;
+  screws and washers no larger than 10 mm OD for registration tabs;
+- face-loaded M5 or M3 drop-in T-nuts with matching low-profile screws and
+  washers no larger than 10 mm OD (M5) or 7 mm OD (M3) for cable anchors;
 - ELEGOO B09ZQS2JRD four-channel 5 V optocoupled relay board, physically
   fitted at 72.70 × 51.85 mm with Ø3 mm mounting holes; and
 - Logitech C270 HD webcam, reconstructed from Logitech's official product
@@ -76,7 +77,7 @@ assumption:
   owner-fit 105.07 × 24 × 15 mm installed envelope.
 
 The outer-frame and stacking load path is aluminum plus metal connectors.
-Printed channel bars, gantry plates, top-bar hangers/backstays, carrier links,
+Printed channel bars, gantry plates, dual-bar fixture links, carrier links,
 and registration tabs are light-duty alignment/mounting parts. Never
 substitute a printed connector into the outer-frame or vertical stacking load
 path.
@@ -98,24 +99,25 @@ The generated, connector-aware six-stick assignment is committed in
 make refresh-cut-list
 ```
 
-The scrap-first top-bar assignment is committed separately in
-[`CUT_LIST_TOPBAR.md`](CUT_LIST_TOPBAR.md). It removes **962 mm** of finished
-fixture-support extrusion (1268 → 306 mm), an 18.49% reduction across the
-complete chassis. Regenerate and check it with:
+The scrap-first dual-bar assignment is committed separately in
+[`CUT_LIST_DUALBAR.md`](CUT_LIST_DUALBAR.md). It removes **656 mm** of finished
+fixture-support extrusion (1268 → 612 mm), a 12.61% reduction across the
+complete chassis and a 51.74% reduction in fixture-support extrusion.
+Regenerate and check it with:
 
 ```sh
-make topbar-cutlist
-make validate-topbar-cut-list-sync
+make dualbar-cutlist
+make validate-dualbar-cut-list-sync
 ```
 
-If no qualifying offcut exists, batch the fifth fresh stick into three 306 mm
-top bars (927.6 mm including kerfs, 72.4 mm remainder). Use one now and reserve
-two for the next chassis builds; each of those then needs only four fresh
-outer-frame sticks.
+If no qualifying offcut exists, cut both fixture bars from the fifth fresh
+stick and retain its 381.6 mm remainder. For batch work, three 306 mm bars fit
+on one stick (927.6 mm including kerfs, 72.4 mm remainder). Two qualifying
+offcuts eliminate the fifth fresh stick; one offcut alone does not.
 
 ## Canonical print workflow
 
-The chassis source owns five device-independent core beds per layout. The
+The chassis source owns a device-independent core-bed set for each layout. The
 table below is the proven gantry set. The device-pack builder combines the
 registered layout with the one carrier variant selected by the device profile;
 do not manually mix a chassis topology, carrier label, hook set, and device
@@ -147,17 +149,17 @@ Build the five shared chassis-core batches:
 make batches
 ```
 
-Build the five Pro S candidate core beds without changing the legacy outputs:
+Build the four Pro S candidate core beds without changing the legacy outputs:
 
 ```sh
-make topbar
-make validate-topbar-batches
+make dualbar
+make validate-dualbar-batches
 ```
 
-Candidate Batches 01–03 contain 18 short channel bars, two keyed upper
-hangers, and two 244 mm lower backstays. Batches 04–05 are
-normalized-geometry identical to the proven layout. `make topbar` also
-regenerates the cut list and six review views under `build/topbar/`. Generate
+Candidate Batches 01–02 contain 20 short channel bars and four identical keyed
+fixture links. Batches 04–05 are
+normalized-geometry identical to the proven layout. `make dualbar` also
+regenerates the cut list and six review views under `build/dualbar/`. Generate
 the complete device-selected candidate through the pack builder, not by mixing
 these files manually:
 
@@ -208,10 +210,10 @@ Batch 01 provides 28 short bars: 22 use-now mount positions and six parked
 replacement bars. The authoritative rail/face preload map is in the handbook
 assembly guide. Do not close a rail end until that map balances to 28.
 
-Top-bar Batch 01 instead provides exactly 18: ten active outer-width-rail
-locations, two active keyed-hanger locations, four parked depth-rail spares,
-and two parked top-bar spares. It contains no long splice bar. Keep the two
-inventories separate.
+Dual-bar Batch 01 instead provides exactly 20: ten active outer-width-rail
+locations, four active fixture-bar link locations, four parked depth-rail
+spares, and two parked fixture-bar spares. It contains no long splice bar.
+Keep the two inventories separate.
 
 ## Stacking registration tabs
 
@@ -231,16 +233,17 @@ vertical stack load.
 
 ## Rail-mounted wire management
 
-Batch 07 provides a starter set of eight identical anchors. Each
+Batch 07 provides a starter set of eight identical M5 anchors. Each
 **32 × 18 × 8.8 mm** anchor bolts to any exposed 2020 rail face with one
-face-loaded M5 T-nut, one low-profile M5 × 10 mm button-head screw, and one
-flat washer no larger than 10 mm OD. Nothing is preloaded through a cut rail
-end.
+face-loaded drop-in T-nut, a matching low-profile button-head screw, and one
+flat washer. Use the default M5 hole with a washer no larger than 10 mm OD, or
+export an individual M3 version with `CABLE_ANCHOR_FASTENER="M3"` and use a
+washer no larger than 7 mm OD. Nothing is preloaded through a cut rail end.
 
 Two rounded **5.6 × 2.4 mm** transverse tunnels accept common zip ties up to
 4.8 mm wide × 1.6 mm thick. Thread one tie through either tunnel, or use both
 for a wider bundle. Print the broad rail-contact face on the bed with supports
-disabled. Tighten the M5 screw only enough to stop the anchor from sliding,
+disabled. Tighten the screw only enough to stop the anchor from sliding,
 and leave the tie loose enough that cables can move slightly under a fingertip.
 
 These are routing aids, not strain relief, structural clamps, or stack
@@ -249,24 +252,26 @@ canonical eight-piece bed is intentionally separate so it can be repeated or
 omitted without reprinting frame hardware; individual and eight-piece
 replacement exports are also available.
 
-## Top-bar fixture suspension candidate
+## Dual-bar fixture suspension candidate
 
-Join the continuous 306 mm bar between the two upper depth rails with two
-accepted concealed metal L-connectors. Never splice this bar. Before closing
-its ends, load two active and two blue-tagged spare short M3 bars into the
-operator-facing groove.
+Join one continuous 306 mm bar between the two lower depth rails and a second
+between the two upper depth rails. Use two accepted concealed metal
+L-connectors per bar and never splice either one. Before closing the bar ends,
+load two active short M3 bars into each operator-facing groove and park one
+blue-tagged spare in each bar.
 
 At each fixture-plate side:
 
-1. seat the upper hanger's 16 × 6.43 mm key in the top-bar groove and clamp its
-   round hole to one active short bar;
-2. place the hanger's 2.5 mm lower lap directly against the plate's existing
-   upper slot;
-3. flip the lower backstay from its print orientation so its 2.5 mm upper lap
-   fills the rail-side half of that joint;
-4. clamp the three-layer upper joint with an ordinary M3 fastener, wide
-   washers, and a metal locknut; and
-5. clamp the backstay's lower round hole through the existing lower plate slot.
+1. seat one link's 16 × 6.43 mm rail key in an active short bar and clamp its
+   round hole to that bar;
+2. clamp the link's plate-side round hole through the corresponding existing
+   fixture-plate slot with an ordinary M3 fastener, wide washers, and a metal
+   locknut;
+3. install lower links above the plate's lower slots and upper links below the
+   upper slots so every link pulls toward the plate rather than peeling away;
+4. repeat at all four corners with the same printed part; and
+5. confirm both aluminum bars, four links, and the fixture plate form one
+   square, rack-free assembly without a printed member spanning the plate.
 
 The source and normalized fingerprints are frozen for repeatable candidate
 prints, but this topology is not production-qualified until `tsp-t1zd.2`
@@ -393,7 +398,7 @@ change under `mechanical/**` also triggers `handbook-cad-refresh.yml`, which
 advances the handbook's exact CAD gitlink through its own reviewed PR.
 
 The canonical `pocketforge-test-node.glb` and `hero.png` are always generated
-with `CHASSIS_VARIANT="topbar_v1"` and
+with `CHASSIS_VARIANT="dualbar_v1"` and
 `EXAMPLE_DEVICE_VARIANT="smart_pro_s"`. The GLB retains separate semantic
 layers for the actual handheld shell/controls/screen, carrier and hooks,
 populated fixture components, webcam and field of view, frame and suspension,

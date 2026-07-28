@@ -336,7 +336,7 @@ jobs:
             python3 mechanical/device-packs/build_device_pack.py build \
               --device "${DEVICE_SLUG}" --mode full --allow-unqualified
           xvfb-run --auto-servernum \
-            make -C mechanical/dut-chassis-2020-v1 topbar-preview
+            make -C mechanical/dut-chassis-2020-v1 dualbar-preview
           python3 mechanical/device-packs/build_device_pack.py verify \
             --pack "${pack}"
           jq -e \
@@ -354,7 +354,7 @@ jobs:
           name: chassis-layout-candidate-${{ matrix.device_slug }}-${{ github.event.pull_request.head.sha }}
           path: |
             mechanical/device-packs/build/${{ matrix.device_slug }}/full/
-            mechanical/dut-chassis-2020-v1/build/topbar/layout-*.png
+            mechanical/dut-chassis-2020-v1/build/dualbar/layout-*.png
           if-no-files-found: error
           compression-level: 9
           retention-days: 30
@@ -490,7 +490,7 @@ jobs:
           grep -q \
             'require physically qualified registered chassis layouts' \
             "${log}"
-          grep -q 'chassis-topbar-v1 (tsp-t1zd.2)' "${log}"
+          grep -q 'chassis-dualbar-v1 (tsp-t1zd.2)' "${log}"
           echo "release_candidate_gate=pass"
 
       - name: Prove two real dual-device builds are byte-identical

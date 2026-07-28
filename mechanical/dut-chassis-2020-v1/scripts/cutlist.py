@@ -17,11 +17,12 @@ ECHO_RE = re.compile(
 
 VARIANT_STATUS = {
     "legacy_gantry": "physically_proven_frozen_baseline",
-    "topbar_v1": "candidate_requires_physical_qualification",
+    "dualbar_v1": "candidate_requires_physical_qualification",
 }
 LEGACY_FINISHED_TOTAL_MM = 5204.0
 LEGACY_FIXTURE_EXTRUSION_MM = 1268.0
-TOPBAR_FIXTURE_EXTRUSION_MM = 306.0
+FIXTURE_BAR_LENGTH_MM = 306.0
+DUALBAR_FIXTURE_EXTRUSION_MM = 2 * FIXTURE_BAR_LENGTH_MM
 
 
 @dataclass(frozen=True)
@@ -216,17 +217,17 @@ def pack(rows: list[tuple[str, int, float, str]], stock_length: float, kerf: flo
     return upper
 
 
-def pack_topbar_for_reusable_offcut(
+def pack_dualbar_for_reusable_offcut(
     rows: list[tuple[str, int, float, str]],
     stock_length: float,
     kerf: float,
 ) -> list[StockBar]:
-    """Keep the fifth-stick remainder as one useful top-bar-sized offcut.
+    """Keep the fifth-stick remainder as one useful fixture-bar offcut.
 
     Many five-stick packings consume the same aluminum.  Four identical outer
-    frame groups plus a top-bar-only fifth stick leave one 690.8 mm remainder
-    instead of fragmenting it across several medium pieces.  Fail closed if
-    the variant's cut contract changes rather than silently emitting a less
+    frame groups plus a two-fixture-bar fifth stick leave one 381.6 mm
+    remainder that can still yield a third fixture bar. Fail closed if the
+    variant's cut contract changes rather than silently emitting a less
     reusable assignment.
     """
 
@@ -234,17 +235,17 @@ def pack_topbar_for_reusable_offcut(
         "outer_vertical_rail": (4, 360.0),
         "outer_depth_rail": (4, 318.0),
         "outer_width_rail": (4, 306.0),
-        "fixture_topbar": (1, 306.0),
+        "fixture_support_bar": (2, FIXTURE_BAR_LENGTH_MM),
     }
     actual = {name: (quantity, length) for name, quantity, length, _ in rows}
     if actual != expected:
         raise SystemExit(
-            "cutlist=fail reason=topbar_reuse_contract_changed "
+            "cutlist=fail reason=dualbar_reuse_contract_changed "
             f"expected={expected!r} actual={actual!r}"
         )
 
     notes = {name: note for name, _, _, note in rows}
-    # Four outer-frame repetitions plus one top-bar-only stick.
+    # Four outer-frame repetitions plus one fixture-bar-only stick.
     bars = [StockBar(number, stock_length, kerf) for number in range(1, 6)]
     for index in range(4):
         for name in (
@@ -255,14 +256,19 @@ def pack_topbar_for_reusable_offcut(
             bars[index].cuts.append(
                 Cut(name, expected[name][1], notes[name], index + 1)
             )
-    bars[4].cuts.append(
-        Cut("fixture_topbar", expected["fixture_topbar"][1],
-            notes["fixture_topbar"], 1)
-    )
+    for ordinal in (1, 2):
+        bars[4].cuts.append(
+            Cut(
+                "fixture_support_bar",
+                expected["fixture_support_bar"][1],
+                notes["fixture_support_bar"],
+                ordinal,
+            )
+        )
 
     if any(bar.remaining < -1e-9 for bar in bars):
         raise SystemExit(
-            "cutlist=fail reason=topbar_reuse_assignment_exceeds_stock"
+            "cutlist=fail reason=dualbar_reuse_assignment_exceeds_stock"
         )
     lower_bound = math.ceil(
         sum(
@@ -274,7 +280,7 @@ def pack_topbar_for_reusable_offcut(
     )
     if lower_bound != len(bars):
         raise SystemExit(
-            "cutlist=fail reason=topbar_reuse_assignment_not_minimal "
+            "cutlist=fail reason=dualbar_reuse_assignment_not_minimal "
             f"lower_bound={lower_bound} assigned={len(bars)}"
         )
     return bars
@@ -305,18 +311,22 @@ def write_markdown(
     kerf_total = sum(len(bar.cuts) for bar in bars) * kerf
     waste_total = stock_total - finished_total - kerf_total
 
-    if variant == "topbar_v1":
+    if variant == "dualbar_v1":
         fixture_savings = (
-            LEGACY_FIXTURE_EXTRUSION_MM - TOPBAR_FIXTURE_EXTRUSION_MM
+            LEGACY_FIXTURE_EXTRUSION_MM - DUALBAR_FIXTURE_EXTRUSION_MM
         )
         whole_chassis_savings = LEGACY_FINISHED_TOTAL_MM - finished_total
-        offcut_minimum = TOPBAR_FIXTURE_EXTRUSION_MM + kerf
+        offcut_minimum = FIXTURE_BAR_LENGTH_MM + kerf
         known_offcut = 356.4
         known_offcut_remainder = known_offcut - offcut_minimum
         outer_bar_consumed = 360.0 + 318.0 + 306.0 + 3 * kerf
         outer_bar_remainder = stock_length - outer_bar_consumed
+        exact_pair_consumed = 2 * offcut_minimum
+        exact_pair_remainder = stock_length - exact_pair_consumed
+        batch_consumed = 3 * offcut_minimum
+        batch_remainder = stock_length - batch_consumed
         lines = [
-            "# PocketForge 2020 chassis cut list — top-bar variant",
+            "# PocketForge 2020 chassis cut list — dual-bar variant",
             "",
             f"- Chassis variant: `{variant}`",
             "- Qualification: **candidate; physical print, fit, loaded-sag, and camera checks are still required**",
@@ -326,24 +336,27 @@ def write_markdown(
             f"- Stock: {stock_length:.2f} mm bars",
             f"- Conservative kerf allowance: {kerf:.2f} mm per finished piece",
             f"- Stock bars required with no reusable offcut: **{len(bars)}**",
-            "- Fresh stock required with the retained 356.40 mm offcut: **4 bars**",
+            "- Fresh stock required with one qualifying offcut: **5 bars**",
+            "- Fresh stock required with two qualifying offcuts: **4 bars**",
             f"- Finished extrusion: {finished_total:.2f} mm",
             f"- Finished-extrusion savings versus legacy gantry: {whole_chassis_savings:.2f} mm ({whole_chassis_savings / LEGACY_FINISHED_TOTAL_MM * 100:.2f}%)",
             f"- Fixture-support savings: {fixture_savings:.2f} mm ({fixture_savings / LEGACY_FIXTURE_EXTRUSION_MM * 100:.2f}%)",
             f"- Kerf allowance: {kerf_total:.2f} mm",
             f"- Remaining stock/offcuts when starting from five full bars: {waste_total:.2f} mm",
             "",
-            "Finished lengths are measured aluminum cuts. This candidate preserves the proven outer frame and replaces the complete two-upright/two-crossbar fixture gantry with one continuous top bar. The bar remains movable on the upper depth rails. Never splice the top bar, and do not cut the legacy upright halves or second crossbar for this variant.",
+            "Finished lengths are measured aluminum cuts. This candidate preserves the proven outer frame and uses two continuous fixture bars: one between the lower depth rails and one between the upper depth rails. The matched pair remains movable for camera-distance adjustment. Never splice either fixture bar.",
             "",
             "## Scrap-first plan",
             "",
-            f"Cut the 306.00 mm `fixture_topbar` from any straight, undamaged 2020 offcut measuring at least **{offcut_minimum:.2f} mm** before buying another stick. The retained **{known_offcut:.2f} mm** offcut from the proven legacy six-stick assignment qualifies and leaves **{known_offcut_remainder:.2f} mm** after one finished cut plus kerf.",
+            f"Each 306.00 mm `fixture_support_bar` needs one straight, undamaged 2020 offcut measuring at least **{offcut_minimum:.2f} mm**. Two qualifying offcuts supply the complete upper/lower pair and reduce fresh stock to the four tightly packed outer-frame sticks.",
             "",
-            f"With that offcut, buy only four fresh 1 m sticks. Each fresh stick yields one 360 mm post, one 318 mm depth rail, and one 306 mm width rail: {outer_bar_consumed:.2f} mm kerf-inclusive consumed and {outer_bar_remainder:.2f} mm remaining. If no qualifying offcut exists, the exact bounded assignment below proves that five full sticks suffice.",
+            f"The known **{known_offcut:.2f} mm** retained offcut qualifies for one fixture bar and leaves **{known_offcut_remainder:.2f} mm**, but it cannot supply both bars. With only that one offcut, a fifth fresh stick is still required for the other fixture bar. Each outer-frame stick yields one 360 mm post, one 318 mm depth rail, and one 306 mm width rail: {outer_bar_consumed:.2f} mm kerf-inclusive consumed and {outer_bar_remainder:.2f} mm remaining.",
             "",
-            "## Batch top-bar route",
+            "## Fifth-stick and batch route",
             "",
-            f"If the fifth stick must be new, cut **three** 306.00 mm top bars together rather than stranding its large single-build remainder. Three finished bars plus three kerfs consume {3 * (TOPBAR_FIXTURE_EXTRUSION_MM + kerf):.2f} mm and leave **{stock_length - 3 * (TOPBAR_FIXTURE_EXTRUSION_MM + kerf):.2f} mm**. Use one now and label the other two for the next two chassis; each later chassis then needs only its four tightly packed outer-frame sticks.",
+            f"For one chassis, two fixture bars plus two kerfs consume **{exact_pair_consumed:.2f} mm** of the fifth stick and leave a straight **{exact_pair_remainder:.2f} mm** offcut. That remainder still qualifies for one future fixture bar; label and retain it.",
+            "",
+            f"For batch cutting, three 306.00 mm fixture bars plus three kerfs consume **{batch_consumed:.2f} mm** and leave **{batch_remainder:.2f} mm**. Use two now and label the third as the first bar of the next chassis. The known 356.40 mm offcut plus all three bars from one fresh stick supplies the four fixture bars needed by two chassis.",
             "",
             "## Finished pieces",
             "",
@@ -387,7 +400,7 @@ def write_markdown(
     )
     assignment_heading = (
         "## 1 m stock assignment — no reusable offcut"
-        if variant == "topbar_v1"
+        if variant == "dualbar_v1"
         else "## 1 m stock assignment"
     )
     lines.extend(["", assignment_heading, ""])
@@ -397,7 +410,7 @@ def write_markdown(
             f"- Bar {bar.number}: {pieces}; kerf-inclusive consumed "
             f"{bar.consumed:.2f} mm; remainder {bar.remaining:.2f} mm"
         )
-    if variant == "topbar_v1":
+    if variant == "dualbar_v1":
         lines.extend(
             [
                 "",
@@ -428,8 +441,8 @@ def main() -> None:
         qualification_status,
     ) = parse_echoes(args.input)
     bars = (
-        pack_topbar_for_reusable_offcut(rows, stock_length, kerf)
-        if variant == "topbar_v1"
+        pack_dualbar_for_reusable_offcut(rows, stock_length, kerf)
+        if variant == "dualbar_v1"
         else pack(rows, stock_length, kerf)
     )
     args.csv.parent.mkdir(parents=True, exist_ok=True)

@@ -172,15 +172,15 @@ class DevicePackTests(unittest.TestCase):
             packs.CRADLE_ROOT, cls.profile_path
         )
         cls.layout = packs.load_layout(cls.root, cls.layout_path)
-        cls.topbar_layout_path = (
+        cls.dualbar_layout_path = (
             cls.root
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-topbar-v1.json"
+            / "chassis-dualbar-v1.json"
         )
-        cls.topbar_layout = packs.load_layout(
-            cls.root, cls.topbar_layout_path
+        cls.dualbar_layout = packs.load_layout(
+            cls.root, cls.dualbar_layout_path
         )
 
     def test_modes_have_exact_membership(self) -> None:
@@ -236,7 +236,7 @@ class DevicePackTests(unittest.TestCase):
                     )
 
     def test_static_layout_geometry_is_regression_locked(self) -> None:
-        for layout in (self.layout, self.topbar_layout):
+        for layout in (self.layout, self.dualbar_layout):
             for artifact in layout.artifacts:
                 with self.subTest(
                     layout=layout.layout_id,
@@ -264,7 +264,7 @@ class DevicePackTests(unittest.TestCase):
         )
         self.assertEqual("chassis-core-v1", pro.layout_id)
         self.assertEqual("physically_qualified", pro.qualification["status"])
-        self.assertEqual("chassis-topbar-v1", pro_s.layout_id)
+        self.assertEqual("chassis-dualbar-v1", pro_s.layout_id)
         self.assertEqual("candidate", pro_s.qualification["status"])
         with self.assertRaisesRegex(
             packs.PackError, "does not match registered layout"
@@ -303,7 +303,7 @@ class DevicePackTests(unittest.TestCase):
             [
                 {
                     "device_slug": "trimui-smart-pro-s",
-                    "layout_id": "chassis-topbar-v1",
+                    "layout_id": "chassis-dualbar-v1",
                     "layout_status": "candidate",
                     "holder_status": "physically_qualified",
                 }
@@ -311,23 +311,22 @@ class DevicePackTests(unittest.TestCase):
             candidate["include"],
         )
 
-    def test_topbar_full_mode_replaces_only_legacy_core_01_to_03(
+    def test_dualbar_full_mode_replaces_only_legacy_core_01_to_03(
         self,
     ) -> None:
         plan = packs.build_plan(
             self.root,
             self.profile,
-            self.topbar_layout,
+            self.dualbar_layout,
             "trimui-smart-pro-s",
             "full",
         )
         ids = {item.artifact_id for item in plan}
-        self.assertEqual(12, len(plan))
+        self.assertEqual(11, len(plan))
         self.assertTrue(
             {
-                "chassis_topbar_01_ironed_interfaces",
-                "chassis_topbar_02_upper_hangers",
-                "chassis_topbar_03_lower_backstays",
+                "chassis_dualbar_01_ironed_interfaces",
+                "chassis_dualbar_02_fixture_links",
             }
             <= ids
         )
@@ -351,7 +350,7 @@ class DevicePackTests(unittest.TestCase):
         for item in plan:
             if item.source.name == "pocketforge-node-chassis.scad":
                 self.assertEqual(
-                    "topbar_v1", item.parameters["CHASSIS_VARIANT"]
+                    "dualbar_v1", item.parameters["CHASSIS_VARIANT"]
                 )
 
     def test_device_slug_selects_exact_wrapper_and_label(self) -> None:
@@ -365,7 +364,7 @@ class DevicePackTests(unittest.TestCase):
         pro_s = packs.build_plan(
             self.root,
             self.profile,
-            self.topbar_layout,
+            self.dualbar_layout,
             "trimui-smart-pro-s",
             "retrofit",
         )
@@ -618,7 +617,7 @@ class DevicePackTests(unittest.TestCase):
         ):
             packs._policy(
                 self.profile,
-                self.topbar_layout,
+                self.dualbar_layout,
                 "full",
                 clean,
                 allow_dirty=False,
@@ -626,7 +625,7 @@ class DevicePackTests(unittest.TestCase):
             )
         eligible, overrides, reasons = packs._policy(
             self.profile,
-            self.topbar_layout,
+            self.dualbar_layout,
             "full",
             clean,
             allow_dirty=False,
@@ -638,7 +637,7 @@ class DevicePackTests(unittest.TestCase):
 
         eligible, overrides, reasons = packs._policy(
             self.profile,
-            self.topbar_layout,
+            self.dualbar_layout,
             "retrofit",
             clean,
             allow_dirty=False,
