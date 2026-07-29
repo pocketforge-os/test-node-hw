@@ -6,7 +6,8 @@
  * permits only shallow contact. Unequal hook spacers compensate the stepped
  * shell so the front glass remains parallel to the camera.
  *
- * PART choices: assembly, plate, lower_hook, upper_hook, hook_set, fit_coupon.
+ * PART choices: assembly, plate, presentation_body, presentation_labels,
+ * lower_hook, upper_hook, hook_set, fit_coupon.
  * Preview geometry is background-only and cannot leak into printable exports.
  */
 
@@ -195,12 +196,16 @@ hook_set_row_spacing = 50.0;
 
 // ---- Fleet-standard labels for the 0.8 mm nozzle -------------------------
 label_height = 1.2;
-label_stroke_growth = 1.10;
+label_stroke_growth = 0.35;
+label_font = "Liberation Sans Narrow:style=Regular";
 title_box_size = [124.0, 24.0];
 title_box_centre = [plate_size.x / 2, plate_size.y - 15.0];
 title_font_size = 14.4;
+title_letter_spacing = 0.90;
 orientation_font_size = 10.5;
 label_feature_clearance = 2.4;
+carrier_body_color = [0.88, 0.88, 0.84];
+carrier_label_color = [0.02, 0.02, 0.02];
 
 top_label_center = [plate_size.x - 25.0, plate_size.y - 38.0];
 bottom_label_center = [plate_size.x / 2, 10.5];
@@ -342,7 +347,7 @@ module embossed_text(point, message, size, rotation = 0,
                 offset(delta = label_stroke_growth)
                     text(message, size = size, halign = halign,
                          valign = "center",
-                         font = "Liberation Sans:style=Bold");
+                         font = label_font);
 }
 
 module label_box(centre, size, message, font_size) {
@@ -360,7 +365,8 @@ module label_box(centre, size, message, font_size) {
                 offset(delta = label_stroke_growth)
                     text(message, size = font_size,
                          halign = "center", valign = "center",
-                         font = "Liberation Sans Narrow:style=Bold");
+                         font = label_font,
+                         spacing = title_letter_spacing);
     }
 }
 
@@ -372,37 +378,48 @@ module carrier_labels() {
                   orientation_font_size);
 }
 
+module carrier_body() {
+    difference() {
+        pf_rounded_prism(
+            [plate_size.x, plate_size.y, plate_thickness],
+            plate_corner_radius
+        );
+
+        pf_frame_tie_holes(
+            frame_tie_features, frame_tie_slot,
+            plate_thickness + 2 * epsilon
+        );
+
+        translate([rear_service_origin.x, rear_service_origin.y,
+                   -epsilon])
+            linear_extrude(height = plate_thickness + 2 * epsilon)
+                pf_rounded_rect_2d(rear_service_window,
+                                   rear_service_radius);
+
+        for (pose = clamp_poses)
+            pf_clamp_mount_cutouts(
+                pose_surface(pose), pose_angle(pose), plate_thickness,
+                hook_screw_offset, hook_key_offset, hook_adjustment,
+                m3_clearance, hook_key_size, hook_key_clearance,
+                hook_keyway_depth, epsilon
+            );
+    }
+}
+
 module carrier_plate() {
     union() {
-        difference() {
-            pf_rounded_prism(
-                [plate_size.x, plate_size.y, plate_thickness],
-                plate_corner_radius
-            );
-
-            pf_frame_tie_holes(
-                frame_tie_features, frame_tie_slot,
-                plate_thickness + 2 * epsilon
-            );
-
-            translate([rear_service_origin.x, rear_service_origin.y,
-                       -epsilon])
-                linear_extrude(height = plate_thickness + 2 * epsilon)
-                    pf_rounded_rect_2d(rear_service_window,
-                                       rear_service_radius);
-
-            for (pose = clamp_poses)
-                pf_clamp_mount_cutouts(
-                    pose_surface(pose), pose_angle(pose), plate_thickness,
-                    hook_screw_offset, hook_key_offset, hook_adjustment,
-                    m3_clearance, hook_key_size, hook_key_clearance,
-                    hook_keyway_depth, epsilon
-                );
-        }
-
+        carrier_body();
         if (SHOW_LABELS)
             carrier_labels();
     }
+}
+
+// Match the real print's white-to-black layer change without splitting the
+// fused production carrier.
+module carrier_presentation() {
+    color(carrier_body_color) carrier_body();
+    if (SHOW_LABELS)
+        color(carrier_label_color) carrier_labels();
 }
 
 module one_hook_installed(pose) {
@@ -611,7 +628,7 @@ module keep_out_preview() {
 }
 
 module assembly() {
-    carrier_plate();
+    carrier_presentation();
 
     if (SHOW_DEVICE)
         %rg353v_device_preview();
@@ -628,6 +645,10 @@ if (PART == "assembly") {
     assembly();
 } else if (PART == "plate") {
     carrier_plate();
+} else if (PART == "presentation_body") {
+    carrier_body();
+} else if (PART == "presentation_labels") {
+    carrier_labels();
 } else if (PART == "lower_hook") {
     lower_hook_printable();
 } else if (PART == "upper_hook") {
