@@ -163,12 +163,11 @@ print_face_margin = 0.10;
 
 // ---- Labels for the 0.8 mm nozzle ----------------------------------------
 label_height = 1.2;
-label_stroke_growth = 1.10;
-title_stroke_growth = 0.35;
+label_stroke_growth = 0.35;
+label_font = "Liberation Sans:style=Regular";
 title_box_size = [124.0, 24.0];
 title_box_centre = [plate_size.x / 2, plate_size.y - 15.0];
 title_font_size = 14.4;
-title_font = "Liberation Sans:style=Regular";
 orientation_font_size = 10.5;
 label_feature_clearance = 2.4;  // three 0.8 mm nozzle widths
 carrier_body_color = [0.88, 0.88, 0.84];
@@ -265,12 +264,11 @@ module embossed_text(point, message, size, rotation = 0,
                 offset(delta = label_stroke_growth)
                     text(message, size = size, halign = halign,
                          valign = "center",
-                         font = "Liberation Sans:style=Bold");
+                         font = label_font);
 }
 
-// Preserve the accepted 124 x 24 mm placard and 14.4 mm title size, but use a
-// regular-weight device name so its counters remain legible with a 0.8 mm
-// nozzle. Orientation labels stay bold because they are much shorter.
+// Preserve the accepted 124 x 24 mm placard, title size, and orientation-label
+// sizes while using the owner-approved Regular face throughout.
 module label_box(centre, size, message, font_size) {
     translate([centre.x - size.x / 2,
                centre.y - size.y / 2,
@@ -283,10 +281,10 @@ module label_box(centre, size, message, font_size) {
             }
         translate([size.x / 2, size.y / 2, 0])
             linear_extrude(height = label_height)
-                offset(delta = title_stroke_growth)
+                offset(delta = label_stroke_growth)
                     text(message, size = font_size,
                          halign = "center", valign = "center",
-                         font = title_font);
+                         font = label_font);
     }
 }
 

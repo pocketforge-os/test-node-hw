@@ -6,8 +6,9 @@ zip-tie anchors. It deliberately uses the same physically accepted J-hook,
 M3 captive-nut, and anti-rotation key mechanism as the Smart Pro family.
 The added top margin carries the same centered outlined device-name box as the
 Smart Pro carriers. Its 124 × 24 mm envelope and 14.4 mm text size stay fixed,
-while the device name uses regular-weight Liberation Sans with only 0.35 mm
-of stroke expansion so its counters remain legible with the 0.8 mm nozzle.
+while the device name and TOP/BOTTOM markings use regular-weight Liberation
+Sans with only 0.35 mm of stroke expansion so their counters remain legible
+with the 0.8 mm nozzle.
 
 The Brick is not uniformly thick. Its lower 20 mm region is 20 mm deep while
 the upper body is 12 mm deep. A single shelf height would tilt the display or
