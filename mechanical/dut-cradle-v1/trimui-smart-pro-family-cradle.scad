@@ -152,10 +152,12 @@ hook_keyway_depth = 1.2;
 hook_adjustment = 8.0;
 
 // ---- Raised labels, sized for the owner's 0.8 mm nozzle ------------------
-// The generous stroke expansion and three-layer-at-0.4-mm emboss keep letter
-// stems from disappearing when the slicer quantizes fine font geometry.
+// The owner-approved Regular face and restrained stroke expansion preserve
+// open counters with the 0.8 mm nozzle. The three-layer-at-0.4-mm emboss
+// remains unchanged.
 label_height = 1.2;
-label_stroke_growth = 0.85;
+label_stroke_growth = 0.35;
+label_font = "Liberation Sans:style=Regular";
 title_box_size = [190, 24];
 title_box_centre = [plate_size.x / 2, 176.5];
 title_font_size = 14.4;
@@ -217,7 +219,7 @@ module label_box(centre, size, message, font_size) {
                 offset(delta = label_stroke_growth)
                     text(message, size = font_size,
                          halign = "center", valign = "center",
-                         font = "Liberation Sans:style=Bold");
+                         font = label_font);
     }
 }
 
@@ -227,7 +229,7 @@ module orientation_label(point, message, halign = "center") {
             offset(delta = label_stroke_growth)
                 text(message, size = orientation_font_size,
                      halign = halign, valign = "center",
-                     font = "Liberation Sans:style=Bold");
+                     font = label_font);
 }
 
 module carrier_labels() {
