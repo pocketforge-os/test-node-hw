@@ -30,6 +30,7 @@ X55_SOURCE := powkiddy-x55-cradle.scad
 	validate-x55-curved-profile-guard \
 	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
 	validate-x55-print-foot-guard validate-x55-preview-export \
+	validate-x55-presentation-split \
 	preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
@@ -96,6 +97,12 @@ $(BUILD)/powkiddy-x55-carrier.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
 		-D 'SHOW_DEVICE=false' -D 'SHOW_HOOKS=false' $<
 
+$(BUILD)/powkiddy-x55-carrier-body.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_body"' $<
+
+$(BUILD)/powkiddy-x55-labels.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
+
 $(BUILD)/powkiddy-x55-bottom-hook.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="bottom_hook"' $<
 
@@ -136,6 +143,10 @@ $(CHECKS)/smart-pro-unlabelled.stl: $(SMART_PRO_SOURCE) $(FAMILY_SOURCE) $(LIBRA
 		-D 'SHOW_LABELS=false' $<
 
 $(CHECKS)/rg353v-unlabelled.stl: $(RG353V_SOURCE) $(LIBRARY) | $(CHECKS)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
+		-D 'SHOW_LABELS=false' $<
+
+$(CHECKS)/x55-unlabelled.stl: $(X55_SOURCE) $(LIBRARY) | $(CHECKS)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
 		-D 'SHOW_LABELS=false' $<
 
@@ -483,6 +494,17 @@ validate-x55-preview-export: $(BUILD)/powkiddy-x55-carrier.stl \
 		$(CHECKS)/x55-assembly-export.stl
 	@echo 'x55_preview_export_guard=pass ghosts=excluded'
 
+validate-x55-presentation-split: \
+	$(BUILD)/powkiddy-x55-carrier-body.stl \
+	$(BUILD)/powkiddy-x55-labels.stl \
+	$(CHECKS)/x55-unlabelled.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--equivalent-to $(CHECKS)/x55-unlabelled.stl \
+		$(BUILD)/powkiddy-x55-carrier-body.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 247 --max-y 175 --max-z 4.4 \
+		$(BUILD)/powkiddy-x55-labels.stl
+	@echo 'x55_presentation_split_guard=pass body=off-white labels=black boundary_z=3.2mm'
+
 validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-rg353v-flat-datum-guard \
@@ -497,7 +519,8 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-x55-owner-profile-guard validate-x55-rear-gap-guard \
 	validate-x55-curved-profile-guard \
 	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
-	validate-x55-print-foot-guard validate-x55-preview-export
+	validate-x55-print-foot-guard validate-x55-preview-export \
+	validate-x55-presentation-split
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
