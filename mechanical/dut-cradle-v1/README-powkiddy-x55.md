@@ -5,6 +5,9 @@ with the PocketForge fleet's top title and eight 4040-frame zip-tie anchors.
 It reuses the keyed M3 captive-nut hook mechanism while giving the X55 a traced
 XY outline, a nonuniform photo-derived rear shell, three edge-specific hook
 profiles, and explicit safe bands for the crowded top and bottom edges.
+Its device name and TOP/BOTTOM labels use Regular Narrow lettering with only
+0.35 mm of stroke expansion for legibility from a 0.8 mm nozzle; their
+established sizes, boxes, positions, and 1.2 mm relief are unchanged.
 
 The owner trace, not the marketing box, governs retention. The front shell is
 210 mm wide at its grips, 200 mm immediately below the shoulder keys, and
@@ -116,9 +119,12 @@ make build/powkiddy-x55-fit-coupon.stl
 | `powkiddy-x55-fit-coupon.stl` | Print first; production bottom spacing and two hooks |
 
 The source `PART` selector accepts `assembly`, `device_preview`, `plate`,
-`bottom_hook`, `top_hook`, `side_hook`, `hook_set`, and `fit_coupon`.
-`device_preview` isolates the curved reference shell for inspection; it remains
-OpenSCAD background geometry and cannot enter an STL.
+`presentation_body`, `presentation_labels`, `bottom_hook`, `top_hook`,
+`side_hook`, `hook_set`, and `fit_coupon`. Print the fused `plate`;
+`presentation_body` and `presentation_labels` exist only to validate the
+off-white/black assembly preview. `device_preview` isolates the curved
+reference shell for inspection; it remains OpenSCAD background geometry and
+cannot enter an STL.
 
 ## Coupon, hardware, and assembly
 
@@ -142,6 +148,8 @@ finger behind the DUT remain unobstructed before frame installation.
 
 - PETG preferred; no supports.
 - Carrier flat with labels upward.
+- Use off-white for the 3.2 mm carrier, then change to black for the raised
+  labels; the OpenSCAD assembly preview shows this intended layer change.
 - Hooks are exported on the same broad structural spine validated for the
   earlier fleet profiles; do not auto-orient them upright.
 - Start at 0.30–0.40 mm layers for the 0.8 mm nozzle, 4 perimeters, 5 top and
