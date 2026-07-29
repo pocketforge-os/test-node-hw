@@ -4,6 +4,10 @@ This profile centers the portrait **Anbernic RG353V** on a 180 × 205 mm
 carrier with the PocketForge fleet's standard top title and eight 4040-frame
 zip-tie anchors. It reuses the parametric M3 captive-nut/keyed hook mechanism
 while introducing grip-aware lower contacts and a curved-bottom fit coupon.
+The device name and TOP/BOTTOM markings retain their established dimensions
+but use Regular-weight Liberation Sans Narrow with 0.35 mm stroke expansion
+and 90% letter spacing for legibility and placard padding with the lab's
+0.8 mm nozzle.
 
 The carrier deliberately keeps the device front on one plane while reproducing
 the owner-measured shell step: 21.63 mm at the bottom contacts and 13.33 mm at
@@ -108,8 +112,10 @@ make build/anbernic-rg353v-fit-coupon.stl
 | `anbernic-rg353v-hook-set.stl` | Optional arranged set of all six hooks |
 | `anbernic-rg353v-fit-coupon.stl` | Print first: exact 21.25 mm bottom-mount spacing plus two lower hooks |
 
-The source `PART` selector accepts `assembly`, `plate`, `lower_hook`,
-`upper_hook`, `hook_set`, and `fit_coupon`.
+The source `PART` selector accepts `assembly`, `plate`, `presentation_body`,
+`presentation_labels`, `lower_hook`, `upper_hook`, `hook_set`, and
+`fit_coupon`. The presentation parts reproduce the material split for renders;
+print the fused `plate` export.
 
 ## Coupon, hardware, and assembly
 
@@ -135,6 +141,9 @@ microSD slots and bottom USB-C—remains usable.
 
 - PETG preferred; no supports.
 - Carrier flat with labels upward.
+- Print the carrier body in white, then change to black at 3.2 mm, where the
+  raised title, border, and TOP/BOTTOM markings begin. The OpenSCAD assembly
+  uses the same off-white/black split.
 - Hooks are already exported on their broad structural spine; do not
   auto-orient them upright.
 - Start at 0.30–0.40 mm layers for the 0.8 mm nozzle, 4 perimeters, 5 top and

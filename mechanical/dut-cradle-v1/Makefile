@@ -25,6 +25,7 @@ X55_SOURCE := powkiddy-x55-cradle.scad
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
+	validate-rg353v-presentation-split \
 	validate-x55-owner-profile-guard validate-x55-rear-gap-guard \
 	validate-x55-curved-profile-guard \
 	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
@@ -72,6 +73,12 @@ $(BUILD)/fit-coupon.stl: $(FAMILY_SOURCE) $(LIBRARY) | $(BUILD)
 $(BUILD)/anbernic-rg353v-carrier.stl: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
 		-D 'SHOW_DEVICE=false' -D 'SHOW_HOOKS=false' $<
+
+$(BUILD)/anbernic-rg353v-carrier-body.stl: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_body"' $<
+
+$(BUILD)/anbernic-rg353v-labels.stl: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
 $(BUILD)/anbernic-rg353v-lower-hook.stl: $(RG353V_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="lower_hook"' $<
@@ -125,6 +132,10 @@ $(CHECKS)/smart-pro-s-unlabelled.stl: $(SMART_PRO_S_SOURCE) $(FAMILY_SOURCE) $(L
 		-D 'SHOW_LABELS=false' $<
 
 $(CHECKS)/smart-pro-unlabelled.stl: $(SMART_PRO_SOURCE) $(FAMILY_SOURCE) $(LIBRARY) | $(CHECKS)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
+		-D 'SHOW_LABELS=false' $<
+
+$(CHECKS)/rg353v-unlabelled.stl: $(RG353V_SOURCE) $(LIBRARY) | $(CHECKS)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
 		-D 'SHOW_LABELS=false' $<
 
@@ -384,6 +395,17 @@ validate-rg353v-preview-export: $(BUILD)/anbernic-rg353v-carrier.stl \
 		$(CHECKS)/rg353v-assembly-export.stl
 	@echo 'rg353v_preview_export_guard=pass ghosts=excluded'
 
+validate-rg353v-presentation-split: \
+	$(BUILD)/anbernic-rg353v-carrier-body.stl \
+	$(BUILD)/anbernic-rg353v-labels.stl \
+	$(CHECKS)/rg353v-unlabelled.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--equivalent-to $(CHECKS)/rg353v-unlabelled.stl \
+		$(BUILD)/anbernic-rg353v-carrier-body.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 180 --max-y 205 --max-z 4.4 \
+		$(BUILD)/anbernic-rg353v-labels.stl
+	@echo 'rg353v_presentation_split_guard=pass body=off-white labels=black boundary_z=3.2mm'
+
 validate-x55-owner-profile-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-x55-owner-profile.log; \
 		mesh=$(BUILD)/invalid-x55-owner-profile.stl; \
@@ -471,6 +493,7 @@ validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-rg353v-trigger-guard validate-rg353v-curve-guard \
 	validate-rg353v-bottom-port-guard \
 	validate-rg353v-print-foot-guard validate-rg353v-preview-export \
+	validate-rg353v-presentation-split \
 	validate-x55-owner-profile-guard validate-x55-rear-gap-guard \
 	validate-x55-curved-profile-guard \
 	validate-x55-top-safe-guard validate-x55-card-keepout-guard \
