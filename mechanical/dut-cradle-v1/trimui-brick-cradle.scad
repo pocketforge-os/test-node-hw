@@ -5,7 +5,8 @@
  * The Brick has a stepped rear shell.  Per-hook rear shelves compensate for
  * that step so the front glass remains parallel to the carrier and camera.
  *
- * PART choices: assembly, plate, lower_hook, upper_hook, hook_set, fit_coupon.
+ * PART choices: assembly, plate, presentation_body, presentation_labels,
+ * lower_hook, upper_hook, hook_set, fit_coupon.
  * Preview geometry is background-only and cannot leak into printable exports.
  */
 
@@ -163,11 +164,15 @@ print_face_margin = 0.10;
 // ---- Labels for the 0.8 mm nozzle ----------------------------------------
 label_height = 1.2;
 label_stroke_growth = 1.10;
+title_stroke_growth = 0.35;
 title_box_size = [124.0, 24.0];
 title_box_centre = [plate_size.x / 2, plate_size.y - 15.0];
 title_font_size = 14.4;
+title_font = "Liberation Sans:style=Regular";
 orientation_font_size = 10.5;
 label_feature_clearance = 2.4;  // three 0.8 mm nozzle widths
+carrier_body_color = [0.88, 0.88, 0.84];
+carrier_label_color = [0.02, 0.02, 0.02];
 
 top_label_center = [plate_size.x - 25.0, plate_size.y - 36.0];
 bottom_label_center = [plate_size.x / 2, 11.5];
@@ -263,8 +268,9 @@ module embossed_text(point, message, size, rotation = 0,
                          font = "Liberation Sans:style=Bold");
 }
 
-// Match the accepted Smart Pro title treatment: a raised outlined box with a
-// centered bold device name, all sized for the owner's 0.8 mm nozzle.
+// Preserve the accepted 124 x 24 mm placard and 14.4 mm title size, but use a
+// regular-weight device name so its counters remain legible with a 0.8 mm
+// nozzle. Orientation labels stay bold because they are much shorter.
 module label_box(centre, size, message, font_size) {
     translate([centre.x - size.x / 2,
                centre.y - size.y / 2,
@@ -277,10 +283,10 @@ module label_box(centre, size, message, font_size) {
             }
         translate([size.x / 2, size.y / 2, 0])
             linear_extrude(height = label_height)
-                offset(delta = label_stroke_growth)
+                offset(delta = title_stroke_growth)
                     text(message, size = font_size,
                          halign = "center", valign = "center",
-                         font = "Liberation Sans:style=Bold");
+                         font = title_font);
     }
 }
 
@@ -292,37 +298,49 @@ module carrier_labels() {
                   orientation_font_size);
 }
 
+module carrier_body() {
+    difference() {
+        pf_rounded_prism(
+            [plate_size.x, plate_size.y, plate_thickness],
+            plate_corner_radius
+        );
+
+        pf_frame_tie_holes(
+            frame_tie_features, frame_tie_slot,
+            plate_thickness + 2 * epsilon
+        );
+
+        translate([rear_service_origin.x, rear_service_origin.y,
+                   -epsilon])
+            linear_extrude(height = plate_thickness + 2 * epsilon)
+                pf_rounded_rect_2d(rear_service_window,
+                                   rear_service_radius);
+
+        for (pose = clamp_poses)
+            pf_clamp_mount_cutouts(
+                pose_surface(pose), pose_angle(pose), plate_thickness,
+                hook_screw_offset, hook_key_offset, hook_adjustment,
+                m3_clearance, hook_key_size, hook_key_clearance,
+                hook_keyway_depth, epsilon
+            );
+    }
+}
+
 module carrier_plate() {
     union() {
-        difference() {
-            pf_rounded_prism(
-                [plate_size.x, plate_size.y, plate_thickness],
-                plate_corner_radius
-            );
-
-            pf_frame_tie_holes(
-                frame_tie_features, frame_tie_slot,
-                plate_thickness + 2 * epsilon
-            );
-
-            translate([rear_service_origin.x, rear_service_origin.y,
-                       -epsilon])
-                linear_extrude(height = plate_thickness + 2 * epsilon)
-                    pf_rounded_rect_2d(rear_service_window,
-                                       rear_service_radius);
-
-            for (pose = clamp_poses)
-                pf_clamp_mount_cutouts(
-                    pose_surface(pose), pose_angle(pose), plate_thickness,
-                    hook_screw_offset, hook_key_offset, hook_adjustment,
-                    m3_clearance, hook_key_size, hook_key_clearance,
-                    hook_keyway_depth, epsilon
-                );
-        }
-
+        carrier_body();
         if (SHOW_LABELS)
             carrier_labels();
     }
+}
+
+// The physical carrier changes from white to black exactly where its raised
+// geometry begins. Keep that split presentation-only: PART="plate" remains
+// one fused printable mesh.
+module carrier_presentation() {
+    color(carrier_body_color) carrier_body();
+    if (SHOW_LABELS)
+        color(carrier_label_color) carrier_labels();
 }
 
 module one_hook_installed(pose) {
@@ -481,7 +499,7 @@ module keep_out_preview() {
 }
 
 module assembly() {
-    carrier_plate();
+    carrier_presentation();
 
     if (SHOW_DEVICE)
         %brick_device_preview();
@@ -498,6 +516,10 @@ if (PART == "assembly") {
     assembly();
 } else if (PART == "plate") {
     carrier_plate();
+} else if (PART == "presentation_body") {
+    carrier_body();
+} else if (PART == "presentation_labels") {
+    carrier_labels();
 } else if (PART == "lower_hook") {
     lower_hook_printable();
 } else if (PART == "upper_hook") {

@@ -19,7 +19,7 @@ BRICK_SOURCE := trimui-brick-cradle.scad
 	validate-preview-export validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
 	validate-brick-label-clearance-guard validate-brick-print-foot-guard \
-	validate-brick-preview-export \
+	validate-brick-preview-export validate-brick-presentation-split \
 	preview clean
 
 all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
@@ -58,6 +58,14 @@ $(BUILD)/trimui-brick-carrier.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
 		-D 'SHOW_DEVICE=false' -D 'SHOW_HOOKS=false' $<
 
+# Presentation-only material split at the 3.2 mm filament-change layer.
+# Neither mesh replaces the fused production carrier above.
+$(BUILD)/trimui-brick-carrier-body.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_body"' $<
+
+$(BUILD)/trimui-brick-labels.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
+
 $(BUILD)/trimui-brick-lower-hook.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="lower_hook"' $<
 
@@ -87,6 +95,10 @@ $(CHECKS)/smart-pro-s-unlabelled.stl: $(SMART_PRO_S_SOURCE) $(FAMILY_SOURCE) $(L
 		-D 'SHOW_LABELS=false' $<
 
 $(CHECKS)/smart-pro-unlabelled.stl: $(SMART_PRO_SOURCE) $(FAMILY_SOURCE) $(LIBRARY) | $(CHECKS)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
+		-D 'SHOW_LABELS=false' $<
+
+$(CHECKS)/brick-unlabelled.stl: $(BRICK_SOURCE) $(LIBRARY) | $(CHECKS)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
 		-D 'SHOW_LABELS=false' $<
 
@@ -249,12 +261,21 @@ validate-brick-preview-export: $(BUILD)/trimui-brick-carrier.stl \
 		$(CHECKS)/brick-assembly-export.stl
 	@echo 'brick_preview_export_guard=pass ghosts=excluded'
 
+validate-brick-presentation-split: $(BUILD)/trimui-brick-carrier-body.stl \
+	$(BUILD)/trimui-brick-labels.stl $(CHECKS)/brick-unlabelled.stl
+	$(PYTHON) scripts/stl_bounds.py \
+		--equivalent-to $(CHECKS)/brick-unlabelled.stl \
+		$(BUILD)/trimui-brick-carrier-body.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 180 --max-y 205 --max-z 4.4 \
+		$(BUILD)/trimui-brick-labels.stl
+	@echo 'brick_presentation_split_guard=pass body=off-white labels=black boundary_z=3.2mm'
+
 validate: lint all validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
 	validate-brick-label-clearance-guard validate-brick-print-foot-guard \
-	validate-brick-preview-export
+	validate-brick-preview-export validate-brick-presentation-split
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-smart-pro-s-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \

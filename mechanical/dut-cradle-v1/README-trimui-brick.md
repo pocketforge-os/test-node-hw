@@ -5,8 +5,9 @@ This profile centers the portrait **TrimUI Brick (TG3040)** on a compact
 zip-tie anchors. It deliberately uses the same physically accepted J-hook,
 M3 captive-nut, and anti-rotation key mechanism as the Smart Pro family.
 The added top margin carries the same centered outlined device-name box as the
-Smart Pro carriers, using 14.4 mm bold lettering sized for the 0.8 mm nozzle.
-The 124 mm-wide box leaves generous text padding without thinning the strokes.
+Smart Pro carriers. Its 124 × 24 mm envelope and 14.4 mm text size stay fixed,
+while the device name uses regular-weight Liberation Sans with only 0.35 mm
+of stroke expansion so its counters remain legible with the 0.8 mm nozzle.
 
 The Brick is not uniformly thick. Its lower 20 mm region is 20 mm deep while
 the upper body is 12 mm deep. A single shelf height would tilt the display or
@@ -93,8 +94,10 @@ make build/trimui-brick-fit-coupon.stl
 | `trimui-brick-hook-set.stl` | Optional arranged alternative containing four lower hooks and one upper hook |
 | `trimui-brick-fit-coupon.stl` | Print first: one lower hook, one upper hook, and one carrier mount coupon |
 
-The source's `PART` selector accepts `assembly`, `plate`, `lower_hook`,
-`upper_hook`, `hook_set`, and `fit_coupon`.
+The source's `PART` selector accepts `assembly`, `plate`, `presentation_body`,
+`presentation_labels`, `lower_hook`, `upper_hook`, `hook_set`, and
+`fit_coupon`. The two presentation parts exist only to reproduce the material
+split in higher-level renders; print the fused `plate` export.
 
 ## Hardware and assembly
 
@@ -120,6 +123,9 @@ The source's `PART` selector accepts `assembly`, `plate`, `lower_hook`,
 
 - PETG preferred; no supports.
 - Carrier flat with labels upward.
+- Print the carrier body in white, then change to black at `plate_thickness`
+  (3.2 mm), where the raised title, title-box border, and TOP/BOTTOM markings
+  begin. The OpenSCAD assembly uses the same off-white/black material split.
 - Hooks are exported on their broad strong spine; do not auto-orient upright.
   Their anti-rotation nub intentionally faces upward and begins 0.1 mm above
   the bed, so no support or slicer-generated raft should be needed.
