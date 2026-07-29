@@ -153,8 +153,8 @@ hook_adjustment = 8.0;
 
 // ---- Raised labels, sized for the owner's 0.8 mm nozzle ------------------
 // The owner-approved Regular face and restrained stroke expansion preserve
-// open counters with the 0.8 mm nozzle. The three-layer-at-0.4-mm emboss
-// remains unchanged.
+// open counters with the 0.8 mm nozzle. Label boxes, type sizes, positions,
+// and the three-layer-at-0.4-mm emboss remain unchanged.
 label_height = 1.2;
 label_stroke_growth = 0.35;
 label_font = "Liberation Sans:style=Regular";
