@@ -222,6 +222,10 @@ windows if that reading is wrong—nothing in the reusable hook changes.
   layers, and 20–30% gyroid. Use the slicer's preview to verify the 1.2 mm-deep
   anti-rotation channels and 1.2 mm raised labels survive the selected layer
   height.
+- The device name and TOP/BOTTOM markings use Regular-weight Liberation Sans
+  with 0.35 mm stroke expansion. Their existing sizes and positions are
+  preserved while the lighter face keeps counters readable with the 0.8 mm
+  nozzle.
 - Print the carrier body in white, then change to black at `plate_thickness`
   (3.2 mm), where the raised title, title-box border, and TOP/BOTTOM markings
   begin. The OpenSCAD assembly uses this same datum for its material colors.
