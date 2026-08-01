@@ -1423,9 +1423,10 @@ module fixture_mesh_at_installed_datum(mesh_path) {
             import(mesh_path, convexity = 10);
 }
 
-module fixture_plate_preview(detail = PLATE_DETAIL) {
+module fixture_plate_preview(detail = PLATE_DETAIL,
+                             plate_tint = [0.90, 0.90, 0.86]) {
     if (detail == "mesh") {
-        color([0.90, 0.90, 0.86])
+        color(plate_tint)
             fixture_mesh_at_installed_datum(fixture_presentation_mesh);
 
         // Presentation-only populated harness geometry is exported separately
@@ -1582,7 +1583,7 @@ module fixture_plate_preview(detail = PLATE_DETAIL) {
             fixture_mesh_at_installed_datum(
                 fixture_smays_markings_presentation_mesh);
     } else {
-        color([0.90, 0.90, 0.86])
+        color(plate_tint)
             translate([fixture_origin.x,
                        fixture_origin.y - fixture_plate_size.z,
                        fixture_origin.z])
@@ -1635,12 +1636,14 @@ module installed_fixture_plate_spacer(point) {
             cube([spacer_size.x, plate_spacer_thickness, spacer_size.y]);
 }
 
-module installed_dualbar_fixture_link(x, upper = false) {
+module installed_dualbar_fixture_link(
+    x, upper = false, tint = [0.95, 0.53, 0.12]
+) {
     bar_z = upper ? fixture_bar_z.y : fixture_bar_z.x;
     plate_z = upper ? fixture_crossbar_z.y : fixture_crossbar_z.x;
     center_z = (bar_z + plate_z) / 2;
 
-    color([0.95, 0.53, 0.12])
+    color(tint)
         multmatrix(upper ? [
             [1, 0, 0, x],
             [0, 0, 1, fixture_plane_y],
@@ -1654,18 +1657,20 @@ module installed_dualbar_fixture_link(x, upper = false) {
         ]) dualbar_fixture_link();
 }
 
-module dualbar_fixture_mount_previews() {
+module dualbar_fixture_mount_previews(tint = [0.95, 0.53, 0.12]) {
     for (x = fixture_mount_x)
         for (upper = [false, true])
-            installed_dualbar_fixture_link(x, upper);
+            installed_dualbar_fixture_link(x, upper, tint);
 }
 
-module installed_rear_carrier_link(x, plate_z, rail_z) {
+module installed_rear_carrier_link(
+    x, plate_z, rail_z, tint = [0.95, 0.53, 0.12]
+) {
     span = abs(rail_z - plate_z);
     center_z = (rail_z + plate_z) / 2;
     rail_above = rail_z > plate_z;
 
-    color([0.95, 0.53, 0.12])
+    color(tint)
         multmatrix(rail_above ? [
             [1, 0, 0, x],
             [0, 0, 1, cradle_plane_y],
@@ -3951,6 +3956,203 @@ module guide_uprights(tint = guide_new_tint) {
                 extrusion(gantry_upright_segment_length, "z", tint);
 }
 
+// ---- Ordered Smart Pro S dual-bar assembly walkthrough -----------------
+// These scenes are the source of truth for the handbook's one-action-per-page
+// guide. They compose production modules and presentation meshes; none redraws
+// printable or structural geometry.
+
+module guide_dualbar_assembly_01_channel_bar() {
+    guide_preload_channel_bar();
+}
+
+module guide_dualbar_assembly_02_width_rails() {
+    guide_preload_width_rails();
+}
+
+module guide_dualbar_assembly_03_depth_rails() {
+    guide_preload_depth_rails();
+}
+
+module guide_dualbar_assembly_04_fixture_bars() {
+    guide_dualbar_preload();
+}
+
+module guide_dualbar_one_fixture_bar(z, tint = guide_complete_tint) {
+    translate([profile_size, fixture_bar_y, z])
+        extrusion(fixture_bar_length, "x", tint);
+    for (right = [false, true])
+        fixture_dualbar_connector_proxy(z, right);
+}
+
+module guide_dualbar_ring_labels(z, suffix = "") {
+    guide_label(str("WIDTH-O", suffix),
+                [frame_outer.x / 2, profile_size / 2, z], 10.0);
+    guide_label(str("WIDTH-D", suffix), [frame_outer.x / 2,
+                                          frame_outer.y - profile_size / 2,
+                                          z], 10.0);
+    guide_label(str("DEPTH-L", suffix),
+                [profile_size / 2, frame_outer.y / 2, z], 9.0,
+                [0, 0, 90]);
+    guide_label(str("DEPTH-R", suffix),
+                [frame_outer.x - profile_size / 2,
+                 frame_outer.y / 2, z], 9.0, [0, 0, -90]);
+    guide_label("OPERATOR", [frame_outer.x / 2, -24.0, z], 10.0,
+                [0, 0, 0], guide_spare_tint);
+    guide_label("DEVICE / WALL", [frame_outer.x / 2,
+                                   frame_outer.y + 24.0, z], 10.0,
+                [0, 0, 0], guide_spare_tint);
+}
+
+module guide_dualbar_assembly_05_lower_frame() {
+    label_z = outer_rail_z.x + profile_size / 2 + 2.0;
+    outer_frame_bottom(guide_new_tint);
+    outer_corner_connector_proxies([false]);
+    guide_dualbar_ring_labels(label_z, "-L");
+}
+
+module guide_dualbar_assembly_06_lower_fixture_bar() {
+    cue_z = outer_rail_z.x + profile_size / 2 + 8.0;
+    outer_frame_bottom(guide_complete_tint);
+    outer_corner_connector_proxies([false]);
+    guide_dualbar_one_fixture_bar(fixture_bar_z.x, guide_new_tint);
+    guide_axis_arrow([frame_outer.x / 2, 0, cue_z], "y", 1,
+                     fixture_bar_y);
+    guide_label("75 mm", [frame_outer.x / 2 - 28.0,
+                           fixture_bar_y / 2, cue_z + 1.0], 9.0,
+                [0, 0, 90], guide_spare_tint);
+    guide_label("OPERATOR PLANE", [frame_outer.x / 2, -24.0,
+                                    cue_z], 9.0, [0, 0, 0],
+                guide_spare_tint);
+}
+
+module guide_dualbar_assembly_07_posts() {
+    outer_frame_bottom(guide_complete_tint);
+    outer_frame_posts(guide_new_tint);
+    outer_corner_connector_proxies([false]);
+    guide_dualbar_one_fixture_bar(fixture_bar_z.x,
+                                  guide_complete_tint);
+}
+
+module guide_dualbar_assembly_08_upper_ring() {
+    bench_shift = fixture_bar_z.x - fixture_bar_z.y;
+    label_z = outer_rail_z.y + profile_size / 2 + 2.0;
+    translate([0, 0, bench_shift]) {
+        outer_frame_top(guide_new_tint);
+        outer_corner_connector_proxies([true]);
+        guide_dualbar_ring_labels(label_z, "-U");
+    }
+}
+
+module guide_dualbar_assembly_09_upper_fixture_bar() {
+    bench_shift = fixture_bar_z.x - fixture_bar_z.y;
+    cue_z = outer_rail_z.y + profile_size / 2 + 8.0;
+    translate([0, 0, bench_shift]) {
+        outer_frame_top(guide_complete_tint);
+        outer_corner_connector_proxies([true]);
+        guide_dualbar_one_fixture_bar(fixture_bar_z.y, guide_new_tint);
+        guide_axis_arrow([frame_outer.x / 2, 0, cue_z], "y", 1,
+                         fixture_bar_y);
+        guide_label("75 mm", [frame_outer.x / 2 - 28.0,
+                               fixture_bar_y / 2, cue_z + 1.0], 9.0,
+                    [0, 0, 90], guide_spare_tint);
+        guide_label("OPERATOR PLANE", [frame_outer.x / 2, -24.0,
+                                        cue_z], 9.0, [0, 0, 0],
+                    guide_spare_tint);
+    }
+}
+
+module guide_dualbar_assembly_10_close_frame() {
+    lift = 60.0;
+    outer_frame_bottom(guide_complete_tint);
+    outer_frame_posts(guide_complete_tint);
+    outer_corner_connector_proxies([false]);
+    guide_dualbar_one_fixture_bar(fixture_bar_z.x,
+                                  guide_complete_tint);
+
+    translate([0, 0, lift]) {
+        outer_frame_top(guide_new_tint);
+        outer_corner_connector_proxies([true]);
+        guide_dualbar_one_fixture_bar(fixture_bar_z.y, guide_new_tint);
+    }
+
+    for (x = [frame_outer.x * 0.30, frame_outer.x * 0.70])
+        guide_axis_arrow([x, -16.0,
+                          frame_outer.z + lift + 22.0],
+                         "z", -1, lift + 16.0);
+}
+
+module guide_dualbar_assembly_11_square_frame() {
+    bench_shift = fixture_bar_z.x - fixture_bar_z.y;
+    cue_z = frame_outer.z + 3.0;
+    inset = profile_size / 2;
+    translate([0, 0, bench_shift]) {
+        outer_frame_top(guide_complete_tint);
+        outer_corner_connector_proxies([true]);
+        guide_dualbar_one_fixture_bar(fixture_bar_z.y,
+                                      guide_complete_tint);
+        guide_segment([inset, inset, cue_z],
+                      [frame_outer.x - inset,
+                       frame_outer.y - inset, cue_z], 3.2);
+        guide_segment([frame_outer.x - inset, inset, cue_z],
+                      [inset, frame_outer.y - inset, cue_z], 3.2,
+                      guide_new_tint);
+        guide_label("A", [frame_outer.x * 0.30,
+                           frame_outer.y * 0.30, cue_z + 1.0], 13.0,
+                    [0, 0, 0], guide_spare_tint);
+        guide_label("B", [frame_outer.x * 0.70,
+                           frame_outer.y * 0.30, cue_z + 1.0], 13.0,
+                    [0, 0, 0], guide_new_tint);
+        guide_label("A AND B WITHIN 2 mm",
+                    [frame_outer.x / 2, frame_outer.y / 2,
+                     cue_z + 1.0], 11.0);
+    }
+}
+
+module guide_dualbar_carrier(tint = guide_complete_tint,
+                             hook_tint = [0.28, 0.29, 0.31]) {
+    color(tint)
+        cradle_mesh_at_installed_datum(cradle_body_presentation_mesh);
+    color([0.05, 0.05, 0.05])
+        cradle_mesh_at_installed_datum(cradle_labels_presentation_mesh);
+    color(hook_tint)
+        cradle_mesh_at_installed_datum(cradle_hooks_presentation_mesh);
+    for (x = cradle_mount_x)
+        for (index = [0, 1])
+            installed_rear_carrier_link(x, cradle_mount_z[index],
+                                        outer_rail_z[index], tint);
+}
+
+module guide_dualbar_assembly_12_dut_holder() {
+    guide_layer_aluminum();
+    guide_layer_connectors();
+    guide_dualbar_carrier(guide_new_tint, guide_new_tint);
+}
+
+module guide_dualbar_assembly_13_fixture_board() {
+    guide_layer_aluminum();
+    guide_layer_connectors();
+    guide_dualbar_carrier();
+    fixture_plate_preview("mesh", guide_new_tint);
+    dualbar_fixture_mount_previews(guide_new_tint);
+    webcam_preview("mesh");
+}
+
+module guide_dualbar_assembly_14_placard() {
+    guide_detail_08_placard();
+}
+
+module guide_dualbar_assembly_15_power_strip() {
+    guide_detail_08_power_strip();
+}
+
+module guide_dualbar_assembly_16_stacking_tabs() {
+    guide_detail_08_stacking_corner();
+}
+
+module guide_dualbar_assembly_17_final() {
+    assembly("mesh");
+}
+
 module guide_step_01_splice_uprights() {
     guide_uprights();
     gantry_splice_previews();
@@ -4834,6 +5036,40 @@ if (PART == "assembly") {
     guide_dualbar_suspension_detail();
 } else if (PART == "guide_dualbar_preload") {
     guide_dualbar_preload();
+} else if (PART == "guide_dualbar_assembly_01_channel_bar") {
+    guide_dualbar_assembly_01_channel_bar();
+} else if (PART == "guide_dualbar_assembly_02_width_rails") {
+    guide_dualbar_assembly_02_width_rails();
+} else if (PART == "guide_dualbar_assembly_03_depth_rails") {
+    guide_dualbar_assembly_03_depth_rails();
+} else if (PART == "guide_dualbar_assembly_04_fixture_bars") {
+    guide_dualbar_assembly_04_fixture_bars();
+} else if (PART == "guide_dualbar_assembly_05_lower_frame") {
+    guide_dualbar_assembly_05_lower_frame();
+} else if (PART == "guide_dualbar_assembly_06_lower_fixture_bar") {
+    guide_dualbar_assembly_06_lower_fixture_bar();
+} else if (PART == "guide_dualbar_assembly_07_posts") {
+    guide_dualbar_assembly_07_posts();
+} else if (PART == "guide_dualbar_assembly_08_upper_ring") {
+    guide_dualbar_assembly_08_upper_ring();
+} else if (PART == "guide_dualbar_assembly_09_upper_fixture_bar") {
+    guide_dualbar_assembly_09_upper_fixture_bar();
+} else if (PART == "guide_dualbar_assembly_10_close_frame") {
+    guide_dualbar_assembly_10_close_frame();
+} else if (PART == "guide_dualbar_assembly_11_square_frame") {
+    guide_dualbar_assembly_11_square_frame();
+} else if (PART == "guide_dualbar_assembly_12_dut_holder") {
+    guide_dualbar_assembly_12_dut_holder();
+} else if (PART == "guide_dualbar_assembly_13_fixture_board") {
+    guide_dualbar_assembly_13_fixture_board();
+} else if (PART == "guide_dualbar_assembly_14_placard") {
+    guide_dualbar_assembly_14_placard();
+} else if (PART == "guide_dualbar_assembly_15_power_strip") {
+    guide_dualbar_assembly_15_power_strip();
+} else if (PART == "guide_dualbar_assembly_16_stacking_tabs") {
+    guide_dualbar_assembly_16_stacking_tabs();
+} else if (PART == "guide_dualbar_assembly_17_final") {
+    guide_dualbar_assembly_17_final();
 } else if (PART == "production_batch_04_frame_hardware") {
     production_batch_04_frame_hardware();
 } else if (PART == "production_batch_05_placard_holder") {

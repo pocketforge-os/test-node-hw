@@ -329,6 +329,28 @@ GUIDE_STEPS := \
 	$(GUIDE_BUILD)/detail-08-power-strip.png \
 	$(GUIDE_BUILD)/detail-08-stacking-corner.png
 
+# Ordered, current-design stills for the novice assembly walkthrough. Keep
+# these names stable: the handbook publishes one route per image and verifies
+# the sequence byte-for-byte.
+GUIDE_DUALBAR_ASSEMBLY_STEPS := \
+	$(GUIDE_BUILD)/assembly-01-channel-bar.png \
+	$(GUIDE_BUILD)/assembly-02-width-rails.png \
+	$(GUIDE_BUILD)/assembly-03-depth-rails.png \
+	$(GUIDE_BUILD)/assembly-04-fixture-bars.png \
+	$(GUIDE_BUILD)/assembly-05-lower-frame.png \
+	$(GUIDE_BUILD)/assembly-06-lower-fixture-bar.png \
+	$(GUIDE_BUILD)/assembly-07-posts.png \
+	$(GUIDE_BUILD)/assembly-08-upper-ring.png \
+	$(GUIDE_BUILD)/assembly-09-upper-fixture-bar.png \
+	$(GUIDE_BUILD)/assembly-10-close-frame.png \
+	$(GUIDE_BUILD)/assembly-11-square-frame.png \
+	$(GUIDE_BUILD)/assembly-12-dut-holder.png \
+	$(GUIDE_BUILD)/assembly-13-fixture-board.png \
+	$(GUIDE_BUILD)/assembly-14-placard.png \
+	$(GUIDE_BUILD)/assembly-15-power-strip.png \
+	$(GUIDE_BUILD)/assembly-16-stacking-tabs.png \
+	$(GUIDE_BUILD)/assembly-17-final.png
+
 GUIDE_BATCH_PREVIEWS := \
 	$(GUIDE_BUILD)/batch-00-calibration.png \
 	$(GUIDE_BUILD)/batch-01-ironed-interfaces.png \
@@ -432,6 +454,7 @@ GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
 # prerequisite production/device exports.
 $(GUIDE_LAYERS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
 $(GUIDE_BUILD)/hero.png: private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
+$(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
 
 .NOTPARALLEL:
 
@@ -439,7 +462,8 @@ $(GUIDE_BUILD)/hero.png: private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
-	guide-static guide-batch-models guide-layers guide-model handbook-assets \
+	guide-static guide-dualbar-assembly-steps guide-batch-models \
+	guide-layers guide-model handbook-assets \
 	cutlist refresh-cut-list dualbar-cutlist refresh-dualbar-cut-list \
 	validate-cut-list-sync validate-dualbar-cut-list-sync \
 	validate validate-right-angle-checker validate-margin-guard \
@@ -1148,6 +1172,89 @@ $(GUIDE_BUILD)/step-08-complete.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $(GUIDE_IMAGE) \
 		-D 'PART="guide_step_08_complete"' $<
 
+$(GUIDE_BUILD)/assembly-01-channel-bar.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,820 \
+		--projection=ortho --camera=-70,-40,48,33,0,10 \
+		-D 'PART="guide_dualbar_assembly_01_channel_bar"' $<
+
+$(GUIDE_BUILD)/assembly-02-width-rails.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,700 \
+		--projection=ortho --camera=352,20,850,352,20,0 \
+		-D 'PART="guide_dualbar_assembly_02_width_rails"' $<
+
+$(GUIDE_BUILD)/assembly-03-depth-rails.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,1200 \
+		--projection=ortho --viewall --camera=185,175,1000,185,175,0 \
+		-D 'PART="guide_dualbar_assembly_03_depth_rails"' $<
+
+$(GUIDE_BUILD)/assembly-04-fixture-bars.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,800 \
+		--projection=ortho --autocenter --viewall \
+		--camera=153,0,520,153,0,0 \
+		-D 'PART="guide_dualbar_assembly_04_fixture_bars"' $<
+
+$(GUIDE_BUILD)/assembly-05-lower-frame.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1100 \
+		--projection=ortho --viewall --camera=173,179,740,173,179,0 \
+		-D 'PART="guide_dualbar_assembly_05_lower_frame"' $<
+
+$(GUIDE_BUILD)/assembly-06-lower-fixture-bar.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1100 \
+		--projection=ortho --viewall --camera=173,179,740,173,179,0 \
+		-D 'PART="guide_dualbar_assembly_06_lower_fixture_bar"' $<
+
+$(GUIDE_BUILD)/assembly-07-posts.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $(GUIDE_IMAGE) \
+		-D 'PART="guide_dualbar_assembly_07_posts"' $<
+
+$(GUIDE_BUILD)/assembly-08-upper-ring.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1100 \
+		--projection=ortho --viewall --camera=173,179,740,173,179,0 \
+		-D 'PART="guide_dualbar_assembly_08_upper_ring"' $<
+
+$(GUIDE_BUILD)/assembly-09-upper-fixture-bar.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1100 \
+		--projection=ortho --viewall --camera=173,179,740,173,179,0 \
+		-D 'PART="guide_dualbar_assembly_09_upper_fixture_bar"' $<
+
+$(GUIDE_BUILD)/assembly-10-close-frame.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $(GUIDE_IMAGE) \
+		-D 'PART="guide_dualbar_assembly_10_close_frame"' $<
+
+$(GUIDE_BUILD)/assembly-11-square-frame.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1100 \
+		--projection=ortho --viewall --camera=173,179,740,173,179,0 \
+		-D 'PART="guide_dualbar_assembly_11_square_frame"' $<
+
+$(GUIDE_BUILD)/assembly-12-dut-holder.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $(GUIDE_IMAGE) \
+		-D 'PART="guide_dualbar_assembly_12_dut_holder"' $<
+
+$(GUIDE_BUILD)/assembly-13-fixture-board.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $(GUIDE_IMAGE) \
+		-D 'PART="guide_dualbar_assembly_13_fixture_board"' $<
+
+$(GUIDE_BUILD)/assembly-14-placard.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,800 \
+		--projection=ortho --viewall --camera=520,-450,470,173,0,330 \
+		-D 'PART="guide_dualbar_assembly_14_placard"' $<
+
+$(GUIDE_BUILD)/assembly-15-power-strip.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
+		--projection=ortho --autocenter --viewall \
+		--camera=650,-250,300,300,220,28 \
+		-D 'PART="guide_dualbar_assembly_15_power_strip"' $<
+
+$(GUIDE_BUILD)/assembly-16-stacking-tabs.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1000 \
+		--projection=ortho --viewall --camera=-230,-240,510,20,20,370 \
+		-D 'PART="guide_dualbar_assembly_16_stacking_tabs"' $<
+
+$(GUIDE_BUILD)/assembly-17-final.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
+		--viewall $(GUIDE_CAMERA) \
+		-D 'PART="guide_dualbar_assembly_17_final"' $<
+
 $(GUIDE_BUILD)/prep-captive-nut.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,600 \
 		--projection=ortho --camera=120,-135,95,0,0,0 \
@@ -1597,7 +1704,10 @@ $(GUIDE_LAYER_BUILD)/placard-labels.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LA
 $(GUIDE_LAYER_BUILD)/camera-frustum.stl: $(SOURCE) lib/pf-2020.scad | $(GUIDE_LAYER_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="guide_layer_camera_frustum"' $<
 
-guide-static: $(GUIDE_STEPS) $(GUIDE_BATCH_PREVIEWS)
+guide-static: $(GUIDE_STEPS) $(GUIDE_DUALBAR_ASSEMBLY_STEPS) \
+	$(GUIDE_BATCH_PREVIEWS)
+
+guide-dualbar-assembly-steps: $(GUIDE_DUALBAR_ASSEMBLY_STEPS)
 
 guide-batch-models: $(GUIDE_BATCH_MODELS)
 
