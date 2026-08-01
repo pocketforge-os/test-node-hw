@@ -273,12 +273,18 @@ centres at 12 and 28 mm, then projects 32 mm above the aluminum stack
 interface. That projection spans the complete bottom rail of the chassis above
 and continues 12 mm beside its corner post.
 
-Install each tab to the lower chassis with two face-loaded M5 sets. After an
-upper chassis is fully seated aluminum-to-aluminum, its third hole aligns with
-the outward groove center of the upper chassis's bottom rail, 10 mm above the
-interface. One additional face-loaded M5 set per tab then positively locks the
-pair. The printed tabs provide lateral registration only; they never carry the
-vertical stack load.
+Install each tab to the lower chassis with two face-loaded M5 sets. In the
+current dual-bar candidate and handbook output, after an upper chassis is fully
+seated aluminum-to-aluminum, the center of its third hole sits 17 mm above the
+interface. This owner-corrected datum is 7 mm above the former position so the
+hole clears the delivered metal corner intrusion. One additional face-loaded
+M5 set per tab then positively locks the pair. The printed tabs provide lateral
+registration only; they never carry the vertical stack load.
+
+The physically qualified legacy `chassis-core-v1` print pack remains immutable
+at its accepted geometry. Generate the revised tab from the current dual-bar
+pack or the individual stacking-tab target; do not substitute a newly generated
+legacy Batch 04 for that accepted pack.
 
 ## Rail-mounted wire management
 
