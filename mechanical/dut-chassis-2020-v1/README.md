@@ -184,6 +184,54 @@ Build the optional calibration bed:
 make calibration
 ```
 
+## Printable 90-degree checker
+
+`right-angle-checker.scad` is a standalone, support-free L-square for setting
+and checking the unpowered extrusion frame. The default is **150 × 150 ×
+5 mm** with **25 mm-wide arms**. A 25 mm arm spans the full 20 mm extrusion
+face with a small handling margin on each side. At 150 mm, one degree of
+angular error opens a gap of about 2.62 mm at the leg end; half a degree is
+still about 1.31 mm, so the tool is sensitive without consuming most of the
+print bed.
+
+The concave reference corner has a 4 mm circular debris relief, and the convex
+reference corner has a 2 mm 45-degree chamfer. These deliberately leave a
+virtual intersection instead of letting a rail burr, connector fillet, or
+speck of plastic create a false reading. The remaining straight inside
+reference span is 121 mm; the straight outside span is 148 mm.
+
+Build the default STL and preview with:
+
+```sh
+make right-angle-checker
+make validate-right-angle-checker
+```
+
+Generated files are `build/right-angle-checker-150mm.stl` and
+`build/right-angle-checker-150mm.png`. Change `leg_length`, `arm_width`,
+`thickness`, `inside_corner_relief_radius`, or `outside_corner_chamfer` in the
+OpenSCAD Customizer for another size. The recessed label derives its dimension
+from `leg_length`; set `show_label=false` for a completely plain top face.
+Assertions preserve useful reference spans and enforce the configured printer
+envelope.
+
+Print it flat, label side up, at 100% scale with supports disabled. Use the
+same material/process as the chassis parts, but let the bed and part cool
+before removal so the legs stay flat. Keep brims away from the reference faces
+when practical; otherwise remove the brim and any elephant foot completely
+without rounding or selectively reshaping those faces. The broad bottom and
+the unrecessed area of the top face both remain planar, so either face can be
+used during calibration.
+
+Use the two concave inside faces around an outside extrusion corner. Use the
+two long convex outside faces to compare an inside corner. Before trusting a
+new print, perform a flip test against the same known-straight datum: take a
+reading or draw a line, reverse the checker, and repeat from the same datum.
+Agreement indicates that the printed tool is square enough for comparison. A
+gap that changes sides, or two lines that diverge, includes twice the
+checker's own angular error; inspect for warp or reprint before adjusting the
+frame. This is an assembly comparator, not a certified metrology instrument.
+
 Individual, stable replacement-part exports remain available through:
 
 ```sh
@@ -299,7 +347,10 @@ They are for the light fixture gantry only.
 
 - `pocketforge-node-chassis.scad`: assembly, production beds, replacement
   parts, guide scenes, semantic web-model layers, and assertions.
+- `right-angle-checker.scad`: standalone parametric extrusion squaring tool.
 - `lib/pf-2020.scad`: self-contained measured extrusion visualization.
+- `scripts/check_right_angle_checker.py`: exact reference-face and 90-degree
+  STL geometry check for the default and a non-default parameter set.
 - `scripts/cutlist.py`: deterministic cut-list and stock assignment.
 - `scripts/build_handbook_model.py`: semantic GLB assembly for the handbook.
 - `scripts/build_handbook_batch_model.py`: canonical-bed STL conversion plus
@@ -375,6 +426,7 @@ That command:
 
 - lints all repository OpenSCAD sources;
 - exports and bounds-checks every production and replacement STL;
+- exports and verifies the default and a non-default right-angle checker;
 - renders the assembly and guide scenes;
 - exercises routing, optical-FOV, gantry-travel, channel-bar, and cable-anchor
   negative guards;
