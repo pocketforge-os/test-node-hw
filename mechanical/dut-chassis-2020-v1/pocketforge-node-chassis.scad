@@ -487,9 +487,10 @@ dualbar_link_set_size = [
     2 * dualbar_link_length + dualbar_link_batch_gap
 ];
 
-// Ten outer-width-rail locations remain active. The four keyed fixture links
-// add two active locations per fixture bar. Four depth-rail spares and one
-// spare in each fixture bar remain parked before the rail ends close.
+// Six outer-width-rail locations remain active. Four power-strip locations
+// move to the lower operator-right depth rail, and the four keyed fixture
+// links add two active locations per fixture bar. Four depth-rail spares and
+// one spare in each fixture bar remain parked before the rail ends close.
 dualbar_m3_slide_nut_required_count = 14;
 dualbar_m3_slide_nut_spare_count = 6;
 dualbar_m3_slide_nut_set_count =
@@ -530,7 +531,7 @@ m3_slide_nut_corner_chamfer = 3.0;
 // bracket the same -0.30 mm process compensation selected by the rail coupon.
 m3_slide_nut_coupon_deep_widths = [6.26, 6.46];
 m3_slide_nut_coupon_copies = 1;
-m3_slide_nut_required_count = 22; // +4 operator power-strip block fasteners
+m3_slide_nut_required_count = 22; // includes 4 right-depth power-strip mounts
 m3_slide_nut_spare_count = 6;     // pre-load before rail ends are closed
 m3_slide_nut_set_count = m3_slide_nut_required_count +
                          m3_slide_nut_spare_count;
@@ -643,23 +644,26 @@ placard_center_z = placard_rail_mount_z -
                    2 * placard_riser_hole_offset;
 placard_riser_center_z = (placard_rail_mount_z + placard_center_z) / 2;
 
-// ---- Inboard human-side lower-cross-rail power-strip interface -----------
-// The strip lies horizontally across the INSIDE face of the lower human-side
-// width rail. Its long axis follows X, its measured 48.5 mm short axis stays
-// below the fixture board, and its preview-only enclosure depth projects +Y
-// into the service bay. This is deliberately not attached to either side post.
+// ---- Inboard operator-right lower-depth-rail power-strip interface -------
+// Viewed from the operator side, the strip runs front-to-back along the
+// INSIDE face of the lower right depth rail. Its long axis follows Y, its
+// measured 48.5 mm short axis stays below the fixture board, and its
+// preview-only enclosure depth projects -X into the chassis. The device-ward
+// bias clears the movable fixture-bar connector while keeping both blocks
+// inside the two right corner posts.
 //
 // Two independently sliding blocks avoid treating the unmeasured long-axis
 // keyhole pitch as authoritative. Each block accepts two of the strip's four
 // supplied mounting screws at the measured symmetric 27.6 mm transverse pitch.
-power_strip_body_size = [204.27, 32.0, 48.5]; // X, provisional Y depth, Z
+power_strip_length = 204.27;
+power_strip_enclosure_depth = 32.0; // preview-only side-profile depth
+power_strip_height = 48.5;
+power_strip_body_size = [power_strip_enclosure_depth,
+                         power_strip_length,
+                         power_strip_height]; // world X, Y, Z
 power_strip_body_depth_is_preview_only = true;
 power_strip_cable_keepout = [36.0, 36.0, 14.0];
 power_strip_bottom_z = 0.0;
-power_strip_inside_rail_face_y = profile_size;
-power_strip_center_x = frame_outer.x / 2;
-power_strip_left_x = power_strip_center_x - power_strip_body_size.x / 2;
-power_strip_right_x = power_strip_center_x + power_strip_body_size.x / 2;
 power_strip_keyhole_bore = 3.3;
 power_strip_keyhole_head = 5.5;
 power_strip_small_hole_diameter = 3.4;
@@ -673,14 +677,16 @@ power_strip_screw_pilot_diameter = 2.0;
 power_strip_screw_pilot_depth = 10.0;
 power_strip_screw_pilot_entry_diameter = 3.2;
 power_strip_screw_pilot_entry_depth = 1.2;
-// Local block X becomes installed world Z; local Y becomes world X. Retaining
-// the 54 x 40 x 13 mm printed envelope therefore yields a 40 mm wide,
-// 54 mm tall block on the human-side lower cross rail.
+// Local block X becomes installed world Z; local Y becomes world Y; local Z
+// points inward along world -X. Retaining the 54 x 40 x 13 mm printed
+// envelope therefore yields a 40 mm long, 54 mm tall block on the lower
+// operator-right depth rail.
 power_strip_mount_plate_size = [54.0, 40.0, 13.0];
-power_strip_mount_face_y =
-    power_strip_inside_rail_face_y + power_strip_mount_plate_size.z;
-power_strip_body_front_y =
-    power_strip_mount_face_y + power_strip_body_size.y;
+power_strip_inside_rail_face_x = frame_outer.x - profile_size;
+power_strip_mount_face_x =
+    power_strip_inside_rail_face_x - power_strip_mount_plate_size.z;
+power_strip_body_left_x =
+    power_strip_mount_face_x - power_strip_body_size.x;
 power_strip_mount_block_center_z = power_strip_mount_plate_size.x / 2;
 // The rail slot center is Z=10. The strip's transverse hole pair is centered
 // on its measured 48.5 mm body, not on the slightly taller 54 mm ABS block.
@@ -692,8 +698,25 @@ power_strip_rail_hole_pitch = 24.0;
 power_strip_rail_countersink_diameter = 6.4;
 power_strip_rail_countersink_depth = 1.8;
 power_strip_end_keyhole_inset = 12.0; // assembly-preview only; blocks slide
-power_strip_block_x = [power_strip_left_x + power_strip_end_keyhole_inset,
-                       power_strip_right_x - power_strip_end_keyhole_inset];
+// Leave enough device-side rail for the 40 mm block to stop before the corner
+// post. The resulting operator-side block also clears the Y=75 fixture joint.
+power_strip_device_y =
+    frame_outer.y - profile_size -
+    (power_strip_mount_plate_size.y / 2 - power_strip_end_keyhole_inset);
+power_strip_operator_y = power_strip_device_y - power_strip_body_size.y;
+power_strip_block_y =
+    [power_strip_operator_y + power_strip_end_keyhole_inset,
+     power_strip_device_y - power_strip_end_keyhole_inset];
+power_strip_rail_fastener_y =
+    [for (block_y = power_strip_block_y)
+         for (offset = [-power_strip_rail_hole_pitch / 2,
+                         power_strip_rail_hole_pitch / 2])
+             block_y + offset];
+power_strip_cable_left_x =
+    power_strip_body_left_x +
+    (power_strip_body_size.x - power_strip_cable_keepout.x) / 2;
+power_strip_cable_operator_y =
+    power_strip_operator_y - power_strip_cable_keepout.y;
 power_strip_pilot_coupon_diameters = [1.6, 1.8, 2.0];
 power_strip_coupon_base_thickness = 8.0;
 power_strip_pilot_coupon_depth = 6.0;
@@ -1052,16 +1075,26 @@ assert(sqrt(pow(power_strip_rail_center_offset -
            power_strip_rail_countersink_diameter / 2 +
            power_strip_screw_pilot_entry_diameter / 2 + 2.0,
        "Power-strip rail and supplied-screw holes need a 2 mm ABS web");
-assert(power_strip_left_x >= profile_size &&
-       power_strip_right_x <= frame_outer.x - profile_size,
-       "Power strip must fit between the human-side corner posts");
+assert(power_strip_inside_rail_face_x == frame_outer.x - profile_size &&
+       power_strip_mount_face_x < power_strip_inside_rail_face_x &&
+       power_strip_body_left_x >= profile_size,
+       "Power strip must stay inboard of the lower right depth rail");
+assert(power_strip_operator_y >= profile_size &&
+       power_strip_device_y <= frame_outer.y - profile_size,
+       "Power strip must fit between the operator/device corner posts");
+assert(min(power_strip_block_y) - power_strip_mount_plate_size.y / 2 >=
+           fixture_bar_y + 26.0,
+       "Right-rail power-strip blocks must clear the fixture-bar connector");
+assert(max(power_strip_block_y) + power_strip_mount_plate_size.y / 2 <=
+           frame_outer.y - profile_size,
+       "Right-rail power-strip blocks must clear the device-side corner post");
+assert(power_strip_cable_operator_y >= profile_size &&
+       power_strip_cable_left_x >= profile_size,
+       "Power-strip cable keep-out must remain inside the lower frame");
 assert(power_strip_bottom_z >= 0 &&
        power_strip_bottom_z + power_strip_body_size.z + 5.0 <=
            fixture_origin.z,
        "Lower-rail power strip needs 5 mm vertical clearance below fixture");
-assert(power_strip_inside_rail_face_y >= profile_size &&
-       power_strip_body_front_y <= frame_outer.y - profile_size,
-       "Power-strip envelope must remain inside the front/rear frame faces");
 assert(2 * len(power_strip_pilot_coupon_diameters) >= 6,
        "Small ABS power-strip fit bed needs at least six cooling objects");
 assert(ironing_coupon_count >= 6,
@@ -2035,13 +2068,13 @@ module power_strip_mount_block_pair() {
         power_strip_mount_block();
 }
 
-module installed_power_strip_bracket(bracket_x) {
-    // Local X -> world Z, local Y -> world X, local Z -> world Y. The block's
-    // two rail holes therefore follow the lower cross-rail slot in X, while
+module installed_power_strip_bracket(bracket_y) {
+    // Local X -> world Z, local Y -> world Y, local Z -> world -X. The block's
+    // two rail holes therefore follow the lower right depth-rail slot in Y, while
     // the supplied-screw pilots reproduce the strip's transverse Z spacing.
     multmatrix([
-        [0, 1, 0, bracket_x],
-        [0, 0, 1, power_strip_inside_rail_face_y],
+        [0, 0, -1, power_strip_inside_rail_face_x],
+        [0, 1, 0, bracket_y],
         [1, 0, 0, power_strip_mount_block_center_z],
         [0, 0, 0, 1]
     ]) {
@@ -2068,26 +2101,26 @@ module installed_power_strip_bracket(bracket_x) {
 }
 
 module power_strip_mounts_preview() {
-    for (bracket_x = power_strip_block_x)
-        installed_power_strip_bracket(bracket_x);
+    for (bracket_y = power_strip_block_y)
+        installed_power_strip_bracket(bracket_y);
 }
 
 module power_strip_body_preview() {
-    // The measured X/Z envelope is authoritative. Y depth remains a clearly
+    // The measured Y/Z envelope is authoritative. X depth remains a clearly
     // documented preview proxy until a side-profile measurement is needed.
-    // Its back hangs on the two lower-rail blocks at
-    // power_strip_mount_face_y; the complete proxy projects inward (+Y).
+    // Its back hangs on the two lower-right-rail blocks at
+    // power_strip_mount_face_x; the complete proxy projects inward (-X).
     color([0.91, 0.91, 0.88, 0.96])
-        translate([power_strip_left_x,
-                   power_strip_mount_face_y,
+        translate([power_strip_body_left_x,
+                   power_strip_operator_y,
                    power_strip_bottom_z])
             cube(power_strip_body_size);
 
-    // Fixed cable exits the left short end. This keep-out remains completely
-    // inside the frame and clear of the fixture board.
+    // Fixed cable exits the operator-side short end. This keep-out remains
+    // completely inside the frame and clear of the fixture joint.
     %color([0.92, 0.20, 0.16, 0.28])
-        translate([power_strip_left_x - power_strip_cable_keepout.x,
-                   power_strip_mount_face_y,
+        translate([power_strip_cable_left_x,
+                   power_strip_cable_operator_y,
                    power_strip_bottom_z +
                        (power_strip_body_size.z -
                         power_strip_cable_keepout.z) / 2])
@@ -3488,16 +3521,16 @@ module guide_dualbar_preload() {
                 [structural_x_length / 2, -78.0,
                  profile_size + 1.0], 9.0);
     guide_label("BLUE TAPE ON 1 PER BAR = 2 PARKED FIXTURE SPARES",
-                [structural_x_length / 2, 76.0,
-                 profile_size + 1.0], 8.0,
+                [structural_x_length / 2, 84.0,
+                 profile_size + 1.0], 7.0,
                 [0, 0, 0], guide_spare_tint);
     guide_label("BATCH 01 TOTAL: 14 ACTIVE + 6 PARKED = 20",
-                [structural_x_length / 2, 68.0,
-                 profile_size + 18.0], 9.0,
+                [structural_x_length / 2, 62.0,
+                 profile_size + 18.0], 8.5,
                 [0, 0, 0], guide_check_tint);
-    guide_label("OTHER RAILS: 10 ACTIVE WIDTH + 4 PARKED DEPTH",
-                [structural_x_length / 2, 92.0,
-                 profile_size + 1.0], 7.0);
+    guide_label("OTHER: 6 WIDTH + 4 RIGHT DEPTH + 4 DEPTH SPARES",
+                [structural_x_length / 2, 106.0,
+                 profile_size + 1.0], 6.2);
 }
 
 // Symbolic bar markers for the whole-frame preload map. Their orientation
@@ -3676,11 +3709,10 @@ module guide_preload_markers() {
     face_offset = profile_size / 2 + 3.0;
     spare_depth_y = frame_outer.y - 46.0;
 
-    // WIDTH-O-L: four power-strip fasteners on its inboard (+Y) face.
-    for (x = [82.0, 126.0, frame_outer.x - 126.0,
-              frame_outer.x - 82.0])
+    // DEPTH-R-L: four power-strip fasteners on its inboard (-X) face.
+    for (y = power_strip_rail_fastener_y)
         guide_preload_marker(
-            [x, operator_y + face_offset, lower_z], "x");
+            [right_x - face_offset, y, lower_z], "y");
 
     // WIDTH-O-U: two placard fasteners on its outboard (-Y) face.
     for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
@@ -3697,14 +3729,15 @@ module guide_preload_markers() {
             [x, device_y - face_offset, upper_z], "x");
     }
 
-    // Four depth rails: one active gantry-joint bar near the fixture gantry
-    // plus one blue-tagged replacement parked near the device-side end.
+    // Four depth rails: the legacy gantry uses one active joint bar per rail;
+    // both variants park one blue-tagged replacement near the device-side end.
     for (x = [left_x, right_x])
         for (z = [lower_z, upper_z]) {
             interior_x = x == left_x ? x + face_offset :
                                       x - face_offset;
-            guide_preload_marker(
-                [interior_x, fixture_gantry_y, z], "y");
+            if (CHASSIS_VARIANT == "legacy_gantry")
+                guide_preload_marker(
+                    [interior_x, fixture_gantry_y, z], "y");
             guide_preload_marker(
                 [interior_x, spare_depth_y, z], "y",
                 guide_new_tint, true);
@@ -3752,9 +3785,7 @@ module guide_preload_width_rails() {
     upper_x = structural_x_length + 92.0;
     operator_y = -48.0;
     device_y = 48.0;
-    width_o_l_offsets =
-        [for (x = [82.0, 126.0, frame_outer.x - 126.0,
-                   frame_outer.x - 82.0]) x - profile_size];
+    width_o_l_offsets = [];
     width_o_u_offsets =
         [for (x = [frame_outer.x / 2 - placard_hole_spacing / 2,
                    frame_outer.x / 2 + placard_hole_spacing / 2])
@@ -3763,7 +3794,7 @@ module guide_preload_width_rails() {
         [for (x = cradle_mount_x) x - profile_size];
 
     guide_plan_rail_x(lower_x, operator_y,
-                      "WIDTH-O-L  /  4", 1, width_o_l_offsets);
+                      "WIDTH-O-L  /  0", 1, width_o_l_offsets);
     guide_plan_rail_x(lower_x, device_y,
                       "WIDTH-D-L  /  2", -1, width_d_offsets);
     guide_label("LOWER PAIR", [lower_x + structural_x_length / 2,
@@ -3790,9 +3821,8 @@ module guide_preload_width_rails() {
 }
 
 module guide_plan_rail_y(panel_x, x, label_text,
-                         face_direction) {
+                         face_direction, active_offsets = []) {
     rail_start_y = 0.0;
-    active_offset = fixture_gantry_y - profile_size;
     spare_offset = frame_outer.y - 46.0 - profile_size;
     face_x = panel_x + x +
              face_direction * (profile_size / 2 + 3.0);
@@ -3800,8 +3830,9 @@ module guide_plan_rail_y(panel_x, x, label_text,
     translate([panel_x + x, rail_start_y, 0])
         extrusion(structural_y_length, "y",
                   [0.70, 0.72, 0.75, 0.52]);
-    guide_preload_marker(
-        [face_x, active_offset, profile_size / 2], "y");
+    for (active_offset = active_offsets)
+        guide_preload_marker(
+            [face_x, active_offset, profile_size / 2], "y");
     guide_preload_marker(
         [face_x, spare_offset, profile_size / 2], "y",
         guide_new_tint, true);
@@ -3819,10 +3850,16 @@ module guide_preload_depth_rails() {
     left_x = 0.0;
     right_x = 120.0;
     panel_center_x = (left_x + right_x) / 2;
+    gantry_offsets = CHASSIS_VARIANT == "legacy_gantry" ?
+        [fixture_gantry_y - profile_size] : [];
+    power_strip_offsets =
+        [for (y = power_strip_rail_fastener_y) y - profile_size];
 
-    guide_plan_rail_y(lower_x, left_x, "DEPTH-L-L", 1);
-    guide_plan_rail_y(lower_x, right_x, "DEPTH-R-L", -1);
-    guide_label("LOWER PAIR  /  2 ORANGE BARS PER RAIL",
+    guide_plan_rail_y(lower_x, left_x, "DEPTH-L-L", 1,
+                      gantry_offsets);
+    guide_plan_rail_y(lower_x, right_x, "DEPTH-R-L  /  POWER", -1,
+                      concat(gantry_offsets, power_strip_offsets));
+    guide_label("LOWER RIGHT ADDS 4 POWER-STRIP BARS",
                 [lower_x + panel_center_x, structural_y_length + 54.0,
                  profile_size + 1.0], 7.0);
     guide_label("BLUE TAPE ON 1 = PARKED REPLACEMENT",
@@ -3837,9 +3874,11 @@ module guide_preload_depth_rails() {
                                   profile_size + 1.0], 8.0,
                 [0, 0, 0], guide_spare_tint);
 
-    guide_plan_rail_y(upper_x, left_x, "DEPTH-L-U", 1);
-    guide_plan_rail_y(upper_x, right_x, "DEPTH-R-U", -1);
-    guide_label("UPPER PAIR  /  2 ORANGE BARS PER RAIL",
+    guide_plan_rail_y(upper_x, left_x, "DEPTH-L-U", 1,
+                      gantry_offsets);
+    guide_plan_rail_y(upper_x, right_x, "DEPTH-R-U", -1,
+                      gantry_offsets);
+    guide_label("UPPER PAIR  /  ONE PARKED SPARE PER RAIL",
                 [upper_x + panel_center_x, structural_y_length + 54.0,
                  profile_size + 1.0], 7.0);
     guide_label("BLUE TAPE ON 1 = PARKED REPLACEMENT",
@@ -4216,23 +4255,25 @@ module guide_detail_08_placard() {
         "x", -1, 58.0);
 }
 
-// The mount blocks stay on the lower operator rail while the translucent
-// power strip approaches their supplied screw heads from inside the chassis.
+// The mount blocks stay on the lower operator-right depth rail while the
+// translucent power strip approaches their supplied screw heads from inside.
 module guide_detail_08_power_strip() {
-    exploded_y = 58.0;
-    translate([profile_size, profile_size / 2, outer_rail_z.x])
-        extrusion(structural_x_length, "x", guide_complete_tint);
+    exploded_x = 58.0;
+    translate([frame_outer.x - profile_size / 2,
+               profile_size,
+               outer_rail_z.x])
+        extrusion(structural_y_length, "y", guide_complete_tint);
     power_strip_mounts_preview();
     color([0.91, 0.91, 0.88, 0.50])
-        translate([power_strip_left_x,
-                   power_strip_mount_face_y + exploded_y,
+        translate([power_strip_body_left_x - exploded_x,
+                   power_strip_operator_y,
                    power_strip_bottom_z])
             cube(power_strip_body_size);
-    for (x = power_strip_block_x)
+    for (y = power_strip_block_y)
         guide_axis_arrow(
-            [x, power_strip_mount_face_y + exploded_y - 4.0,
+            [power_strip_mount_face_x - exploded_x + 4.0, y,
              power_strip_body_size.z / 2],
-            "y", -1, exploded_y - 8.0);
+            "x", 1, exploded_x - 8.0);
 }
 
 module guide_registration_tab_fasteners() {

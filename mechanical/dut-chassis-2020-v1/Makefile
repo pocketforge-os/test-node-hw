@@ -439,6 +439,7 @@ $(GUIDE_BUILD)/hero.png: private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
 	validate validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
+	validate-power-strip-guard \
 	validate-cable-anchor-guard \
 	validate-cable-anchor-variants \
 	validate-production-batches validate-dualbar-batches \
@@ -1036,7 +1037,8 @@ $(DUALBAR_BUILD)/layout-suspension-detail.png: $(SOURCE) lib/pf-2020.scad | $(DU
 
 $(DUALBAR_BUILD)/layout-preload.png: $(SOURCE) lib/pf-2020.scad | $(DUALBAR_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,800 \
-		--projection=ortho --camera=153,0,520,153,0,0 \
+		--projection=ortho --autocenter --viewall \
+		--camera=153,0,520,153,0,0 \
 		-D 'CHASSIS_VARIANT="dualbar_v1"' \
 		-D 'PART="guide_dualbar_preload"' $<
 
@@ -1236,7 +1238,8 @@ $(GUIDE_BUILD)/detail-08-placard.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD
 
 $(GUIDE_BUILD)/detail-08-power-strip.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
-		--projection=ortho --viewall --camera=470,-430,300,173,45,28 \
+		--projection=ortho --autocenter --viewall \
+		--camera=650,-250,300,300,220,28 \
 		-D 'PART="guide_detail_08_power_strip"' $<
 
 $(GUIDE_BUILD)/detail-08-stacking-corner.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
@@ -1940,12 +1943,25 @@ validate-dualbar-guard: | $(DUALBAR_BUILD)
 	grep -q 'Four-link dual-bar batch must fit the 247 x 207 mm print bed' $$bed_log; \
 	echo 'dualbar_guard=pass rejected_unknown_variant=unknown rejected_overlong_link_bed=true'
 
+validate-power-strip-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-power-strip-position.log; \
+	mesh=$(BUILD)/invalid-power-strip-position.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+		-D 'power_strip_device_y=500' \
+		-D 'PART="power_strip_system_preview"' $(SOURCE) \
+		>$$log 2>&1; then \
+		echo 'ERROR: out-of-bounds power strip was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'Power strip must fit between the operator/device corner posts' $$log; \
+	echo 'power_strip_guard=pass rejected_device_y=500'
+
 validate-target-contract:
 	$(PYTHON) $(TARGET_CONTRACT_TEST)
 
 validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
+	validate-power-strip-guard \
 	validate-cable-anchor-guard \
 	validate-cable-anchor-variants \
 	validate-production-batches validate-dualbar-batches \

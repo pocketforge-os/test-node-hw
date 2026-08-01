@@ -48,9 +48,9 @@ Avoid “front” and “back”; those reverse with the observer.
   DUT.
 
 The electronics fixture support defaults to centerline `Y=75`. The fixed DUT
-carrier is on the device-side width rails. The power strip is inside the lower
-operator-side width rail. The placard hangs below the upper operator-side width
-rail.
+carrier is on the device-side width rails. The power strip runs front-to-back
+inside the lower operator-right depth rail. The placard hangs below the upper
+operator-side width rail.
 
 ## Accepted hardware and interfaces
 
@@ -210,9 +210,10 @@ Batch 01 provides 28 short bars: 22 use-now mount positions and six parked
 replacement bars. The authoritative rail/face preload map is in the handbook
 assembly guide. Do not close a rail end until that map balances to 28.
 
-Dual-bar Batch 01 instead provides exactly 20: ten active outer-width-rail
-locations, four active fixture-bar link locations, four parked depth-rail
-spares, and two parked fixture-bar spares. It contains no long splice bar.
+Dual-bar Batch 01 instead provides exactly 20: six active outer-width-rail
+locations, four active power-strip locations on the lower operator-right depth
+rail, four active fixture-bar link locations, four parked depth-rail spares,
+and two parked fixture-bar spares. It contains no long splice bar.
 Keep the two inventories separate.
 
 ## Stacking registration tabs
