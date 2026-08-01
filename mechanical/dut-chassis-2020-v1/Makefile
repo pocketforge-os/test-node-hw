@@ -1915,11 +1915,21 @@ validate-registration-tab-guard: | $(BUILD)
 	lock_mesh=$(BUILD)/invalid-registration-tab-upper-lock.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$lock_mesh \
 			-D 'PART="registration_tab"' \
-			-D 'registration_upper_lock_y=69' \
+			-D 'registration_upper_lock_y=70' \
 			$(SOURCE) >$$lock_log 2>&1; then \
-		echo 'ERROR: shifted registration upper lock was not rejected' >&2; exit 1; \
+		echo 'ERROR: former 70 mm registration upper lock was not rejected' >&2; exit 1; \
 	fi; \
-	grep -q 'meet the upper bottom-rail groove center' $$lock_log; \
+	grep -q 'preserve the owner-corrected 77 mm datum' $$lock_log; \
+	web_log=$(BUILD)/invalid-registration-tab-upper-web.log; \
+	web_mesh=$(BUILD)/invalid-registration-tab-upper-web.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$web_mesh \
+			-D 'PART="registration_tab"' \
+			-D 'registration_upper_lock_y=88' \
+			-D 'registration_upper_lock_corner_clearance=18' \
+			$(SOURCE) >$$web_log 2>&1; then \
+		echo 'ERROR: undersized registration upper-hole edge web was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'at least 4 mm of material above the hole' $$web_log; \
 	count_log=$(BUILD)/invalid-registration-tab-count.log; \
 	count_mesh=$(BUILD)/invalid-registration-tab-count.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$count_mesh \
@@ -1929,7 +1939,7 @@ validate-registration-tab-guard: | $(BUILD)
 		echo 'ERROR: seven-tab frame batch was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'exactly eight registration tabs' $$count_log; \
-	echo 'registration_tab_guard=pass size=18x92x4mm lower=60mm upper=32mm lower_slots=12,28mm upper_lock=70mm count=8'
+	echo 'registration_tab_guard=pass size=18x92x4mm lower=60mm upper=32mm lower_slots=12,28mm upper_lock=77mm corner_clearance_shift=7mm count=8'
 
 validate-cable-anchor-guard: | $(BUILD)
 	@set -eu; count_log=$(BUILD)/invalid-cable-anchor-count.log; \

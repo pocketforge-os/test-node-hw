@@ -274,11 +274,12 @@ interface. That projection spans the complete bottom rail of the chassis above
 and continues 12 mm beside its corner post.
 
 Install each tab to the lower chassis with two face-loaded M5 sets. After an
-upper chassis is fully seated aluminum-to-aluminum, its third hole aligns with
-the outward groove center of the upper chassis's bottom rail, 10 mm above the
-interface. One additional face-loaded M5 set per tab then positively locks the
-pair. The printed tabs provide lateral registration only; they never carry the
-vertical stack load.
+upper chassis is fully seated aluminum-to-aluminum, the center of its third
+hole sits 17 mm above the interface. This owner-corrected datum is 7 mm above
+the former position so the hole clears the delivered metal corner intrusion.
+One additional face-loaded M5 set per tab then positively locks the pair. The
+printed tabs provide lateral registration only; they never carry the vertical
+stack load.
 
 ## Rail-mounted wire management
 

@@ -764,8 +764,12 @@ registration_tab_size = [
 ];
 registration_lower_slot = [9.0, m5_clearance];
 registration_lower_hole_y = [12.0, 28.0];
+// The delivered metal corner extends across the former rail-groove datum.
+// Lift the upper fastening hole 7 mm so the printed tab clears that intrusion.
+registration_upper_lock_corner_clearance = 7.0;
 registration_upper_lock_y =
-    registration_lower_engagement + profile_size / 2;
+    registration_lower_engagement + profile_size / 2 +
+        registration_upper_lock_corner_clearance;
 registration_tab_count = 8;
 registration_tab_columns = 4;
 registration_tab_gap = [6.0, 6.0];
@@ -1111,9 +1115,14 @@ assert(registration_tab_size.x <= profile_size - 2.0,
        "Registration tabs must leave 1 mm of aluminum visible on each rail-face edge");
 assert(registration_lower_hole_y == [12.0, 28.0],
        "Registration lower slots must preserve the 12 and 28 mm screw datums");
-assert(registration_upper_lock_y ==
-           registration_lower_engagement + profile_size / 2,
-       "Registration upper lock must meet the upper bottom-rail groove center");
+assert(registration_tab_size.y - registration_upper_lock_y -
+           m5_clearance / 2 >= 4.0,
+       "Registration upper lock needs at least 4 mm of material above the hole");
+assert(registration_upper_lock_corner_clearance == 7.0 &&
+       registration_upper_lock_y ==
+           registration_lower_engagement + profile_size / 2 +
+               registration_upper_lock_corner_clearance,
+       "Registration upper lock must preserve the owner-corrected 77 mm datum");
 assert(registration_tab_count == 8 &&
        registration_tab_columns == 4 &&
        registration_tab_rows == 2,
@@ -1130,8 +1139,9 @@ assert(registration_guide_bottom + max(registration_lower_hole_y) <
        outer_rail_z.y - profile_size / 2,
        "Registration lower screws must land in the vertical extrusion");
 assert(registration_guide_bottom + registration_upper_lock_y ==
-           frame_outer.z + profile_size / 2,
-       "Registration upper lock must land in the stacked frame bottom rail");
+           frame_outer.z + profile_size / 2 +
+               registration_upper_lock_corner_clearance,
+       "Registration upper lock must retain the 7 mm metal-corner clearance shift");
 assert(cable_anchor_count == 8,
        "Wire-management starter batch must contain exactly eight anchors");
 assert(CABLE_ANCHOR_FASTENER == "M5" ||
@@ -2627,8 +2637,8 @@ module registration_tab() {
                     rotate(90)
                         pf_capsule_2d(registration_lower_slot.x,
                                       registration_lower_slot.y);
-        // Positive lock into the outward groove of the upper frame's bottom
-        // rail after both aluminum chassis faces are fully seated.
+        // Owner-corrected upper fastening point, shifted above the delivered
+        // metal corner intrusion after both chassis faces are fully seated.
         translate([registration_tab_size.x / 2,
                    registration_upper_lock_y, -epsilon])
             cylinder(d = m5_clearance,
@@ -4534,10 +4544,12 @@ module guide_detail_08_stacking_corner() {
         guide_registration_tab_fasteners();
 
     guide_axis_arrow([-25.0, registration_tab_size.x / 2,
-                      frame_outer.z + profile_size / 2],
+                      registration_guide_bottom +
+                          registration_upper_lock_y],
                      "x", 1, 17.0);
     guide_axis_arrow([registration_tab_size.x / 2, -25.0,
-                      frame_outer.z + profile_size / 2],
+                      registration_guide_bottom +
+                          registration_upper_lock_y],
                      "y", 1, 17.0);
 }
 
