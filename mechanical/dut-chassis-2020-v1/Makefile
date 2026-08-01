@@ -8,8 +8,13 @@ GUIDE_LAYER_BUILD := $(GUIDE_BUILD)/layers
 GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
 GUIDE_MODEL_BUILD := $(GUIDE_BUILD)/model
 SOURCE := pocketforge-node-chassis.scad
+RIGHT_ANGLE_CHECKER_SOURCE := right-angle-checker.scad
+RIGHT_ANGLE_CHECKER_STL := $(BUILD)/right-angle-checker-150mm.stl
+RIGHT_ANGLE_CHECKER_PREVIEW := $(BUILD)/right-angle-checker-150mm.png
+RIGHT_ANGLE_CHECKER_CUSTOM_TEST := $(BUILD)/right-angle-checker-custom-test.stl
 BOUNDS := ../dut-cradle-v1/scripts/stl_bounds.py
 TOPOLOGY := scripts/check_stl_topology.py
+RIGHT_ANGLE_CHECKER_GEOMETRY := scripts/check_right_angle_checker.py
 FINGERPRINT := ../dut-cradle-v1/scripts/mesh_fingerprint.py
 TARGET_CONTRACT_TEST := scripts/test_makefile_targets.py
 CUT_LIST := CUT_LIST.md
@@ -432,11 +437,12 @@ $(GUIDE_BUILD)/hero.png: private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
 
 .PHONY: all batches core-batches dualbar dualbar-batches dualbar-preview \
 	dualbar-replacements device-example-batches calibration \
-	replacements lint preview presentation-assets \
+	replacements fabrication-tools right-angle-checker lint preview \
+	presentation-assets \
 	guide-static guide-batch-models guide-layers guide-model handbook-assets \
 	cutlist refresh-cut-list dualbar-cutlist refresh-dualbar-cut-list \
 	validate-cut-list-sync validate-dualbar-cut-list-sync \
-	validate validate-margin-guard \
+	validate validate-right-angle-checker validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-power-strip-guard \
@@ -445,7 +451,7 @@ $(GUIDE_BUILD)/hero.png: private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES)
 	validate-production-batches validate-dualbar-batches \
 	validate-dualbar-guard validate-target-contract clean
 
-all: batches replacements cutlist
+all: batches replacements fabrication-tools cutlist
 
 batches: core-batches
 
@@ -465,6 +471,11 @@ calibration: $(CALIBRATION)
 
 replacements: $(REPLACEMENT_PARTS)
 
+fabrication-tools: right-angle-checker
+
+right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
+	$(RIGHT_ANGLE_CHECKER_PREVIEW)
+
 $(BUILD) $(DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
 $(GUIDE_MODEL_BUILD) $(PRESENTATION_IMPORT_DIR):
@@ -472,6 +483,20 @@ $(GUIDE_MODEL_BUILD) $(PRESENTATION_IMPORT_DIR):
 
 lint:
 	cd ../.. && OPENSCAD='$(OPENSCAD)' scripts/lint-openscad.sh
+
+$(RIGHT_ANGLE_CHECKER_STL): $(RIGHT_ANGLE_CHECKER_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $<
+
+$(RIGHT_ANGLE_CHECKER_PREVIEW): $(RIGHT_ANGLE_CHECKER_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1000 \
+		--projection=ortho --viewall \
+		--camera=210,-240,220,75,75,0 $<
+
+$(RIGHT_ANGLE_CHECKER_CUSTOM_TEST): $(RIGHT_ANGLE_CHECKER_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'leg_length=100' -D 'arm_width=22' \
+		-D 'thickness=4' -D 'inside_corner_relief_radius=3' \
+		-D 'outside_corner_chamfer=1.5' -D 'show_label=false' $<
 
 $(BUILD)/device-id-placard.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="placard"' $<
@@ -1958,6 +1983,45 @@ validate-power-strip-guard: | $(BUILD)
 validate-target-contract:
 	$(PYTHON) $(TARGET_CONTRACT_TEST)
 
+validate-right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
+		$(RIGHT_ANGLE_CHECKER_PREVIEW) \
+		$(RIGHT_ANGLE_CHECKER_CUSTOM_TEST)
+	@set -eu; \
+	report=$$($(PYTHON) $(BOUNDS) --max-x 150 --max-y 150 --max-z 5 \
+		--bed-x 247 --bed-y 207 $(RIGHT_ANGLE_CHECKER_STL)); \
+	printf '%s\n' "$$report"; \
+	printf '%s\n' "$$report" | grep -q 'size=150.000,150.000,5.000'
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 \
+		$(RIGHT_ANGLE_CHECKER_STL)
+	$(PYTHON) $(RIGHT_ANGLE_CHECKER_GEOMETRY) \
+		--leg-length 150 --arm-width 25 --thickness 5 \
+		--inside-relief 4 --outside-chamfer 2 \
+		$(RIGHT_ANGLE_CHECKER_STL)
+	@set -eu; \
+	report=$$($(PYTHON) $(BOUNDS) --max-x 100 --max-y 100 --max-z 4 \
+		--bed-x 247 --bed-y 207 $(RIGHT_ANGLE_CHECKER_CUSTOM_TEST)); \
+	printf '%s\n' "$$report"; \
+	printf '%s\n' "$$report" | grep -q 'size=100.000,100.000,4.000'
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 \
+		$(RIGHT_ANGLE_CHECKER_CUSTOM_TEST)
+	$(PYTHON) $(RIGHT_ANGLE_CHECKER_GEOMETRY) \
+		--leg-length 100 --arm-width 22 --thickness 4 \
+		--inside-relief 3 --outside-chamfer 1.5 \
+		$(RIGHT_ANGLE_CHECKER_CUSTOM_TEST)
+	@test -s $(RIGHT_ANGLE_CHECKER_PREVIEW)
+	@set -eu; \
+	log=$(BUILD)/invalid-right-angle-checker.log; \
+	mesh=$(BUILD)/invalid-right-angle-checker.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'leg_length=70' $(RIGHT_ANGLE_CHECKER_SOURCE) \
+			>$$log 2>&1; then \
+		echo 'ERROR: undersized right-angle checker was not rejected' >&2; \
+		exit 1; \
+	fi; \
+	grep -q 'leg_length must be at least 80 mm' $$log; \
+	echo 'right_angle_checker_guard=pass rejected_leg_length_mm=70'
+	@echo 'right_angle_checker_validation=pass default=150x150x5 custom=100x100x4 angle_deg=90'
+
 validate: lint all calibration preview validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
@@ -1966,6 +2030,7 @@ validate: lint all calibration preview validate-margin-guard \
 	validate-cable-anchor-variants \
 	validate-production-batches validate-dualbar-batches \
 	validate-dualbar-guard validate-target-contract \
+	validate-right-angle-checker \
 	validate-cut-list-sync validate-dualbar-cut-list-sync
 	printf '%s  %s\n' '$(DEVICE_MODEL_SHA256)' \
 		'$(PRESENTATION_DEVICE_SCAD)' | sha256sum -c -
