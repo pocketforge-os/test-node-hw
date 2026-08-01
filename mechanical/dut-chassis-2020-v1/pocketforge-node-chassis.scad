@@ -764,9 +764,11 @@ registration_tab_size = [
 ];
 registration_lower_slot = [9.0, m5_clearance];
 registration_lower_hole_y = [12.0, 28.0];
-// The delivered metal corner extends across the former rail-groove datum.
-// Lift the upper fastening hole 7 mm so the printed tab clears that intrusion.
-registration_upper_lock_corner_clearance = 7.0;
+// The delivered dual-bar metal corner extends across the former rail-groove
+// datum. Lift that candidate's upper fastening hole 7 mm while preserving the
+// immutable geometry of the physically qualified legacy chassis pack.
+registration_upper_lock_corner_clearance =
+    CHASSIS_VARIANT == "dualbar_v1" ? 7.0 : 0.0;
 registration_upper_lock_y =
     registration_lower_engagement + profile_size / 2 +
         registration_upper_lock_corner_clearance;
@@ -1118,10 +1120,11 @@ assert(registration_lower_hole_y == [12.0, 28.0],
 assert(registration_tab_size.y - registration_upper_lock_y -
            m5_clearance / 2 >= 4.0,
        "Registration upper lock needs at least 4 mm of material above the hole");
-assert(registration_upper_lock_corner_clearance == 7.0 &&
-       registration_upper_lock_y ==
-           registration_lower_engagement + profile_size / 2 +
-               registration_upper_lock_corner_clearance,
+assert(CHASSIS_VARIANT != "dualbar_v1" ||
+       (registration_upper_lock_corner_clearance == 7.0 &&
+        registration_upper_lock_y ==
+            registration_lower_engagement + profile_size / 2 +
+                registration_upper_lock_corner_clearance),
        "Registration upper lock must preserve the owner-corrected 77 mm datum");
 assert(registration_tab_count == 8 &&
        registration_tab_columns == 4 &&

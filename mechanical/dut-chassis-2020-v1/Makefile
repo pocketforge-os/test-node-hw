@@ -593,10 +593,14 @@ $(BUILD)/gantry-upright-splice-full-collar-internal-bar-pair.stl: $(SOURCE) lib/
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="gantry_splice_full_collar_internal_bar_pair"' $<
 
 $(BUILD)/stacking-registration-tab.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="registration_tab"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="registration_tab"' $<
 
 $(BUILD)/stacking-registration-tab-set.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="registration_tab_set"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="registration_tab_set"' $<
 
 $(BUILD)/rail-fit-coupon.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="rail_fit_coupon"' $<
@@ -1377,6 +1381,7 @@ $(GUIDE_BUILD)/detail-08-power-strip.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_B
 $(GUIDE_BUILD)/detail-08-stacking-corner.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1000 \
 		--projection=ortho --viewall --camera=-230,-240,510,20,20,370 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
 		-D 'PART="guide_detail_08_stacking_corner"' $<
 
 $(GUIDE_BUILD)/batch-00-calibration.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
@@ -1397,7 +1402,9 @@ $(GUIDE_BUILD)/batch-02-fixture-links.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_
 
 $(GUIDE_BUILD)/batch-04-frame-hardware.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
-		--projection=ortho --viewall -D 'PART="production_batch_04_frame_hardware"' $<
+		--projection=ortho --viewall \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="production_batch_04_frame_hardware"' $<
 
 $(GUIDE_BUILD)/batch-05-placard-holder.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,700 \
@@ -1446,7 +1453,7 @@ $(GUIDE_BUILD)/batch-02-fixture-links.glb: \
 		--input $< --output $@ --name "Batch 02 fixture links"
 
 $(GUIDE_BUILD)/batch-04-frame-hardware.glb: \
-		$(BUILD)/production-batch-04-frame-hardware.stl \
+		$(DUALBAR_BUILD)/production-batch-04-frame-hardware.stl \
 		$(GUIDE_BATCH_MODEL_SCRIPT) $(GUIDE_MODEL_REQUIREMENTS) | $(GUIDE_BUILD)
 	$(PYTHON) $(GUIDE_BATCH_MODEL_SCRIPT) \
 		--input $< --output $@ --name "Batch 04 frame hardware"
@@ -1886,6 +1893,7 @@ validate-registration-tab-guard: | $(BUILD)
 	size_mesh=$(BUILD)/invalid-registration-tab-size.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$size_mesh \
 			-D 'PART="registration_tab"' \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
 			-D 'registration_tab_size=[19,92,4]' \
 			$(SOURCE) >$$size_log 2>&1; then \
 		echo 'ERROR: 19 mm-wide registration tab was not rejected' >&2; exit 1; \
@@ -1895,6 +1903,7 @@ validate-registration-tab-guard: | $(BUILD)
 	engagement_mesh=$(BUILD)/invalid-registration-tab-engagement.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$engagement_mesh \
 			-D 'PART="registration_tab"' \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
 			-D 'registration_tab_size=[18,92,4]' \
 			-D 'registration_lower_engagement=59' \
 			$(SOURCE) >$$engagement_log 2>&1; then \
@@ -1906,6 +1915,7 @@ validate-registration-tab-guard: | $(BUILD)
 	slot_mesh=$(BUILD)/invalid-registration-tab-slots.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$slot_mesh \
 			-D 'PART="registration_tab"' \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
 			-D 'registration_lower_hole_y=[13,28]' \
 			$(SOURCE) >$$slot_log 2>&1; then \
 		echo 'ERROR: shifted registration lower slot was not rejected' >&2; exit 1; \
@@ -1915,6 +1925,7 @@ validate-registration-tab-guard: | $(BUILD)
 	lock_mesh=$(BUILD)/invalid-registration-tab-upper-lock.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$lock_mesh \
 			-D 'PART="registration_tab"' \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
 			-D 'registration_upper_lock_y=70' \
 			$(SOURCE) >$$lock_log 2>&1; then \
 		echo 'ERROR: former 70 mm registration upper lock was not rejected' >&2; exit 1; \
@@ -1924,6 +1935,7 @@ validate-registration-tab-guard: | $(BUILD)
 	web_mesh=$(BUILD)/invalid-registration-tab-upper-web.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$web_mesh \
 			-D 'PART="registration_tab"' \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
 			-D 'registration_upper_lock_y=88' \
 			-D 'registration_upper_lock_corner_clearance=18' \
 			$(SOURCE) >$$web_log 2>&1; then \
@@ -1934,12 +1946,13 @@ validate-registration-tab-guard: | $(BUILD)
 	count_mesh=$(BUILD)/invalid-registration-tab-count.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$count_mesh \
 			-D 'PART="registration_tab_set"' \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
 			-D 'registration_tab_count=7' \
 			$(SOURCE) >$$count_log 2>&1; then \
 		echo 'ERROR: seven-tab frame batch was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'exactly eight registration tabs' $$count_log; \
-	echo 'registration_tab_guard=pass size=18x92x4mm lower=60mm upper=32mm lower_slots=12,28mm upper_lock=77mm corner_clearance_shift=7mm count=8'
+	echo 'registration_tab_guard=pass variant=dualbar_v1 size=18x92x4mm lower=60mm upper=32mm lower_slots=12,28mm upper_lock=77mm corner_clearance_shift=7mm count=8'
 
 validate-cable-anchor-guard: | $(BUILD)
 	@set -eu; count_log=$(BUILD)/invalid-cable-anchor-count.log; \
@@ -2054,9 +2067,12 @@ validate-dualbar-batches: $(DUALBAR_CORE_BATCHES) \
 		$(DUALBAR_BUILD)/production-batch-01-ironed-interfaces.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 4 \
 		$(DUALBAR_BUILD)/production-batch-02-fixture-links.stl
-	$(PYTHON) $(BOUNDS) \
-		--equivalent-to $(BUILD)/production-batch-04-frame-hardware.stl \
-		$(DUALBAR_BUILD)/production-batch-04-frame-hardware.stl
+	$(PYTHON) $(FINGERPRINT) \
+		$(BUILD)/production-batch-04-frame-hardware.stl | \
+		grep -q '"sha256":"911d249f2b8e7120b46d86c9a25f85a4a1edbf64944c05615911681a01e0cb25"'
+	$(PYTHON) $(FINGERPRINT) \
+		$(DUALBAR_BUILD)/production-batch-04-frame-hardware.stl | \
+		grep -q '"sha256":"31ddea2c53c3d93cb6f64cca11c123b39d071879b9e172839c0ea87c75307601"'
 	$(PYTHON) $(BOUNDS) \
 		--equivalent-to $(BUILD)/production-batch-05-placard-holder.stl \
 		$(DUALBAR_BUILD)/production-batch-05-placard-holder.stl
@@ -2064,7 +2080,7 @@ validate-dualbar-batches: $(DUALBAR_CORE_BATCHES) \
 		$(DUALBAR_BUILD)/dualbar-fixture-link.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 4 \
 		$(DUALBAR_BUILD)/dualbar-fixture-link-set.stl
-	@echo 'dualbar_batches=pass core=4 captive_bars=20 fixture_links=4 shared_batches=04,05'
+	@echo 'dualbar_batches=pass core=4 captive_bars=20 fixture_links=4 revised_batch=04 shared_batch=05'
 
 validate-dualbar-guard: | $(DUALBAR_BUILD)
 	@set -eu; variant_log=$(DUALBAR_BUILD)/invalid-variant.log; \

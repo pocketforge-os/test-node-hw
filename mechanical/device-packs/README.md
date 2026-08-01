@@ -181,11 +181,13 @@ output cannot make a source change look complete.
 
 The static normalized hashes in `layouts/chassis-core-v1.json` freeze the
 working base chassis. `layouts/chassis-dualbar-v1.json` separately freezes the
-Pro S candidate beds. Shared Batch 04, Batch 05, carrier-link, calibration, and
-wire-anchor hashes are identical across both layouts; only dual-bar Batches
-01–02 are new. These are regression baselines, not automatic physical
-qualification. Changing a lock requires understanding the geometry change,
-not blindly recording a new digest.
+Pro S candidate beds. Batch 04 intentionally differs: the immutable qualified
+legacy bed retains its accepted stacking-tab hole, while the current dual-bar
+bed carries the owner-corrected hole 7 mm higher. Batch 05, carrier-link,
+calibration, and wire-anchor hashes remain identical across both layouts;
+dual-bar Batches 01–02 are also variant-specific. These are regression
+baselines, not automatic physical qualification. Changing a lock requires
+understanding the geometry change, not blindly recording a new digest.
 
 ## Immutable production releases
 
