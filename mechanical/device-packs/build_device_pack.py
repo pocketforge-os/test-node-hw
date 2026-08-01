@@ -85,6 +85,7 @@ class LayoutArtifact:
 class ResolvedLayout:
     path: Path
     layout_id: str
+    supersedes_layout_id: str | None
     toolchain_lock: Path
     input_paths: tuple[Path, ...]
     artifacts: tuple[LayoutArtifact, ...]
@@ -329,12 +330,24 @@ def load_layout(root: Path, path: Path) -> ResolvedLayout:
             "qualification",
             "artifacts",
         },
+        {"supersedes_layout_id"},
     )
     if document["schema"] != LAYOUT_SCHEMA:
         raise PackError(f"{path}.schema must be {LAYOUT_SCHEMA!r}")
     layout_id = _string(document["layout_id"], f"{path}.layout_id")
     if not ID_RE.fullmatch(layout_id.replace("-", "_")):
         raise PackError(f"{path}.layout_id has invalid format")
+    supersedes_layout_id = document.get("supersedes_layout_id")
+    if supersedes_layout_id is not None:
+        supersedes_layout_id = _string(
+            supersedes_layout_id, f"{path}.supersedes_layout_id"
+        )
+        if not ID_RE.fullmatch(supersedes_layout_id.replace("-", "_")):
+            raise PackError(f"{path}.supersedes_layout_id has invalid format")
+        if supersedes_layout_id == layout_id:
+            raise PackError(
+                f"{path}.supersedes_layout_id must name an older layout"
+            )
     toolchain_lock = _repo_path(
         root, document["toolchain_lock"], f"{path}.toolchain_lock"
     )
@@ -453,6 +466,7 @@ def load_layout(root: Path, path: Path) -> ResolvedLayout:
     return ResolvedLayout(
         path=path,
         layout_id=layout_id,
+        supersedes_layout_id=supersedes_layout_id,
         toolchain_lock=toolchain_lock,
         input_paths=input_paths,
         artifacts=tuple(artifacts),
@@ -499,9 +513,11 @@ def guard_qualified_layouts(
 
     A physically qualified layout is immutable by version: any geometry,
     parameter, print-contract, or even formatting change must be introduced
-    under a new candidate layout ID.  Candidate-to-qualified promotion may
-    change only the qualification record, ensuring the physically inspected
-    candidate and the promoted source contract are identical.
+    under a new candidate layout ID. A device may move from that frozen record
+    only to a layout that explicitly names it with supersedes_layout_id and
+    includes the device in its qualification scope. Candidate-to-qualified
+    promotion may change only the qualification record, ensuring the physically
+    inspected candidate and the promoted source contract are identical.
 
     Layouts that predate the qualification field are admitted once as a
     bootstrap.  After that bootstrap lands, the ordinary immutable rule
@@ -563,6 +579,17 @@ def guard_qualified_layouts(
             )
             registered = mappings.get(slug)
             if registered != head_path.resolve():
+                successor = (
+                    load_layout(root, registered)
+                    if registered is not None
+                    else None
+                )
+                if (
+                    successor is not None
+                    and successor.supersedes_layout_id == layout_id
+                    and slug in successor.qualification["device_slugs"]
+                ):
+                    continue
                 registered_text = (
                     "<unmapped>"
                     if registered is None

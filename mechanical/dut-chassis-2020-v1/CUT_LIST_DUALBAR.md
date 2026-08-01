@@ -2,7 +2,7 @@
 
 - Chassis variant: `dualbar_v1`
 - Qualification: **candidate; physical print, fit, loaded-sag, and camera checks are still required**
-- Join topology: `three_way_cap_flush_side_butt_B08C9Q2TGW_measured_plus_two_adjustable_fixture_bars_B08D6T9CGN`
+- Join topology: `three_way_cap_flush_side_butt_B08C9Q2TGW_measured_plus_two_adjustable_fixture_bars_printed_indexing_plates`
 - External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm
 - Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm
 - Stock: 1000.00 mm bars

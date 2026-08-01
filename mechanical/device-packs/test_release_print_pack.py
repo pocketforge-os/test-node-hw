@@ -110,7 +110,8 @@ class ReleaseArchiveTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                     releases.ReleaseError,
                     "physically qualified registered chassis layouts.*"
-                    "chassis-dualbar-v1.*tsp-t1zd.2",
+                    "chassis-core-v2.*tsp-px73.23.*"
+                    "chassis-dualbar-v1.*tsp-px73.23",
                 ):
                     releases.build_release_bundle(
                         self.root,

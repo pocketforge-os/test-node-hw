@@ -32,6 +32,7 @@ GUIDE_DEVICE_REGISTRY := ../device-packs/device-layouts.json
 GUIDE_LAYOUT_RECORD := ../device-packs/layouts/chassis-dualbar-v1.json
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
+	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
 	-D 'EXAMPLE_DEVICE_VARIANT="$(GUIDE_EXAMPLE_DEVICE_VARIANT)"'
 
 FIXTURE_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl
@@ -323,6 +324,7 @@ GUIDE_STEPS := \
 	$(GUIDE_BUILD)/detail-05-lower-top-ring.png \
 	$(GUIDE_BUILD)/detail-05-square-diagonals.png \
 	$(GUIDE_BUILD)/detail-06-carrier-link-lengths.png \
+	$(GUIDE_BUILD)/detail-06-carrier-link-lengths-stack-clear.png \
 	$(GUIDE_BUILD)/detail-07-fixture-spacers.png \
 	$(GUIDE_BUILD)/detail-07-optical-axis.png \
 	$(GUIDE_BUILD)/detail-08-placard.png \
@@ -1357,6 +1359,12 @@ $(GUIDE_BUILD)/detail-06-carrier-link-lengths.png: $(SOURCE) lib/pf-2020.scad | 
 		--projection=ortho --viewall --camera=0,-180,310,0,0,0 \
 		-D 'PART="guide_detail_06_carrier_link_lengths"' $<
 
+$(GUIDE_BUILD)/detail-06-carrier-link-lengths-stack-clear.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,760 \
+		--projection=ortho --viewall --camera=0,-180,310,0,0,0 \
+		-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
+		-D 'PART="guide_detail_06_carrier_link_lengths"' $<
+
 $(GUIDE_BUILD)/detail-07-fixture-spacers.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1000 \
 		--projection=ortho --viewall --camera=430,-360,350,173,65,184 \
@@ -2063,9 +2071,9 @@ validate-dualbar-batches: $(DUALBAR_CORE_BATCHES) \
 		$(DUALBAR_BUILD)/production-batch-01-ironed-interfaces.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 7 \
 		$(DUALBAR_BUILD)/production-batch-02-fixture-links.stl
-	$(PYTHON) $(TOPOLOGY) --expected-components 20 \
+	$(PYTHON) $(TOPOLOGY) --expected-components 28 \
 		$(DUALBAR_BUILD)/production-batch-01-ironed-interfaces.stl
-	$(PYTHON) $(TOPOLOGY) --expected-components 4 \
+	$(PYTHON) $(TOPOLOGY) --expected-components 8 \
 		$(DUALBAR_BUILD)/production-batch-02-fixture-links.stl
 	$(PYTHON) $(FINGERPRINT) \
 		$(BUILD)/production-batch-04-frame-hardware.stl | \
@@ -2080,7 +2088,7 @@ validate-dualbar-batches: $(DUALBAR_CORE_BATCHES) \
 		$(DUALBAR_BUILD)/dualbar-fixture-link.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 4 \
 		$(DUALBAR_BUILD)/dualbar-fixture-link-set.stl
-	@echo 'dualbar_batches=pass core=4 captive_bars=20 fixture_links=4 revised_batch=04 shared_batch=05'
+	@echo 'dualbar_batches=pass core=4 captive_bars=28 fixture_links=4 printed_crossbar_joints=4 revised_batch=04 shared_batch=05'
 
 validate-dualbar-guard: | $(DUALBAR_BUILD)
 	@set -eu; variant_log=$(DUALBAR_BUILD)/invalid-variant.log; \
@@ -2092,6 +2100,15 @@ validate-dualbar-guard: | $(DUALBAR_BUILD)
 		echo 'ERROR: unknown chassis variant was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'Unknown chassis variant' $$variant_log; \
+	carrier_log=$(DUALBAR_BUILD)/invalid-carrier-link-revision.log; \
+	carrier_mesh=$(DUALBAR_BUILD)/invalid-carrier-link-revision.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$carrier_mesh \
+		-D 'CARRIER_LINK_REVISION="unknown"' \
+		-D 'PART="rear_carrier_link_set"' $(SOURCE) \
+		>$$carrier_log 2>&1; then \
+		echo 'ERROR: unknown carrier-link revision was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'Unknown carrier-link revision' $$carrier_log; \
 	bed_log=$(DUALBAR_BUILD)/invalid-fixture-link-bed.log; \
 	bed_mesh=$(DUALBAR_BUILD)/invalid-fixture-link-bed.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$bed_mesh \
@@ -2102,7 +2119,7 @@ validate-dualbar-guard: | $(DUALBAR_BUILD)
 		echo 'ERROR: overlong dual-bar fixture-link bed was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'Four-link dual-bar batch must fit the 247 x 207 mm print bed' $$bed_log; \
-	echo 'dualbar_guard=pass rejected_unknown_variant=unknown rejected_overlong_link_bed=true'
+	echo 'dualbar_guard=pass rejected_unknown_variant=unknown rejected_unknown_carrier_revision=unknown rejected_overlong_link_bed=true'
 
 validate-power-strip-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-power-strip-position.log; \
@@ -2184,7 +2201,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'Fixture-support savings: 656.00 mm (51.74%)' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'three 306.00 mm fixture bars plus three kerfs consume \*\*927.60 mm\*\* and leave \*\*72.40 mm\*\*' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'Bar 5: fixture_support_bar 306.00, fixture_support_bar 306.00; kerf-inclusive consumed 618.40 mm; remainder 381.60 mm' $(DUALBAR_BUILD)/cut-list.md
-	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_candidate_core_batches=4 device_example_batches=2 legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=24 cable_anchors=8'
+	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_candidate_core_batches=4 device_example_batches=2 legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=25 cable_anchors=8'
 
 clean:
 	rm -rf $(BUILD)

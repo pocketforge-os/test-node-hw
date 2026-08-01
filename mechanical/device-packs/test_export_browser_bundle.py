@@ -165,10 +165,10 @@ class BrowserBundleTests(unittest.TestCase):
         clean_by_slug = {
             device["slug"]: device for device in self.catalog["devices"]
         }
-        self.assertTrue(
-            clean_by_slug["trimui-smart-pro"]["modes"]["full"][
-                "production_eligible"
-            ]
+        pro_full = clean_by_slug["trimui-smart-pro"]["modes"]["full"]
+        self.assertFalse(pro_full["production_eligible"])
+        self.assertEqual(
+            ["layout_unqualified"], pro_full["nonproduction_reasons"]
         )
         pro_s_full = clean_by_slug["trimui-smart-pro-s"]["modes"]["full"]
         self.assertFalse(pro_s_full["production_eligible"])

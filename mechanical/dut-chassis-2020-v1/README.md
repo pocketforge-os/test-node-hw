@@ -27,13 +27,14 @@ topology from `../device-packs/device-layouts.json`; do not choose it by hand.
 
 | Device | Layout | Fixture support | Status |
 | --- | --- | --- | --- |
-| TrimUI Smart Pro | `chassis-core-v1` | Four 164 mm upright halves + two 306 mm crossbars | Physically proven and frozen |
-| TrimUI Smart Pro S | `chassis-dualbar-v1` | Two movable 306 mm fixture bars + four identical printed links | Candidate pending `tsp-t1zd.2` |
+| TrimUI Smart Pro | `chassis-core-v2` | Proven gantry + stack-clear carrier links | Candidate pending `tsp-px73.23`; `chassis-core-v1` remains frozen |
+| TrimUI Smart Pro S | `chassis-dualbar-v1` | Two movable 306 mm fixture bars + four printed joints + four printed links | Candidate pending `tsp-px73.23` |
 
 Both layouts preserve the same outer frame, fixture plate, plate Y/Z datum,
 camera optical relationship, DUT carrier, placard, power strip, stacking
-hardware, and wire anchors. In the dual-bar layout, a continuous bar spans the
-lower depth rails and another spans the upper depth rails. Four identical
+interface, and wire anchors; each record locks its own accepted or
+candidate stacking-tab revision. In the dual-bar layout, a continuous bar
+spans the lower depth rails and another spans the upper depth rails. Four identical
 71.5 mm keyed links join those bars directly to the plate's existing upper and
 lower slots.
 
@@ -61,7 +62,8 @@ assumption:
 - measured slot mouth 6.73 mm, depth approximately 6.48 mm, widest pocket
   12.15 mm, lip depth 1.66 mm, and deep channel width 6.66 mm;
 - BLCCLOY B08C9Q2TGW metal three-way end connectors;
-- BLCCLOY B08D6T9CGN concealed metal L-connectors;
+- BLCCLOY B08D6T9CGN concealed metal L-connectors for the legacy gantry
+  crossbars only;
 - ordinary metal M3 nuts measuring 5.36 mm across flats × 2.30 mm thick;
 - face-loaded M5 drop-in T-nuts with low-profile M5 × 10 mm button-head
   screws and washers no larger than 10 mm OD for registration tabs;
@@ -156,9 +158,10 @@ make dualbar
 make validate-dualbar-batches
 ```
 
-Candidate Batches 01–02 contain 20 short channel bars and four identical keyed
-fixture links. Batches 04–05 are
-normalized-geometry identical to the proven layout. `make dualbar` also
+Candidate Batches 01–02 contain 28 short channel bars, four identical keyed
+fixture links, and four accepted printed crossbar-joint plates. Batch 04 keeps
+the owner-corrected stacking tab and Batch 05 remains normalized-geometry
+identical to the proven layout. `make dualbar` also
 regenerates the cut list and six review views under `build/dualbar/`. Generate
 the complete device-selected candidate through the pack builder, not by mixing
 these files manually:
@@ -258,11 +261,19 @@ Batch 01 provides 28 short bars: 22 use-now mount positions and six parked
 replacement bars. The authoritative rail/face preload map is in the handbook
 assembly guide. Do not close a rail end until that map balances to 28.
 
-Dual-bar Batch 01 instead provides exactly 20: six active outer-width-rail
+Dual-bar Batch 01 instead provides exactly 28: six active outer-width-rail
 locations, four active power-strip locations on the lower operator-right depth
-rail, four active fixture-bar link locations, four parked depth-rail spares,
-and two parked fixture-bar spares. It contains no long splice bar.
+rail, four active fixture-bar link locations, eight active printed-joint
+locations (four in the fixture bars and four in the depth rails), four parked
+depth-rail spares, and two parked fixture-bar spares. It contains no long
+splice bar.
 Keep the two inventories separate.
+
+Current device packs select `CARRIER_LINK_REVISION="stack_clear_v2"`. Its 9 mm
+end margin keeps every installed link 1 mm inside the chassis's lower and upper
+stack planes, eliminating the former 2 mm projection. The frozen
+`chassis-core-v1` pack remains reproducible with `legacy_v1` and its original
+12 mm end margin.
 
 ## Stacking registration tabs
 
@@ -310,10 +321,21 @@ replacement exports are also available.
 ## Dual-bar fixture suspension candidate
 
 Join one continuous 306 mm bar between the two lower depth rails and a second
-between the two upper depth rails. Use two accepted concealed metal
-L-connectors per bar and never splice either one. Before closing the bar ends,
-load two active short M3 bars into each operator-facing groove and park one
-blue-tagged spare in each bar.
+between the two upper depth rails. Use two accepted printed indexing plates
+per bar and never splice either one. Before closing the bar ends, load two
+active short M3 bars plus one blue-tagged spare into each operator-facing
+groove for the fixture links. Load two more active bars into the clear inward
+horizontal groove of each fixture bar for the printed end joints: upward on
+the lower bar and downward on the upper bar. Load one active joint bar into
+the matching inward horizontal groove of each outer depth rail and park one
+spare in each depth rail's side groove.
+
+At each fixture-bar end, orient the printed joint plate on the clear interior
+face between the upper and lower rails. Seat its perpendicular keys in the
+depth-rail and fixture-bar slots, then clamp both holes through their active
+short bars. The lower plates sit above the lower rails; the upper plates sit
+below the upper rails. These plates index the movable fixture support only and
+never enter the outer-frame or vertical stacking load path.
 
 At each fixture-plate side:
 

@@ -490,7 +490,8 @@ jobs:
           grep -q \
             'require physically qualified registered chassis layouts' \
             "${log}"
-          grep -q 'chassis-dualbar-v1 (tsp-t1zd.2)' "${log}"
+          grep -q 'chassis-core-v2 (tsp-px73.23)' "${log}"
+          grep -q 'chassis-dualbar-v1 (tsp-px73.23)' "${log}"
           echo "release_candidate_gate=pass"
 
       - name: Prove two real dual-device builds are byte-identical

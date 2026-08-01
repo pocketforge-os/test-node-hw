@@ -18,6 +18,7 @@ DUALBAR_CORE_OUTPUTS = (
 GUIDE_LAYER_COUNT = 70
 GUIDE_SCENE_DEFINES = (
     """-D 'CHASSIS_VARIANT="dualbar_v1"'""",
+    """-D 'CARRIER_LINK_REVISION="stack_clear_v2"'""",
     """-D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"'""",
 )
 GUIDE_DUALBAR_ASSEMBLY = (
