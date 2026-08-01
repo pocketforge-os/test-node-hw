@@ -324,6 +324,7 @@ GUIDE_STEPS := \
 	$(GUIDE_BUILD)/detail-05-lower-top-ring.png \
 	$(GUIDE_BUILD)/detail-05-square-diagonals.png \
 	$(GUIDE_BUILD)/detail-06-carrier-link-lengths.png \
+	$(GUIDE_BUILD)/detail-06-carrier-link-lengths-stack-clear.png \
 	$(GUIDE_BUILD)/detail-07-fixture-spacers.png \
 	$(GUIDE_BUILD)/detail-07-optical-axis.png \
 	$(GUIDE_BUILD)/detail-08-placard.png \
@@ -1358,6 +1359,12 @@ $(GUIDE_BUILD)/detail-06-carrier-link-lengths.png: $(SOURCE) lib/pf-2020.scad | 
 		--projection=ortho --viewall --camera=0,-180,310,0,0,0 \
 		-D 'PART="guide_detail_06_carrier_link_lengths"' $<
 
+$(GUIDE_BUILD)/detail-06-carrier-link-lengths-stack-clear.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,760 \
+		--projection=ortho --viewall --camera=0,-180,310,0,0,0 \
+		-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
+		-D 'PART="guide_detail_06_carrier_link_lengths"' $<
+
 $(GUIDE_BUILD)/detail-07-fixture-spacers.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1000 \
 		--projection=ortho --viewall --camera=430,-360,350,173,65,184 \
@@ -2194,7 +2201,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'Fixture-support savings: 656.00 mm (51.74%)' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'three 306.00 mm fixture bars plus three kerfs consume \*\*927.60 mm\*\* and leave \*\*72.40 mm\*\*' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'Bar 5: fixture_support_bar 306.00, fixture_support_bar 306.00; kerf-inclusive consumed 618.40 mm; remainder 381.60 mm' $(DUALBAR_BUILD)/cut-list.md
-	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_candidate_core_batches=4 device_example_batches=2 legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=24 cable_anchors=8'
+	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_candidate_core_batches=4 device_example_batches=2 legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=25 cable_anchors=8'
 
 clean:
 	rm -rf $(BUILD)
