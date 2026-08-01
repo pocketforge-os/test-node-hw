@@ -417,6 +417,18 @@ face-loaded cable-anchor/tie path.
 Keep those panels derived from the production modules rather than redrawing
 their geometry independently.
 
+The novice handbook walkthrough has a separate ordered 17-image contract for
+the Smart Pro S dual-bar chassis. Generate just that sequence with:
+
+```sh
+make guide-dualbar-assembly-steps
+```
+
+The stable outputs are `build/handbook/assembly-01-channel-bar.png` through
+`assembly-17-final.png`. Every render target pins both `dualbar_v1` and
+`smart_pro_s`; the target-contract test rejects a missing/reordered image or a
+recipe that points back to a retired gantry assembly scene.
+
 ## Assembly documentation
 
 The novice-safe parts list, print settings, preload map, cutting order,
