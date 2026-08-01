@@ -143,9 +143,10 @@ change. Ordinary builds re-render and compare every fit-bearing qualified mesh
 before emitting a pack.
 
 Qualified chassis layouts are immutable by layout ID. CI compares every
-qualified layout file and its registered device mappings with the pull
-request's base revision; change geometry under a new candidate layout ID
-instead of editing a proven version. Promotion is staged: candidate geometry
+qualified layout file with the pull request's base revision; change geometry
+under a new candidate layout ID instead of editing a proven version. Move a
+registered device only to a candidate that explicitly names the frozen record
+with `supersedes_layout_id`. Promotion is staged: candidate geometry
 must land first, be printed and accepted, and a later change may update only
 its `qualification` record. CI also renders every production full pack on the
 pull request, so changing shared OpenSCAD source without reproducing every
@@ -180,14 +181,16 @@ repeats those packs on each relevant pushed revision, so stale generated
 output cannot make a source change look complete.
 
 The static normalized hashes in `layouts/chassis-core-v1.json` freeze the
-working base chassis. `layouts/chassis-dualbar-v1.json` separately freezes the
-Pro S candidate beds. Batch 04 intentionally differs: the immutable qualified
-legacy bed retains its accepted stacking-tab hole, while the current dual-bar
-bed carries the owner-corrected hole 7 mm higher. Batch 05, carrier-link,
-calibration, and wire-anchor hashes remain identical across both layouts;
-dual-bar Batches 01–02 are also variant-specific. These are regression
-baselines, not automatic physical qualification. Changing a lock requires
-understanding the geometry change, not blindly recording a new digest.
+working base chassis. `layouts/chassis-core-v2.json` is its candidate successor
+and changes only the carrier links to the stack-clear revision.
+`layouts/chassis-dualbar-v1.json` separately freezes the Pro S candidate beds.
+Batch 04 intentionally differs: the immutable qualified legacy bed retains its
+accepted stacking-tab hole, while the current dual-bar bed carries the
+owner-corrected hole 7 mm higher. Dual-bar Batches 01–02 now contain 28 captive
+bars, four fixture links, and four printed crossbar-joint plates. These are
+regression baselines, not automatic physical qualification. Changing a lock
+requires understanding the geometry change, not blindly recording a new
+digest.
 
 ## Immutable production releases
 

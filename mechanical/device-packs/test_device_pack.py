@@ -172,6 +172,16 @@ class DevicePackTests(unittest.TestCase):
             packs.CRADLE_ROOT, cls.profile_path
         )
         cls.layout = packs.load_layout(cls.root, cls.layout_path)
+        cls.current_layout_path = (
+            cls.root
+            / "mechanical"
+            / "device-packs"
+            / "layouts"
+            / "chassis-core-v2.json"
+        )
+        cls.current_layout = packs.load_layout(
+            cls.root, cls.current_layout_path
+        )
         cls.dualbar_layout_path = (
             cls.root
             / "mechanical"
@@ -236,7 +246,11 @@ class DevicePackTests(unittest.TestCase):
                     )
 
     def test_static_layout_geometry_is_regression_locked(self) -> None:
-        for layout in (self.layout, self.dualbar_layout):
+        for layout in (
+            self.layout,
+            self.current_layout,
+            self.dualbar_layout,
+        ):
             for artifact in layout.artifacts:
                 with self.subTest(
                     layout=layout.layout_id,
@@ -262,10 +276,21 @@ class DevicePackTests(unittest.TestCase):
         pro_s = packs.resolve_device_layout(
             self.root, "trimui-smart-pro-s"
         )
-        self.assertEqual("chassis-core-v1", pro.layout_id)
-        self.assertEqual("physically_qualified", pro.qualification["status"])
+        self.assertEqual("chassis-core-v2", pro.layout_id)
+        self.assertEqual("chassis-core-v1", pro.supersedes_layout_id)
+        self.assertEqual("candidate", pro.qualification["status"])
         self.assertEqual("chassis-dualbar-v1", pro_s.layout_id)
         self.assertEqual("candidate", pro_s.qualification["status"])
+        for layout in (pro, pro_s):
+            carrier_links = next(
+                artifact
+                for artifact in layout.artifacts
+                if artifact.artifact_id == "device_carrier_links"
+            )
+            self.assertEqual(
+                "stack_clear_v2",
+                carrier_links.parameters["CARRIER_LINK_REVISION"],
+            )
         with self.assertRaisesRegex(
             packs.PackError, "does not match registered layout"
         ):
@@ -288,19 +313,15 @@ class DevicePackTests(unittest.TestCase):
             self.profile,
             kind="candidate-layout-devices",
         )
+        self.assertEqual([], production["include"])
         self.assertEqual(
             [
                 {
                     "device_slug": "trimui-smart-pro",
-                    "layout_id": "chassis-core-v1",
-                    "layout_status": "physically_qualified",
+                    "layout_id": "chassis-core-v2",
+                    "layout_status": "candidate",
                     "holder_status": "physically_qualified",
-                }
-            ],
-            production["include"],
-        )
-        self.assertEqual(
-            [
+                },
                 {
                     "device_slug": "trimui-smart-pro-s",
                     "layout_id": "chassis-dualbar-v1",
@@ -533,6 +554,60 @@ class DevicePackTests(unittest.TestCase):
             ).mkdir(parents=True)
             with self.assertRaisesRegex(
                 packs.PackError, "cannot begin as physically qualified"
+            ):
+                packs.guard_qualified_layouts(head, base)
+
+    def test_qualified_layout_guard_allows_declared_candidate_successor(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory(
+            prefix="pf-layout-head-"
+        ) as head_temp, tempfile.TemporaryDirectory(
+            prefix="pf-layout-base-"
+        ) as base_temp:
+            head = Path(head_temp)
+            base = Path(base_temp)
+            head_v1 = write_layout_guard_tree(
+                head, status="physically_qualified"
+            )
+            write_layout_guard_tree(base, status="physically_qualified")
+
+            successor = json.loads(head_v1.read_text(encoding="utf-8"))
+            successor["layout_id"] = "demo-v2"
+            successor["supersedes_layout_id"] = "demo-v1"
+            successor["qualification"]["status"] = "candidate"
+            successor["qualification"]["accepted_on"] = None
+            successor_path = head_v1.with_name("demo-v2.json")
+            successor_path.write_text(
+                json.dumps(successor, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            registry_path = (
+                head
+                / "mechanical"
+                / "device-packs"
+                / "device-layouts.json"
+            )
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["devices"]["device-demo"]["layout"] = (
+                "mechanical/device-packs/layouts/demo-v2.json"
+            )
+            registry_path.write_text(
+                json.dumps(registry, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                (1, 0, 0),
+                packs.guard_qualified_layouts(head, base),
+            )
+
+            successor.pop("supersedes_layout_id")
+            successor_path.write_text(
+                json.dumps(successor, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                packs.PackError, "proven device/layout mapping is immutable"
             ):
                 packs.guard_qualified_layouts(head, base)
 

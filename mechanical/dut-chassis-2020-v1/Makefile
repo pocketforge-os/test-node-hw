@@ -32,6 +32,7 @@ GUIDE_DEVICE_REGISTRY := ../device-packs/device-layouts.json
 GUIDE_LAYOUT_RECORD := ../device-packs/layouts/chassis-dualbar-v1.json
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
+	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
 	-D 'EXAMPLE_DEVICE_VARIANT="$(GUIDE_EXAMPLE_DEVICE_VARIANT)"'
 
 FIXTURE_STL := ../dut-fixture-v1/build/pocketforge-dut-fixture-v1.stl
@@ -2063,9 +2064,9 @@ validate-dualbar-batches: $(DUALBAR_CORE_BATCHES) \
 		$(DUALBAR_BUILD)/production-batch-01-ironed-interfaces.stl
 	$(PYTHON) $(BOUNDS) --max-x 247 --max-y 207 --max-z 7 \
 		$(DUALBAR_BUILD)/production-batch-02-fixture-links.stl
-	$(PYTHON) $(TOPOLOGY) --expected-components 20 \
+	$(PYTHON) $(TOPOLOGY) --expected-components 28 \
 		$(DUALBAR_BUILD)/production-batch-01-ironed-interfaces.stl
-	$(PYTHON) $(TOPOLOGY) --expected-components 4 \
+	$(PYTHON) $(TOPOLOGY) --expected-components 8 \
 		$(DUALBAR_BUILD)/production-batch-02-fixture-links.stl
 	$(PYTHON) $(FINGERPRINT) \
 		$(BUILD)/production-batch-04-frame-hardware.stl | \
@@ -2080,7 +2081,7 @@ validate-dualbar-batches: $(DUALBAR_CORE_BATCHES) \
 		$(DUALBAR_BUILD)/dualbar-fixture-link.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 4 \
 		$(DUALBAR_BUILD)/dualbar-fixture-link-set.stl
-	@echo 'dualbar_batches=pass core=4 captive_bars=20 fixture_links=4 revised_batch=04 shared_batch=05'
+	@echo 'dualbar_batches=pass core=4 captive_bars=28 fixture_links=4 printed_crossbar_joints=4 revised_batch=04 shared_batch=05'
 
 validate-dualbar-guard: | $(DUALBAR_BUILD)
 	@set -eu; variant_log=$(DUALBAR_BUILD)/invalid-variant.log; \
@@ -2092,6 +2093,15 @@ validate-dualbar-guard: | $(DUALBAR_BUILD)
 		echo 'ERROR: unknown chassis variant was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'Unknown chassis variant' $$variant_log; \
+	carrier_log=$(DUALBAR_BUILD)/invalid-carrier-link-revision.log; \
+	carrier_mesh=$(DUALBAR_BUILD)/invalid-carrier-link-revision.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$carrier_mesh \
+		-D 'CARRIER_LINK_REVISION="unknown"' \
+		-D 'PART="rear_carrier_link_set"' $(SOURCE) \
+		>$$carrier_log 2>&1; then \
+		echo 'ERROR: unknown carrier-link revision was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'Unknown carrier-link revision' $$carrier_log; \
 	bed_log=$(DUALBAR_BUILD)/invalid-fixture-link-bed.log; \
 	bed_mesh=$(DUALBAR_BUILD)/invalid-fixture-link-bed.stl; \
 	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$bed_mesh \
@@ -2102,7 +2112,7 @@ validate-dualbar-guard: | $(DUALBAR_BUILD)
 		echo 'ERROR: overlong dual-bar fixture-link bed was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'Four-link dual-bar batch must fit the 247 x 207 mm print bed' $$bed_log; \
-	echo 'dualbar_guard=pass rejected_unknown_variant=unknown rejected_overlong_link_bed=true'
+	echo 'dualbar_guard=pass rejected_unknown_variant=unknown rejected_unknown_carrier_revision=unknown rejected_overlong_link_bed=true'
 
 validate-power-strip-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-power-strip-position.log; \
