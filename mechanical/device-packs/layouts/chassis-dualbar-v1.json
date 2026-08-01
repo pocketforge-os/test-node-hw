@@ -112,7 +112,7 @@
         "CHASSIS_VARIANT": "dualbar_v1"
       },
       "parameter_bindings": {},
-      "expected_normalized_sha256": "911d249f2b8e7120b46d86c9a25f85a4a1edbf64944c05615911681a01e0cb25",
+      "expected_normalized_sha256": "31ddea2c53c3d93cb6f64cca11c123b39d071879b9e172839c0ea87c75307601",
       "print": {
         "material": "ABS",
         "scale_percent": 100,
