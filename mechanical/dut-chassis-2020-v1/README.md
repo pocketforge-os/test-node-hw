@@ -322,10 +322,13 @@ replacement exports are also available.
 
 Join one continuous 306 mm bar between the two lower depth rails and a second
 between the two upper depth rails. Use two accepted printed indexing plates
-per bar and never splice either one. Before closing the bar ends, load four
-active short M3 bars into each operator-facing groove—two for the fixture links
-and two for the printed end joints—and park one blue-tagged spare in each bar.
-Load one active joint bar plus one parked spare into each outer depth rail.
+per bar and never splice either one. Before closing the bar ends, load two
+active short M3 bars plus one blue-tagged spare into each operator-facing
+groove for the fixture links. Load two more active bars into the clear inward
+horizontal groove of each fixture bar for the printed end joints: upward on
+the lower bar and downward on the upper bar. Load one active joint bar into
+the matching inward horizontal groove of each outer depth rail and park one
+spare in each depth rail's side groove.
 
 At each fixture-bar end, orient the printed joint plate on the clear interior
 face between the upper and lower rails. Seat its perpendicular keys in the

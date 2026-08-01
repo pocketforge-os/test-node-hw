@@ -3517,8 +3517,10 @@ module guide_dualbar_suspension_detail() {
 }
 
 // Exact dual-bar preload view. Each fixture bar receives two active link
-// threads and one otherwise-identical blue-tape spare. The remaining
-// dual-bar inventory is called out explicitly so Batch 01 stays auditable.
+// threads in its operator-facing groove, two active printed-joint threads in
+// its inward horizontal groove, and one otherwise-identical blue-tape spare.
+// The remaining dual-bar inventory is called out explicitly so Batch 01 stays
+// auditable.
 module guide_dualbar_preload() {
     rail_y = [-32.0, 32.0];
     rail_z = profile_size / 2;
@@ -3536,9 +3538,13 @@ module guide_dualbar_preload() {
             guide_preload_marker(
                 [x, rail_y[index] - profile_size / 2 - 3.0, rail_z],
                 "x");
+        // This handbook map is viewed straight down. Displace the two
+        // horizontal-face markers to the far side of each rail so their X
+        // positions stay visible; the label and assembly text own the actual
+        // upward/downward face.
         for (x = joint_offsets)
             guide_preload_marker(
-                [x, rail_y[index] - profile_size / 2 - 3.0, rail_z],
+                [x, rail_y[index] + profile_size / 2 + 3.0, rail_z],
                 "x");
         guide_preload_marker(
             [spare_offset,
@@ -3547,7 +3553,7 @@ module guide_dualbar_preload() {
             "x", guide_new_tint, true);
     }
 
-    guide_label("EACH FIXTURE BAR  /  2 LINKS + 2 PRINTED JOINTS",
+    guide_label("EACH BAR  /  2 OPERATOR LINKS + 2 INWARD JOINTS",
                 [structural_x_length / 2, -78.0,
                  profile_size + 1.0], 9.0);
     guide_label("BLUE TAPE ON 1 PER BAR = 2 PARKED FIXTURE SPARES",
@@ -3851,7 +3857,9 @@ module guide_preload_width_rails() {
 }
 
 module guide_plan_rail_y(panel_x, x, label_text,
-                         face_direction, active_offsets = []) {
+                         face_direction, active_offsets = [],
+                         horizontal_active_offsets = [],
+                         horizontal_face_direction = 1) {
     rail_start_y = 0.0;
     spare_offset = frame_outer.y - 46.0 - profile_size;
     face_x = panel_x + x +
@@ -3863,6 +3871,11 @@ module guide_plan_rail_y(panel_x, x, label_text,
     for (active_offset = active_offsets)
         guide_preload_marker(
             [face_x, active_offset, profile_size / 2], "y");
+    for (active_offset = horizontal_active_offsets)
+        guide_preload_marker(
+            [panel_x + x, active_offset,
+             horizontal_face_direction > 0 ? profile_size + 3.0 : -3.0],
+            "y");
     guide_preload_marker(
         [face_x, spare_offset, profile_size / 2], "y",
         guide_new_tint, true);
@@ -3872,24 +3885,31 @@ module guide_plan_rail_y(panel_x, x, label_text,
 
 // Exact depth-rail preload. Blue tape marks the otherwise identical orange
 // replacements near the future device-side ends; untagged bars remain loose
-// near the camera-frame joint. Left and right rails mirror one another into
-// their inside grooves.
+// near the camera-frame joint. Left and right rails mirror side-face hardware
+// into their inside grooves. In the dual-bar variant, one additional joint
+// bar sits in the upward groove of each lower rail and the downward groove of
+// each upper rail so the printed plates remain between the rail rings.
 module guide_preload_depth_rails() {
     lower_x = 0.0;
-    upper_x = 250.0;
+    upper_x = CHASSIS_VARIANT == "dualbar_v1" ? 310.0 : 250.0;
     left_x = 0.0;
     right_x = 120.0;
     panel_center_x = (left_x + right_x) / 2;
     gantry_offsets = CHASSIS_VARIANT == "legacy_gantry" ?
         [fixture_gantry_y - profile_size] : [];
+    dualbar_joint_offsets = CHASSIS_VARIANT == "dualbar_v1" ?
+        [fixture_bar_y - profile_size] : [];
     power_strip_offsets =
         [for (y = power_strip_rail_fastener_y) y - profile_size];
 
     guide_plan_rail_y(lower_x, left_x, "DEPTH-L-L", 1,
-                      gantry_offsets);
+                      gantry_offsets, dualbar_joint_offsets, 1);
     guide_plan_rail_y(lower_x, right_x, "DEPTH-R-L  /  POWER", -1,
-                      concat(gantry_offsets, power_strip_offsets));
-    guide_label("LOWER RIGHT ADDS 4 POWER-STRIP BARS",
+                      concat(gantry_offsets, power_strip_offsets),
+                      dualbar_joint_offsets, 1);
+    guide_label(CHASSIS_VARIANT == "dualbar_v1" ?
+                "LOWER: 1 UP JOINT EACH; RIGHT +4 POWER" :
+                "LOWER RIGHT ADDS 4 POWER-STRIP BARS",
                 [lower_x + panel_center_x, structural_y_length + 54.0,
                  profile_size + 1.0], 7.0);
     guide_label("BLUE TAPE ON 1 = PARKED REPLACEMENT",
@@ -3905,10 +3925,12 @@ module guide_preload_depth_rails() {
                 [0, 0, 0], guide_spare_tint);
 
     guide_plan_rail_y(upper_x, left_x, "DEPTH-L-U", 1,
-                      gantry_offsets);
+                      gantry_offsets, dualbar_joint_offsets, -1);
     guide_plan_rail_y(upper_x, right_x, "DEPTH-R-U", -1,
-                      gantry_offsets);
-    guide_label("UPPER PAIR  /  ONE PARKED SPARE PER RAIL",
+                      gantry_offsets, dualbar_joint_offsets, -1);
+    guide_label(CHASSIS_VARIANT == "dualbar_v1" ?
+                "UPPER: 1 DOWN JOINT + 1 PARKED EACH" :
+                "UPPER PAIR  /  ONE PARKED SPARE PER RAIL",
                 [upper_x + panel_center_x, structural_y_length + 54.0,
                  profile_size + 1.0], 7.0);
     guide_label("BLUE TAPE ON 1 = PARKED REPLACEMENT",
