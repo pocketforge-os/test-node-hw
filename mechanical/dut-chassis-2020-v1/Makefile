@@ -588,7 +588,7 @@ validate-usb-c-interrupter-prototype: prototype-usb-c-interrupter
 	grep -q 'M1.7 self-tapper pilot must remain a conservative starter hole' \
 		$$log; \
 	echo 'usb_c_interrupter_pilot_guard=pass rejected_pilot_mm=1.8'
-	@echo 'usb_c_interrupter_prototype_validation=pass face_mm=20.09x6.59 face_hole_spacing_mm=16 m17_pilot_mm=1.35 rear_board_clearance_mm=12.25 rail_mount=2xM3 physical_status=candidate'
+	@echo 'usb_c_interrupter_prototype_validation=pass face_mm=20.09x6.59 face_hole_spacing_mm=16 m17_pilot_mm=1.35 rear_board_clearance_mm=13.0 rail_mount=2xM3 physical_status=candidate'
 
 $(BUILD)/device-id-placard.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="placard"' $<

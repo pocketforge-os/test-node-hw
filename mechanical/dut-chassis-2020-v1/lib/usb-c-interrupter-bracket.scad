@@ -33,7 +33,7 @@ function usbci_mount_pad_centre_y() = 18.0;
 function usbci_retention_depth() = 5.6;
 function usbci_retention_floor() =
     usbci_retention_depth() - usbci_m17_pilot_depth();
-function usbci_retention_inner_x() = 6.125;
+function usbci_retention_inner_x() = 6.5;
 function usbci_retention_outer_x() = 11.5;
 function usbci_retention_bottom_y() = -2.8;
 function usbci_retention_top_y() = 10.0;
@@ -106,8 +106,8 @@ module usb_c_interrupter_bracket(
            "M1.7 self-tapper pilot must remain a conservative starter hole");
     assert(usbci_retention_floor() >= 0.6 - 0.001,
            "M1.7 blind pilots need a 0.6 mm closed floor");
-    assert(usbci_rear_board_opening_width() >= 12.0,
-           "Rear PCB opening must preserve the supplied 12 mm width");
+    assert(usbci_rear_board_opening_width() >= 13.0,
+           "Rear PCB opening needs 0.5 mm per side around the 12 mm board");
     assert(usbci_mount_pad_size().y == 20.0,
            "Rail pad must span the full 20 mm extrusion face");
 
