@@ -613,6 +613,7 @@ gantry_joint_key_length = 18.0;
 // and the fixture board. It is intentionally absent from production batches,
 // device-pack manifests, and handbook layers until the owner's print gate.
 usbci_mount_center_x = 68.0;
+// Local row Y=0 is the upper port; additional rows hang downward from here.
 usbci_face_center_z = fixture_bar_z.y - profile_size / 2 - 8.0;
 usbci_rail_contact_y = fixture_bar_y - profile_size / 2;
 usbci_left_joint_max_x = profile_size + profile_size / 2 +
@@ -627,6 +628,10 @@ usbci_fixture_clearance =
 usbci_face_to_upper_bar_clearance =
     fixture_bar_z.y - profile_size / 2 -
     (usbci_face_center_z + usbci_face_size().y / 2);
+usbci_lower_face_to_fixture_clearance =
+    usbci_face_center_z + min(usbci_face_row_centres()) -
+    usbci_face_size().y / 2 -
+    (fixture_origin.z + fixture_plate_size.y);
 usbci_operator_service_depth =
     usbci_rail_contact_y - usbci_retention_depth() -
     human_side_inner_face_y;
@@ -1076,6 +1081,9 @@ assert(usbci_fixture_clearance >= 8.0,
 assert(usbci_face_to_upper_bar_clearance >= 4.0,
        str("USB-C interrupter face must hang below the upper fixture bar; ",
            "actual ", usbci_face_to_upper_bar_clearance, " mm"));
+assert(usbci_lower_face_to_fixture_clearance >= 20.0,
+       str("Lower USB-C interrupter face must clear the fixture board; ",
+           "actual ", usbci_lower_face_to_fixture_clearance, " mm"));
 assert(usbci_operator_service_depth >= 30.0,
        str("USB-C interrupter needs at least 30 mm of operator-side cable bay; ",
            "actual ", usbci_operator_service_depth, " mm"));

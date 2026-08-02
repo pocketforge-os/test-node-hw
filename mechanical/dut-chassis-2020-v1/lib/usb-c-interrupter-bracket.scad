@@ -8,6 +8,8 @@
  *
  * This is a source-only physical-fit candidate. The photographed face was
  * measured as 20.09 x 6.59 mm with two nominal 2 mm holes on 16 mm centres.
+ * One interrupter consists of two of those port boards; this first pass
+ * stacks them with a photo-derived 2.0 mm edge gap (8.59 mm centre pitch).
  * The separately measured 2.23 / 2.54 mm long-edge margins sum to 6.77 mm
  * after including the 2 mm hole, so the candidate centres the hole row on the
  * 6.59 mm face. The 2 mm face holes retain 0.15 mm radial freedom around an
@@ -18,6 +20,10 @@ function usbci_face_size() = [20.09, 6.59];
 function usbci_face_hole_diameter() = 2.0;
 function usbci_face_hole_spacing() = 16.0;
 function usbci_face_hole_centres() = [-8.0, 8.0];
+function usbci_port_count() = 2;
+function usbci_face_edge_gap() = 2.0;
+function usbci_face_pitch() = usbci_face_size().y + usbci_face_edge_gap();
+function usbci_face_row_centres() = [0, -usbci_face_pitch()];
 function usbci_rear_board_depth() = 12.0;
 function usbci_connector_depth() = 6.0;
 
@@ -35,7 +41,8 @@ function usbci_retention_floor() =
     usbci_retention_depth() - usbci_m17_pilot_depth();
 function usbci_retention_inner_x() = 6.5;
 function usbci_retention_outer_x() = 11.5;
-function usbci_retention_bottom_y() = -2.8;
+function usbci_retention_bottom_y() =
+    usbci_face_row_centres().y - 2.8;
 function usbci_retention_top_y() = 10.0;
 function usbci_rear_board_opening_width() =
     2 * usbci_retention_inner_x();
@@ -77,15 +84,15 @@ module usbci_retention_leg(right = false) {
             usbci_rounded_rect_2d(leg_size, 1.2);
 }
 
-module usbci_m17_blind_pilot(x, pilot_diameter) {
+module usbci_m17_blind_pilot(x, y, pilot_diameter) {
     pilot_start_z = usbci_retention_floor();
     entry_start_z = usbci_retention_depth() -
                     usbci_m17_pilot_entry_depth();
 
-    translate([x, 0, pilot_start_z])
+    translate([x, y, pilot_start_z])
         cylinder(d = pilot_diameter,
                  h = usbci_m17_pilot_depth() + 0.02, $fn = 32);
-    translate([x, 0, entry_start_z])
+    translate([x, y, entry_start_z])
         cylinder(d1 = pilot_diameter,
                  d2 = usbci_m17_pilot_entry_diameter(),
                  h = usbci_m17_pilot_entry_depth() + 0.02, $fn = 32);
@@ -98,6 +105,15 @@ module usb_c_interrupter_bracket(
                usbci_face_hole_centres().x) ==
                usbci_face_hole_spacing(),
            "USB-C interrupter retention holes must remain on 16 mm centres");
+    assert(len(usbci_face_row_centres()) == usbci_port_count() &&
+               usbci_port_count() == 2,
+           "One interrupter assembly must retain two stacked port boards");
+    assert(abs(abs(usbci_face_row_centres().y -
+                   usbci_face_row_centres().x) -
+               usbci_face_pitch()) < 0.001 &&
+               abs(usbci_face_pitch() - usbci_face_size().y -
+                   usbci_face_edge_gap()) < 0.001,
+           "Stacked interrupter faces must preserve the photo-derived gap");
     assert(usbci_face_size().x / 2 -
                usbci_face_hole_spacing() / 2 -
                usbci_face_hole_diameter() / 2 >= 1.0,
@@ -123,8 +139,9 @@ module usb_c_interrupter_bracket(
                 cylinder(d = usbci_m3_clearance(),
                          h = usbci_mount_pad_size().z + 0.04, $fn = 36);
 
-        for (x = usbci_face_hole_centres())
-            usbci_m17_blind_pilot(x, pilot_diameter);
+        for (row_y = usbci_face_row_centres())
+            for (x = usbci_face_hole_centres())
+                usbci_m17_blind_pilot(x, row_y, pilot_diameter);
     }
 }
 
@@ -138,33 +155,37 @@ module usb_c_interrupter_proxy() {
     board_width = 12.0;
     connector_face = [9.0, 3.4];
 
-    color([0.10, 0.12, 0.13])
-        difference() {
-            translate([0, 0,
-                       usbci_retention_depth() + face_thickness / 2])
-                cube([usbci_face_size().x, usbci_face_size().y,
-                      face_thickness], center = true);
-            for (x = usbci_face_hole_centres())
-                translate([x, 0, usbci_retention_depth() - 0.02])
-                    cylinder(d = usbci_face_hole_diameter(),
-                             h = face_thickness + 0.04, $fn = 32);
-        }
+    for (row_y = usbci_face_row_centres()) {
+        color([0.10, 0.12, 0.13])
+            difference() {
+                translate([0, row_y,
+                           usbci_retention_depth() + face_thickness / 2])
+                    cube([usbci_face_size().x, usbci_face_size().y,
+                          face_thickness], center = true);
+                for (x = usbci_face_hole_centres())
+                    translate([x, row_y,
+                               usbci_retention_depth() - 0.02])
+                        cylinder(d = usbci_face_hole_diameter(),
+                                 h = face_thickness + 0.04, $fn = 32);
+            }
 
-    color([0.08, 0.42, 0.22])
-        translate([0, 0,
-                   usbci_retention_depth() -
-                   usbci_rear_board_depth() / 2])
-            cube([board_width, board_thickness,
-                  usbci_rear_board_depth()], center = true);
+        color([0.08, 0.42, 0.22])
+            translate([0, row_y,
+                       usbci_retention_depth() -
+                       usbci_rear_board_depth() / 2])
+                cube([board_width, board_thickness,
+                      usbci_rear_board_depth()], center = true);
 
-    color([0.64, 0.67, 0.68])
-        translate([0, 0,
-                   usbci_retention_depth() -
-                   usbci_connector_depth() / 2])
-            cube([connector_face.x, connector_face.y,
-                  usbci_connector_depth()], center = true);
-    color([0.015, 0.018, 0.020])
-        translate([0, 0, usbci_retention_depth() + face_thickness + 0.25])
-            linear_extrude(height = 0.5)
-                usbci_rounded_rect_2d(connector_face, 1.5);
+        color([0.64, 0.67, 0.68])
+            translate([0, row_y,
+                       usbci_retention_depth() -
+                       usbci_connector_depth() / 2])
+                cube([connector_face.x, connector_face.y,
+                      usbci_connector_depth()], center = true);
+        color([0.015, 0.018, 0.020])
+            translate([0, row_y,
+                       usbci_retention_depth() + face_thickness + 0.25])
+                linear_extrude(height = 0.5)
+                    usbci_rounded_rect_2d(connector_face, 1.5);
+    }
 }
