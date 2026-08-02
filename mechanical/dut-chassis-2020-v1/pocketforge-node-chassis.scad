@@ -18,6 +18,7 @@
  *   rear_carrier_link_top, rear_carrier_link_bottom,
  *   rear_carrier_link_fit_pair, rear_carrier_link_set,
  *   dualbar_fixture_link, dualbar_fixture_link_set,
+ *   usb_c_interrupter_bracket, usb_c_interrupter_installed_preview,
  *   gantry_splice_internal_bar,
  *   gantry_splice_full_collar,
  *   gantry_splice_full_collar_internal_bar,
@@ -93,6 +94,7 @@
  */
 
 include <lib/pf-2020.scad>;
+use <lib/usb-c-interrupter-bracket.scad>;
 
 PART = "assembly";
 // The default is the physically proven TrimUI Smart Pro chassis and is
@@ -112,6 +114,9 @@ SHOW_CAMERA_FRUSTUM = true;
 SHOW_CONNECTOR_PROXIES = true;
 SHOW_REGISTRATION_GUIDES = true;
 SHOW_POWER_STRIP = true;
+// Candidate only; change after the owner's screw-fit verdict, not by scaling
+// the STL. The current 1.35 mm starter pilot targets an M1.7 self-tapper.
+USB_C_INTERRUPTER_M17_PILOT_DIAMETER = 1.35;
 
 // `make preview` stages these exact production meshes beside this source so
 // presentation mode is portable with the Desktop export.  Proxy mode never
@@ -602,6 +607,29 @@ gantry_joint_corner_radius = 3.0;
 gantry_joint_hole_offset = 10.0;
 gantry_joint_slot = [8.0, m3_clearance];
 gantry_joint_key_length = 18.0;
+
+// Source-only USB-C interrupter fit candidate. The two-screw bracket occupies
+// the upper fixture bar's operator-facing slot between the left joint plate
+// and the fixture board. It is intentionally absent from production batches,
+// device-pack manifests, and handbook layers until the owner's print gate.
+usbci_mount_center_x = 68.0;
+usbci_face_center_z = fixture_bar_z.y - profile_size / 2 - 8.0;
+usbci_rail_contact_y = fixture_bar_y - profile_size / 2;
+usbci_left_joint_max_x = profile_size + profile_size / 2 +
+                         gantry_joint_plate_size.y / 2;
+usbci_fixture_left_x = fixture_origin.x;
+usbci_left_joint_clearance =
+    usbci_mount_center_x - usbci_mount_pad_size().x / 2 -
+    usbci_left_joint_max_x;
+usbci_fixture_clearance =
+    usbci_fixture_left_x -
+    (usbci_mount_center_x + usbci_mount_pad_size().x / 2);
+usbci_face_to_upper_bar_clearance =
+    fixture_bar_z.y - profile_size / 2 -
+    (usbci_face_center_z + usbci_face_size().y / 2);
+usbci_operator_service_depth =
+    usbci_rail_contact_y - usbci_retention_depth() -
+    human_side_inner_face_y;
 gantry_joint_key_height = slot_key_height;
 
 // Reusable fleet ID system. A 230 mm holder is the largest clean standard that
@@ -1039,6 +1067,18 @@ assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
        gantry_joint_plate_size.y >
        2 * gantry_joint_hole_offset + gantry_joint_slot.y,
        "Gantry joint plate must surround both keyed fastener interfaces");
+assert(usbci_left_joint_clearance >= 3.0,
+       str("USB-C interrupter bracket must clear the left joint plate by 3 mm; ",
+           "actual ", usbci_left_joint_clearance, " mm"));
+assert(usbci_fixture_clearance >= 8.0,
+       str("USB-C interrupter bracket must stay left of the fixture board; ",
+           "actual ", usbci_fixture_clearance, " mm"));
+assert(usbci_face_to_upper_bar_clearance >= 4.0,
+       str("USB-C interrupter face must hang below the upper fixture bar; ",
+           "actual ", usbci_face_to_upper_bar_clearance, " mm"));
+assert(usbci_operator_service_depth >= 30.0,
+       str("USB-C interrupter needs at least 30 mm of operator-side cable bay; ",
+           "actual ", usbci_operator_service_depth, " mm"));
 assert(placard_center_z + placard_size.y / 2 <
        outer_rail_z.y - profile_size / 2,
        "Front placard must remain completely below the top front rail");
@@ -1271,6 +1311,42 @@ module fixture_support(tint = [0.72, 0.74, 0.77]) {
         fixture_dualbars(tint);
     else
         fixture_gantry(tint);
+}
+
+module usb_c_interrupter_at_installed_datum() {
+    // Printable local +Z points toward the operator. Installed local +Y is
+    // world +Z, leaving the photographed perpendicular PCB open toward +Y.
+    multmatrix([
+        [1, 0, 0, usbci_mount_center_x],
+        [0, 0, -1, usbci_rail_contact_y],
+        [0, 1, 0, usbci_face_center_z],
+        [0, 0, 0, 1]
+    ]) children();
+}
+
+module installed_usb_c_interrupter_bracket(show_module = false) {
+    color([0.95, 0.53, 0.12])
+        usb_c_interrupter_at_installed_datum()
+            usb_c_interrupter_bracket(
+                USB_C_INTERRUPTER_M17_PILOT_DIAMETER);
+    if (show_module)
+        usb_c_interrupter_at_installed_datum()
+            usb_c_interrupter_proxy();
+}
+
+module usb_c_interrupter_installed_preview() {
+    assert(CHASSIS_VARIANT == "dualbar_v1",
+           "USB-C interrupter candidate is placed on the dual-bar fixture");
+    // Exact-datum crop of the left end of the upper 306 mm fixture bar. The
+    // lower bar and outer ring are omitted only so they cannot occlude the
+    // small candidate in its review render.
+    translate([profile_size, fixture_bar_y, fixture_bar_z.y])
+        extrusion(112.0, "x", [0.72, 0.74, 0.77, 0.72]);
+    color([0.94, 0.47, 0.10])
+        installed_dualbar_joint_plate(fixture_bar_z.y, false);
+    fixture_plate_preview("proxy", [0.88, 0.88, 0.84, 0.45]);
+    installed_dualbar_fixture_link(fixture_mount_x.x, true);
+    installed_usb_c_interrupter_bracket(true);
 }
 
 module three_way_end_connector_proxy(x_right = false,
@@ -5043,6 +5119,10 @@ if (PART == "assembly") {
     dualbar_fixture_link();
 } else if (PART == "dualbar_fixture_link_set") {
     dualbar_fixture_link_set();
+} else if (PART == "usb_c_interrupter_bracket") {
+    usb_c_interrupter_bracket(USB_C_INTERRUPTER_M17_PILOT_DIAMETER);
+} else if (PART == "usb_c_interrupter_installed_preview") {
+    usb_c_interrupter_installed_preview();
 } else if (PART == "gantry_joint_plate") {
     gantry_joint_plate();
 } else if (PART == "gantry_joint_plate_set") {

@@ -3,6 +3,7 @@ OPENSCAD_FLAGS := --hardwarnings --check-parameters=true --check-parameter-range
 PYTHON ?= python3
 BUILD := build
 DUALBAR_BUILD := $(BUILD)/dualbar
+PROTOTYPE_BUILD := $(BUILD)/prototypes
 GUIDE_BUILD := $(BUILD)/handbook
 GUIDE_LAYER_BUILD := $(GUIDE_BUILD)/layers
 GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
@@ -248,6 +249,14 @@ DUALBAR_REPLACEMENT_PARTS := \
 	$(DUALBAR_BUILD)/dualbar-fixture-link.stl \
 	$(DUALBAR_BUILD)/dualbar-fixture-link-set.stl
 
+USB_C_INTERRUPTER_SOURCE := lib/usb-c-interrupter-bracket.scad
+USB_C_INTERRUPTER_STL := \
+	$(PROTOTYPE_BUILD)/usb-c-interrupter-rail-bracket.stl
+USB_C_INTERRUPTER_PREVIEW := \
+	$(PROTOTYPE_BUILD)/usb-c-interrupter-rail-bracket.png
+USB_C_INTERRUPTER_INSTALLED_PREVIEW := \
+	$(PROTOTYPE_BUILD)/usb-c-interrupter-installed.png
+
 DUALBAR_REVIEW := \
 	$(DUALBAR_BUILD)/layout-assembly.png \
 	$(DUALBAR_BUILD)/layout-front.png \
@@ -462,7 +471,9 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 
 .PHONY: all batches core-batches dualbar dualbar-batches dualbar-preview \
 	dualbar-replacements device-example-batches calibration \
-	replacements fabrication-tools right-angle-checker lint preview \
+	replacements fabrication-tools right-angle-checker \
+	prototype-usb-c-interrupter validate-usb-c-interrupter-prototype \
+	lint preview \
 	presentation-assets \
 	guide-static guide-dualbar-assembly-steps guide-batch-models \
 	guide-layers guide-model handbook-assets \
@@ -502,7 +513,12 @@ fabrication-tools: right-angle-checker
 right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 	$(RIGHT_ANGLE_CHECKER_PREVIEW)
 
-$(BUILD) $(DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
+prototype-usb-c-interrupter: $(USB_C_INTERRUPTER_STL) \
+	$(USB_C_INTERRUPTER_PREVIEW) \
+	$(USB_C_INTERRUPTER_INSTALLED_PREVIEW)
+
+$(BUILD) $(DUALBAR_BUILD) $(PROTOTYPE_BUILD) $(GUIDE_BUILD) \
+$(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
 $(GUIDE_MODEL_BUILD) $(PRESENTATION_IMPORT_DIR):
 	mkdir -p $@
@@ -523,6 +539,56 @@ $(RIGHT_ANGLE_CHECKER_CUSTOM_TEST): $(RIGHT_ANGLE_CHECKER_SOURCE) | $(BUILD)
 		-D 'leg_length=100' -D 'arm_width=22' \
 		-D 'thickness=4' -D 'inside_corner_relief_radius=3' \
 		-D 'outside_corner_chamfer=1.5' -D 'show_label=false' $<
+
+$(USB_C_INTERRUPTER_STL): Makefile $(SOURCE) $(USB_C_INTERRUPTER_SOURCE) \
+		lib/pf-2020.scad | $(PROTOTYPE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="usb_c_interrupter_bracket"' $(SOURCE)
+
+$(USB_C_INTERRUPTER_PREVIEW): Makefile $(SOURCE) $(USB_C_INTERRUPTER_SOURCE) \
+		lib/pf-2020.scad | $(PROTOTYPE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1000 \
+		--projection=ortho --viewall \
+		--camera=48,-58,52,0,12,2 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="usb_c_interrupter_bracket"' $(SOURCE)
+
+$(USB_C_INTERRUPTER_INSTALLED_PREVIEW): Makefile $(SOURCE) \
+		$(USB_C_INTERRUPTER_SOURCE) lib/pf-2020.scad | $(PROTOTYPE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1100 \
+		--projection=ortho \
+		--camera=-35,-25,345,68,65,340 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="usb_c_interrupter_installed_preview"' $(SOURCE)
+
+validate-usb-c-interrupter-prototype: prototype-usb-c-interrupter
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 \
+		$(USB_C_INTERRUPTER_STL)
+	@bounds=$$($(PYTHON) $(BOUNDS) --max-x 24.8 --max-y 30.8 \
+		--max-z 5.6 --bed-x 247 --bed-y 207 \
+		$(USB_C_INTERRUPTER_STL)); \
+	printf '%s\n' "$$bounds"; \
+	printf '%s\n' "$$bounds" | \
+		grep -q 'size=24.800,30.800,5.600'
+	$(PYTHON) $(FINGERPRINT) --pretty $(USB_C_INTERRUPTER_STL)
+	@test -s $(USB_C_INTERRUPTER_PREVIEW)
+	@test -s $(USB_C_INTERRUPTER_INSTALLED_PREVIEW)
+	@set -eu; \
+	log=$(PROTOTYPE_BUILD)/invalid-usb-c-interrupter-pilot.log; \
+	mesh=$(PROTOTYPE_BUILD)/invalid-usb-c-interrupter-pilot.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
+			-D 'USB_C_INTERRUPTER_M17_PILOT_DIAMETER=1.8' \
+			-D 'PART="usb_c_interrupter_bracket"' $(SOURCE) \
+			>$$log 2>&1; then \
+		echo 'ERROR: oversize M1.7 starter pilot was not rejected' >&2; \
+		exit 1; \
+	fi; \
+	grep -q 'M1.7 self-tapper pilot must remain a conservative starter hole' \
+		$$log; \
+	echo 'usb_c_interrupter_pilot_guard=pass rejected_pilot_mm=1.8'
+	@echo 'usb_c_interrupter_prototype_validation=pass face_mm=20.09x6.59 face_hole_spacing_mm=16 m17_pilot_mm=1.35 rear_board_clearance_mm=12.25 rail_mount=2xM3 physical_status=candidate'
 
 $(BUILD)/device-id-placard.stl: $(SOURCE) lib/pf-2020.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="placard"' $<
