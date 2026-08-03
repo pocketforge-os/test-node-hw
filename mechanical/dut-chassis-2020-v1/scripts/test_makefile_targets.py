@@ -219,7 +219,7 @@ def main() -> int:
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
     if "dualbar/production-batch-" in core:
-        raise SystemExit("legacy batches includes dual-bar outputs")
+        raise SystemExit("legacy batch target includes dual-bar outputs")
     require_names(dualbar, DUALBAR_CORE_OUTPUTS, "dualbar-batches")
     reject(dualbar, DEVICE_EXAMPLE_BATCHES, "dualbar-batches")
     if "production-batch-02-splice-collars.stl" in dualbar:
