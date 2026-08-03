@@ -162,6 +162,36 @@ class ReleaseArchiveTests(unittest.TestCase):
                         replace=False,
                     )
 
+    def test_future_holder_v2_schema_v1_rejects_mixed_layouts_early(
+        self,
+    ) -> None:
+        legacy = releases.release_identity(self.profile, 1)
+        future_holder = replace(
+            legacy,
+            version=2,
+            tag="print-pack-trimui-smart-pro-family-v2",
+        )
+        with tempfile.TemporaryDirectory(prefix="pf-release-test-") as temp:
+            with mock.patch.object(
+                releases.packs,
+                "source_state",
+                return_value=releases.packs.SourceState(COMMIT, False),
+            ), mock.patch.object(
+                releases, "release_identity", return_value=future_holder
+            ):
+                with self.assertRaisesRegex(
+                    releases.ReleaseError,
+                    "release schema v1 cannot encode mixed per-device chassis "
+                    "layouts",
+                ):
+                    releases.build_release_bundle(
+                        self.root,
+                        profile_id=PROFILE_ID,
+                        output=Path(temp) / future_holder.tag,
+                        openscad="unused-openscad",
+                        replace=False,
+                    )
+
     def test_canonical_archives_are_byte_identical_and_verifiable(self) -> None:
         with tempfile.TemporaryDirectory(prefix="pf-release-test-") as temp:
             root = Path(temp)

@@ -991,7 +991,7 @@ def build_release_bundle(
             "layouts; candidate layouts: " + ", ".join(unqualified_layouts)
         )
     layout_ids = {layout.layout_id for layout in layouts.values()}
-    if identity.version < 2 and len(layout_ids) != 1:
+    if not identity.uses_release_qualification and len(layout_ids) != 1:
         raise ReleaseError(
             "release schema v1 cannot encode mixed per-device chassis "
             "layouts; mint the versioned mixed-layout release lane before "
