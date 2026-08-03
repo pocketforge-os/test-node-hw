@@ -219,7 +219,7 @@ def main() -> int:
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
     if "dualbar/production-batch-" in core:
-        raise SystemExit("batches includes candidate dual-bar outputs")
+        raise SystemExit("legacy batches includes dual-bar outputs")
     require_names(dualbar, DUALBAR_CORE_OUTPUTS, "dualbar-batches")
     reject(dualbar, DEVICE_EXAMPLE_BATCHES, "dualbar-batches")
     if "production-batch-02-splice-collars.stl" in dualbar:
@@ -277,7 +277,7 @@ def main() -> int:
         raise SystemExit("handbook scene still fetches the base Smart Pro model")
     print(
         "makefile_target_contract=pass "
-        "legacy_core_batches=5 dualbar_candidate_core_batches=4 "
+        "legacy_core_batches=5 dualbar_qualified_core_batches=4 "
         "handbook_device_examples=2 handbook_scene=smart-pro-s-dualbar "
         f"semantic_layers={GUIDE_LAYER_COUNT} assembly_steps=17"
     )

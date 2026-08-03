@@ -2201,7 +2201,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'Fixture-support savings: 656.00 mm (51.74%)' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'three 306.00 mm fixture bars plus three kerfs consume \*\*927.60 mm\*\* and leave \*\*72.40 mm\*\*' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'Bar 5: fixture_support_bar 306.00, fixture_support_bar 306.00; kerf-inclusive consumed 618.40 mm; remainder 381.60 mm' $(DUALBAR_BUILD)/cut-list.md
-	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_candidate_core_batches=4 device_example_batches=2 legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=25 cable_anchors=8'
+	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_qualified_core_batches=4 device_example_batches=2 legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=25 cable_anchors=8'
 
 clean:
 	rm -rf $(BUILD)

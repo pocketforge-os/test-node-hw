@@ -161,20 +161,16 @@ class BrowserBundleTests(unittest.TestCase):
         ):
             export_browser_bundle.validate_catalog(duplicated)
 
-    def test_candidate_and_dirty_policy_are_preserved(self) -> None:
+    def test_qualified_and_dirty_policy_are_preserved(self) -> None:
         clean_by_slug = {
             device["slug"]: device for device in self.catalog["devices"]
         }
         pro_full = clean_by_slug["trimui-smart-pro"]["modes"]["full"]
-        self.assertFalse(pro_full["production_eligible"])
-        self.assertEqual(
-            ["layout_unqualified"], pro_full["nonproduction_reasons"]
-        )
+        self.assertTrue(pro_full["production_eligible"])
+        self.assertEqual([], pro_full["nonproduction_reasons"])
         pro_s_full = clean_by_slug["trimui-smart-pro-s"]["modes"]["full"]
-        self.assertFalse(pro_s_full["production_eligible"])
-        self.assertEqual(
-            ["layout_unqualified"], pro_s_full["nonproduction_reasons"]
-        )
+        self.assertTrue(pro_s_full["production_eligible"])
+        self.assertEqual([], pro_s_full["nonproduction_reasons"])
 
         dirty, _ = export_browser_bundle.build_catalog(
             ROOT, state=DIRTY_STATE

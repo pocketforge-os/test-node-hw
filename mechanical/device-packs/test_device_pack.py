@@ -278,9 +278,11 @@ class DevicePackTests(unittest.TestCase):
         )
         self.assertEqual("chassis-core-v2", pro.layout_id)
         self.assertEqual("chassis-core-v1", pro.supersedes_layout_id)
-        self.assertEqual("candidate", pro.qualification["status"])
+        self.assertEqual("physically_qualified", pro.qualification["status"])
         self.assertEqual("chassis-dualbar-v1", pro_s.layout_id)
-        self.assertEqual("candidate", pro_s.qualification["status"])
+        self.assertEqual(
+            "physically_qualified", pro_s.qualification["status"]
+        )
         for layout in (pro, pro_s):
             carrier_links = next(
                 artifact
@@ -313,24 +315,24 @@ class DevicePackTests(unittest.TestCase):
             self.profile,
             kind="candidate-layout-devices",
         )
-        self.assertEqual([], production["include"])
         self.assertEqual(
             [
                 {
                     "device_slug": "trimui-smart-pro",
                     "layout_id": "chassis-core-v2",
-                    "layout_status": "candidate",
+                    "layout_status": "physically_qualified",
                     "holder_status": "physically_qualified",
                 },
                 {
                     "device_slug": "trimui-smart-pro-s",
                     "layout_id": "chassis-dualbar-v1",
-                    "layout_status": "candidate",
+                    "layout_status": "physically_qualified",
                     "holder_status": "physically_qualified",
                 }
             ],
-            candidate["include"],
+            production["include"],
         )
+        self.assertEqual([], candidate["include"])
 
     def test_dualbar_full_mode_replaces_only_legacy_core_01_to_03(
         self,
@@ -687,12 +689,21 @@ class DevicePackTests(unittest.TestCase):
         self.assertEqual([], overrides)
         self.assertEqual(["coupon_only", "holder_unqualified"], reasons)
 
+        candidate_qualification = copy.deepcopy(
+            self.dualbar_layout.qualification
+        )
+        candidate_qualification["status"] = "candidate"
+        candidate_qualification["accepted_on"] = None
+        candidate_layout = replace(
+            self.dualbar_layout,
+            qualification=candidate_qualification,
+        )
         with self.assertRaisesRegex(
             packs.PackError, "chassis layout"
         ):
             packs._policy(
                 self.profile,
-                self.dualbar_layout,
+                candidate_layout,
                 "full",
                 clean,
                 allow_dirty=False,
@@ -700,7 +711,7 @@ class DevicePackTests(unittest.TestCase):
             )
         eligible, overrides, reasons = packs._policy(
             self.profile,
-            self.dualbar_layout,
+            candidate_layout,
             "full",
             clean,
             allow_dirty=False,

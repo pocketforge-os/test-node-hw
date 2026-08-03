@@ -17,7 +17,7 @@ ECHO_RE = re.compile(
 
 VARIANT_STATUS = {
     "legacy_gantry": "physically_proven_frozen_baseline",
-    "dualbar_v1": "candidate_requires_physical_qualification",
+    "dualbar_v1": "physically_qualified",
 }
 LEGACY_FINISHED_TOTAL_MM = 5204.0
 LEGACY_FIXTURE_EXTRUSION_MM = 1268.0
@@ -411,12 +411,21 @@ def write_markdown(
             f"{bar.consumed:.2f} mm; remainder {bar.remaining:.2f} mm"
         )
     if variant == "dualbar_v1":
+        qualification_boundary = (
+            f"`{qualification_status}` records the completed `tsp-t1zd.2` "
+            "physical gate for the exact locked dual-bar layout. The printed "
+            "fit, fastener engagement, loaded plate stability, camera "
+            "alignment, service access, and owner approval were accepted on "
+            "2026-08-03. Any geometry or topology change requires a new "
+            "candidate layout and a fresh physical gate; do not edit this "
+            "qualified layout in place."
+        )
         lines.extend(
             [
                 "",
                 "## Qualification boundary",
                 "",
-                f"`{qualification_status}` is deliberate. These dimensions and print beds may be generated for a prototype, but this cut list does not make the topology production-qualified. Promote it only after the tracked physical acceptance gate records print fit, fastener engagement, loaded plate stability, camera alignment, and owner approval.",
+                qualification_boundary,
             ]
         )
     lines.append("")

@@ -49,4 +49,4 @@ For batch cutting, three 306.00 mm fixture bars plus three kerfs consume **927.6
 
 ## Qualification boundary
 
-`candidate_requires_physical_qualification` is deliberate. These dimensions and print beds may be generated for a prototype, but this cut list does not make the topology production-qualified. Promote it only after the tracked physical acceptance gate records print fit, fastener engagement, loaded plate stability, camera alignment, and owner approval.
+`physically_qualified` records the completed `tsp-t1zd.2` physical gate for the exact locked dual-bar layout. The printed fit, fastener engagement, loaded plate stability, camera alignment, service access, and owner approval were accepted on 2026-08-03. Any geometry or topology change requires a new candidate layout and a fresh physical gate; do not edit this qualified layout in place.
