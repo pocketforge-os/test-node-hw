@@ -100,11 +100,22 @@ class ReleaseArchiveTests(unittest.TestCase):
             "trimui-smart-pro-family-v2.json",
             self.identity.qualification_path.name,
         )
+        self.assertTrue(self.identity.uses_release_qualification)
         legacy = releases.release_identity(self.profile, 1)
         self.assertEqual("print-pack-trimui-smart-pro-family-v1", legacy.tag)
         self.assertEqual(
             "trimui-smart-pro-family-v1.json",
             legacy.qualification_path.name,
+        )
+        self.assertFalse(legacy.uses_release_qualification)
+        future_holder = replace(
+            legacy,
+            version=2,
+            tag="print-pack-trimui-smart-pro-family-v2",
+        )
+        self.assertEqual(
+            releases.RELEASE_SCHEMA_V1,
+            releases._release_schema(future_holder),
         )
 
     def test_release_build_rejects_candidate_registered_layout(self) -> None:

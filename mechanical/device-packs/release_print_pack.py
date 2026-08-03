@@ -55,10 +55,15 @@ class ReleaseIdentity:
     version: int
     tag: str
     qualification_path: Path
+    uses_release_qualification: bool
 
 
 def _release_schema(identity: ReleaseIdentity) -> str:
-    return RELEASE_SCHEMA if identity.version >= 2 else RELEASE_SCHEMA_V1
+    return (
+        RELEASE_SCHEMA
+        if identity.uses_release_qualification
+        else RELEASE_SCHEMA_V1
+    )
 
 
 def _sha256(path: Path) -> str:
@@ -223,11 +228,13 @@ def release_identity(
         )
     if version is None:
         version = max(records, default=holder_version)
+    uses_release_qualification = False
     if version == holder_version:
         pass
     elif version in records:
         path = records[version]
         _validate_release_qualification(repo_root, profile, path, version)
+        uses_release_qualification = True
     else:
         raise ReleaseError(
             f"no release qualification exists for {profile_id} v{version}"
@@ -237,6 +244,7 @@ def release_identity(
         version=version,
         tag=f"print-pack-{profile_id}-v{version}",
         qualification_path=path,
+        uses_release_qualification=uses_release_qualification,
     )
 
 
@@ -621,7 +629,7 @@ def _release_document(
         },
         "devices": list(devices),
     }
-    if identity.version >= 2:
+    if identity.uses_release_qualification:
         release_qualification = _validate_release_qualification(
             root, profile, identity.qualification_path, identity.version
         )
@@ -1053,7 +1061,7 @@ def build_release_bundle(
                     archive,
                     slug,
                     manifest,
-                    include_layout=identity.version >= 2,
+                    include_layout=identity.uses_release_qualification,
                 )
             )
             archive_names.append(name)
