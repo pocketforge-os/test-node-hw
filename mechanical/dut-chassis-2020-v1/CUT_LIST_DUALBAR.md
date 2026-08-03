@@ -1,7 +1,7 @@
 # PocketForge 2020 chassis cut list — dual-bar variant
 
 - Chassis variant: `dualbar_v1`
-- Qualification: **candidate; physical print, fit, loaded-sag, and camera checks are still required**
+- Qualification: **physically_qualified** (`tsp-t1zd.2`; accepted 2026-08-03)
 - Join topology: `three_way_cap_flush_side_butt_B08C9Q2TGW_measured_plus_two_adjustable_fixture_bars_printed_indexing_plates`
 - External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm
 - Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm

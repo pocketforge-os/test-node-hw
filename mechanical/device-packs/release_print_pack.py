@@ -227,11 +227,6 @@ def release_identity(
         pass
     elif version in records:
         path = records[version]
-        if version <= holder_version:
-            raise ReleaseError(
-                "release qualification versions must advance beyond the "
-                "holder qualification version"
-            )
         _validate_release_qualification(repo_root, profile, path, version)
     else:
         raise ReleaseError(

@@ -329,7 +329,7 @@ def write_markdown(
             "# PocketForge 2020 chassis cut list — dual-bar variant",
             "",
             f"- Chassis variant: `{variant}`",
-            "- Qualification: **candidate; physical print, fit, loaded-sag, and camera checks are still required**",
+            f"- Qualification: **{qualification_status}** (`tsp-t1zd.2`; accepted 2026-08-03)",
             f"- Join topology: `{topology}`",
             f"- External assembled envelope (W × D × H): {frame_outer[0]:.2f} × {frame_outer[1]:.2f} × {frame_outer[2]:.2f} mm",
             f"- Clear internal envelope (W × D × H): {frame_clear[0]:.2f} × {frame_clear[1]:.2f} × {frame_clear[2]:.2f} mm",
