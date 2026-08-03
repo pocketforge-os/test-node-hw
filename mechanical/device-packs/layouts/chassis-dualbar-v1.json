@@ -8,9 +8,9 @@
     "mechanical/device-packs/device-layouts.json"
   ],
   "qualification": {
-    "status": "candidate",
-    "acceptance_ref": "tsp-px73.23",
-    "accepted_on": null,
+    "status": "physically_qualified",
+    "acceptance_ref": "tsp-t1zd.2",
+    "accepted_on": "2026-08-03",
     "device_slugs": [
       "trimui-smart-pro-s"
     ],

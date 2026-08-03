@@ -1,7 +1,7 @@
 # PocketForge 2020 chassis cut list — dual-bar variant
 
 - Chassis variant: `dualbar_v1`
-- Qualification: **candidate; physical print, fit, loaded-sag, and camera checks are still required**
+- Qualification: **physically_qualified** (`tsp-t1zd.2`; accepted 2026-08-03)
 - Join topology: `three_way_cap_flush_side_butt_B08C9Q2TGW_measured_plus_two_adjustable_fixture_bars_printed_indexing_plates`
 - External assembled envelope (W × D × H): 346.00 × 358.00 × 368.00 mm
 - Clear internal envelope (W × D × H): 306.00 × 318.00 × 328.00 mm
@@ -16,7 +16,7 @@
 - Kerf allowance: 44.80 mm
 - Remaining stock/offcuts when starting from five full bars: 407.20 mm
 
-Finished lengths are measured aluminum cuts. This candidate preserves the proven outer frame and uses two continuous fixture bars: one between the lower depth rails and one between the upper depth rails. The matched pair remains movable for camera-distance adjustment. Never splice either fixture bar.
+Finished lengths are measured aluminum cuts. This qualified layout preserves the proven outer frame and uses two continuous fixture bars: one between the lower depth rails and one between the upper depth rails. The matched pair remains movable for camera-distance adjustment. Never splice either fixture bar.
 
 ## Scrap-first plan
 
@@ -49,4 +49,4 @@ For batch cutting, three 306.00 mm fixture bars plus three kerfs consume **927.6
 
 ## Qualification boundary
 
-`candidate_requires_physical_qualification` is deliberate. These dimensions and print beds may be generated for a prototype, but this cut list does not make the topology production-qualified. Promote it only after the tracked physical acceptance gate records print fit, fastener engagement, loaded plate stability, camera alignment, and owner approval.
+`physically_qualified` records the completed `tsp-t1zd.2` physical gate for the exact locked dual-bar layout. The printed fit, fastener engagement, loaded plate stability, camera alignment, service access, and owner approval were accepted on 2026-08-03. Any geometry or topology change requires a new candidate layout and a fresh physical gate; do not edit this qualified layout in place.

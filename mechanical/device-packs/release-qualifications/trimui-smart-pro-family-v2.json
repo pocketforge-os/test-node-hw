@@ -1,0 +1,25 @@
+{
+  "schema": "pocketforge-print-pack-release-qualification-v1",
+  "profile_id": "trimui-smart-pro-family",
+  "version": 2,
+  "acceptance_ref": "tsp-t1zd.2",
+  "accepted_on": "2026-08-03",
+  "holder_qualification": {
+    "path": "mechanical/dut-cradle-v1/qualification/trimui-smart-pro-family-v1.json",
+    "sha256": "e8f5034848ec9522420c9d69d9835f3cb50651bf767515b0604b0a2e572fd59d"
+  },
+  "device_layouts": [
+    {
+      "device_slug": "trimui-smart-pro",
+      "layout_id": "chassis-core-v2",
+      "path": "mechanical/device-packs/layouts/chassis-core-v2.json",
+      "sha256": "fa6f5a26b8c40ed45f0ad0495a97962961c597987ebf4cf0f293ff6dbb041ace"
+    },
+    {
+      "device_slug": "trimui-smart-pro-s",
+      "layout_id": "chassis-dualbar-v1",
+      "path": "mechanical/device-packs/layouts/chassis-dualbar-v1.json",
+      "sha256": "9333515889cb2b6db638b54613db199bb17cf2a8f911c91517f87f2ae66e16f7"
+    }
+  ]
+}

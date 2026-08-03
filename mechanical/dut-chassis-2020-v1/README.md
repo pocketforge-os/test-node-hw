@@ -15,7 +15,7 @@ the **test-node chassis**.
 
 The fleet-standard envelope is **346 W × 358 D × approximately 368 H mm**,
 with **306 W × 318 D × 328 H mm** clear inside. The proven gantry chassis uses
-six nominal 1 m sticks of 20 × 20 mm extrusion. The dual-bar candidate uses
+six nominal 1 m sticks of 20 × 20 mm extrusion. The qualified dual-bar chassis uses
 five when starting from new stock, or four new sticks plus the retained
 356.4 mm legacy offcut.
 
@@ -27,13 +27,13 @@ topology from `../device-packs/device-layouts.json`; do not choose it by hand.
 
 | Device | Layout | Fixture support | Status |
 | --- | --- | --- | --- |
-| TrimUI Smart Pro | `chassis-core-v2` | Proven gantry + stack-clear carrier links | Candidate pending `tsp-px73.23`; `chassis-core-v1` remains frozen |
-| TrimUI Smart Pro S | `chassis-dualbar-v1` | Two movable 306 mm fixture bars + four printed joints + four printed links | Candidate pending `tsp-px73.23` |
+| TrimUI Smart Pro | `chassis-core-v2` | Proven gantry + stack-clear carrier links | Physically qualified by `tsp-t1zd.2`; `chassis-core-v1` remains frozen |
+| TrimUI Smart Pro S | `chassis-dualbar-v1` | Two movable 306 mm fixture bars + four printed joints + four printed links | Physically qualified by `tsp-t1zd.2` |
 
 Both layouts preserve the same outer frame, fixture plate, plate Y/Z datum,
 camera optical relationship, DUT carrier, placard, power strip, stacking
-interface, and wire anchors; each record locks its own accepted or
-candidate stacking-tab revision. In the dual-bar layout, a continuous bar
+interface, and wire anchors; each record locks its accepted stacking-tab
+revision. In the dual-bar layout, a continuous bar
 spans the lower depth rails and another spans the upper depth rails. Four identical
 71.5 mm keyed links join those bars directly to the plate's existing upper and
 lower slots.
@@ -285,7 +285,7 @@ interface. That projection spans the complete bottom rail of the chassis above
 and continues 12 mm beside its corner post.
 
 Install each tab to the lower chassis with two face-loaded M5 sets. In the
-current dual-bar candidate and handbook output, after an upper chassis is fully
+current qualified dual-bar layout and handbook output, after an upper chassis is fully
 seated aluminum-to-aluminum, the center of its third hole sits 17 mm above the
 interface. This owner-corrected datum is 7 mm above the former position so the
 hole clears the delivered metal corner intrusion. One additional face-loaded
@@ -318,7 +318,7 @@ canonical eight-piece bed is intentionally separate so it can be repeated or
 omitted without reprinting frame hardware; individual and eight-piece
 replacement exports are also available.
 
-## Dual-bar fixture suspension candidate
+## Qualified dual-bar fixture suspension
 
 Join one continuous 306 mm bar between the two lower depth rails and a second
 between the two upper depth rails. Use two accepted printed indexing plates
@@ -350,10 +350,11 @@ At each fixture-plate side:
 5. confirm both aluminum bars, four links, and the fixture plate form one
    square, rack-free assembly without a printed member spanning the plate.
 
-The source and normalized fingerprints are frozen for repeatable candidate
-prints, but this topology is not production-qualified until `tsp-t1zd.2`
-records fit, real loaded sag/racking, camera alignment, and explicit owner
-acceptance.
+The source and normalized fingerprints are physically qualified by
+`tsp-t1zd.2`. The accepted assembly passed printed fit, real loaded
+sag/racking, camera alignment, service access, powered harness operation, and
+explicit owner acceptance on 2026-08-03. Any geometry change must use a new
+candidate layout ID and repeat that physical gate.
 
 ## Fixture-upright splice — proven gantry only
 

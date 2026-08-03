@@ -90,21 +90,21 @@ python3 mechanical/device-packs/build_device_pack.py build \
   --mode full
 ```
 
-The TrimUI Smart Pro remains mapped to the physically proven two-upright
-gantry. The TrimUI Smart Pro S is mapped to the material-reduced dual-bar
-candidate. Generate that candidate explicitly for printing and review with:
+The TrimUI Smart Pro remains mapped to its physically proven two-upright
+gantry successor. The TrimUI Smart Pro S is mapped to the physically qualified
+material-reduced dual-bar layout. Generate either production pack directly:
 
 ```sh
 python3 mechanical/device-packs/build_device_pack.py build \
   --device trimui-smart-pro-s \
-  --mode full \
-  --allow-unqualified
+  --mode full
 ```
 
-Its clean-source manifest must report `production_eligible=false`,
-`nonproduction_reasons=["layout_unqualified"]`, and
+Its clean-source manifest reports `production_eligible=true`,
+`nonproduction_reasons=[]`, and
 `layout.qualification.acceptance_ref="tsp-t1zd.2"`. There is no flag that maps
-the Pro S back to the legacy layout or maps the base model onto the candidate.
+the Pro S back to the legacy layout or maps the base model onto the dual-bar
+layout.
 
 Outputs default to
 `mechanical/device-packs/build/<device>/<mode>/`. Existing output is never
@@ -181,32 +181,31 @@ repeats those packs on each relevant pushed revision, so stale generated
 output cannot make a source change look complete.
 
 The static normalized hashes in `layouts/chassis-core-v1.json` freeze the
-working base chassis. `layouts/chassis-core-v2.json` is its candidate successor
-and changes only the carrier links to the stack-clear revision.
-`layouts/chassis-dualbar-v1.json` separately freezes the Pro S candidate beds.
+working base chassis. `layouts/chassis-core-v2.json` is its qualified successor
+and changes only the carrier links to the accepted stack-clear revision.
+`layouts/chassis-dualbar-v1.json` separately freezes the qualified Pro S beds.
 Batch 04 intentionally differs: the immutable qualified legacy bed retains its
 accepted stacking-tab hole, while the current dual-bar bed carries the
 owner-corrected hole 7 mm higher. Dual-bar Batches 01–02 now contain 28 captive
 bars, four fixture links, and four printed crossbar-joint plates. These are
-regression baselines, not automatic physical qualification. Changing a lock
-requires understanding the geometry change, not blindly recording a new
-digest.
+immutable qualified regression baselines. Changing geometry requires a new
+candidate layout ID and physical gate, not a refreshed digest.
 
 ## Immutable production releases
 
-One release represents exactly one versioned physical-qualification manifest,
-not a moving snapshot of a device name. The qualification file
-`qualification/<profile-id>-vN.json` deterministically owns the tag
-`print-pack-<profile-id>-vN`. Every device variant named by that profile is
-included as its own `device-pack-<device-slug>.zip`. A source-only refactor
-does not replace or republish an accepted release. Geometry that needs renewed
-physical acceptance gets a new `vN` qualification manifest and therefore a new
-release tag.
+One release represents exactly one versioned physical-qualification identity,
+not a moving snapshot of a device name. Holder-only v1 releases derive that
+identity from `dut-cradle-v1/qualification/<profile-id>-v1.json`. A later
+mixed-layout release uses
+`device-packs/release-qualifications/<profile-id>-vN.json` to bind the unchanged
+holder qualification and every device's exact qualified chassis layout. Either
+record deterministically owns `print-pack-<profile-id>-vN`. Every device variant
+is included as its own `device-pack-<device-slug>.zip`.
 
 Release generation resolves the same per-device registry and refuses if any
-selected layout is still a candidate. It also refuses to force mixed layouts
-through the original single-layout release schema. The tracked Pro S physical
-gate owns the later versioned mixed-layout release lane; the immutable
+selected layout is still a candidate. The accepted mixed-layout v2 record binds
+Smart Pro to `chassis-core-v2` and Smart Pro S to `chassis-dualbar-v1`; the v2
+release manifest records layout provenance per archive. The immutable
 `print-pack-trimui-smart-pro-family-v1` release remains untouched.
 
 Each canonical, uncompressed ZIP has fixed metadata, sorted safe paths, and one
@@ -226,7 +225,7 @@ python3 mechanical/device-packs/release_print_pack.py build \
 
 python3 mechanical/device-packs/release_print_pack.py verify \
   --bundle mechanical/device-packs/build/releases/\
-print-pack-trimui-smart-pro-family-v1
+print-pack-trimui-smart-pro-family-v2
 ```
 
 The builder refuses dirty source, unqualified profiles, prototype overrides,
@@ -272,7 +271,7 @@ Published assets are never overwritten or deleted by this tooling.
 To consume a release, name the qualification tag explicitly:
 
 ```sh
-tag=print-pack-trimui-smart-pro-family-v1
+tag=print-pack-trimui-smart-pro-family-v2
 gh release download "$tag" \
   --repo pocketforge-os/test-node-hw --dir "$tag"
 (cd "$tag" && sha256sum --check SHA256SUMS)

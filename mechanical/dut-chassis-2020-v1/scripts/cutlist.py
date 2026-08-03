@@ -17,7 +17,7 @@ ECHO_RE = re.compile(
 
 VARIANT_STATUS = {
     "legacy_gantry": "physically_proven_frozen_baseline",
-    "dualbar_v1": "candidate_requires_physical_qualification",
+    "dualbar_v1": "physically_qualified",
 }
 LEGACY_FINISHED_TOTAL_MM = 5204.0
 LEGACY_FIXTURE_EXTRUSION_MM = 1268.0
@@ -329,7 +329,7 @@ def write_markdown(
             "# PocketForge 2020 chassis cut list — dual-bar variant",
             "",
             f"- Chassis variant: `{variant}`",
-            "- Qualification: **candidate; physical print, fit, loaded-sag, and camera checks are still required**",
+            f"- Qualification: **{qualification_status}** (`tsp-t1zd.2`; accepted 2026-08-03)",
             f"- Join topology: `{topology}`",
             f"- External assembled envelope (W × D × H): {frame_outer[0]:.2f} × {frame_outer[1]:.2f} × {frame_outer[2]:.2f} mm",
             f"- Clear internal envelope (W × D × H): {frame_clear[0]:.2f} × {frame_clear[1]:.2f} × {frame_clear[2]:.2f} mm",
@@ -344,7 +344,7 @@ def write_markdown(
             f"- Kerf allowance: {kerf_total:.2f} mm",
             f"- Remaining stock/offcuts when starting from five full bars: {waste_total:.2f} mm",
             "",
-            "Finished lengths are measured aluminum cuts. This candidate preserves the proven outer frame and uses two continuous fixture bars: one between the lower depth rails and one between the upper depth rails. The matched pair remains movable for camera-distance adjustment. Never splice either fixture bar.",
+            "Finished lengths are measured aluminum cuts. This qualified layout preserves the proven outer frame and uses two continuous fixture bars: one between the lower depth rails and one between the upper depth rails. The matched pair remains movable for camera-distance adjustment. Never splice either fixture bar.",
             "",
             "## Scrap-first plan",
             "",
@@ -411,12 +411,21 @@ def write_markdown(
             f"{bar.consumed:.2f} mm; remainder {bar.remaining:.2f} mm"
         )
     if variant == "dualbar_v1":
+        qualification_boundary = (
+            f"`{qualification_status}` records the completed `tsp-t1zd.2` "
+            "physical gate for the exact locked dual-bar layout. The printed "
+            "fit, fastener engagement, loaded plate stability, camera "
+            "alignment, service access, and owner approval were accepted on "
+            "2026-08-03. Any geometry or topology change requires a new "
+            "candidate layout and a fresh physical gate; do not edit this "
+            "qualified layout in place."
+        )
         lines.extend(
             [
                 "",
                 "## Qualification boundary",
                 "",
-                f"`{qualification_status}` is deliberate. These dimensions and print beds may be generated for a prototype, but this cut list does not make the topology production-qualified. Promote it only after the tracked physical acceptance gate records print fit, fastener engagement, loaded plate stability, camera alignment, and owner approval.",
+                qualification_boundary,
             ]
         )
     lines.append("")

@@ -11,6 +11,7 @@ source of truth.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import hashlib
 import json
 import os
@@ -27,7 +28,11 @@ from typing import Any, Callable, Mapping, Sequence
 import build_device_pack as packs
 
 
-RELEASE_SCHEMA = "pocketforge-print-pack-release-v1"
+RELEASE_SCHEMA_V1 = "pocketforge-print-pack-release-v1"
+RELEASE_SCHEMA = "pocketforge-print-pack-release-v2"
+RELEASE_QUALIFICATION_SCHEMA = (
+    "pocketforge-print-pack-release-qualification-v1"
+)
 RELEASE_MANIFEST_NAME = "release-manifest.json"
 RELEASE_CHECKSUM_NAME = "SHA256SUMS"
 ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
@@ -50,6 +55,15 @@ class ReleaseIdentity:
     version: int
     tag: str
     qualification_path: Path
+    uses_release_qualification: bool
+
+
+def _release_schema(identity: ReleaseIdentity) -> str:
+    return (
+        RELEASE_SCHEMA
+        if identity.uses_release_qualification
+        else RELEASE_SCHEMA_V1
+    )
 
 
 def _sha256(path: Path) -> str:
@@ -168,6 +182,7 @@ def resolve_profile(
 
 def release_identity(
     profile: packs.holder_profiles.ResolvedProfile,
+    version: int | None = None,
 ) -> ReleaseIdentity:
     profile_id = profile.document["profile_id"]
     qualification = profile.document["qualification"]
@@ -187,13 +202,153 @@ def release_identity(
             "qualification manifest must be named "
             f"qualification/{profile_id}-vN.json"
         )
-    version = int(match.group(1))
+    holder_version = int(match.group(1))
+    repo_root = profile.root.parents[1]
+    release_root = (
+        repo_root / "mechanical" / "device-packs" / "release-qualifications"
+    )
+    records: dict[int, Path] = {}
+    if release_root.is_dir():
+        for candidate in release_root.glob(f"{profile_id}-v*.json"):
+            candidate_match = re.fullmatch(
+                rf"{re.escape(profile_id)}-v([1-9][0-9]*)\.json",
+                candidate.name,
+            )
+            if candidate_match:
+                record_version = int(candidate_match.group(1))
+                if record_version in records:
+                    raise ReleaseError(
+                        f"duplicate release qualification version {record_version}"
+                    )
+                records[record_version] = candidate
+    if any(record_version <= holder_version for record_version in records):
+        raise ReleaseError(
+            "release qualification versions must advance beyond the "
+            "holder qualification version"
+        )
+    if version is None:
+        version = max(records, default=holder_version)
+    uses_release_qualification = False
+    if version == holder_version:
+        pass
+    elif version in records:
+        path = records[version]
+        _validate_release_qualification(repo_root, profile, path, version)
+        uses_release_qualification = True
+    else:
+        raise ReleaseError(
+            f"no release qualification exists for {profile_id} v{version}"
+        )
     return ReleaseIdentity(
         profile_id=profile_id,
         version=version,
         tag=f"print-pack-{profile_id}-v{version}",
         qualification_path=path,
+        uses_release_qualification=uses_release_qualification,
     )
+
+
+def _validate_release_qualification(
+    root: Path,
+    profile: packs.holder_profiles.ResolvedProfile,
+    path: Path,
+    version: int,
+) -> Mapping[str, Any]:
+    document = _load_json(path)
+    _strict_keys(
+        document,
+        str(path),
+        {
+            "schema",
+            "profile_id",
+            "version",
+            "acceptance_ref",
+            "accepted_on",
+            "holder_qualification",
+            "device_layouts",
+        },
+    )
+    if document["schema"] != RELEASE_QUALIFICATION_SCHEMA:
+        raise ReleaseError(f"unsupported release qualification: {path}")
+    if document["profile_id"] != profile.document["profile_id"]:
+        raise ReleaseError(f"release qualification has wrong profile: {path}")
+    if document["version"] != version:
+        raise ReleaseError(
+            f"release qualification version does not match filename: {path}"
+        )
+    accepted_on = document["accepted_on"]
+    if (
+        not isinstance(document["acceptance_ref"], str)
+        or not document["acceptance_ref"]
+        or not isinstance(accepted_on, str)
+    ):
+        raise ReleaseError(f"release qualification acceptance is invalid: {path}")
+    try:
+        if dt.date.fromisoformat(accepted_on).isoformat() != accepted_on:
+            raise ValueError
+    except ValueError as exc:
+        raise ReleaseError(
+            f"release qualification accepted_on is invalid: {path}"
+        ) from exc
+
+    holder = document["holder_qualification"]
+    if not isinstance(holder, dict):
+        raise ReleaseError("holder_qualification must be an object")
+    _strict_keys(holder, "holder_qualification", {"path", "sha256"})
+    holder_path = root / Path(
+        *_safe_relative_file(
+            holder["path"], "holder_qualification.path"
+        ).parts
+    )
+    current_holder = (
+        profile.root / profile.document["qualification"]["geometry_manifest"]
+    ).resolve()
+    if (
+        holder_path.resolve() != current_holder
+        or holder.get("sha256") != _sha256(current_holder)
+    ):
+        raise ReleaseError(
+            "release qualification does not bind the current immutable "
+            "holder qualification"
+        )
+
+    entries = document["device_layouts"]
+    if not isinstance(entries, list) or not entries:
+        raise ReleaseError("device_layouts must be a non-empty array")
+    slugs: list[str] = []
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict):
+            raise ReleaseError(f"device_layouts[{index}] must be an object")
+        _strict_keys(
+            entry,
+            f"device_layouts[{index}]",
+            {"device_slug", "layout_id", "path", "sha256"},
+        )
+        slug = entry["device_slug"]
+        if not isinstance(slug, str):
+            raise ReleaseError(f"device_layouts[{index}].device_slug is invalid")
+        layout = packs.resolve_device_layout(root, slug)
+        layout_path = root / Path(
+            *_safe_relative_file(
+                entry["path"], f"device_layouts[{index}].path"
+            ).parts
+        )
+        if (
+            layout.qualification["status"] != "physically_qualified"
+            or entry["layout_id"] != layout.layout_id
+            or layout_path.resolve() != layout.path.resolve()
+            or entry["sha256"] != _sha256(layout.path)
+        ):
+            raise ReleaseError(
+                f"release qualification layout binding is stale for {slug}"
+            )
+        slugs.append(slug)
+    expected = sorted(profile.variants)
+    if slugs != expected or len(slugs) != len(set(slugs)):
+        raise ReleaseError(
+            f"release qualification devices must be exactly {expected}, got {slugs}"
+        )
+    return document
 
 
 def archive_name(device_slug: str) -> str:
@@ -419,12 +574,14 @@ def _archive_record(
     archive: Path,
     device_slug: str,
     pack_manifest: Mapping[str, Any],
+    *,
+    include_layout: bool = False,
 ) -> dict[str, Any]:
     with zipfile.ZipFile(archive, mode="r") as source:
         manifest_bytes = source.read(
             f"device-pack-{device_slug}/manifest.json"
         )
-    return {
+    record = {
         "device_slug": device_slug,
         "display_name": pack_manifest["device"]["display_name"],
         "archive": {
@@ -440,6 +597,9 @@ def _archive_record(
             "artifact_count": len(pack_manifest["artifacts"]),
         },
     }
+    if include_layout:
+        record["layout"] = pack_manifest["layout"]
+    return record
 
 
 def _release_document(
@@ -449,8 +609,8 @@ def _release_document(
     source_pack: Mapping[str, Any],
     devices: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    return {
-        "schema": RELEASE_SCHEMA,
+    document = {
+        "schema": _release_schema(identity),
         "tag": identity.tag,
         "title": release_title(identity),
         "profile": {
@@ -460,7 +620,6 @@ def _release_document(
         },
         "qualification": source_pack["qualification"],
         "fixture": source_pack["fixture"],
-        "layout": source_pack["layout"],
         "source": source_pack["source"],
         "toolchain": source_pack["toolchain"],
         "generator": {
@@ -470,6 +629,20 @@ def _release_document(
         },
         "devices": list(devices),
     }
+    if identity.uses_release_qualification:
+        release_qualification = _validate_release_qualification(
+            root, profile, identity.qualification_path, identity.version
+        )
+        document["release_qualification"] = {
+            "path": _relative(root, identity.qualification_path),
+            "sha256": _sha256(identity.qualification_path),
+            "schema": release_qualification["schema"],
+            "acceptance_ref": release_qualification["acceptance_ref"],
+            "accepted_on": release_qualification["accepted_on"],
+        }
+    else:
+        document["layout"] = source_pack["layout"]
+    return document
 
 
 def _write_release_checksums(stage: Path, archive_names: Sequence[str]) -> None:
@@ -519,6 +692,13 @@ def _safe_output(root: Path, output: Path) -> Path:
 
 def _read_release_manifest(bundle: Path) -> Mapping[str, Any]:
     document = _load_json(bundle / RELEASE_MANIFEST_NAME)
+    schema = document.get("schema")
+    if schema == RELEASE_SCHEMA_V1:
+        provenance_fields = {"layout"}
+    elif schema == RELEASE_SCHEMA:
+        provenance_fields = {"release_qualification"}
+    else:
+        raise ReleaseError(f"unsupported release schema: {schema!r}")
     _strict_keys(
         document,
         RELEASE_MANIFEST_NAME,
@@ -529,17 +709,13 @@ def _read_release_manifest(bundle: Path) -> Mapping[str, Any]:
             "profile",
             "qualification",
             "fixture",
-            "layout",
+            *provenance_fields,
             "source",
             "toolchain",
             "generator",
             "devices",
         },
     )
-    if document["schema"] != RELEASE_SCHEMA:
-        raise ReleaseError(
-            f"unsupported release schema: {document['schema']!r}"
-        )
     return document
 
 
@@ -625,9 +801,27 @@ def verify_release_bundle(
     if not isinstance(profile_id, str):
         raise ReleaseError("release manifest.profile.id is invalid")
     profile = resolve_profile(root, profile_id)
-    identity = release_identity(profile)
+    tag = document.get("tag")
+    if not isinstance(tag, str):
+        raise ReleaseError("release tag is invalid")
+    tag_match = re.fullmatch(
+        rf"print-pack-{re.escape(profile_id)}-v([1-9][0-9]*)", tag
+    )
+    if not tag_match:
+        raise ReleaseError("release tag does not match holder profile")
+    identity = release_identity(profile, int(tag_match.group(1)))
     if document.get("tag") != identity.tag:
         raise ReleaseError("release tag does not match qualification identity")
+    schema_v2 = document["schema"] == RELEASE_SCHEMA
+    qualified_layouts: dict[str, Mapping[str, Any]] = {}
+    if schema_v2:
+        release_qualification = _validate_release_qualification(
+            root, profile, identity.qualification_path, identity.version
+        )
+        qualified_layouts = {
+            entry["device_slug"]: entry
+            for entry in release_qualification["device_layouts"]
+        }
 
     devices = document.get("devices")
     if not isinstance(devices, list) or not devices:
@@ -661,21 +855,36 @@ def verify_release_bundle(
             device_slug=slug,
             pack_verifier=pack_verifier,
         )
+        if schema_v2:
+            expected_layout = qualified_layouts[slug]
+            layout_record = manifest.get("layout")
+            if not isinstance(layout_record, dict) or (
+                layout_record.get("id") != expected_layout["layout_id"]
+                or layout_record.get("path") != expected_layout["path"]
+                or layout_record.get("sha256") != expected_layout["sha256"]
+            ):
+                raise ReleaseError(
+                    f"release archive layout does not match physical "
+                    f"qualification for {slug}"
+                )
         if source_pack is None:
             source_pack = manifest
-        for field in (
+        common_fields = (
             "profile",
             "qualification",
             "fixture",
-            "layout",
             "source",
             "toolchain",
-        ):
+        )
+        fields = common_fields if schema_v2 else (*common_fields, "layout")
+        for field in fields:
             if manifest.get(field) != source_pack.get(field):
                 raise ReleaseError(
                     f"device packs have mixed {field} provenance"
                 )
-        computed = _archive_record(archive, slug, manifest)
+        computed = _archive_record(
+            archive, slug, manifest, include_layout=schema_v2
+        )
         if record != computed:
             raise ReleaseError(f"release archive metadata mismatch for {slug}")
         slugs.append(slug)
@@ -782,7 +991,7 @@ def build_release_bundle(
             "layouts; candidate layouts: " + ", ".join(unqualified_layouts)
         )
     layout_ids = {layout.layout_id for layout in layouts.values()}
-    if len(layout_ids) != 1:
+    if not identity.uses_release_qualification and len(layout_ids) != 1:
         raise ReleaseError(
             "release schema v1 cannot encode mixed per-device chassis "
             "layouts; mint the versioned mixed-layout release lane before "
@@ -847,7 +1056,14 @@ def build_release_bundle(
                 )
             if source_pack is None:
                 source_pack = manifest
-            archive_records.append(_archive_record(archive, slug, manifest))
+            archive_records.append(
+                _archive_record(
+                    archive,
+                    slug,
+                    manifest,
+                    include_layout=identity.uses_release_qualification,
+                )
+            )
             archive_names.append(name)
         assert source_pack is not None
         shutil.rmtree(work)

@@ -4915,7 +4915,7 @@ module guide_layer_camera_frustum() {
 module cutlist_echo() {
     echo(str("PFVARIANT|", CHASSIS_VARIANT, "|",
              CHASSIS_VARIANT == "dualbar_v1" ?
-                 "candidate_requires_physical_qualification" :
+                 "physically_qualified" :
                  "physically_proven_frozen_baseline"));
     echo(str("PFFRAME|", frame_outer.x, "|", frame_outer.y, "|",
              frame_outer.z, "|", frame_clear.x, "|", frame_clear.y, "|",

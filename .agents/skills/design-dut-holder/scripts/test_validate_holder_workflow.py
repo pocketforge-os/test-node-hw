@@ -39,7 +39,7 @@ class HolderSkillValidationTests(unittest.TestCase):
         self.assertEqual(1, result["qualified_profile_count"])
         self.assertEqual(2, result["qualified_device_count"])
         self.assertEqual(
-            "print-pack-trimui-smart-pro-family-v1",
+            "print-pack-trimui-smart-pro-family-v2",
             result["release_identity"],
         )
         self.assertFalse(result["source_mutation"])
