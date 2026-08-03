@@ -344,7 +344,7 @@ def write_markdown(
             f"- Kerf allowance: {kerf_total:.2f} mm",
             f"- Remaining stock/offcuts when starting from five full bars: {waste_total:.2f} mm",
             "",
-            "Finished lengths are measured aluminum cuts. This candidate preserves the proven outer frame and uses two continuous fixture bars: one between the lower depth rails and one between the upper depth rails. The matched pair remains movable for camera-distance adjustment. Never splice either fixture bar.",
+            "Finished lengths are measured aluminum cuts. This qualified layout preserves the proven outer frame and uses two continuous fixture bars: one between the lower depth rails and one between the upper depth rails. The matched pair remains movable for camera-distance adjustment. Never splice either fixture bar.",
             "",
             "## Scrap-first plan",
             "",
