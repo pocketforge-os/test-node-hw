@@ -61,6 +61,7 @@ def main() -> int:
     parser.add_argument("--max-z", type=float)
     parser.add_argument("--bed-x", type=float)
     parser.add_argument("--bed-y", type=float)
+    parser.add_argument("--min-bed-contact-area", type=float)
     parser.add_argument("--allow-rotate", action="store_true")
     parser.add_argument("--equivalent-to", type=Path)
     args = parser.parse_args()
@@ -93,6 +94,27 @@ def main() -> int:
     size = tuple(maxs[axis] - mins[axis] for axis in range(3))
     if any(value <= 0 for value in size):
         raise SystemExit(f"invalid STL: degenerate bounds {size}")
+
+    bed_contact_area = 0.0
+    bed_z = mins[2]
+    bed_tolerance = 1e-4
+    for offset in range(0, len(points), 3):
+        triangle = points[offset : offset + 3]
+        if all(abs(point[2] - bed_z) <= bed_tolerance for point in triangle):
+            a, b, c = triangle
+            projected_cross = (
+                (b[0] - a[0]) * (c[1] - a[1])
+                - (b[1] - a[1]) * (c[0] - a[0])
+            )
+            bed_contact_area += abs(projected_cross) / 2
+    if (
+        args.min_bed_contact_area is not None
+        and bed_contact_area + 1e-6 < args.min_bed_contact_area
+    ):
+        raise SystemExit(
+            f"insufficient_bed_contact: area={bed_contact_area:.3f} mm^2 "
+            f"< {args.min_bed_contact_area:.3f} mm^2"
+        )
 
     for axis, limit in enumerate((args.max_x, args.max_y, args.max_z)):
         if limit is not None and size[axis] > limit + 1e-6:
@@ -134,6 +156,7 @@ def main() -> int:
         f"min={','.join(f'{v:.3f}' for v in mins)} "
         f"max={','.join(f'{v:.3f}' for v in maxs)} "
         f"size={','.join(f'{v:.3f}' for v in size)} "
+        f"bed_contact_mm2={bed_contact_area:.3f} "
         f"volume_cm3={volume_cm3:.3f} bed_orientation={bed_orientation} "
         f"equivalent_to={equivalent_to}"
     )
