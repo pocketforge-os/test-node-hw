@@ -8,6 +8,7 @@ LIBRARY := lib/dut-cradle-library.scad
 FAMILY_SOURCE := trimui-smart-pro-family-cradle.scad
 SMART_PRO_S_SOURCE := trimui-smart-pro-s-cradle.scad
 SMART_PRO_SOURCE := trimui-smart-pro-cradle.scad
+# Candidate-only until the physical gates in README-trimui-brick.md pass.
 BRICK_SOURCE := trimui-brick-cradle.scad
 QUALIFICATION_MANIFEST := qualification/trimui-smart-pro-family-v1.json
 QUALIFIED_ARTIFACTS := $(CHECKS)/smart-pro-unlabelled.stl \
