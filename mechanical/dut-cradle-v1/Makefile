@@ -24,7 +24,8 @@ QUALIFIED_ARTIFACTS := $(CHECKS)/smart-pro-unlabelled.stl \
 	validate-preview-export validate-presentation-split \
 	validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
-	validate-brick-label-clearance-guard validate-brick-print-foot-guard \
+	validate-brick-bottom-io-guard validate-brick-label-clearance-guard \
+	validate-brick-print-foot-guard \
 	validate-brick-preview-export validate-brick-presentation-split \
 	preview clean
 
@@ -32,7 +33,8 @@ all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 	$(BUILD)/trimui-smart-pro-carrier.stl \
 	$(BUILD)/j-hook.stl $(BUILD)/j-hook-set.stl $(BUILD)/fit-coupon.stl \
 	$(BUILD)/trimui-brick-carrier.stl \
-	$(BUILD)/trimui-brick-lower-hook.stl \
+	$(BUILD)/trimui-brick-bottom-support.stl \
+	$(BUILD)/trimui-brick-side-hook.stl \
 	$(BUILD)/trimui-brick-upper-hook.stl \
 	$(BUILD)/trimui-brick-hook-set.stl \
 	$(BUILD)/trimui-brick-fit-coupon.stl
@@ -92,8 +94,11 @@ $(BUILD)/trimui-brick-carrier-body.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 $(BUILD)/trimui-brick-labels.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="presentation_labels"' $<
 
-$(BUILD)/trimui-brick-lower-hook.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="lower_hook"' $<
+$(BUILD)/trimui-brick-bottom-support.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="bottom_support"' $<
+
+$(BUILD)/trimui-brick-side-hook.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="side_hook"' $<
 
 $(BUILD)/trimui-brick-upper-hook.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="upper_hook"' $<
@@ -260,6 +265,19 @@ validate-brick-side-contact-guard: | $(BUILD)
 		rm -f $$log $$mesh; \
 		echo 'brick_side_contact_guard=pass case=corner_arc_overlap'
 
+validate-brick-bottom-io-guard: | $(BUILD)
+	@set -eu; log=$(BUILD)/invalid-brick-bottom-io.log; \
+		mesh=$(BUILD)/invalid-brick-bottom-io.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'PART="bottom_support"' \
+			-D 'bottom_support_stem_height=18.0' $(BRICK_SOURCE) >$$log 2>&1; then \
+			echo 'ERROR: Brick support entering bottom I/O plane was not rejected' >&2; \
+			exit 1; \
+		fi; \
+		grep -q 'bottom supports entered the bottom I/O insertion plane' $$log; \
+		rm -f $$log $$mesh; \
+		echo 'brick_bottom_io_guard=pass case=stem_above_rear_support_zone'
+
 validate-brick-label-clearance-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-brick-label-clearance.log; \
 		mesh=$(BUILD)/invalid-brick-label-clearance.stl; \
@@ -339,7 +357,8 @@ validate: lint all $(BUILD)/trimui-smart-pro-family-installed-hooks.stl \
 	validate-preview-export validate-presentation-split \
 	validate-qualified validate-qualified-mutation \
 	validate-brick-flat-datum-guard validate-brick-clearance-guard \
-	validate-brick-side-contact-guard validate-brick-label-clearance-guard \
+	validate-brick-side-contact-guard validate-brick-bottom-io-guard \
+	validate-brick-label-clearance-guard \
 	validate-brick-print-foot-guard validate-brick-preview-export \
 	validate-brick-presentation-split
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
@@ -357,8 +376,11 @@ validate: lint all $(BUILD)/trimui-smart-pro-family-installed-hooks.stl \
 	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
 		$(BUILD)/trimui-brick-carrier.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 45 --max-z 18 \
+		--min-bed-contact-area 95 \
+		$(BUILD)/trimui-brick-bottom-support.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 45 --max-z 18 \
 		--min-bed-contact-area 150 \
-		$(BUILD)/trimui-brick-lower-hook.stl
+		$(BUILD)/trimui-brick-side-hook.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 30 --max-y 45 --max-z 18 \
 		--min-bed-contact-area 150 \
 		$(BUILD)/trimui-brick-upper-hook.stl

@@ -28,26 +28,28 @@ reachable for manual trigger tests, wiring, and airflow.
 
 ## Retention decision
 
-The first-print design uses five contacts rather than new mirrored corner cups:
+The five-contact design keeps the active retention simple while separating
+weight support from edge capture:
 
-- two lower hooks carry the device at 18 mm in from each bottom edge;
-- two identical lower hooks contact the straight portion of the thick side
+- two rear-only bottom supports carry the device at 18 mm in from each edge;
+  their short stems stop behind the bottom I/O insertion plane, so the TF,
+  reset, USB-C, microphone, and audio openings remain accessible;
+- two side hooks contact the straight portion of the thick side
   shell at 14 mm above the bottom, with 0.6 mm lateral play; the complete
   9 mm contact band stays above the 8.5 mm corner transition;
 - one 6 mm-wide upper hook prevents escape, with 0.45 mm play.
 
-Four contacts therefore use the exact same `lower_hook` geometry. The single
-`upper_hook` differs only where the stepped shell requires it: shelf height,
-throat, width, support depth, and a shallow 1.2 mm front lip. This avoids a new
-two-axis corner-cup mechanism during the first physical iteration and makes
-every fit surface independently inspectable.
+The bottom supports reuse the same base, captive nut, key and rear shelf as
+the side hooks but intentionally omit the continuous front stem and lip. The
+side and upper hooks retain the shell with passive play; the supports carry
+weight without occupying a port mouth. This avoids a new two-axis corner-cup
+mechanism while making every fit surface independently inspectable.
 
-Both hooks retain a 10.4 mm-wide structural spine/base even though their shell
-contacts remain 9 mm and 6 mm wide. That spine keeps the existing keyway datum
-compatible with already printed carriers and puts a continuous broad face on
-the print bed. The anti-rotation key is therefore 0.1 mm above layer one rather
-than becoming a small support-requiring foot; the short contact shelves bridge
-outward from the spine without support.
+All three parts retain a 10.4 mm-wide structural spine/base even though their
+shell contacts remain 9 mm and 6 mm wide. That spine keeps one keyway datum and
+puts a continuous broad face on the print bed. The anti-rotation key is 0.1 mm
+above layer one rather than becoming a small support-requiring foot; the short
+contact shelves bridge outward from the spine without support.
 
 The upper hook is 17 mm from the device's left edge. Its 6 mm contact window is
 well left of the centered 16 mm USB-host keep-out. Its 1.2 mm lip is below the
@@ -81,7 +83,8 @@ From `mechanical/dut-cradle-v1`:
 
 ```sh
 make build/trimui-brick-carrier.stl
-make build/trimui-brick-lower-hook.stl
+make build/trimui-brick-bottom-support.stl
+make build/trimui-brick-side-hook.stl
 make build/trimui-brick-upper-hook.stl
 make build/trimui-brick-hook-set.stl
 make build/trimui-brick-fit-coupon.stl
@@ -90,13 +93,14 @@ make build/trimui-brick-fit-coupon.stl
 | File | Quantity / use |
 |---|---|
 | `trimui-brick-carrier.stl` | Print one |
-| `trimui-brick-lower-hook.stl` | Print four |
+| `trimui-brick-bottom-support.stl` | Print two |
+| `trimui-brick-side-hook.stl` | Print two |
 | `trimui-brick-upper-hook.stl` | Print one |
-| `trimui-brick-hook-set.stl` | Optional arranged alternative containing four lower hooks and one upper hook |
-| `trimui-brick-fit-coupon.stl` | Print first: one lower hook, one upper hook, and one carrier mount coupon |
+| `trimui-brick-hook-set.stl` | Optional arranged alternative containing two bottom supports, two side hooks, and one upper hook |
+| `trimui-brick-fit-coupon.stl` | Print first: one of each contact part and one carrier mount coupon |
 
 The source's `PART` selector accepts `assembly`, `plate`, `presentation_body`,
-`presentation_labels`, `lower_hook`, `upper_hook`, `hook_set`, and
+`presentation_labels`, `bottom_support`, `side_hook`, `upper_hook`, `hook_set`, and
 `fit_coupon`. The two presentation parts exist only to reproduce the material
 split in higher-level renders; print the fused `plate` export.
 
@@ -108,10 +112,11 @@ split in higher-level renders; print the fused `plate` export.
 - optional 0.5–1 mm felt or TPU contact pads;
 - 8 heavy-duty zip ties for the 4040 anchors.
 
-1. Print the fit coupon or one lower and one upper hook first. Confirm the
-   owner-validated 5.6 mm nut pocket and both passive shell fits.
-2. Install the two bottom hooks loosely and lower the Brick onto their rear
-   shelves. Do not use screw torque to squeeze the shell.
+1. Print the fit coupon first. Confirm the 5.6 mm nut pocket, rear-only bottom
+   support, side hook, and upper-hook passive shell fits.
+2. Install the two bottom supports loosely and lower the Brick onto their rear
+   shelves. Confirm their short stems remain behind the bottom connector plane.
+   Do not use screw torque to squeeze the shell.
 3. Bring the two lower side datums inward with visible play, then lock their
    screws. They locate the Brick but must not clamp it.
 4. Install the narrow upper hook last. Confirm the front lip touches only bezel
@@ -139,10 +144,9 @@ make validate
 ```
 
 Validation covers parser/evaluation lint, manifold meshes, Prusa bed bounds,
-preview/export isolation, the 8 mm minimum rear-access rule, and exact equality
-of the upper/lower front contact datums. A negative label-clearance guard also
-proves that an undersized plate is rejected rather than allowing the centered
-top title box to enter either 4040 attachment slot. A print-foot regression
-guard rejects any spine that would let the anti-rotation key become the lowest
-feature. Final closure still requires the owner's explicit physical fit and
-webcam-view confirmation.
+preview/export isolation, the 8 mm minimum rear-access rule, exact equality of
+the upper/lower front contact datums, and a negative guard proving the bottom
+supports cannot grow into the I/O insertion plane. A label-clearance guard
+rejects an undersized plate, and a print-foot guard rejects any spine that
+would let the anti-rotation key become the lowest feature. Final closure still
+requires the owner's explicit physical fit and webcam-view confirmation.

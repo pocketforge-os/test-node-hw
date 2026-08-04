@@ -6,7 +6,7 @@
  * that step so the front glass remains parallel to the carrier and camera.
  *
  * PART choices: assembly, plate, presentation_body, presentation_labels,
- * lower_hook, upper_hook, hook_set, fit_coupon.
+ * bottom_support, side_hook, upper_hook, hook_set, fit_coupon.
  * Preview geometry is background-only and cannot leak into printable exports.
  */
 
@@ -62,9 +62,9 @@ device_bottom_corner_radius = 8.5;
 device_origin = (plate_size - device_body_size) / 2;
 device_centre = device_origin + device_body_size / 2;
 
-// The lower 20 mm of the shell is 20 mm deep; the upper shell is 12 mm deep.
+// The lower 60 mm of the shell is 20 mm deep; the upper shell is 12 mm deep.
 // Supporting the two regions 8 mm apart holds their shared front face flat.
-lower_region_height = 20.0;
+lower_region_height = 60.0;
 lower_body_depth = 20.0;
 upper_body_depth = 12.0;
 minimum_rear_clearance = 8.0;
@@ -87,9 +87,9 @@ rear_service_origin = device_centre - rear_service_window / 2;
 rear_service_radius = 7.0;
 
 // ---- Five passive contacts -----------------------------------------------
-// Four lower contacts share one physically proven hook geometry.  Bottom
-// hooks carry weight; side hooks are loose datums.  The narrow upper hook is
-// offset left of the centred USB-host path and only prevents escape.
+// Two rear-only bottom supports carry weight without crossing the bottom I/O
+// insertion plane. Two side hooks are loose datums, and the narrow upper hook
+// is offset left of the centred USB-host path and only prevents escape.
 bottom_contact_inset = 18.0;
 // Keep the complete 9 mm side-contact band above the 8.5 mm lower corner arc.
 lower_side_contact_height = 14.0;
@@ -102,18 +102,18 @@ upper_throat = upper_body_depth + 0.6;
 clamp_poses = [
     ["bottom_left",
      [device_origin.x + bottom_contact_inset, device_origin.y],
-     90, 0.25, "lower"],
+     90, 0.25, "bottom"],
     ["bottom_right",
      [device_origin.x + device_body_size.x - bottom_contact_inset,
       device_origin.y],
-     90, 0.25, "lower"],
+     90, 0.25, "bottom"],
     ["left_lower_datum",
      [device_origin.x, device_origin.y + lower_side_contact_height],
-     0, 0.60, "lower"],
+     0, 0.60, "side"],
     ["right_lower_datum",
      [device_origin.x + device_body_size.x,
       device_origin.y + lower_side_contact_height],
-     180, 0.60, "lower"],
+     180, 0.60, "side"],
     ["upper_retainer",
      [device_origin.x + upper_contact_inset,
       device_origin.y + device_body_size.y],
@@ -131,15 +131,20 @@ function pose_surface(pose) =
               pf_scale_2d(-pose_play(pose), pose_inward(pose)));
 
 // ---- Shared hook hardware / two contact profiles -------------------------
-lower_hook_width = 9.0;
+bottom_support_width = 9.0;
+side_hook_width = 9.0;
 upper_hook_width = 6.0;
 hook_wall = 4.0;
-lower_lip_depth = 3.0;
+side_lip_depth = 3.0;
 upper_lip_depth = 1.2;
 hook_lip_thickness = 4.0;
-lower_support_depth = 4.0;
+bottom_support_depth = 4.0;
+side_support_depth = 4.0;
 upper_support_depth = 3.0;
 hook_support_thickness = 3.2;
+bottom_io_min_z = 7.0;
+bottom_io_clearance = 1.0;
+bottom_support_stem_height = lower_rear_gap + 4.0;
 hook_base_outward = 13.0;
 hook_base_inward = 4.0;
 hook_base_height = 4.4;
@@ -237,11 +242,14 @@ assert(top_label_outer_y + label_feature_clearance <= title_box_min.y,
 assert(bottom_label_outer_y + label_feature_clearance <=
            bottom_mount_inner_y,
        "Brick BOTTOM label entered a lower hook adjustment sweep");
-assert(lower_side_contact_height - lower_hook_width / 2 >
+assert(lower_side_contact_height - side_hook_width / 2 >
            device_bottom_corner_radius &&
-       lower_side_contact_height + lower_hook_width / 2 <
+       lower_side_contact_height + side_hook_width / 2 <
            lower_region_height,
        "The complete Brick side-contact band must land on the straight thick shell");
+assert(bottom_support_stem_height <=
+           lower_rear_gap + bottom_io_min_z - bottom_io_clearance,
+       "Brick bottom supports entered the bottom I/O insertion plane");
 assert(m3_nut_capture_wall >= 2.4,
        "Brick M3 nut capture wall must remain at least three nozzle widths");
 assert(hook_key_offset.y + hook_key_size.y / 2 + print_face_margin <=
@@ -343,27 +351,51 @@ module carrier_presentation() {
 
 module one_hook_installed(pose) {
     upper = pose_kind(pose) == "upper";
-    pf_installed_j_hook(
-        pose_surface(pose), pose_angle(pose), plate_thickness,
-        upper ? upper_throat : lower_throat,
-        upper ? upper_rear_gap : lower_rear_gap,
-        upper ? upper_hook_width : lower_hook_width,
-        hook_wall,
-        upper ? upper_lip_depth : lower_lip_depth,
-        hook_lip_thickness,
-        upper ? upper_support_depth : lower_support_depth,
-        hook_support_thickness, hook_base_outward, hook_base_inward,
-        hook_base_height, hook_base_radius, hook_screw_offset,
-        hook_key_offset, m3_clearance, m3_nut_across_flats,
-        m3_nut_depth, m3_nut_capture_wall, hook_key_size,
-        hook_keyway_depth, epsilon, hook_spine_width
+    bottom = pose_kind(pose) == "bottom";
+    if (bottom)
+        pf_installed_j_hook(
+            pose_surface(pose), pose_angle(pose), plate_thickness,
+            lower_throat, lower_rear_gap, bottom_support_width, hook_wall,
+            0, 0, bottom_support_depth, hook_support_thickness,
+            hook_base_outward, hook_base_inward, hook_base_height,
+            hook_base_radius, hook_screw_offset, hook_key_offset,
+            m3_clearance, m3_nut_across_flats, m3_nut_depth,
+            m3_nut_capture_wall, hook_key_size, hook_keyway_depth,
+            epsilon, hook_spine_width, bottom_support_stem_height
+        );
+    else
+        pf_installed_j_hook(
+            pose_surface(pose), pose_angle(pose), plate_thickness,
+            upper ? upper_throat : lower_throat,
+            upper ? upper_rear_gap : lower_rear_gap,
+            upper ? upper_hook_width : side_hook_width, hook_wall,
+            upper ? upper_lip_depth : side_lip_depth,
+            hook_lip_thickness,
+            upper ? upper_support_depth : side_support_depth,
+            hook_support_thickness, hook_base_outward, hook_base_inward,
+            hook_base_height, hook_base_radius, hook_screw_offset,
+            hook_key_offset, m3_clearance, m3_nut_across_flats,
+            m3_nut_depth, m3_nut_capture_wall, hook_key_size,
+            hook_keyway_depth, epsilon, hook_spine_width
+        );
+}
+
+module bottom_support_printable(throat = lower_throat) {
+    pf_print_oriented_j_hook(
+        throat, lower_rear_gap, bottom_support_width, hook_wall,
+        0, 0, bottom_support_depth, hook_support_thickness,
+        hook_base_outward, hook_base_inward, hook_base_height,
+        hook_base_radius, hook_screw_offset, hook_key_offset, m3_clearance,
+        m3_nut_across_flats, m3_nut_depth, m3_nut_capture_wall,
+        hook_key_size, hook_keyway_depth, epsilon, hook_spine_width,
+        bottom_support_stem_height
     );
 }
 
-module lower_hook_printable(throat = lower_throat) {
+module side_hook_printable(throat = lower_throat) {
     pf_print_oriented_j_hook(
-        throat, lower_rear_gap, lower_hook_width, hook_wall,
-        lower_lip_depth, hook_lip_thickness, lower_support_depth,
+        throat, lower_rear_gap, side_hook_width, hook_wall,
+        side_lip_depth, hook_lip_thickness, side_support_depth,
         hook_support_thickness, hook_base_outward, hook_base_inward,
         hook_base_height, hook_base_radius, hook_screw_offset,
         hook_key_offset, m3_clearance, m3_nut_across_flats,
@@ -385,10 +417,10 @@ module upper_hook_printable(throat = upper_throat) {
 }
 
 module hook_set() {
-    for (column = [0 : 1])
-        for (row = [0 : 1])
-            translate([column * 23, row * 40, 0])
-                lower_hook_printable();
+    for (column = [0 : 1]) {
+        translate([column * 23, 0, 0]) bottom_support_printable();
+        translate([column * 23, 40, 0]) side_hook_printable();
+    }
     translate([46, 0, 0]) upper_hook_printable();
 }
 
@@ -406,9 +438,10 @@ module mount_coupon_plate() {
 }
 
 module fit_coupon() {
-    lower_hook_printable();
-    translate([24, 0, 0]) upper_hook_printable();
-    translate([10, 42, 0]) mount_coupon_plate();
+    bottom_support_printable();
+    translate([24, 0, 0]) side_hook_printable();
+    translate([48, 0, 0]) upper_hook_printable();
+    translate([22, 42, 0]) mount_coupon_plate();
 }
 
 // ---- Preview-only device / keep-outs -------------------------------------
@@ -490,9 +523,9 @@ module keep_out_preview() {
         translate([device_origin.x + device_body_size.x - 2,
                    device_origin.y + 77, front_plane - 8])
             cube([4, 18, 8]);
-        translate([device_centre.x - 21, device_origin.y - 6,
-                   plate_thickness + lower_rear_gap + 3])
-            cube([42, 8, 11]);
+        translate([device_origin.x + 10, device_origin.y - 6,
+                   plate_thickness + lower_rear_gap + bottom_io_min_z])
+            cube([45.56, 8, 7]);
     }
 }
 
@@ -518,8 +551,10 @@ if (PART == "assembly") {
     carrier_body();
 } else if (PART == "presentation_labels") {
     carrier_labels();
-} else if (PART == "lower_hook") {
-    lower_hook_printable();
+} else if (PART == "bottom_support") {
+    bottom_support_printable();
+} else if (PART == "side_hook" || PART == "lower_hook") {
+    side_hook_printable();
 } else if (PART == "upper_hook") {
     upper_hook_printable();
 } else if (PART == "hook_set") {

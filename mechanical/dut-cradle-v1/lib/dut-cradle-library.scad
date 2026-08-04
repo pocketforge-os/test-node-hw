@@ -121,15 +121,19 @@ module pf_j_hook_installed(
     key_size,
     keyway_depth,
     epsilon = 0.05,
-    spine_width = undef
+    spine_width = undef,
+    stem_height = undef
 ) {
     total_height = rear_gap + throat + lip_thickness;
+    effective_stem_height = is_undef(stem_height) ? total_height : stem_height;
     nut_circumradius = nut_across_flats / (2 * cos(30));
     nut_capture_radius = nut_circumradius + nut_capture_wall;
     body_width = is_undef(spine_width) ? width : spine_width;
 
     assert(nut_capture_wall > 0,
            "Nut capture wall must be positive");
+    assert(effective_stem_height >= rear_gap,
+           "Short support stem must reach the rear shelf datum");
 
     difference() {
         union() {
@@ -148,7 +152,7 @@ module pf_j_hook_installed(
             // Continuous stem; the generous section is intentional for a
             // 0.8 mm nozzle and survives repeated device servicing.
             translate([-wall, -body_width / 2, 0])
-                cube([wall, body_width, total_height]);
+                cube([wall, body_width, effective_stem_height]);
 
             // Rear shelf.  A sloped underside avoids an abrupt stress riser.
             translate([0, -width / 2, rear_gap - support_thickness])
@@ -164,15 +168,17 @@ module pf_j_hook_installed(
 
             // Short front lip: enough to capture the edge without covering
             // the display or controls.  A top gusset strengthens the root.
-            translate([0, -width / 2, rear_gap + throat])
-                cube([lip_depth, width, lip_thickness]);
-            hull() {
-                translate([-wall, -width / 2,
-                           rear_gap + throat + lip_thickness - 1.0])
-                    cube([0.8, width, 1.0]);
-                translate([lip_depth - 0.8, -width / 2,
-                           rear_gap + throat + lip_thickness - 0.8])
-                    cube([0.8, width, 0.8]);
+            if (lip_depth > 0 && lip_thickness > 0) {
+                translate([0, -width / 2, rear_gap + throat])
+                    cube([lip_depth, width, lip_thickness]);
+                hull() {
+                    translate([-wall, -width / 2,
+                               rear_gap + throat + lip_thickness - 1.0])
+                        cube([0.8, width, 1.0]);
+                    translate([lip_depth - 0.8, -width / 2,
+                               rear_gap + throat + lip_thickness - 0.8])
+                        cube([0.8, width, 0.8]);
+                }
             }
 
             // Rectangular key rides in the carrier's shallow keyway.
@@ -219,7 +225,8 @@ module pf_installed_j_hook(
     key_size,
     keyway_depth,
     epsilon = 0.05,
-    spine_width = undef
+    spine_width = undef,
+    stem_height = undef
 ) {
     translate([surface.x, surface.y, plate_thickness])
         rotate([0, 0, angle])
@@ -228,7 +235,7 @@ module pf_installed_j_hook(
                 support_depth, support_thickness, base_outward, base_inward,
                 base_height, base_radius, screw_offset, key_offset,
                 m3_clearance, nut_across_flats, nut_depth, nut_capture_wall,
-                key_size, keyway_depth, epsilon, spine_width
+                key_size, keyway_depth, epsilon, spine_width, stem_height
             );
 }
 
@@ -255,7 +262,8 @@ module pf_print_oriented_j_hook(
     key_size,
     keyway_depth,
     epsilon = 0.05,
-    spine_width = undef
+    spine_width = undef,
+    stem_height = undef
 ) {
     total_height = rear_gap + throat + lip_thickness;
     nut_circumradius = nut_across_flats / (2 * cos(30));
@@ -275,7 +283,7 @@ module pf_print_oriented_j_hook(
                 support_depth, support_thickness, base_outward, base_inward,
                 base_height, base_radius, screw_offset, key_offset,
                 m3_clearance, nut_across_flats, nut_depth, nut_capture_wall,
-                key_size, keyway_depth, epsilon, spine_width
+                key_size, keyway_depth, epsilon, spine_width, stem_height
             );
 }
 
