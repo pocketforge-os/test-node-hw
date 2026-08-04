@@ -8,9 +8,12 @@
  *   trimui-smart-pro-s-cradle.scad -> "TrimUI Smart Pro S"
  *   trimui-smart-pro-cradle.scad   -> "TrimUI Smart Pro"
  *
- * PART choices: assembly, plate, hook, hook_set, fit_coupon.
+ * PART choices: assembly, plate, presentation_body, presentation_labels,
+ * hook, hook_set, installed_hooks, fit_coupon.
  * The default assembly shows background-only DUT/hooks; even a manual STL
  * export of that view contains only the printable carrier plate.
+ * `installed_hooks` is a presentation-only export in carrier coordinates. It
+ * deliberately contains no plate or DUT geometry and is never a print bed.
  */
 
 include <lib/dut-cradle-library.scad>;
@@ -149,14 +152,18 @@ hook_keyway_depth = 1.2;
 hook_adjustment = 8.0;
 
 // ---- Raised labels, sized for the owner's 0.8 mm nozzle ------------------
-// The generous stroke expansion and three-layer-at-0.4-mm emboss keep letter
-// stems from disappearing when the slicer quantizes fine font geometry.
+// The owner-approved Regular face and restrained stroke expansion preserve
+// open counters with the 0.8 mm nozzle. Label boxes, type sizes, positions,
+// and the three-layer-at-0.4-mm emboss remain unchanged.
 label_height = 1.2;
-label_stroke_growth = 0.85;
+label_stroke_growth = 0.35;
+label_font = "Liberation Sans:style=Regular";
 title_box_size = [190, 24];
 title_box_centre = [plate_size.x / 2, 176.5];
 title_font_size = 14.4;
 orientation_font_size = 9.0;
+carrier_body_color = [0.88, 0.88, 0.84];
+carrier_label_color = [0.02, 0.02, 0.02];
 
 // ---- Design assertions ----------------------------------------------------
 assert(plate_size.x <= printable_bed.x && plate_size.y <= printable_bed.y,
@@ -212,7 +219,7 @@ module label_box(centre, size, message, font_size) {
                 offset(delta = label_stroke_growth)
                     text(message, size = font_size,
                          halign = "center", valign = "center",
-                         font = "Liberation Sans:style=Bold");
+                         font = label_font);
     }
 }
 
@@ -222,7 +229,7 @@ module orientation_label(point, message, halign = "center") {
             offset(delta = label_stroke_growth)
                 text(message, size = orientation_font_size,
                      halign = halign, valign = "center",
-                     font = "Liberation Sans:style=Bold");
+                     font = label_font);
 }
 
 module carrier_labels() {
@@ -237,36 +244,48 @@ module carrier_labels() {
                       "BOTTOM", "right");
 }
 
+module carrier_body() {
+    difference() {
+        pf_rounded_prism(
+            [plate_size.x, plate_size.y, plate_thickness],
+            plate_corner_radius
+        );
+
+        pf_frame_tie_holes(
+            frame_tie_features, frame_tie_slot,
+            plate_thickness + 2 * epsilon
+        );
+
+        translate([rear_service_origin.x, rear_service_origin.y, -epsilon])
+            linear_extrude(height = plate_thickness + 2 * epsilon)
+                pf_rounded_rect_2d(rear_service_window,
+                                   rear_service_radius);
+
+        for (pose = clamp_poses)
+            pf_clamp_mount_cutouts(
+                pose_surface(pose), pose_angle(pose), plate_thickness,
+                hook_screw_offset, hook_key_offset, hook_adjustment,
+                m3_clearance, hook_key_size, hook_key_clearance,
+                hook_keyway_depth, epsilon
+            );
+    }
+}
+
 module carrier_plate() {
     union() {
-        difference() {
-            pf_rounded_prism(
-                [plate_size.x, plate_size.y, plate_thickness],
-                plate_corner_radius
-            );
-
-            pf_frame_tie_holes(
-                frame_tie_features, frame_tie_slot,
-                plate_thickness + 2 * epsilon
-            );
-
-            translate([rear_service_origin.x, rear_service_origin.y, -epsilon])
-                linear_extrude(height = plate_thickness + 2 * epsilon)
-                    pf_rounded_rect_2d(rear_service_window,
-                                       rear_service_radius);
-
-            for (pose = clamp_poses)
-                pf_clamp_mount_cutouts(
-                    pose_surface(pose), pose_angle(pose), plate_thickness,
-                    hook_screw_offset, hook_key_offset, hook_adjustment,
-                    m3_clearance, hook_key_size, hook_key_clearance,
-                    hook_keyway_depth, epsilon
-                );
-        }
-
+        carrier_body();
         if (SHOW_LABELS)
             carrier_labels();
     }
+}
+
+// The physical print changes from white to black exactly where the raised
+// geometry begins.  Keep that material split presentation-only: production
+// PART="plate" remains the same single printable union.
+module carrier_presentation() {
+    color(carrier_body_color) carrier_body();
+    if (SHOW_LABELS)
+        color(carrier_label_color) carrier_labels();
 }
 
 module one_hook_installed(pose, throat = hook_throat,
@@ -347,8 +366,17 @@ module safe_contact_window_preview() {
     }
 }
 
+// Presentation-only assembly geometry.  Keeping the six installed hooks in a
+// dedicated export lets higher-level rack/chassis models show the accepted
+// retention system without weakening assembly's preview-ghost export guard or
+// accidentally creating one fused carrier-and-hooks production STL.
+module installed_hooks() {
+    for (pose = clamp_poses)
+        one_hook_installed(pose);
+}
+
 module assembly() {
-    carrier_plate();
+    carrier_presentation();
 
     if (SHOW_DEVICE)
         %pf_device_preview(
@@ -361,18 +389,23 @@ module assembly() {
         %safe_contact_window_preview();
 
     if (SHOW_HOOKS)
-        for (pose = clamp_poses)
-            %one_hook_installed(pose);
+        %installed_hooks();
 }
 
 if (PART == "assembly") {
     assembly();
 } else if (PART == "plate") {
     carrier_plate();
+} else if (PART == "presentation_body") {
+    carrier_body();
+} else if (PART == "presentation_labels") {
+    carrier_labels();
 } else if (PART == "hook") {
     one_hook_printable();
 } else if (PART == "hook_set") {
     hook_set();
+} else if (PART == "installed_hooks") {
+    installed_hooks();
 } else if (PART == "fit_coupon") {
     fit_coupon();
 } else {

@@ -47,6 +47,91 @@ plate, fit coupon, split fallback, joiner, layout previews, and SHA-256 checksum
 30-day workflow artifact. New OpenSCAD projects join the same process by adding one project entry to
 the workflow matrix.
 
+Presentation-only meshes expose the populated harness without contaminating
+the production plate. `pocketforge-dut-fixture-components.stl` now contains
+only the physical black retention ties around the exact component models, and
+`pocketforge-dut-fixture-labels.stl` contains all ten placement labels. The
+Banana Pi is now an exact source-native BPI-M2 Zero V1.0 reconstruction split
+into five real-material meshes: blue PCB, dark ICs/header, metal
+shields/ports, gold contacts, and pale silkscreen. Its dedicated close-up is
+`layout-bpi-m2-zero.png`; source evidence and immutable manufacturer-reference
+hashes are recorded in `BPI-M2-ZERO-PROVENANCE.md`.
+
+The ESP32 is an original populated-board reconstruction of the exact ACEIRMC
+ESP32-S3 SuperMini / HW-747 V0.0.2 listing revision. Six presentation meshes
+preserve its black PCB, dark diagonal ESP32-S3FH4R2 package and switches,
+USB-C/switch metal, plated contacts, red `C3` ceramic antenna, and white
+silkscreen. `layout-esp32-s3-supermini.png` is its dedicated close-up and
+`ESP32-S3-SUPERMINI-PROVENANCE.md` records the saved Amazon reference hashes
+without redistributing listing artwork. Analytical connector/service keep-outs
+remain editor-only and are excluded.
+
+The four-channel relay is an original populated-board reconstruction of the
+exact ELEGOO `B09ZQS2JRD` / `US-EL-SM-Relay` listing revision. Six meshes keep
+its blue PCB, blue Songle-style relay cans and screw-terminal bodies, dark
+optocouplers/driver packages, metal screws/pins, red indicators, and pale
+markings distinct. The source retains the owner-fit 51.85 × 72.70 mm installed
+envelope and 45.03 × 66.93 mm hole registration, with the twelve-terminal
+bank facing +X. `layout-elegoo-relay.png` is its close-up and
+`ELEGOO-4-CHANNEL-RELAY-PROVENANCE.md` records the Amazon hashes, misleading
+listing dimensions, and rejected non-matching online models.
+
+The boost converter is an original reconstruction of the exact HiLetgo
+`B07BNHR4HW` / `Flying-Fish-XL6009` revision, split into five meshes for its
+blue PCB, dark 470-marked inductor/regulator/passives, blue W103 multi-turn
+adjuster, aluminum cans/pads/leads/brass screw, and pale markings. It preserves
+the owner's 43.16 × 21.23 mm fit, diagonal Ø3 mm holes, 14 mm populated
+height, and IN-on-−X / OUT-on-+X orientation. Its close-up is
+`layout-hiletgo-xl6009.png`; `HILETGO-XL6009-PROVENANCE.md` records the
+Amazon hashes, 43 × 21 mm gallery dimension, contradictory 47 × 22 × 13 mm
+prose, and rejected online-model candidates.
+
+The MOSFET switch is an original reconstruction of the exact Ceksezx
+`B0FMJH3DML` / `MTSD001` revision. Six meshes preserve its blue 34 × 17 mm
+PCB, blue four-position terminal bank, two dark `PD4184` MOSFET packages and
+gate-network passives, plated holes/screws/leads, indicator LED, and pale
+markings. The exact board is centred inside the accepted 35 × 18 mm collision
+envelope and rotated 180 degrees, so its clipped Ø2.2 mm holes remain on the
+existing 13.38 mm-centre standoffs while the terminal bank faces −X as in the
+owner photograph. Its populated height is 12 mm. The close-up is
+`layout-ceksezx-mtsd001.png`; `CEKSEZX-MTSD001-PROVENANCE.md` records the
+Amazon/gallery/owner-photo hashes and rejected online-model search.
+
+The ALIENTEK DP100 is an original reconstruction of exact Amazon ASIN
+`B0CWRG6YFM`, split into seven meshes for its dark enclosure, black
+panel/ports/seams, gray buttons and adjustment wheel, IPS screen, red positive
+output/status accents, metal banana/USB interfaces, and pale markings. The
+owner-measured **94.6 × 62.2 × 17.2 mm** enclosure remains the installed
+fixture envelope; a **5.8 mm** banana projection yields the manual's
+**100.4 mm** overall length. Banana outputs face −X, USB-C/USB-A face +X, and
+the screen/buttons/wheel face −Y. Its close-up is
+`layout-alientek-dp100.png`; `ALIENTEK-DP100-PROVENANCE.md` records the
+listing/manual hashes and rejected online-model search.
+
+The Logitech C270 is likewise an original source-native reconstruction, split
+into five presentation meshes for its dark-gray shell and articulated clip,
+black bezel/lens/cable, lens glass, lime activity LED, and pale front
+markings. The body retains the physically fitted 71.00 × 31.55 mm face, while
+the asymmetric lens—not the shell center—defines the optical datum.
+`layout-logitech-c270.png` is its dedicated close-up and
+`LOGITECH-C270-PROVENANCE.md` records Logitech's official dimensions,
+reference hashes, and the rejected online-model candidates without
+redistributing any external geometry.
+
+The final three fixture proxies are also gone. The Eightwood `EWUA0205`
+antenna is reconstructed as the exact 114 × 15 mm heat-shrink paddle, routed
+300 mm / Ø0.8 mm coax, and 2.33 mm MHF4 connector. The VIENON `Usb-001`
+four-port hub preserves its 100 × 30 × 10 mm black shell, four downward-facing
+USB-A receptacles, and fixed +X upstream cable. The white Smays
+`microb-hub-8152` preserves its 105.07 × 24 × 15 mm installed envelope, three
+upward-facing USB-A ports, −X RJ45, +X micro-USB OTG cable, and −Y 3.5 mm DC
+input. Thirteen material meshes keep their shells, interfaces, indicators, and
+markings distinct. Their dedicated close-ups are
+`layout-eightwood-ewua0205.png`, `layout-vienon-usb-001.png`, and
+`layout-smays-microb-hub-8152.png`; the matching provenance files record
+listing identifiers, reference-image hashes, reconciled dimensions, and the
+unsuccessful exact-model search.
+
 No container is required for this: OpenSCAD is a single distro package, the source is portable, and
 the stdlib-only bounds validator removes Python dependency drift. A container would add substantially
 more machinery than determinism here.
@@ -69,19 +154,43 @@ more machinery than determinism here.
   and one vertical anchor, aimed toward its two adjacent rails. The 5.5 mm opening is intended for a
   common 4.8 mm heavy-duty cable tie; confirm the actual tie in the fit coupon before printing the
   plate. A 5 mm component keep-out remains around every frame slot for threading access.
-- The webcam is centred left-to-right and kept near the plate centre. A machine-enforced 71 × 20 mm
-  clear strip immediately below it is reserved for the owner's later secondary block.
-- The upper powered USB/Ethernet hub has a 25 mm connector bay above it and an 18 × 12 mm cable
-  corridor at its right end. Its lower and left sides reserve no unused cable space. Its two 7 × 2.7 mm
-  tie-slot pairs include the extra 0.5 mm width requested after the first physical fit.
-- The lower USB hub retains its physically proven bottom-edge placement. Its connector side opens
-  beyond the plate, while centred 20 × 12 mm cable corridors reserve both narrow ends. The two hub
-  bodies are separated only by the roughly 10 mm required for their independent zip-tie slots.
-- The ESP32 is oriented with its 18.5 mm short edge toward the bottom of the plate. A centred 8.5 mm
-  USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots sit 1.5 mm farther inward
-  than the first print—two flanking USB-C and two mirrored on the opposite edge.
-- The four-channel opto-isolated relay moves 10 mm left and sits on 26 mm-high, 9 mm-diameter
-  standoffs, providing vertical clearance for the adjacent DP100 connections.
+- The webcam body is centred left-to-right and kept near the plate centre.
+  Its left-offset C270 lens remains the optical datum. A machine-enforced
+  71 × 20 mm clear strip immediately below it is reserved for the owner's
+  later secondary block.
+- The exact upper Smays hub has three USB-A ports facing +Y, RJ45 facing −X,
+  its fixed micro-USB OTG lead facing +X, and its 3.5 mm DC input facing −Y.
+  It retains the proven 25 mm USB connector bay and 18 mm corridors at both
+  narrow ends. The installed DC plug cannot turn inside the flat inter-hub
+  gap, so a machine-checked 20 × 14 × 7.5 mm **overhead** service volume rises
+  from the gap and crosses above the black hub. Do not treat that apparent
+  gap as unused space when rewiring: preserve this overhead route or revise
+  the fixture layout. Its two 7 × 2.7 mm tie-slot pairs retain the extra
+  0.5 mm width requested after the first physical fit.
+- The exact lower VIENON hub retains its physically proven bottom-edge
+  placement, with its four USB-A ports facing −Y beyond the plate and its
+  fixed upstream lead facing +X into a 20 mm corridor. The 30 mm exact body
+  is shown 2 mm closer to the open edge than the former 24 mm proxy and
+  20 mm left of its legacy tie-envelope datum. That photographed stagger
+  leaves a 6 mm body-to-body gap and puts the existing ties near the VIENON
+  body's middle and +X end without moving the proven printable slots.
+- The ESP32-S3 SuperMini is oriented with its 18.5 mm short edge toward the
+  bottom of the plate and the actual USB-C receptacle points down. A centred
+  8.5 mm USB-C corridor reserves 20 mm below that edge. Four 3 × 3 mm tie slots
+  sit 1.5 mm farther inward than the first print—two flanking USB-C and two
+  mirrored on the opposite edge.
+- The four-channel opto-isolated relay moves 10 mm left and sits on 26 mm-high,
+  9 mm-diameter standoffs, providing vertical clearance for the adjacent
+  DP100 connections. Its twelve-position screw-terminal edge faces right
+  (+X), while its logic and relay-power headers face left.
+- The MTSD001 board retains the existing two M2 standoffs. Its four screw
+  terminals face left (−X), while the PWM/GND pads and mounting-hole edge face
+  right (+X), matching the owner's installed component photograph.
+- The DP100 retains its two opposite-side ties and measured 94.6 × 62.2 mm
+  body. The black/red banana outputs project toward −X, while the USB-C input
+  and USB-A communications connector open toward +X with a 15 mm cable
+  corridor. Its display, three buttons, and adjustment wheel face the plate's
+  −Y/front edge.
 
 The plate can also be exported along the empty horizontal corridor as 200 × 150 mm lower and
 200 × 97 mm upper sections. Both fit the MK3S without rotation:
@@ -106,34 +215,68 @@ centre spacing = far-edge spacing - hole diameter
 
 | Item | Envelope / interface used | Status |
 |---|---:|---|
-| ALIENTEK DP100 | 94.6 × 62.2 mm | Owner-corrected physical measurement |
+| ALIENTEK DP100 | 94.6 × 62.2 × 17.2 mm installed body; 100.4 mm overall with 5.8 mm banana projection; outputs −X, USB +X, controls −Y | Owner-corrected physical body plus exact B0CWRG6YFM listing/manual cross-check; original repository-native model |
 | DP100 tie positions | Two total: one on each short side, 21 / 25 mm down from top | Interpreted from sketch; parameterized |
 | Webcam | 71 × 31.55 mm keep-out; 44.75 × 19.5 mm minimum aperture; 71 × 20 mm lower clear strip | Physically fit; printable opening gets 0.4 mm clearance |
 | 4-channel relay | 51.85 × 72.70 mm; Ø3 holes; 45.03 × 66.93 mm centres; 26 mm standoffs | Measured; height owner-corrected after physical fit |
-| BPI-M2-Zero | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres | Converted from measured far edges |
-| Boost converter | 43.16 × 21.23 mm; two Ø3 diagonal holes with 5 mm horizontal hole-edge-to-board-edge gaps (6.5 mm X centre insets), plus 1.1 mm top and 0.7 mm bottom gaps | Owner-corrected from physical fit and annotated measurement |
-| MOSFET module | Ø2.2 holes, 13.38 mm centre spacing | Envelope and edge offset provisional |
-| Antenna | 14.3 mm wide; mounted horizontally | Length/tie positions provisional |
-| ESP32 | 23.67 × 18.5 mm; short-edge USB-C; four 3 × 3 mm short-edge tie slots | Envelope measured; slot fit owner-corrected after first print |
-| Powered USB/Ethernet hub | 105.07 × 24 mm; ties 24 / 39 mm from ends; 25 mm top and 18 mm right service | Measured and physically fit |
-| Unpowered USB hub | 105 × 24 mm; bottom connectors off-plate; 20 mm at both narrow ends | Estimated envelope; placement and service physically fit |
+| BPI-M2-Zero V1.0 | 29.90 × 65 mm; Ø2.6 holes; 23.00 × 58.36 mm centres; H2+, K016 shield, populated 2x20 header, u.FL, mini-HDMI, dual micro-USB, micro-SD, and CSI | Runtime identity, owner photo/calipers, and manufacturer V1.0 DXF cross-check; original repository-native model |
+| HiLetgo Flying-Fish XL6009 boost converter | 43.16 × 21.23 × 14 mm; two Ø3 diagonal holes at `[6.50, 18.63]` / `[36.66, 2.20]`; IN at −X and OUT at +X | Owner physical fit plus exact B07BNHR4HW gallery cross-check; original repository-native model |
+| Ceksezx MTSD001 dual-MOSFET module | 34 × 17 × 12 mm populated board centred in the accepted 35 × 18 mm analytical envelope; two clipped Ø2.2 holes at 13.38 mm centres; terminal bank −X | Owner photograph/mounting measurements plus exact B0FMJH3DML gallery cross-check; original repository-native model |
+| Eightwood EWUA0205 antenna | 114 × 15 × 3 mm heat-shrink paddle; 300 mm / Ø0.8 mm coax; 2.33 mm MHF4; cable exits +X; one antenna installed from the retail pair | Exact B0CRDVS774 listing dimensions and installed orientation; original repository-native model |
+| ACEIRMC ESP32-S3 SuperMini HW-747 V0.0.2 | 23.67 × 18.5 mm; 18 plated edge holes at 2.54 mm pitch; USB-C; ESP32-S3FH4R2; BOOT/RST; red ceramic antenna; four 3 × 3 mm short-edge tie slots | Envelope physically measured; population and revision cross-checked to owner-supplied Amazon ASIN B0GS1X97DZ; original repository-native model |
+| Smays microb-hub-8152 powered USB/Ethernet hub | 105.07 × 24 × 15 mm installed envelope; three USB-A +Y, RJ45 −X, micro-USB OTG lead +X, 3.5 mm DC input −Y; 25 mm USB bay, 18 mm end corridors, and 20 × 14 × 7.5 mm overhead DC-plug route | Owner photo and physical fit control the footprint/orientation; B00L32UUJK listing cross-check; original repository-native model |
+| VIENON Usb-001 four-port USB hub | 100 × 30 × 10 mm; four USB-A −Y; fixed upstream lead +X; ports open beyond plate and upstream lead has 20 mm service | Exact B09MLRPTT2 listing envelope plus owner-photo orientation; original repository-native model |
 | 4040 frame anchors | Eight 12 × 5.5 mm rounded slots | Tunable; verify actual heavy-duty tie in coupon |
 
 ## Refinement workflow
 
-1. Change only the named component parameters near the top of `dut-fixture.scad`.
+1. Change fixture interfaces near the top of `dut-fixture.scad`; change only
+   exact relay presentation geometry in `elegoo-4-channel-relay.scad`; change
+   only exact boost-converter presentation geometry in
+   `hiletgo-xl6009.scad`; change only exact MOSFET presentation geometry in
+   `ceksezx-mtsd001.scad`; change only exact DP100 presentation geometry in
+   `alientek-dp100.scad`; change
+   only Banana Pi presentation geometry in `bpi-m2-zero-v1.scad`; change only
+   HW-747 presentation geometry in
+   `esp32-s3-supermini-hw747-v0.0.2.scad`; and change only C270 presentation
+   geometry in `logitech-c270.scad`; change only exact antenna geometry in
+   `eightwood-ewua0205.scad`; change only exact black-hub geometry in
+   `vienon-usb-001.scad`; and change only exact white-hub geometry in
+   `smays-microb-hub-8152.scad`.
 2. Run `make preview validate`.
 3. Reprint only the fit coupon when changing pilot, tie-slot, or webcam-aperture tolerances.
 4. Print the plate only after the coupon and a paper/slicer layout review pass.
 
-Preview component blocks are translucent interface envelopes, not cosmetic models. They are omitted
-from every production STL and exist to expose inaccessible connectors and bad cable paths. The complete
-preview subtree—including the component labels—uses OpenSCAD's `%` background modifier. Labels remain
-visible in the editor but are intentionally absent from printable meshes because the lab printer uses
-a 0.8 mm nozzle. Even a manual STL export from the default preview view contains only the printable
-fixture. `make validate` proves that preview and production
-exports have identical triangle geometry. Pairwise component spacing is also machine-enforced: every
-render/export asserts at least 3 mm between envelopes; retention slots keep at least 1 mm from
-components and one another; reserved webcam/hub service zones stay clear; and full M3 joiner screw-head
-keep-outs may not intersect components, tie slots, or service zones. `make validate` includes an
-intentional relay/antenna collision that must be rejected.
+All ten populated fixture components are now exact source-owned visual
+replacements; no translucent analytical component proxy remains. All preview
+geometry is omitted
+from every production STL and
+exists to expose inaccessible connectors and bad cable paths. The complete
+preview subtree—including the component labels—uses OpenSCAD's `%` background
+modifier. Labels remain visible in the editor but are intentionally absent
+from printable meshes because the lab printer uses a 0.8 mm nozzle. Even a
+manual STL export from the default preview view contains only the printable
+fixture. `make validate` proves that preview and production exports have
+identical triangle geometry, proves the BPI's 29.90 × 65.00 × 1.60 mm PCB
+bounds, proves the relay's 51.85 × 72.70 mm installed envelope, four-channel
+population, mounting registration, and +X terminal orientation, proves the
+boost converter's 43.16 × 21.23 × 14 mm envelope, diagonal mounting
+registration, and −X input orientation, proves the MTSD001's 34 × 17 × 12 mm
+populated envelope, two-MOSFET/four-terminal population, existing standoff
+registration, and −X terminal orientation, proves the DP100's 94.60 × 62.20 ×
+17.20 mm installed body, 100.40 mm terminal-inclusive overall length, and
+−X-output/+X-USB/−Y-control orientation, proves the
+ESP32's 18.50 × 23.67 mm installed envelope and bottom USB orientation, proves
+the C270's 71.00 × 31.55 mm installed face and -Z optical orientation, and
+proves the antenna's 114 × 15 mm paddle and +X cable exit, the VIENON hub's
+100 × 30 × 10 mm body and −Y USB/+X cable orientation, and the Smays hub's
+105.07 × 24 × 15 mm body and +Y USB/−X RJ45/+X OTG/−Y DC orientation. It also
+proves that the Smays DC plug and cable can rise through the inter-hub gap and
+cross above the VIENON body without a 3D collision, and deliberately rejects
+scale/registration/orientation/clearance drift. Pairwise
+component spacing is also machine-enforced: every render/export asserts at
+least 3 mm between envelopes; retention slots keep at least 1 mm from
+components and one another; reserved webcam/hub service zones stay clear; and
+full M3 joiner screw-head keep-outs may not intersect components, tie slots,
+or service zones. `make validate` includes an intentional relay/antenna
+collision that must be rejected.

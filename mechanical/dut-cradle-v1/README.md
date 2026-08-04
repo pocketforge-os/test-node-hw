@@ -44,8 +44,11 @@ mounts. Orientation labels may move to suit the device-specific keep-outs.
 |---|---|
 | `assembly` | Default presentation; exports only the carrier because DUT, safe windows, and installed hooks are background geometry |
 | `plate` | Carrier plate |
+| `presentation_body` | Presentation-only carrier body below the filament-change layer; do not print separately |
+| `presentation_labels` | Presentation-only title, border, and orientation labels for the selected wrapper; do not print separately |
 | `hook` | One J-hook, already laid on its strong printing side |
 | `hook_set` | Six production J-hooks arranged for one print |
+| `installed_hooks` | Presentation-only mesh of all six hooks at their installed carrier coordinates; do not print |
 | `fit_coupon` | Three throat/nut variants plus the production screw-slot/keyway coupon |
 
 There is only one hook implementation and one single-hook export. `hook_set`
@@ -82,17 +85,96 @@ make validate
 Generated STLs and PNGs live under `build/`, remain uncommitted, and are
 published as a GitHub Actions artifact on relevant pushes. The main outputs are
 `trimui-smart-pro-s-carrier.stl`, `trimui-smart-pro-carrier.stl`, `j-hook.stl`,
-`j-hook-set.stl`, plus the `trimui-brick-*` carrier/hook/coupon exports listed
-in the Brick README.
+and `j-hook-set.stl`, plus the `trimui-brick-*` carrier/hook/coupon exports
+listed in the Brick README. The additional
+`trimui-smart-pro-family-installed-hooks.stl` is a presentation asset consumed
+by the parent chassis model; it is deliberately separate from both production
+carrier exports and must not be sent to a slicer. The generated family carrier
+body plus base/S label meshes are likewise presentation-only: together they
+preserve the white-body/black-label material split in imported chassis views,
+while each production carrier remains one unified printable STL.
 
 Validation parses every repository OpenSCAD source, renders all meshes, proves
 the 247 × 200 mm plate fits the conservative 247 × 207 mm Prusa envelope,
 rejects an undersized hook throat, and proves preview-only geometry cannot leak
 into either carrier export. A family-equivalence guard also exports both plates
 without labels and proves their mechanical meshes are byte-for-byte equivalent
-at the triangle level; the raised title is the only model difference. Brick
-guards independently reject a non-flat front datum and rear finger clearance
-below 8 mm.
+at the triangle level; the raised title is the only model difference.
+Validation also bounds-checks the presentation-only installed-hook mesh so the
+chassis view cannot silently drift away from the accepted six-hook layout.
+Brick guards independently reject a non-flat front datum, rear finger
+clearance below 8 mm, contact on the lower corner transition, insufficient
+print-foot area, and title/mount overlap.
+
+## Qualified geometry regression
+
+The fit-bearing Smart Pro family geometry is physically qualified, not merely
+renderable. The owner accepted the final carrier/retention fit on 2026-07-21
+under Bead `tsp-bcx.21.22`; the accepted settings are the 11.3 mm hook throat,
+11 mm trigger/rear gap, 5.6 mm nut pocket, and 2.4 mm nut-capture wall.
+
+[`qualification/trimui-smart-pro-family-v1.json`](qualification/trimui-smart-pro-family-v1.json)
+records normalized geometry identities and review metrics for:
+
+- the unlabelled, fit-bearing carrier body;
+- one production J-hook;
+- the six-hook print set; and
+- the fit coupon used to establish the retained dimensions.
+
+Labels and the installed-hook presentation mesh are deliberately excluded.
+They do not establish contact with the DUT. The manifest stores no STL:
+production meshes remain generated under `build/`.
+
+Run the check directly or through full validation:
+
+```sh
+make validate-qualified validate-qualified-mutation
+make validate
+```
+
+The fingerprint quantizes coordinates to 0.0001 mm and then ignores STL
+headers, normals, binary attribute bytes, facet order, winding, starting
+vertex, and signed zero. This makes ASCII and binary exports of identical
+geometry share an identity. The quantum is 0.1 micrometre—far below the target
+FDM process—so it does not mask a printable change. Bounds, area, volume, and
+topology remain alongside the digest as reviewable characterization data.
+
+The mutation guard renders a valid, in-bounds hook with an 11.4 mm throat. It
+must fail the qualified fingerprint even though ordinary OpenSCAD and bounds
+checks pass. Relevant pull requests run this complete check, not lint alone.
+The CI compatibility lock is Ubuntu 24.04 plus the
+`openscad=2021.01-6build4` package; the checker also requires OpenSCAD to report
+version 2021.01.
+
+### Intentional geometry changes
+
+A failing qualification check is not an instruction to refresh the manifest.
+First inspect the geometric change, print the appropriate coupon or full
+holder, and obtain explicit physical acceptance against the named device
+hardware revision. The record command is intentionally separate from every
+normal Make/CI path and refuses to operate without an acceptance reference and
+`--confirm-physical-acceptance`:
+
+```sh
+python3 scripts/qualified_geometry.py --root . record \
+  --manifest qualification/trimui-smart-pro-family-v1.json \
+  --acceptance-ref <bead-or-approval-record> \
+  --accepted-source-revision <physically-tested-commit> \
+  --characterized-source-revision <current-commit> \
+  --accepted-on <YYYY-MM-DD> \
+  --confirm-physical-acceptance
+```
+
+Without `--write`, that command prints a review candidate and changes nothing.
+Add `--write` only as the deliberate source edit after physical qualification;
+review the manifest diff like any other fit-bearing CAD change.
+
+The normalized digest answers “is this the same geometry?” Raw STL SHA256
+answers “is this the same distributed file?” Release print packs should carry
+raw checksums, but representation-dependent file hashes are not substitutes
+for this qualification gate. Neither form proves that future measurements are
+correct: a new device or changed contact surface still requires an in-hand fit
+gate.
 
 ## Hardware and assembly
 
@@ -153,5 +235,12 @@ windows if that reading is wrong—nothing in the reusable hook changes.
   layers, and 20–30% gyroid. Use the slicer's preview to verify the 1.2 mm-deep
   anti-rotation channels and 1.2 mm raised labels survive the selected layer
   height.
+- The device name and TOP/BOTTOM markings use Regular-weight Liberation Sans
+  with 0.35 mm stroke expansion. Their existing sizes and positions are
+  preserved while the lighter face keeps counters readable with the 0.8 mm
+  nozzle.
+- Print the carrier body in white, then change to black at `plate_thickness`
+  (3.2 mm), where the raised title, title-box border, and TOP/BOTTOM markings
+  begin. The OpenSCAD assembly uses this same datum for its material colors.
 - The large central aperture is intentional: it saves material, improves
   airflow, keeps the open PCB/wiring untouched, and permits rear service.

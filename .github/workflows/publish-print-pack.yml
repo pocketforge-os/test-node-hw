@@ -1,0 +1,123 @@
+name: Publish qualified print pack
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile_id:
+        description: Physically qualified holder profile ID
+        required: true
+        default: trimui-smart-pro-family
+        type: string
+
+permissions:
+  attestations: read
+  contents: write
+
+concurrency:
+  group: publish-print-pack-${{ inputs.profile_id }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out the exact trusted main revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}" \
+            "+refs/heads/main:refs/remotes/origin/main"
+          git checkout --detach "${HEAD_SHA}"
+          test "$(git rev-parse origin/main)" = "${HEAD_SHA}"
+          test -z "$(git status --porcelain=v1 --untracked-files=normal)"
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Require immutable releases before generating assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PF_PRINT_PACK_IMMUTABILITY_PROOF: >-
+            ${{ vars.PF_PRINT_PACK_IMMUTABILITY_PROOF }}
+          PROFILE_ID: ${{ inputs.profile_id }}
+        run: |
+          set -euo pipefail
+          python3 mechanical/device-packs/publish_print_pack.py preflight \
+            --profile-id "${PROFILE_ID}"
+
+      - name: Install the qualified OpenSCAD toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Resolve the immutable release identity
+        id: identity
+        env:
+          PROFILE_ID: ${{ inputs.profile_id }}
+        run: |
+          set -euo pipefail
+          tag="$(
+            python3 mechanical/device-packs/release_print_pack.py identity \
+              --profile-id "${PROFILE_ID}"
+          )"
+          echo "tag=${tag}" >>"${GITHUB_OUTPUT}"
+          echo "bundle=mechanical/device-packs/build/releases/${tag}" \
+            >>"${GITHUB_OUTPUT}"
+
+      - name: Build and verify every qualified device archive
+        env:
+          PROFILE_ID: ${{ inputs.profile_id }}
+          BUNDLE: ${{ steps.identity.outputs.bundle }}
+        run: |
+          set -euo pipefail
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/release_print_pack.py build \
+              --profile-id "${PROFILE_ID}" --output "${BUNDLE}"
+          python3 mechanical/device-packs/release_print_pack.py verify \
+            --bundle "${BUNDLE}"
+
+      - name: Publish only after local and remote digest verification
+        env:
+          BUNDLE: ${{ steps.identity.outputs.bundle }}
+          GH_TOKEN: ${{ github.token }}
+          PF_PRINT_PACK_IMMUTABILITY_PROOF: >-
+            ${{ vars.PF_PRINT_PACK_IMMUTABILITY_PROOF }}
+        run: |
+          set -euo pipefail
+          python3 mechanical/device-packs/publish_print_pack.py publish \
+            --bundle "${BUNDLE}"
+
+      - name: Verify the immutable release attestation when supported
+        env:
+          BUNDLE: ${{ steps.identity.outputs.bundle }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.identity.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release verify --help >/dev/null 2>&1 \
+            && gh release verify-asset --help >/dev/null 2>&1; then
+            verified=false
+            for attempt in $(seq 1 12); do
+              if gh release verify "${TAG}" \
+                --repo "${GITHUB_REPOSITORY}"; then
+                verified=true
+                break
+              fi
+              if [[ "${attempt}" -lt 12 ]]; then
+                sleep 5
+              fi
+            done
+            [[ "${verified}" == "true" ]]
+            while IFS= read -r -d '' asset; do
+              gh release verify-asset "${TAG}" "${asset}" \
+                --repo "${GITHUB_REPOSITORY}"
+            done < <(find "${BUNDLE}" -maxdepth 1 -type f -print0 | sort -z)
+          else
+            echo "release_attestation=skip reason=gh_cli_lacks_verify"
+          fi

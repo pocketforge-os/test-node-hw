@@ -6,23 +6,127 @@ on:
       - "**/*.scad"
       - "scripts/lint-openscad.sh"
       - "scripts/test-lint-openscad.sh"
+      - "scripts/handbook_cad_refresh_plan.py"
+      - "scripts/test_handbook_cad_refresh_plan.py"
+      - ".agents/skills/design-dut-holder/**"
       - "mechanical/dut-fixture-v1/Makefile"
       - "mechanical/dut-cradle-v1/Makefile"
+      - "mechanical/dut-cradle-v1/profiles/**"
+      - "mechanical/dut-cradle-v1/qualification/**"
+      - "mechanical/dut-cradle-v1/scripts/**"
+      - "mechanical/device-packs/**"
+      - "mechanical/dut-chassis-2020-v1/Makefile"
+      - "mechanical/dut-chassis-2020-v1/scripts/**"
       - ".github/workflows/openscad-lint.yml"
+      - ".github/workflows/fixture-dependency-intake.yml"
+      - ".github/workflows/handbook-cad-refresh.yml"
+      - ".github/workflows/publish-print-pack.yml"
 
 permissions:
   contents: read
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  qualification_plan:
+    name: qualification plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      fixture_matrix: ${{ steps.plan.outputs.fixture_matrix }}
+      fixture_candidate_count: ${{ steps.plan.outputs.fixture_candidate_count }}
+      layout_production_matrix: ${{ steps.plan.outputs.layout_production_matrix }}
+      layout_production_count: ${{ steps.plan.outputs.layout_production_count }}
+      layout_candidate_matrix: ${{ steps.plan.outputs.layout_candidate_matrix }}
+      layout_candidate_count: ${{ steps.plan.outputs.layout_candidate_count }}
+    steps:
+      - name: Check out source and exact PR base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git fetch --depth=1 origin "${BASE_SHA}"
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Plan every qualification transition
+        id: plan
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          base_repo="${runner_temp}/qualification-base"
+          plan_path="${runner_temp}/qualification-plan.json"
+          mkdir -p "${base_repo}"
+          git archive "${BASE_SHA}" mechanical/dut-cradle-v1 |
+            tar -x -C "${base_repo}"
+          git archive "${BASE_SHA}" mechanical/device-packs |
+            tar -x -C "${base_repo}"
+          python3 mechanical/dut-cradle-v1/scripts/qualification_ci.py plan \
+            --base-root "${base_repo}/mechanical/dut-cradle-v1" \
+            --output "${plan_path}"
+          python3 mechanical/device-packs/build_device_pack.py \
+            guard-qualified-layouts --base-root "${base_repo}"
+          matrix="$(jq -c '.matrix' "${plan_path}")"
+          echo "matrix=${matrix}" >>"${GITHUB_OUTPUT}"
+          cradle="mechanical/dut-cradle-v1"
+          intake="${cradle}/scripts/fixture_dependency_intake.py"
+          python3 "${intake}" validate-candidates
+          fixture_matrix="$(python3 "${intake}" matrix)"
+          echo "fixture_matrix=${fixture_matrix}" >>"${GITHUB_OUTPUT}"
+          fixture_candidate_count="$(
+            jq -r '.include | length' <<<"${fixture_matrix}"
+          )"
+          echo "fixture_candidate_count=${fixture_candidate_count}" \
+            >>"${GITHUB_OUTPUT}"
+          layout_production_matrix="$(
+            python3 mechanical/device-packs/build_device_pack.py matrix \
+              --kind production-devices
+          )"
+          layout_production_count="$(
+            jq -r '.include | length' <<<"${layout_production_matrix}"
+          )"
+          echo "layout_production_matrix=${layout_production_matrix}" \
+            >>"${GITHUB_OUTPUT}"
+          echo "layout_production_count=${layout_production_count}" \
+            >>"${GITHUB_OUTPUT}"
+          layout_candidate_matrix="$(
+            python3 mechanical/device-packs/build_device_pack.py matrix \
+              --kind candidate-layout-devices
+          )"
+          layout_candidate_count="$(
+            jq -r '.include | length' <<<"${layout_candidate_matrix}"
+          )"
+          echo "layout_candidate_matrix=${layout_candidate_matrix}" \
+            >>"${GITHUB_OUTPUT}"
+          echo "layout_candidate_count=${layout_candidate_count}" \
+            >>"${GITHUB_OUTPUT}"
+
+      - name: Upload the qualification plan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: holder-qualification-plan-${{ github.event.pull_request.head.sha }}
+          path: ${{ runner.temp }}/qualification-plan.json
+          if-no-files-found: error
+          retention-days: 30
+
+  static:
+    name: static OpenSCAD and contract checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - name: Check out source
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          set -euo pipefail
           git init .
           git remote add origin \
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -32,11 +136,436 @@ jobs:
 
       - name: Install OpenSCAD
         run: |
+          set -euo pipefail
           sudo apt-get update
-          sudo apt-get install --yes openscad xvfb
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
 
       - name: Reject ERROR diagnostics even with a zero process status
         run: scripts/test-lint-openscad.sh
 
+      - name: Test handbook CAD refresh authorization
+        run: python3 scripts/test_handbook_cad_refresh_plan.py
+
+      - name: Test the DUT holder design skill contract
+        run: |
+          set -euo pipefail
+          skill=".agents/skills/design-dut-holder"
+          python3 -m unittest discover \
+            -s "${skill}/scripts" -p 'test_*.py' -v
+          python3 "${skill}/scripts/validate_holder_workflow.py" contract
+
       - name: Parse and evaluate every OpenSCAD source
         run: xvfb-run --auto-servernum scripts/lint-openscad.sh
+
+      - name: Test and validate every holder profile contract
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          python3 -m unittest discover \
+            -s "${cradle}/scripts" -p 'test_*.py' -v
+          python3 "${cradle}/scripts/holder_profiles.py" validate
+          python3 "${cradle}/scripts/qualification_ci.py" \
+            matrix --kind qualified-profiles
+          python3 "${cradle}/scripts/qualification_ci.py" \
+            matrix --kind qualified-devices
+          python3 "${cradle}/scripts/fixture_dependency_intake.py" \
+            validate-candidates
+
+      - name: Test device-pack contracts
+        run: |
+          python3 -m unittest discover \
+            -s mechanical/device-packs -p 'test_*.py' -v
+
+      - name: Build and verify a real qualified coupon pack
+        run: |
+          set -euo pipefail
+          pack="mechanical/device-packs/build/trimui-smart-pro/coupon"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/build_device_pack.py build \
+              --device trimui-smart-pro --mode coupon
+          python3 mechanical/device-packs/build_device_pack.py verify \
+            --pack "$pack"
+
+  fixture_candidate:
+    name: fixture candidate (${{ matrix.profile_id }})
+    needs: qualification_plan
+    # GitHub reports an empty dynamic matrix as a failed dependency. Evaluate
+    # this job-level guard before matrix expansion so the ordinary zero-candidate
+    # state is an explicit skip while every non-empty matrix stays fail-closed.
+    if: ${{ needs.qualification_plan.outputs.fixture_candidate_count != '0' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.qualification_plan.outputs.fixture_matrix) }}
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin \
+            "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Verify the candidate against its exact platform source
+        env:
+          RECEIPT_PATH: ${{ matrix.receipt_path }}
+          PLATFORM_REVISION: ${{ matrix.platform_revision }}
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          platform_root="$(
+            mktemp -d "${runner_temp}/platform-fixture-candidate.XXXXXX"
+          )"
+          git init --quiet "${platform_root}"
+          git -C "${platform_root}" remote add origin \
+            "https://github.com/pocketforge-os/platform.git"
+          git -C "${platform_root}" fetch --quiet --depth=1 \
+            origin "${PLATFORM_REVISION}"
+          git -C "${platform_root}" checkout --quiet --detach FETCH_HEAD
+          python3 "${cradle}/scripts/fixture_dependency_intake.py" \
+            verify-source \
+            --receipt "${RECEIPT_PATH}" \
+            --platform-root "${platform_root}"
+
+  layout_production:
+    name: qualified chassis layout (${{ matrix.device_slug }})
+    needs: qualification_plan
+    if: ${{ needs.qualification_plan.outputs.layout_production_count != '0' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.qualification_plan.outputs.layout_production_matrix) }}
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin \
+            "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Render and verify every frozen production mesh
+        env:
+          DEVICE_SLUG: ${{ matrix.device_slug }}
+          LAYOUT_ID: ${{ matrix.layout_id }}
+        run: |
+          set -euo pipefail
+          pack="mechanical/device-packs/build/${DEVICE_SLUG}/full"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/build_device_pack.py build \
+              --device "${DEVICE_SLUG}" --mode full
+          python3 mechanical/device-packs/build_device_pack.py verify \
+            --pack "${pack}"
+          jq -e \
+            --arg layout_id "${LAYOUT_ID}" \
+            '.production_eligible == true
+             and .nonproduction_reasons == []
+             and .overrides == []
+             and .layout.id == $layout_id
+             and .layout.qualification.status == "physically_qualified"' \
+            "${pack}/manifest.json"
+
+      - name: Upload qualified geometry regression evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: chassis-layout-qualified-${{ matrix.device_slug }}-${{ github.event.pull_request.head.sha }}
+          path: mechanical/device-packs/build/${{ matrix.device_slug }}/full/
+          if-no-files-found: error
+          compression-level: 9
+          retention-days: 30
+
+  layout_candidate:
+    name: chassis layout candidate (${{ matrix.device_slug }})
+    needs: qualification_plan
+    if: ${{ needs.qualification_plan.outputs.layout_candidate_count != '0' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.qualification_plan.outputs.layout_candidate_matrix) }}
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin \
+            "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Render, verify, and prove non-production provenance
+        env:
+          DEVICE_SLUG: ${{ matrix.device_slug }}
+          LAYOUT_ID: ${{ matrix.layout_id }}
+        run: |
+          set -euo pipefail
+          pack="mechanical/device-packs/build/${DEVICE_SLUG}/full"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/build_device_pack.py build \
+              --device "${DEVICE_SLUG}" --mode full --allow-unqualified
+          xvfb-run --auto-servernum \
+            make -C mechanical/dut-chassis-2020-v1 dualbar-preview
+          python3 mechanical/device-packs/build_device_pack.py verify \
+            --pack "${pack}"
+          jq -e \
+            --arg layout_id "${LAYOUT_ID}" \
+            '.production_eligible == false
+             and ((.nonproduction_reasons | index("layout_unqualified")) != null)
+             and ((.overrides | index("allow_unqualified")) != null)
+             and .layout.id == $layout_id
+             and .layout.qualification.status == "candidate"' \
+            "${pack}/manifest.json"
+
+      - name: Upload candidate print and review evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: chassis-layout-candidate-${{ matrix.device_slug }}-${{ github.event.pull_request.head.sha }}
+          path: |
+            mechanical/device-packs/build/${{ matrix.device_slug }}/full/
+            mechanical/dut-chassis-2020-v1/build/dualbar/layout-*.png
+          if-no-files-found: error
+          compression-level: 9
+          retention-days: 30
+
+  qualification:
+    name: qualification (${{ matrix.profile_id }})
+    needs: qualification_plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.qualification_plan.outputs.matrix) }}
+    steps:
+      - name: Check out source and exact PR base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git fetch --depth=1 origin "${BASE_SHA}"
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Verify the exact pinned platform fixture source
+        env:
+          PROFILE_PATH: ${{ matrix.profile_path }}
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          revision="$(
+            python3 "${cradle}/scripts/holder_profiles.py" \
+              source-revision --profile "${PROFILE_PATH}"
+          )"
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          platform_root="$(
+            mktemp -d "${runner_temp}/platform-fixture-source.XXXXXX"
+          )"
+          git init --quiet "${platform_root}"
+          git -C "${platform_root}" remote add origin \
+            "https://github.com/pocketforge-os/platform.git"
+          git -C "${platform_root}" fetch --quiet --depth=1 origin "${revision}"
+          git -C "${platform_root}" checkout --quiet --detach FETCH_HEAD
+          python3 "${cradle}/scripts/holder_profiles.py" \
+            verify-source --profile "${PROFILE_PATH}" \
+            --platform-root "${platform_root}"
+
+      - name: Render and compare the qualification candidate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PROFILE_ID: ${{ matrix.profile_id }}
+          QUALIFICATION_MODE: ${{ matrix.mode }}
+        run: |
+          set -euo pipefail
+          cradle="mechanical/dut-cradle-v1"
+          runner_temp="${RUNNER_TEMP:?RUNNER_TEMP is required}"
+          base_repo="${runner_temp}/qualification-base"
+          mkdir -p "${base_repo}"
+          git archive "${BASE_SHA}" mechanical/dut-cradle-v1 |
+            tar -x -C "${base_repo}"
+          xvfb-run --auto-servernum \
+            python3 "${cradle}/scripts/qualification_ci.py" check \
+              --base-root "${base_repo}/mechanical/dut-cradle-v1" \
+              --profile-id "${PROFILE_ID}" \
+              --output "${cradle}/build/qualification-ci/${PROFILE_ID}"
+          if [[ "${QUALIFICATION_MODE}" == "protect" \
+            || "${QUALIFICATION_MODE}" == "requalify" ]]; then
+            xvfb-run --auto-servernum \
+              python3 "${cradle}/scripts/qualification_ci.py" \
+                check-mutation \
+                --base-root "${base_repo}/mechanical/dut-cradle-v1" \
+                --profile-id "${PROFILE_ID}" \
+                --output \
+                  "${cradle}/build/qualification-ci/${PROFILE_ID}/mutation"
+          fi
+
+      - name: Upload candidate meshes and geometry diff
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: holder-qualification-${{ matrix.profile_id }}-${{ github.event.pull_request.head.sha }}
+          path: mechanical/dut-cradle-v1/build/qualification-ci/${{ matrix.profile_id }}/
+          if-no-files-found: warn
+          compression-level: 9
+          retention-days: 30
+
+  release_bundle:
+    name: deterministic release qualification gate
+    needs: qualification_plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "${HEAD_SHA}"
+          git checkout --detach FETCH_HEAD
+          git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+
+      - name: Install OpenSCAD
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes openscad=2021.01-6build4 xvfb
+
+      - name: Prove a candidate layout cannot enter a production release
+        if: ${{ needs.qualification_plan.outputs.layout_candidate_count != '0' }}
+        run: |
+          set -euo pipefail
+          log="${RUNNER_TEMP:?RUNNER_TEMP is required}/release-refusal.log"
+          if xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/release_print_pack.py build \
+              --profile-id trimui-smart-pro-family >"${log}" 2>&1; then
+            echo "ERROR: release builder accepted a candidate layout" >&2
+            exit 1
+          fi
+          grep -q \
+            'require physically qualified registered chassis layouts' \
+            "${log}"
+          grep -q 'chassis-core-v2 (tsp-px73.23)' "${log}"
+          grep -q 'chassis-dualbar-v1 (tsp-px73.23)' "${log}"
+          echo "release_candidate_gate=pass"
+
+      - name: Prove two real dual-device builds are byte-identical
+        if: ${{ needs.qualification_plan.outputs.layout_candidate_count == '0' }}
+        run: |
+          set -euo pipefail
+          profile="trimui-smart-pro-family"
+          tag="$(
+            python3 mechanical/device-packs/release_print_pack.py identity \
+              --profile-id "${profile}"
+          )"
+          bundle="mechanical/device-packs/build/releases/${tag}"
+          first="${RUNNER_TEMP:?RUNNER_TEMP is required}/release-first.sha256"
+          second="${RUNNER_TEMP}/release-second.sha256"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/release_print_pack.py build \
+              --profile-id "${profile}" --output "${bundle}"
+          find "${bundle}" -maxdepth 1 -type f -print0 |
+            sort -z | xargs -0 sha256sum >"${first}"
+          xvfb-run --auto-servernum \
+            python3 mechanical/device-packs/release_print_pack.py build \
+              --profile-id "${profile}" --output "${bundle}" --replace
+          find "${bundle}" -maxdepth 1 -type f -print0 |
+            sort -z | xargs -0 sha256sum >"${second}"
+          diff -u "${first}" "${second}"
+          python3 mechanical/device-packs/release_print_pack.py verify \
+            --bundle "${bundle}"
+
+      - name: Upload ephemeral release evidence
+        if: ${{ needs.qualification_plan.outputs.layout_candidate_count == '0' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qualified-print-pack-${{ github.event.pull_request.head.sha }}
+          path: mechanical/device-packs/build/releases/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+  # Preserve the existing required status-check name while making it depend on
+  # every dynamically discovered qualification job.
+  lint:
+    name: lint
+    if: ${{ always() }}
+    needs:
+      - qualification_plan
+      - static
+      - fixture_candidate
+      - layout_production
+      - layout_candidate
+      - qualification
+      - release_bundle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every OpenSCAD and qualification check
+        env:
+          PLAN_RESULT: ${{ needs.qualification_plan.result }}
+          STATIC_RESULT: ${{ needs.static.result }}
+          FIXTURE_CANDIDATE_RESULT: ${{ needs.fixture_candidate.result }}
+          LAYOUT_PRODUCTION_RESULT: ${{ needs.layout_production.result }}
+          LAYOUT_CANDIDATE_RESULT: ${{ needs.layout_candidate.result }}
+          QUALIFICATION_RESULT: ${{ needs.qualification.result }}
+          RELEASE_BUNDLE_RESULT: ${{ needs.release_bundle.result }}
+        run: |
+          set -euo pipefail
+          [[ "${PLAN_RESULT}" == "success" ]]
+          [[ "${STATIC_RESULT}" == "success" ]]
+          [[ "${FIXTURE_CANDIDATE_RESULT}" == "success" \
+            || "${FIXTURE_CANDIDATE_RESULT}" == "skipped" ]]
+          [[ "${LAYOUT_PRODUCTION_RESULT}" == "success" \
+            || "${LAYOUT_PRODUCTION_RESULT}" == "skipped" ]]
+          [[ "${LAYOUT_CANDIDATE_RESULT}" == "success" \
+            || "${LAYOUT_CANDIDATE_RESULT}" == "skipped" ]]
+          [[ "${QUALIFICATION_RESULT}" == "success" \
+            || "${QUALIFICATION_RESULT}" == "skipped" ]]
+          [[ "${RELEASE_BUNDLE_RESULT}" == "success" ]]
+          echo "openscad_lint=pass qualification_matrix=pass"

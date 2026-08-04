@@ -1,0 +1,238 @@
+{
+  "artifacts": {
+    "carrier_body": {
+      "expected": {
+        "bounds_mm": {
+          "max": [
+            "247.0000",
+            "200.0000",
+            "3.2000"
+          ],
+          "min": [
+            "0.0000",
+            "0.0000",
+            "0.0000"
+          ],
+          "size": [
+            "247.0000",
+            "200.0000",
+            "3.2000"
+          ]
+        },
+        "fingerprint": {
+          "algorithm": "pocketforge-normalized-stl-v1",
+          "coordinate_quantum_mm": "0.0001",
+          "sha256": "dbed6e2035ec4a4f9ef1c33fd1b7db5a4530cdd3b46d830c1bc7d528f0767ca6"
+        },
+        "surface_area_mm2": "86708.955",
+        "topology": {
+          "boundary_edges": 0,
+          "components": 1,
+          "edges": 6780,
+          "euler_characteristic": -28,
+          "facets": 4520,
+          "nonmanifold_edges": 0,
+          "vertices": 2232
+        },
+        "triangle_count": 4520,
+        "volume_mm3": "129353.893"
+      },
+      "generation": {
+        "make_target": "build/checks/smart-pro-unlabelled.stl",
+        "part": "plate",
+        "source": "trimui-smart-pro-cradle.scad",
+        "variables": {
+          "SHOW_LABELS": false
+        }
+      },
+      "path": "build/checks/smart-pro-unlabelled.stl",
+      "qualification_scope": "Fit-bearing carrier plate without presentation labels"
+    },
+    "fit_coupon": {
+      "expected": {
+        "bounds_mm": {
+          "max": [
+            "65.6909",
+            "55.0000",
+            "14.2909"
+          ],
+          "min": [
+            "0.0000",
+            "0.0000",
+            "0.0000"
+          ],
+          "size": [
+            "65.6909",
+            "55.0000",
+            "14.2909"
+          ]
+        },
+        "fingerprint": {
+          "algorithm": "pocketforge-normalized-stl-v1",
+          "coordinate_quantum_mm": "0.0001",
+          "sha256": "4dc8cd5e343f634a220a3836f80bc14278a9310c305133bfd94c79990553edae"
+        },
+        "surface_area_mm2": "6174.746",
+        "topology": {
+          "boundary_edges": 0,
+          "components": 4,
+          "edges": 3372,
+          "euler_characteristic": 0,
+          "facets": 2248,
+          "nonmanifold_edges": 0,
+          "vertices": 1124
+        },
+        "triangle_count": 2248,
+        "volume_mm3": "7686.532"
+      },
+      "generation": {
+        "make_target": "build/fit-coupon.stl",
+        "part": "fit_coupon",
+        "source": "trimui-smart-pro-family-cradle.scad"
+      },
+      "path": "build/fit-coupon.stl",
+      "qualification_scope": "Calibration geometry encoding the owner-accepted throat, nut-pocket, slot, and keyway values"
+    },
+    "j_hook": {
+      "expected": {
+        "bounds_mm": {
+          "max": [
+            "17.6332",
+            "27.5000",
+            "14.2332"
+          ],
+          "min": [
+            "0.0000",
+            "0.0000",
+            "0.0000"
+          ],
+          "size": [
+            "17.6332",
+            "27.5000",
+            "14.2332"
+          ]
+        },
+        "fingerprint": {
+          "algorithm": "pocketforge-normalized-stl-v1",
+          "coordinate_quantum_mm": "0.0001",
+          "sha256": "6d3256d1f1bb8d1300feced7b996724423d011dd52f2e927483bd91946969fa1"
+        },
+        "surface_area_mm2": "1519.021",
+        "topology": {
+          "boundary_edges": 0,
+          "components": 1,
+          "edges": 816,
+          "euler_characteristic": 0,
+          "facets": 544,
+          "nonmanifold_edges": 0,
+          "vertices": 272
+        },
+        "triangle_count": 544,
+        "volume_mm3": "1952.004"
+      },
+      "generation": {
+        "make_target": "build/j-hook.stl",
+        "part": "hook",
+        "source": "trimui-smart-pro-family-cradle.scad"
+      },
+      "path": "build/j-hook.stl",
+      "qualification_scope": "One production J-hook in its support-free print orientation"
+    },
+    "j_hook_set": {
+      "expected": {
+        "bounds_mm": {
+          "max": [
+            "65.6332",
+            "61.5000",
+            "14.2332"
+          ],
+          "min": [
+            "0.0000",
+            "0.0000",
+            "0.0000"
+          ],
+          "size": [
+            "65.6332",
+            "61.5000",
+            "14.2332"
+          ]
+        },
+        "fingerprint": {
+          "algorithm": "pocketforge-normalized-stl-v1",
+          "coordinate_quantum_mm": "0.0001",
+          "sha256": "e77a9aeb725879b381a40d11f38a7ab242696923b4107d5cfacc9a9a8e6bed59"
+        },
+        "surface_area_mm2": "9114.125",
+        "topology": {
+          "boundary_edges": 0,
+          "components": 6,
+          "edges": 4896,
+          "euler_characteristic": 0,
+          "facets": 3264,
+          "nonmanifold_edges": 0,
+          "vertices": 1632
+        },
+        "triangle_count": 3264,
+        "volume_mm3": "11712.025"
+      },
+      "generation": {
+        "make_target": "build/j-hook-set.stl",
+        "part": "hook_set",
+        "source": "trimui-smart-pro-family-cradle.scad"
+      },
+      "path": "build/j-hook-set.stl",
+      "qualification_scope": "Six exact instances of the qualified production J-hook"
+    }
+  },
+  "fingerprint_contract": {
+    "algorithm": "pocketforge-normalized-stl-v1",
+    "coordinate_quantum_mm": "0.0001",
+    "ignored_representation": [
+      "STL header",
+      "facet normals",
+      "binary attribute bytes",
+      "facet order",
+      "facet winding",
+      "facet starting vertex",
+      "signed zero"
+    ]
+  },
+  "qualification": {
+    "acceptance_ref": "tsp-bcx.21.22",
+    "accepted_on": "2026-07-21",
+    "accepted_source_revision": "04959196e12e20d8dddea686f3ff54cedce0590b",
+    "characterized_source_revision": "0ac32466887ff00950748c2fb8983a31b1409bb6",
+    "device_ids": [
+      "trimui-smart-pro",
+      "trimui-smart-pro-s"
+    ],
+    "fit_parameters_mm": {
+      "device_rear_gap": "11.0",
+      "hook_throat": "11.3",
+      "m3_nut_across_flats": "5.6",
+      "m3_nut_capture_wall": "2.4"
+    },
+    "scope": "Fit-bearing shared carrier and retention geometry; labels and presentation-only installed meshes are excluded",
+    "status": "physically_accepted"
+  },
+  "schema": "pocketforge-qualified-geometry-v1",
+  "source_inputs": [
+    {
+      "characterized_sha256": "0918adfa5180473ed24c9921c2722a33a8db252f929d8cf709115edb321a81ce",
+      "path": "trimui-smart-pro-family-cradle.scad"
+    },
+    {
+      "characterized_sha256": "d264167dd249e63729c7610c4d99baceb4f5f4524926cf799a6c60c9ef6ec9be",
+      "path": "lib/dut-cradle-library.scad"
+    },
+    {
+      "characterized_sha256": "11ca2d207b4b4ed0af02c71dc47c4135807b4381621204f3711537ed15c0f80e",
+      "path": "trimui-smart-pro-cradle.scad"
+    },
+    {
+      "characterized_sha256": "268b7da91f90e67bf2960b4ddd05da622a8335125eba516a617fe1b7a57a1718",
+      "path": "trimui-smart-pro-s-cradle.scad"
+    }
+  ],
+  "toolchain_lock": "qualification/cad-toolchain.json"
+}

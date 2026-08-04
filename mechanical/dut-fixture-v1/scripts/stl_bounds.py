@@ -60,6 +60,8 @@ def main() -> int:
     parser.add_argument("--max-x", type=float)
     parser.add_argument("--max-y", type=float)
     parser.add_argument("--max-z", type=float)
+    parser.add_argument("--min-size-x", type=float)
+    parser.add_argument("--min-size-y", type=float)
     parser.add_argument("--min-size-z", type=float)
     parser.add_argument("--bed-x", type=float)
     parser.add_argument("--bed-y", type=float)
@@ -107,10 +109,13 @@ def main() -> int:
             raise SystemExit(
                 f"oversize: {axes[axis]}={size[axis]:.3f} mm > {limit:.3f} mm"
             )
-    if args.min_size_z is not None and size[2] + 1e-6 < args.min_size_z:
-        raise SystemExit(
-            f"undersize: Z={size[2]:.3f} mm < {args.min_size_z:.3f} mm"
-        )
+    minimum_sizes = (args.min_size_x, args.min_size_y, args.min_size_z)
+    for axis, minimum in enumerate(minimum_sizes):
+        if minimum is not None and size[axis] + 1e-6 < minimum:
+            raise SystemExit(
+                f"undersize: {axes[axis]}={size[axis]:.3f} mm "
+                f"< {minimum:.3f} mm"
+            )
 
     bed_orientation = "n/a"
     if args.bed_x is not None and args.bed_y is not None:

@@ -1,0 +1,228 @@
+{
+  "schema": "pocketforge-device-pack-layout-v1",
+  "layout_id": "chassis-core-v1",
+  "toolchain_lock": "mechanical/dut-cradle-v1/qualification/cad-toolchain.json",
+  "input_paths": [
+    "mechanical/dut-chassis-2020-v1/lib/pf-2020.scad",
+    "mechanical/device-packs/device-layouts.json"
+  ],
+  "qualification": {
+    "status": "physically_qualified",
+    "acceptance_ref": "tsp-t1zd.1#legacy-baseline-evidence",
+    "accepted_on": "2026-07-27",
+    "device_slugs": [
+      "trimui-smart-pro"
+    ],
+    "scope": [
+      "Pre-existing working TrimUI Smart Pro chassis topology and exact normalized production-bed geometry.",
+      "Outer frame, two-upright fixture gantry, fixture plate mounts, carrier links, placard hardware, and wire anchors."
+    ]
+  },
+  "artifacts": [
+    {
+      "id": "chassis_process_calibration",
+      "output": "calibration/chassis-process-calibration.stl",
+      "role": "Re-run after a printer, material, process, or extrusion change",
+      "scope": "calibration",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_00_calibration",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "9677650b5e925f78c2c7de8166e699a54461f0f3543c64de332e5872daf185d9",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Conditional process-calibration bed; do not print for an unchanged qualified process."
+        ]
+      }
+    },
+    {
+      "id": "chassis_core_01_ironed_interfaces",
+      "output": "chassis/core-01-ironed-interfaces.stl",
+      "role": "Common chassis channel bars and splice bars",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_01_ironed_interfaces",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "548e8a4bacf7e44721bc1284e1823a038cce499d571c08c14f06fa65a0be42ef",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Enable ironing on topmost surfaces."
+        ]
+      }
+    },
+    {
+      "id": "chassis_core_02_splice_collars",
+      "output": "chassis/core-02-splice-collars.stl",
+      "role": "Common chassis gantry splice collars",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_02_splice_collars",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "99c52f74f7129e8c29f91563b753ada49610e419848668915a45166492709268",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Print upright in the exported orientation."
+        ]
+      }
+    },
+    {
+      "id": "chassis_core_03_movable_mounts",
+      "output": "chassis/core-03-movable-mounts.stl",
+      "role": "Common chassis gantry plates and fixture spacers",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_03_movable_mounts",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "1ad8ac70a3eb94051e5a0e241e09ca342b1312b05923a17efa80cf5131d4e92f",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": []
+      }
+    },
+    {
+      "id": "chassis_core_04_frame_hardware",
+      "output": "chassis/core-04-frame-hardware.stl",
+      "role": "Common chassis registration, placard, and power-strip hardware",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_04_frame_hardware",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "911d249f2b8e7120b46d86c9a25f85a4a1edbf64944c05615911681a01e0cb25",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": []
+      }
+    },
+    {
+      "id": "chassis_core_05_placard_holder",
+      "output": "chassis/core-05-placard-holder.stl",
+      "role": "Common reusable chassis placard holder",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_05_placard_holder",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "01cdd01b5043aae5fca4bac793abfd9952035b420d4fcb928c6805feb787d854",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": []
+      }
+    },
+    {
+      "id": "device_carrier_links",
+      "output": "device/carrier-link-set.stl",
+      "role": "Four links joining the selected DUT carrier to the chassis",
+      "scope": "device",
+      "modes": [
+        "retrofit",
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "rear_carrier_link_set",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "c63737d66ebc6df5d08543e44c22de57acbc7c05d36dd4733628125edb5aa27e",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Exact regression-locked link set from the owner-validated TrimUI chassis."
+        ]
+      }
+    },
+    {
+      "id": "device_nameplate",
+      "output": "device/device-nameplate.stl",
+      "role": "Device-labeled slide-in chassis nameplate",
+      "scope": "device",
+      "modes": [
+        "retrofit",
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_06_device_nameplate",
+      "parameters": {},
+      "parameter_bindings": {
+        "DEVICE_LABEL": "device.display_name"
+      },
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Print white and change to black at 2.4 mm for the raised device name."
+        ]
+      }
+    },
+    {
+      "id": "device_wire_anchors",
+      "output": "device/wire-anchor-set.stl",
+      "role": "Starter set of eight rail-mounted harness anchors",
+      "scope": "device",
+      "modes": [
+        "retrofit",
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_07_wire_management",
+      "parameters": {},
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "dd40ffd1b0903eccaf5cd44fec9c1454466473160a59c7f44c49846ec706c4ee",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Repeat or omit anchors only after the device harness route is known."
+        ]
+      }
+    }
+  ]
+}
