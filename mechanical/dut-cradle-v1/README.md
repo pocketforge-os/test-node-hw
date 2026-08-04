@@ -8,6 +8,8 @@ The first mechanical family supports both the **TrimUI Smart Pro** and
 The compact portrait profile supports the **TrimUI Brick** while reusing the
 same proven M3/keyway hook mechanism; see
 [`README-trimui-brick.md`](README-trimui-brick.md).
+That profile remains a qualification candidate until the owner accepts its
+printed fit, retention, service clearance, and webcam framing.
 
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
