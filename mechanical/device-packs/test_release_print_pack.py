@@ -718,6 +718,31 @@ class PublisherTests(unittest.TestCase):
 
 
 class ReleaseWorkflowTests(unittest.TestCase):
+    def test_lint_release_gate_is_independent_of_unrelated_candidates(
+        self,
+    ) -> None:
+        path = (
+            releases.packs.REPO_ROOT
+            / ".github"
+            / "workflows"
+            / "openscad-lint.yml"
+        )
+        text = path.read_text(encoding="utf-8")
+        release_job = text.split("\n  release_bundle:\n", 1)[1].split(
+            "\n  # Preserve the existing required status-check name", 1
+        )[0]
+
+        self.assertNotIn("layout_candidate_count", release_job)
+        self.assertIn(
+            "Prove two real dual-device builds are byte-identical",
+            release_job,
+        )
+        self.assertEqual(
+            2, release_job.count("release_print_pack.py build")
+        )
+        self.assertIn("release_print_pack.py verify", release_job)
+        self.assertIn("Upload ephemeral release evidence", release_job)
+
     def test_publication_workflow_is_trusted_main_only_and_fail_closed(
         self,
     ) -> None:
