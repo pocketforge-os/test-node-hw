@@ -15,6 +15,11 @@ DUALBAR_CORE_OUTPUTS = (
     "dualbar/production-batch-04-frame-hardware.stl",
     "dualbar/production-batch-05-placard-holder.stl",
 )
+BRICK_DUALBAR_REVIEW = (
+    "build/dualbar-brick/layout-assembly.png",
+    "build/dualbar-brick/layout-front.png",
+    "build/dualbar-brick/layout-device-side.png",
+)
 GUIDE_LAYER_COUNT = 70
 GUIDE_SCENE_DEFINES = (
     """-D 'CHASSIS_VARIANT="dualbar_v1"'""",
@@ -215,6 +220,7 @@ def main() -> int:
     dualbar = dry_run("dualbar-batches")
     handbook = dry_run("handbook-assets")
     assembly = dry_run("guide-dualbar-assembly-steps")
+    brick_preview = dry_run("brick-dualbar-preview")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
@@ -224,6 +230,13 @@ def main() -> int:
     reject(dualbar, DEVICE_EXAMPLE_BATCHES, "dualbar-batches")
     if "production-batch-02-splice-collars.stl" in dualbar:
         raise SystemExit("dualbar-batches includes legacy gantry splice collars")
+    require_names(
+        brick_preview, BRICK_DUALBAR_REVIEW, "brick-dualbar-preview"
+    )
+    if brick_preview.count('EXAMPLE_DEVICE_VARIANT="trimui_brick"') != 3:
+        raise SystemExit(
+            "Brick dual-bar evidence is not locked to all three review views"
+        )
     require_names(handbook, DUALBAR_CORE_OUTPUTS, "handbook-assets")
     require(handbook, DEVICE_EXAMPLE_BATCHES, "handbook-assets")
     if "production-batch-02-splice-collars.stl" in handbook:

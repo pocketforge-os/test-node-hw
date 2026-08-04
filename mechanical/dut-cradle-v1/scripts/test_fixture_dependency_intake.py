@@ -142,6 +142,25 @@ class FixtureDependencyIntakeTests(unittest.TestCase):
         self.assertEqual(self.accepted_hashes, self.accepted_file_hashes())
         self.assertFalse((self.root / intake.RECEIPT_DIRECTORY).exists())
 
+    def test_unqualified_profile_stays_in_the_manual_lane(self) -> None:
+        current = intake.load_snapshot(
+            self.write_snapshot(self.snapshot_document(), "current.json")
+        )
+        plan, updates = intake.plan_updates(self.root, current)
+        profiles = {
+            profile["profile_id"]: profile for profile in plan["profiles"]
+        }
+
+        self.assertEqual([], updates)
+        self.assertEqual(
+            "unqualified_manual", profiles["trimui-brick"]["status"]
+        )
+        self.assertIsNone(
+            profiles["trimui-brick"]["resolved_interface_sha256"]
+        )
+        self.assertEqual([], plan["write_paths"])
+        self.assertFalse((self.root / intake.RECEIPT_DIRECTORY).exists())
+
     def test_fit_change_stages_only_new_candidate_and_is_idempotent(self) -> None:
         snapshot = self.load_changed_snapshot()
         plan, updates = intake.plan_updates(self.root, snapshot)

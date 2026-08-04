@@ -750,6 +750,45 @@ def device_layout_matrix(
     return {"include": include}
 
 
+def discover_device_profiles(
+    root: Path,
+) -> dict[str, holder_profiles.ResolvedProfile]:
+    cradle_root = root.resolve() / "mechanical" / "dut-cradle-v1"
+    devices: dict[str, holder_profiles.ResolvedProfile] = {}
+    for profile_path in holder_profiles.discover_profiles(cradle_root):
+        profile = holder_profiles.validate_profile(cradle_root, profile_path)
+        for slug in profile.variants:
+            if slug in devices:
+                raise PackError(
+                    f"device {slug!r} belongs to more than one holder profile"
+                )
+            devices[slug] = profile
+    if not devices:
+        raise PackError("no holder device variants were discovered")
+    return devices
+
+
+def all_device_layout_matrix(
+    root: Path,
+    *,
+    registry_path: Path = DEFAULT_LAYOUT_REGISTRY,
+    kind: str,
+) -> dict[str, list[dict[str, str]]]:
+    rows: list[dict[str, str]] = []
+    profiles = discover_device_profiles(root)
+    for slug in sorted(profiles):
+        profile = profiles[slug]
+        one = device_layout_matrix(
+            root,
+            profile,
+            registry_path=registry_path,
+            kind=kind,
+        )
+        rows.extend(row for row in one["include"] if row["device_slug"] == slug)
+    rows.sort(key=lambda row: row["device_slug"])
+    return {"include": rows}
+
+
 def _qualification_expected(
     profile: holder_profiles.ResolvedProfile, artifact_name: str
 ) -> str | None:
@@ -822,10 +861,10 @@ def build_plan(
 ) -> tuple[PlanItem, ...]:
     if mode not in MODES:
         raise PackError(f"unsupported pack mode: {mode!r}")
-    if profile.document["implementation"]["kind"] != "declarative":
+    implementation_kind = profile.document["implementation"]["kind"]
+    if implementation_kind not in {"declarative", "custom_openscad"}:
         raise PackError(
-            "device packs require a declarative reusable holder mechanism; "
-            "promote custom OpenSCAD geometry before pack generation"
+            f"unsupported holder implementation kind: {implementation_kind!r}"
         )
     required_profile_artifacts = {"fit_coupon"}
     if mode in {"retrofit", "full"}:
@@ -872,7 +911,7 @@ def build_plan(
                     profile,
                     artifact_id="device_carrier",
                     output="device/carrier.stl",
-                    role="Device-labeled production DUT carrier",
+                    role="Device-labeled DUT carrier",
                     recipe=variant["production_carrier"],
                     print_notes=(
                         "Print flat with labels upward; change to the label "
@@ -883,12 +922,13 @@ def build_plan(
                     profile,
                     artifact_id="device_j_hook_set",
                     output="device/j-hook-set.stl",
-                    role="Six qualified J-hooks for the selected carrier",
+                    role="Complete retention set for the selected carrier",
                     recipe=profile.artifacts["j_hook_set"],
                     expected_artifact="j_hook_set",
                     print_notes=(
-                        "The hooks are already exported on their strong "
-                        "printing side.",
+                        "The retention parts are already exported on their "
+                        "strong printing side; use the profile's documented "
+                        "quantities.",
                     ),
                 ),
             ]
@@ -1793,14 +1833,25 @@ def _resolve_cli_path(root: Path, path: Path) -> Path:
 
 def _load_cli_contracts(
     root: Path,
-    profile_path: Path,
+    profile_path: Path | None,
     device_slug: str,
     registry_path: Path,
     layout_path: Path | None,
 ) -> tuple[holder_profiles.ResolvedProfile, ResolvedLayout]:
-    profile = holder_profiles.validate_profile(
-        CRADLE_ROOT, _resolve_cli_path(root, profile_path)
-    )
+    if profile_path is None:
+        profiles = discover_device_profiles(root)
+        profile = profiles.get(device_slug)
+        if profile is None:
+            choices = ", ".join(sorted(profiles))
+            raise PackError(
+                f"device {device_slug!r} has no holder profile; "
+                f"choose one of: {choices}"
+            )
+    else:
+        profile = holder_profiles.validate_profile(
+            root / "mechanical" / "dut-cradle-v1",
+            _resolve_cli_path(root, profile_path),
+        )
     layout = resolve_device_layout(
         root,
         device_slug,
@@ -1821,10 +1872,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     build_parser.add_argument(
         "--profile",
         type=Path,
-        default=Path(
-            "mechanical/dut-cradle-v1/profiles/"
-            "trimui-smart-pro-family.json"
-        ),
+        help="Explicit holder profile; otherwise resolve it from --device",
     )
     build_parser.add_argument(
         "--layout",
@@ -1854,10 +1902,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     matrix_parser.add_argument(
         "--profile",
         type=Path,
-        default=Path(
-            "mechanical/dut-cradle-v1/profiles/"
-            "trimui-smart-pro-family.json"
-        ),
+        help="Optional single-profile matrix; default discovers all profiles",
     )
     matrix_parser.add_argument(
         "--layout-registry",
@@ -1912,15 +1957,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 allow_unqualified=args.allow_unqualified,
             )
         elif args.command == "matrix":
-            profile = holder_profiles.validate_profile(
-                CRADLE_ROOT, _resolve_cli_path(root, args.profile)
-            )
-            matrix = device_layout_matrix(
-                root,
-                profile,
-                registry_path=args.layout_registry,
-                kind=args.kind,
-            )
+            if args.profile is None:
+                matrix = all_device_layout_matrix(
+                    root,
+                    registry_path=args.layout_registry,
+                    kind=args.kind,
+                )
+            else:
+                profile = holder_profiles.validate_profile(
+                    root / "mechanical" / "dut-cradle-v1",
+                    _resolve_cli_path(root, args.profile),
+                )
+                matrix = device_layout_matrix(
+                    root,
+                    profile,
+                    registry_path=args.layout_registry,
+                    kind=args.kind,
+                )
             print(
                 json.dumps(
                     matrix,

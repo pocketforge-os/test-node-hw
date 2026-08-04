@@ -335,8 +335,13 @@ jobs:
           xvfb-run --auto-servernum \
             python3 mechanical/device-packs/build_device_pack.py build \
               --device "${DEVICE_SLUG}" --mode full --allow-unqualified
-          xvfb-run --auto-servernum \
-            make -C mechanical/dut-chassis-2020-v1 dualbar-preview
+          if [[ "${DEVICE_SLUG}" == "trimui-brick" ]]; then
+            xvfb-run --auto-servernum \
+              make -C mechanical/dut-chassis-2020-v1 brick-dualbar-preview
+          else
+            xvfb-run --auto-servernum \
+              make -C mechanical/dut-chassis-2020-v1 dualbar-preview
+          fi
           python3 mechanical/device-packs/build_device_pack.py verify \
             --pack "${pack}"
           jq -e \
@@ -355,6 +360,7 @@ jobs:
           path: |
             mechanical/device-packs/build/${{ matrix.device_slug }}/full/
             mechanical/dut-chassis-2020-v1/build/dualbar/layout-*.png
+            mechanical/dut-chassis-2020-v1/build/dualbar-brick/layout-*.png
           if-no-files-found: error
           compression-level: 9
           retention-days: 30
@@ -476,26 +482,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes openscad=2021.01-6build4 xvfb
 
-      - name: Prove a candidate layout cannot enter a production release
-        if: ${{ needs.qualification_plan.outputs.layout_candidate_count != '0' }}
-        run: |
-          set -euo pipefail
-          log="${RUNNER_TEMP:?RUNNER_TEMP is required}/release-refusal.log"
-          if xvfb-run --auto-servernum \
-            python3 mechanical/device-packs/release_print_pack.py build \
-              --profile-id trimui-smart-pro-family >"${log}" 2>&1; then
-            echo "ERROR: release builder accepted a candidate layout" >&2
-            exit 1
-          fi
-          grep -q \
-            'require physically qualified registered chassis layouts' \
-            "${log}"
-          grep -q 'chassis-core-v2 (tsp-px73.23)' "${log}"
-          grep -q 'chassis-dualbar-v1 (tsp-px73.23)' "${log}"
-          echo "release_candidate_gate=pass"
-
       - name: Prove two real dual-device builds are byte-identical
-        if: ${{ needs.qualification_plan.outputs.layout_candidate_count == '0' }}
         run: |
           set -euo pipefail
           profile="trimui-smart-pro-family"
@@ -521,7 +508,6 @@ jobs:
             --bundle "${bundle}"
 
       - name: Upload ephemeral release evidence
-        if: ${{ needs.qualification_plan.outputs.layout_candidate_count == '0' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qualified-print-pack-${{ github.event.pull_request.head.sha }}

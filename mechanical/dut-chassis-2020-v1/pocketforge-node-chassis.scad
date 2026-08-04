@@ -101,9 +101,11 @@ PART = "assembly";
 CHASSIS_VARIANT = "legacy_gantry"; // legacy_gantry or dualbar_v1
 CARRIER_LINK_REVISION = CHASSIS_VARIANT == "dualbar_v1" ?
     "stack_clear_v2" : "legacy_v1"; // legacy_v1 or stack_clear_v2
-EXAMPLE_DEVICE_VARIANT = "smart_pro"; // smart_pro or smart_pro_s
+EXAMPLE_DEVICE_VARIANT = "smart_pro"; // smart_pro, smart_pro_s, or trimui_brick
 DEVICE_LABEL = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
-               "TrimUI Smart Pro S" : "TrimUI Smart Pro";
+               "TrimUI Smart Pro S" :
+               EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+               "TrimUI Brick / TG3040" : "TrimUI Smart Pro";
 PLATE_DETAIL = "proxy";       // proxy or mesh
 EXTRUSION_DETAIL = "slot";    // envelope or slot
 SHOW_PLATES = true;
@@ -346,9 +348,12 @@ fixture_plate_size = [200.0, 247.0, 3.2];
 fixture_webcam_datum = [83.70, 132.0];
 fixture_slot_inset = [19.0, 8.0];
 
-cradle_plate_size = [247.0, 200.0, 3.2];
-cradle_screen_datum = [123.5, 100.0];
-cradle_slot_inset = [19.0, 8.0];
+cradle_plate_size = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+                    [180.0, 205.0, 3.2] : [247.0, 200.0, 3.2];
+cradle_screen_datum = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+                      [90.0, 131.375] : [123.5, 100.0];
+cradle_slot_inset = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+                    [18.0, 7.0] : [19.0, 8.0];
 
 // Center the taller 247 mm fixture plate inside the 328 mm clear height while
 // preserving its measured webcam datum. The carrier then shares that optical
@@ -423,22 +428,42 @@ camera_assumed_hfov =
 camera_assumed_vfov =
     2 * atan(tan(camera_diagonal_fov / 2) * camera_capture_aspect.y /
              camera_aspect_diagonal);
-device_body = [188.35, 79.77, 10.7];
-device_rear_gap = 11.0;
+device_body = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+              [72.8, 110.75, 20.0] : [188.35, 79.77, 10.7];
+device_rear_gap = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ? 10.0 : 11.0;
+// Screen-centered Brick placement leaves its taller shell 28.875 mm below
+// the optical axis. Pro-family screens remain centered in their shell proxy.
+device_body_offset_from_optical =
+    EXAMPLE_DEVICE_VARIANT == "trimui_brick" ? [0.0, -28.875] : [0.0, 0.0];
 device_screen_y = cradle_plane_y - device_rear_gap - device_body.z;
 optical_distance = device_screen_y - camera_lens_y;
-// Only the complete device body is a hard framing requirement. Carrier
-// orientation labels may crop. Ten millimetres is the asserted minimum on
-// every edge; the derived default coverage remains larger in both axes.
+// Pro-family framing covers the complete device body. The taller Brick is
+// deliberately screen-centered by its fixture contract; a C270 cannot cover
+// its complete asymmetric shell at this distance, so its hard automated
+// target is the measured active display. Whole-device composition remains a
+// named physical/webcam acceptance gate. Ten millimetres is the asserted
+// margin around the selected target.
 framing_margin = [10.0, 10.0];
-framing_target = [device_body.x + 2 * framing_margin.x,
-                  device_body.y + 2 * framing_margin.y];
+camera_framing_body = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+                      [65.02, 48.77] : [device_body.x, device_body.y];
+camera_framing_offset = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+                        [0.0, 0.0] : device_body_offset_from_optical;
+framing_target = [camera_framing_body.x +
+                      2 * (framing_margin.x +
+                           abs(camera_framing_offset.x)),
+                  camera_framing_body.y +
+                      2 * (framing_margin.y +
+                           abs(camera_framing_offset.y))];
 required_hfov = 2 * atan((framing_target.x / 2) / optical_distance);
 required_vfov = 2 * atan((framing_target.y / 2) / optical_distance);
 camera_coverage = [2 * optical_distance * tan(camera_assumed_hfov / 2),
                    2 * optical_distance * tan(camera_assumed_vfov / 2)];
-camera_edge_margin = [(camera_coverage.x - device_body.x) / 2,
-                      (camera_coverage.y - device_body.y) / 2];
+camera_edge_margin = [
+    (camera_coverage.x - device_body.x) / 2 -
+        abs(device_body_offset_from_optical.x),
+    (camera_coverage.y - device_body.y) / 2 -
+        abs(device_body_offset_from_optical.y)
+];
 
 // ---- Printable interface parameters -------------------------------------
 m3_clearance = 3.6;
@@ -845,7 +870,8 @@ cradle_margins = [cradle_origin.x - inner_min.x,
                   inner_max.y - (cradle_origin.z + cradle_plate_size.y)];
 
 assert(EXAMPLE_DEVICE_VARIANT == "smart_pro" ||
-       EXAMPLE_DEVICE_VARIANT == "smart_pro_s",
+       EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ||
+       EXAMPLE_DEVICE_VARIANT == "trimui_brick",
        str("Unknown example device variant: ", EXAMPLE_DEVICE_VARIANT));
 assert(CHASSIS_VARIANT == "legacy_gantry" ||
        CHASSIS_VARIANT == "dualbar_v1",
@@ -1734,9 +1760,13 @@ module device_preview(detail = PLATE_DETAIL) {
         // Lightweight envelope keeps lint and ordinary assembly preview free
         // of generated presentation assets.
         color([0.08, 0.09, 0.10, 0.88])
-            translate([optical_datum.x - device_body.x / 2,
+            translate([optical_datum.x +
+                           device_body_offset_from_optical.x -
+                           device_body.x / 2,
                        device_screen_y,
-                       optical_datum.y - device_body.y / 2])
+                       optical_datum.y +
+                           device_body_offset_from_optical.y -
+                           device_body.y / 2])
                 cube([device_body.x, device_body.z, device_body.y]);
     }
 

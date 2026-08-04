@@ -3,6 +3,7 @@ OPENSCAD_FLAGS := --hardwarnings --check-parameters=true --check-parameter-range
 PYTHON ?= python3
 BUILD := build
 DUALBAR_BUILD := $(BUILD)/dualbar
+BRICK_DUALBAR_BUILD := $(BUILD)/dualbar-brick
 GUIDE_BUILD := $(BUILD)/handbook
 GUIDE_LAYER_BUILD := $(GUIDE_BUILD)/layers
 GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
@@ -256,6 +257,11 @@ DUALBAR_REVIEW := \
 	$(DUALBAR_BUILD)/layout-ironed-interfaces.png \
 	$(DUALBAR_BUILD)/layout-fixture-links.png
 
+BRICK_DUALBAR_REVIEW := \
+	$(BRICK_DUALBAR_BUILD)/layout-assembly.png \
+	$(BRICK_DUALBAR_BUILD)/layout-front.png \
+	$(BRICK_DUALBAR_BUILD)/layout-device-side.png
+
 DEVICE_EXAMPLE_BATCHES := \
 	$(BUILD)/production-batch-06-device-nameplate.stl \
 	$(BUILD)/production-batch-07-wire-management.stl
@@ -461,6 +467,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 .NOTPARALLEL:
 
 .PHONY: all batches core-batches dualbar dualbar-batches dualbar-preview \
+	brick-dualbar-preview \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
@@ -491,6 +498,8 @@ dualbar-replacements: $(DUALBAR_REPLACEMENT_PARTS)
 
 dualbar-preview: $(DUALBAR_REVIEW)
 
+brick-dualbar-preview: $(BRICK_DUALBAR_REVIEW)
+
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
 calibration: $(CALIBRATION)
@@ -502,7 +511,7 @@ fabrication-tools: right-angle-checker
 right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 	$(RIGHT_ANGLE_CHECKER_PREVIEW)
 
-$(BUILD) $(DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
+$(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
 $(GUIDE_MODEL_BUILD) $(PRESENTATION_IMPORT_DIR):
 	mkdir -p $@
@@ -1081,6 +1090,30 @@ $(DUALBAR_BUILD)/layout-front.png: $(SOURCE) lib/pf-2020.scad | $(DUALBAR_BUILD)
 		--camera=173,-600,184,173,179,184 \
 		-D 'CHASSIS_VARIANT="dualbar_v1"' \
 		-D 'EXAMPLE_DEVICE_VARIANT="smart_pro_s"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
+
+$(BRICK_DUALBAR_BUILD)/layout-assembly.png: $(SOURCE) lib/pf-2020.scad | $(BRICK_DUALBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --viewall \
+		--camera=560,-650,470,173,179,184 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="trimui_brick"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
+
+$(BRICK_DUALBAR_BUILD)/layout-front.png: $(SOURCE) lib/pf-2020.scad | $(BRICK_DUALBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --viewall \
+		--camera=173,-600,184,173,179,184 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="trimui_brick"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
+
+$(BRICK_DUALBAR_BUILD)/layout-device-side.png: $(SOURCE) lib/pf-2020.scad | $(BRICK_DUALBAR_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --viewall \
+		--camera=470,700,330,173,300,184 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="trimui_brick"' \
 		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
 
 $(DUALBAR_BUILD)/layout-suspension-detail.png: $(SOURCE) lib/pf-2020.scad | $(DUALBAR_BUILD)

@@ -55,8 +55,8 @@ matches an accepted or regression-locked mesh.
 
 | Mode | Purpose | Contents |
 | --- | --- | --- |
-| `coupon` | Validate a new or changed physical fit cheaply | Qualified holder fit coupon |
-| `retrofit` | Change the DUT on an existing chassis | Coupon, selected labeled carrier, six-hook set, four carrier links, device nameplate, eight wire anchors |
+| `coupon` | Validate a new or changed physical fit cheaply | Holder fit coupon |
+| `retrofit` | Change the DUT on an existing chassis | Coupon, selected labeled carrier, complete profile-defined retention set, four carrier links, device nameplate, eight wire anchors |
 | `full` | Build a complete test node | Retrofit pack, optional process-calibration bed, and every core bed owned by the selected chassis layout |
 
 The calibration bed is included in a full export so the pack is complete, but
@@ -105,6 +105,24 @@ Its clean-source manifest reports `production_eligible=true`,
 `layout.qualification.acceptance_ref="tsp-t1zd.2"`. There is no flag that maps
 the Pro S back to the legacy layout or maps the base model onto the dual-bar
 layout.
+
+The TrimUI Brick / TG3040 is a prototype candidate on the same qualified
+dual-bar aluminum topology, with its own 180 × 205 mm carrier, screen datum,
+slot datums, and regression-locked carrier-link geometry. Generate its coupon
+normally; generate the retrofit or full prototype with the explicit
+non-production override:
+
+```sh
+python3 mechanical/device-packs/build_device_pack.py build \
+  --device trimui-brick \
+  --mode full \
+  --allow-unqualified
+```
+
+The resulting manifest must report `production_eligible=false` with both
+`holder_unqualified` and `layout_unqualified`. The retention mesh contains
+two rear-only bottom supports, two side hooks, and one upper hook; quantities
+come from the holder README rather than an assumed six-hook family.
 
 Outputs default to
 `mechanical/device-packs/build/<device>/<mode>/`. Existing output is never
@@ -162,9 +180,10 @@ accepted normalized fingerprint fails before merge.
    new slug; otherwise add a candidate source-owned layout with a tracked
    physical acceptance reference.
 4. Reuse the declarative perimeter-hook mechanism when its contact and
-   clearance constraints fit. If the device needs a new retention mechanism,
-   add source and tests first; that engineering step can still be agent-assisted
-   but must end in the same data contract.
+   clearance constraints fit. A source-owned custom OpenSCAD mechanism may
+   enter browser and print-pack generation only while explicitly unqualified;
+   retrofit/full builds require `--allow-unqualified`, remain non-production,
+   and must name a reusable-family follow-up before physical promotion.
 5. Generate and physically test the `coupon` pack.
 6. Record explicit owner acceptance and lock the fit-bearing normalized
    geometry.

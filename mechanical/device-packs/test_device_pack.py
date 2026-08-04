@@ -192,6 +192,22 @@ class DevicePackTests(unittest.TestCase):
         cls.dualbar_layout = packs.load_layout(
             cls.root, cls.dualbar_layout_path
         )
+        cls.brick_profile_path = (
+            packs.CRADLE_ROOT / "profiles" / "trimui-brick.json"
+        )
+        cls.brick_profile = packs.holder_profiles.validate_profile(
+            packs.CRADLE_ROOT, cls.brick_profile_path
+        )
+        cls.brick_layout_path = (
+            cls.root
+            / "mechanical"
+            / "device-packs"
+            / "layouts"
+            / "chassis-dualbar-brick-v1.json"
+        )
+        cls.brick_layout = packs.load_layout(
+            cls.root, cls.brick_layout_path
+        )
 
     def test_modes_have_exact_membership(self) -> None:
         expected = {
@@ -376,6 +392,76 @@ class DevicePackTests(unittest.TestCase):
                     "dualbar_v1", item.parameters["CHASSIS_VARIANT"]
                 )
 
+    def test_brick_candidate_reuses_dualbar_core_with_new_optical_links(
+        self,
+    ) -> None:
+        self.assertEqual(
+            "unqualified",
+            self.brick_profile.document["qualification"]["status"],
+        )
+        self.assertEqual("candidate", self.brick_layout.qualification["status"])
+        self.assertEqual(
+            "chassis-dualbar-v1", self.brick_layout.supersedes_layout_id
+        )
+        candidate = packs.all_device_layout_matrix(
+            self.root, kind="candidate-layout-devices"
+        )
+        self.assertEqual(
+            [
+                {
+                    "device_slug": "trimui-brick",
+                    "layout_id": "chassis-dualbar-brick-v1",
+                    "layout_status": "candidate",
+                    "holder_status": "unqualified",
+                }
+            ],
+            candidate["include"],
+        )
+        plan = packs.build_plan(
+            self.root,
+            self.brick_profile,
+            self.brick_layout,
+            "trimui-brick",
+            "full",
+        )
+        self.assertEqual(11, len(plan))
+        retention = next(
+            item for item in plan if item.artifact_id == "device_j_hook_set"
+        )
+        self.assertEqual("trimui-brick-cradle.scad", retention.source.name)
+        self.assertEqual("hook_set", retention.part)
+        links = next(
+            item for item in plan if item.artifact_id == "device_carrier_links"
+        )
+        self.assertEqual(
+            [packs.Decimal(180), packs.Decimal(205), packs.Decimal("3.2")],
+            links.parameters["cradle_plate_size"],
+        )
+        self.assertEqual(
+            [packs.Decimal(90), packs.Decimal("131.375")],
+            links.parameters["cradle_screen_datum"],
+        )
+        self.assertEqual(
+            [packs.Decimal(18), packs.Decimal(7)],
+            links.parameters["cradle_slot_inset"],
+        )
+        self.assertEqual(
+            "184fc37b03916a70f16b47753f83ec8404602dea4de0481620f36b5b2cd2e1d6",
+            links.expected_normalized_sha256,
+        )
+
+        qualified_common = {
+            item.artifact_id: item
+            for item in self.dualbar_layout.artifacts
+            if item.artifact_id != "device_carrier_links"
+        }
+        candidate_common = {
+            item.artifact_id: item
+            for item in self.brick_layout.artifacts
+            if item.artifact_id != "device_carrier_links"
+        }
+        self.assertEqual(qualified_common, candidate_common)
+
     def test_device_slug_selects_exact_wrapper_and_label(self) -> None:
         pro = packs.build_plan(
             self.root,
@@ -420,21 +506,41 @@ class DevicePackTests(unittest.TestCase):
                 "coupon",
             )
 
-    def test_custom_holder_escape_hatch_cannot_emit_a_pack(self) -> None:
+    def test_custom_holder_escape_hatch_emits_only_a_prototype_pack(self) -> None:
         document = copy.deepcopy(self.profile.document)
         document["implementation"]["kind"] = "custom_openscad"
+        document["qualification"]["status"] = "unqualified"
         custom = replace(self.profile, document=document)
-        with self.assertRaisesRegex(
-            packs.PackError,
-            "require a declarative reusable holder mechanism",
-        ):
-            packs.build_plan(
-                self.root,
+        plan = packs.build_plan(
+            self.root,
+            custom,
+            self.layout,
+            "trimui-smart-pro",
+            "retrofit",
+        )
+        self.assertIn(
+            "device_j_hook_set", {item.artifact_id for item in plan}
+        )
+        with self.assertRaisesRegex(packs.PackError, "allow-unqualified"):
+            packs._policy(
                 custom,
                 self.layout,
-                "trimui-smart-pro",
-                "coupon",
+                "retrofit",
+                packs.SourceState(commit="a" * 40, dirty=False),
+                allow_dirty=False,
+                allow_unqualified=False,
             )
+        eligible, overrides, reasons = packs._policy(
+            custom,
+            self.layout,
+            "retrofit",
+            packs.SourceState(commit="a" * 40, dirty=False),
+            allow_dirty=False,
+            allow_unqualified=True,
+        )
+        self.assertFalse(eligible)
+        self.assertEqual(["allow_unqualified"], overrides)
+        self.assertEqual(["holder_unqualified"], reasons)
 
     def _write_layout(self, document: dict[str, object]) -> Path:
         temp_root = Path(
