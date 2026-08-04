@@ -29,6 +29,7 @@ topology from `../device-packs/device-layouts.json`; do not choose it by hand.
 | --- | --- | --- | --- |
 | TrimUI Smart Pro | `chassis-core-v2` | Proven gantry + stack-clear carrier links | Physically qualified by `tsp-t1zd.2`; `chassis-core-v1` remains frozen |
 | TrimUI Smart Pro S | `chassis-dualbar-v1` | Two movable 306 mm fixture bars + four printed joints + four printed links | Physically qualified by `tsp-t1zd.2` |
+| TrimUI Brick / TG3040 | `chassis-dualbar-brick-v1` | Unchanged qualified dual-bar frame + Brick-specific 180 × 205 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
 
 Both layouts preserve the same outer frame, fixture plate, plate Y/Z datum,
 camera optical relationship, DUT carrier, placard, power strip, stacking
@@ -134,8 +135,8 @@ slug.
 | 04 | `production-batch-04-frame-hardware.stl` | Eight 18 × 92 × 4 mm registration tabs, placard mounts, power-strip blocks | None |
 | 05 | `production-batch-05-placard-holder.stl` | Reusable placard holder | None |
 
-Carrier links, the labeled carrier, six hooks, device nameplate, and eight
-starter wire anchors are device-pack outputs. The chassis still exposes its
+Carrier links, the labeled carrier, the profile-defined retention set, device
+nameplate, and eight starter wire anchors are device-pack outputs. The chassis still exposes its
 nameplate and anchor beds as development examples, but they are not canonical
 inputs for a newly onboarded device.
 

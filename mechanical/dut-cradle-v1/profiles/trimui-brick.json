@@ -1,0 +1,66 @@
+{
+  "schema": "pocketforge-holder-profile-v1",
+  "profile_id": "trimui-brick",
+  "device_slugs": [
+    "trimui-brick"
+  ],
+  "device_variants": [
+    {
+      "device_slug": "trimui-brick",
+      "display_name": "TrimUI Brick / TG3040",
+      "production_carrier": {
+        "source": "trimui-brick-cradle.scad",
+        "part": "plate",
+        "parameters": {
+          "DEVICE_LABEL": "TrimUI Brick / TG3040",
+          "SHOW_DEVICE": false,
+          "SHOW_HOOKS": false,
+          "SHOW_LABELS": true
+        }
+      }
+    }
+  ],
+  "fixture": {
+    "lock": "profiles/fixture-locks/trimui-brick-v1.json",
+    "interface_sha256": "e52f855585f502405e36f52b393fa34b75b141ed8cd59f678686ca564723d896",
+    "bindings": {
+      "local_depth": "thick_lower_shell",
+      "rear_service_access": "rear_service",
+      "camera_target": "camera_visibility_target_xy",
+      "shell_center": "shell_center_xy",
+      "rear_clearance": "lower_rear_service_gap"
+    }
+  },
+  "implementation": {
+    "kind": "custom_openscad",
+    "source": "trimui-brick-cradle.scad",
+    "rationale": "The stepped 20/12 mm shell needs separate rear-only supports and side/upper retention; the six-contact perimeter J-hook family cannot express that prototype safely.",
+    "reusable_family_followup": "bead:tsp-bcx.21.23"
+  },
+  "artifacts": {
+    "carrier_body": {
+      "source": "trimui-brick-cradle.scad",
+      "part": "presentation_body",
+      "parameters": {}
+    },
+    "fit_coupon": {
+      "source": "trimui-brick-cradle.scad",
+      "part": "fit_coupon",
+      "parameters": {}
+    },
+    "j_hook_set": {
+      "source": "trimui-brick-cradle.scad",
+      "part": "hook_set",
+      "parameters": {}
+    }
+  },
+  "qualification": {
+    "status": "unqualified",
+    "acceptance_ref": null,
+    "accepted_on": null,
+    "accepted_geometry_revision": null,
+    "fixture_interface_sha256": "e52f855585f502405e36f52b393fa34b75b141ed8cd59f678686ca564723d896",
+    "geometry_manifest": null,
+    "artifact_names": []
+  }
+}

@@ -13,6 +13,7 @@
 include <lib/dut-cradle-library.scad>;
 
 PART = "assembly";
+DEVICE_LABEL = "TrimUI Brick / TG3040";
 SHOW_DEVICE = true;
 SHOW_HOOKS = true;
 SHOW_KEEP_OUTS = true;
@@ -56,7 +57,7 @@ frame_tie_features = [
 ];
 
 // ---- Owner-measured Brick mechanical profile -----------------------------
-device_name = "TrimUI Brick";
+device_name = DEVICE_LABEL;
 device_body_size = [72.8, 110.75];
 device_bottom_corner_radius = 8.5;
 device_origin = (plate_size - device_body_size) / 2;
@@ -172,7 +173,7 @@ label_stroke_growth = 0.35;
 label_font = "Liberation Sans:style=Regular";
 title_box_size = [124.0, 24.0];
 title_box_centre = [plate_size.x / 2, plate_size.y - 15.0];
-title_font_size = 14.4;
+title_font_size = 10.0;
 orientation_font_size = 10.5;
 label_feature_clearance = 2.4;  // three 0.8 mm nozzle widths
 carrier_body_color = [0.88, 0.88, 0.84];

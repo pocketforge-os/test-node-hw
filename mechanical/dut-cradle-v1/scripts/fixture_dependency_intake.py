@@ -474,6 +474,38 @@ def plan_updates(
     write_paths: list[str] = []
     for profile_id in sorted(registry):
         record = registry[profile_id]
+        if record.status != qualification_ci.QUALIFIED:
+            # An unqualified/custom holder is already in the manual design
+            # lane. It has no accepted geometry to preserve and therefore
+            # must not create or block the immutable qualified-refresh queue.
+            # Its committed fixture lock remains the prototype source pin.
+            contracts = [
+                snapshot.contracts[slug]
+                for slug in record.device_slugs
+                if slug in snapshot.contracts
+            ]
+            results.append(
+                {
+                    "profile_id": profile_id,
+                    "profile_path": record.relative_path,
+                    "device_slugs": list(record.device_slugs),
+                    "accepted_interface_sha256": record.fixture_sha256,
+                    "resolved_interface_sha256": (
+                        contracts[0]["resolved_interface_sha256"]
+                        if len(contracts) == len(record.device_slugs)
+                        and len(
+                            {
+                                contract["resolved_interface_sha256"]
+                                for contract in contracts
+                            }
+                        )
+                        == 1
+                        else None
+                    ),
+                    "status": "unqualified_manual",
+                }
+            )
+            continue
         selected: list[Mapping[str, Any]] = []
         missing: list[str] = []
         for slug in record.device_slugs:
@@ -509,11 +541,6 @@ def plan_updates(
             result["status"] = "no_change"
             results.append(result)
             continue
-        if record.status != qualification_ci.QUALIFIED:
-            raise IntakeError(
-                f"profile {profile_id!r}: changed upstream interface requires "
-                "manual handling while the holder is not physically qualified"
-            )
         interface = snapshot.interfaces[resolved_hash]
         candidate_revision = _positive_integer(
             interface["interface_revision"],

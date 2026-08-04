@@ -172,6 +172,21 @@ class BrowserBundleTests(unittest.TestCase):
         self.assertTrue(pro_s_full["production_eligible"])
         self.assertEqual([], pro_s_full["nonproduction_reasons"])
 
+        brick = clean_by_slug["trimui-brick"]
+        brick_full = brick["modes"]["full"]
+        self.assertFalse(brick_full["production_eligible"])
+        self.assertEqual(
+            ["holder_unqualified", "layout_unqualified"],
+            brick_full["nonproduction_reasons"],
+        )
+        self.assertEqual(
+            ["allow_unqualified"], brick_full["required_overrides"]
+        )
+        self.assertEqual(
+            ["coupon_only", "holder_unqualified"],
+            brick["modes"]["coupon"]["nonproduction_reasons"],
+        )
+
         dirty, _ = export_browser_bundle.build_catalog(
             ROOT, state=DIRTY_STATE
         )

@@ -254,8 +254,13 @@ jobs:
           xvfb-run --auto-servernum \
             python3 mechanical/device-packs/build_device_pack.py build \
               --device "${DEVICE_SLUG}" --mode full --allow-unqualified
-          xvfb-run --auto-servernum \
-            make -C mechanical/dut-chassis-2020-v1 dualbar-preview
+          if [[ "${DEVICE_SLUG}" == "trimui-brick" ]]; then
+            xvfb-run --auto-servernum \
+              make -C mechanical/dut-chassis-2020-v1 brick-dualbar-preview
+          else
+            xvfb-run --auto-servernum \
+              make -C mechanical/dut-chassis-2020-v1 dualbar-preview
+          fi
           python3 mechanical/device-packs/build_device_pack.py verify \
             --pack "$pack"
           jq -e \
@@ -274,6 +279,7 @@ jobs:
           path: |
             mechanical/device-packs/build/${{ matrix.device_slug }}/full/
             mechanical/dut-chassis-2020-v1/build/dualbar/layout-*.png
+            mechanical/dut-chassis-2020-v1/build/dualbar-brick/layout-*.png
           if-no-files-found: error
           compression-level: 9
           retention-days: 30
