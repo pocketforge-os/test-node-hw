@@ -142,7 +142,7 @@
         62.3
       ],
       "label_height_mm": 1.2,
-      "label_stroke_growth_mm": 0.85,
+      "label_stroke_growth_mm": 0.35,
       "title_box_size_mm": [
         190,
         24
@@ -151,7 +151,7 @@
         123.5,
         176.5
       ],
-      "title_font_size_mm": 14.4,
+      "title_font_size_mm": 10,
       "orientation_font_size_mm": 9,
       "carrier_body_color": [
         0.88,

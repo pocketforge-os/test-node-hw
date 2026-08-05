@@ -109,6 +109,14 @@ class HolderProfileTests(unittest.TestCase):
             set(self.profile["device_slugs"]),
             set(resolved.variants),
         )
+        self.assertEqual(
+            profiles.Decimal("0.35"),
+            resolved.openscad_parameters["label_stroke_growth"],
+        )
+        self.assertEqual(
+            profiles.Decimal("10"),
+            resolved.openscad_parameters["title_font_size"],
+        )
 
     def test_compiler_maps_locked_contacts_to_accepted_carrier_poses(self) -> None:
         poses = {
