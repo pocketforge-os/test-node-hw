@@ -231,12 +231,15 @@ and changes only the carrier links to the accepted stack-clear revision.
 Batch 04 intentionally differs: the immutable qualified legacy bed retains its
 accepted stacking-tab hole, while the current dual-bar bed carries the
 owner-corrected hole 7 mm higher. Those files remain immutable qualified
-regression baselines. The registered candidate successors are
-`chassis-core-v3`, `chassis-dualbar-v2`, and `chassis-dualbar-brick-v2`; each
+regression baselines. All registered devices now resolve to the physically
+qualified continuous-bar topology through `chassis-dualbar-smart-pro-v1`,
+`chassis-dualbar-v2`, `chassis-dualbar-brick-v2`, or
+`chassis-dualbar-powkiddy-x55-v1`; no active
+full pack emits the legacy gantry splice bars or splice collars. Each candidate
 declares its predecessor, separates the revised joint plates into a compact
-retrofit bed, and remains unqualified until `tsp-bcx.21.38` is physically
-accepted. Changing geometry requires a new candidate layout ID and physical
-gate, not a refreshed digest.
+retrofit bed, and preserves its device-specific physical gates. Changing
+geometry requires a new candidate layout ID and physical gate, not a refreshed
+digest.
 
 ## Immutable production releases
 

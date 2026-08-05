@@ -128,7 +128,7 @@ class ReleaseArchiveTests(unittest.TestCase):
         )
         self.assertEqual(
             {
-                "trimui-smart-pro": "chassis-core-v3",
+                "trimui-smart-pro": "chassis-dualbar-smart-pro-v1",
                 "trimui-smart-pro-s": "chassis-dualbar-v2",
             },
             {slug: layout.layout_id for slug, layout in registered.items()},
