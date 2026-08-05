@@ -13,6 +13,8 @@ import numpy as np
 import trimesh
 from trimesh.visual.material import PBRMaterial
 
+from handbook_scene_contract import validate_layout_binding
+
 
 LAYER_MATERIALS = {
     "aluminum": ("Aluminum extrusion", "#a8afb8", 0.72, 0.28, 1.0),
@@ -302,20 +304,13 @@ def load_scene_contract(
         .get(arguments.device_slug, {})
         .get("layout")
     )
-    if registered_layout != layout_relative:
-        raise ValueError(
-            f"{arguments.device_slug} selects {registered_layout!r}, "
-            f"not {layout_relative!r}"
-        )
-
-    layout_id = layout.get("layout_id")
-    if not isinstance(layout_id, str) or not layout_id:
-        raise ValueError("layout record has no layout_id")
-    qualification = layout.get("qualification", {})
-    if arguments.device_slug not in qualification.get("device_slugs", []):
-        raise ValueError(
-            f"{arguments.device_slug} is outside {layout_id} qualification scope"
-        )
+    validate_layout_binding(
+        device_slug=arguments.device_slug,
+        registered_layout=registered_layout,
+        layout_relative=layout_relative,
+        layout=layout,
+    )
+    layout_id = layout["layout_id"]
     artifact_variants = {
         artifact.get("parameters", {}).get("CHASSIS_VARIANT")
         for artifact in layout.get("artifacts", [])
