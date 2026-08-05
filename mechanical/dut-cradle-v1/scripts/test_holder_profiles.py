@@ -461,6 +461,13 @@ class HolderProfileTests(unittest.TestCase):
                 "coordinate_system": interface["coordinate_system"],
                 "fixture_interface": interface["fixture_interface"],
             }
+            # Snapshot locks normalize semantically unordered interface lists.
+            # Source verification must accept a contract whose source order is
+            # different while still comparing every semantic value.
+            full["fixture_interface"] = copy.deepcopy(
+                full["fixture_interface"]
+            )
+            full["fixture_interface"]["keepouts"].reverse()
             alias = {
                 "kind": "shared_chassis_alias",
                 "device": {"slug": "trimui-smart-pro-s"},

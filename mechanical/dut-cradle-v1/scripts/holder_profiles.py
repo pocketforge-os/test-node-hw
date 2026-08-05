@@ -1923,8 +1923,12 @@ def verify_source_pin(
                 "fixture_interface": locked_interface["fixture_interface"],
             }
             for key, expected in comparisons.items():
-                if _canonical_json(source_document.get(key)) != _canonical_json(
-                    expected
+                source_value = _normalize_semantic_lists(
+                    source_document.get(key)
+                )
+                expected_value = _normalize_semantic_lists(expected)
+                if _canonical_json(source_value) != _canonical_json(
+                    expected_value
                 ):
                     raise ProfileError(
                         f"locked {key} differs from platform source for {slug}"

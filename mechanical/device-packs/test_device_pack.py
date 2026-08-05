@@ -208,6 +208,20 @@ class DevicePackTests(unittest.TestCase):
         cls.brick_layout = packs.load_layout(
             cls.root, cls.brick_layout_path
         )
+        cls.x55_profile_path = (
+            packs.CRADLE_ROOT / "profiles" / "powkiddy-x55.json"
+        )
+        cls.x55_profile = packs.holder_profiles.validate_profile(
+            packs.CRADLE_ROOT, cls.x55_profile_path
+        )
+        cls.x55_layout_path = (
+            cls.root
+            / "mechanical"
+            / "device-packs"
+            / "layouts"
+            / "chassis-core-powkiddy-x55-v1.json"
+        )
+        cls.x55_layout = packs.load_layout(cls.root, cls.x55_layout_path)
 
     def test_modes_have_exact_membership(self) -> None:
         expected = {
@@ -356,6 +370,7 @@ class DevicePackTests(unittest.TestCase):
             ("trimui-smart-pro", self.profile, self.current_layout),
             ("trimui-smart-pro-s", self.profile, self.dualbar_layout),
             ("trimui-brick", self.brick_profile, self.brick_layout),
+            ("powkiddy-x55", self.x55_profile, self.x55_layout),
         ):
             with self.subTest(device=device_slug):
                 retrofit = packs.build_plan(
@@ -438,6 +453,12 @@ class DevicePackTests(unittest.TestCase):
         self.assertEqual(
             [
                 {
+                    "device_slug": "powkiddy-x55",
+                    "layout_id": "chassis-core-powkiddy-x55-v1",
+                    "layout_status": "candidate",
+                    "holder_status": "unqualified",
+                },
+                {
                     "device_slug": "trimui-brick",
                     "layout_id": "chassis-dualbar-brick-v2",
                     "layout_status": "candidate",
@@ -502,6 +523,55 @@ class DevicePackTests(unittest.TestCase):
             if item.artifact_id != "device_carrier_links"
         }
         self.assertEqual(qualified_common, candidate_common)
+
+    def test_x55_candidate_uses_provisional_profile_and_compact_links(
+        self,
+    ) -> None:
+        self.assertEqual(
+            "unqualified", self.x55_profile.document["qualification"]["status"]
+        )
+        self.assertEqual("candidate", self.x55_layout.qualification["status"])
+        self.assertIsNone(self.x55_layout.supersedes_layout_id)
+        plan = packs.build_plan(
+            self.root,
+            self.x55_profile,
+            self.x55_layout,
+            "powkiddy-x55",
+            "full",
+        )
+        self.assertEqual(13, len(plan))
+        carrier = next(
+            item for item in plan if item.artifact_id == "device_carrier"
+        )
+        retention = next(
+            item for item in plan if item.artifact_id == "device_j_hook_set"
+        )
+        links = next(
+            item for item in plan if item.artifact_id == "device_carrier_links"
+        )
+        nameplate = next(
+            item for item in plan if item.artifact_id == "device_nameplate"
+        )
+        self.assertEqual("powkiddy-x55-cradle.scad", carrier.source.name)
+        self.assertEqual("powkiddy-x55-cradle.scad", retention.source.name)
+        self.assertEqual("hook_set", retention.part)
+        self.assertEqual("Powkiddy X55", nameplate.parameters["DEVICE_LABEL"])
+        self.assertEqual(
+            [packs.Decimal(247), packs.Decimal(175), packs.Decimal("3.2")],
+            links.parameters["cradle_plate_size"],
+        )
+        self.assertEqual(
+            [packs.Decimal("123.5"), packs.Decimal("85.38")],
+            links.parameters["cradle_screen_datum"],
+        )
+        self.assertEqual(
+            [packs.Decimal(18), packs.Decimal(7)],
+            links.parameters["cradle_slot_inset"],
+        )
+        self.assertEqual(
+            "9a43c6a35d083907afda8042365e80124017b5b5e88a3fec7790430a3b2e03c6",
+            links.expected_normalized_sha256,
+        )
 
     def test_device_slug_selects_exact_wrapper_and_label(self) -> None:
         pro = packs.build_plan(

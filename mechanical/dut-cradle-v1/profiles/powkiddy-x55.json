@@ -1,0 +1,66 @@
+{
+  "schema": "pocketforge-holder-profile-v1",
+  "profile_id": "powkiddy-x55",
+  "device_slugs": [
+    "powkiddy-x55"
+  ],
+  "device_variants": [
+    {
+      "device_slug": "powkiddy-x55",
+      "display_name": "Powkiddy X55",
+      "production_carrier": {
+        "source": "powkiddy-x55-cradle.scad",
+        "part": "plate",
+        "parameters": {
+          "DEVICE_LABEL": "Powkiddy X55",
+          "SHOW_DEVICE": false,
+          "SHOW_HOOKS": false,
+          "SHOW_LABELS": true
+        }
+      }
+    }
+  ],
+  "fixture": {
+    "lock": "profiles/fixture-locks/powkiddy-x55-v1.json",
+    "interface_sha256": "4a2a3d2751480e21e9cb7b42fd92e3fca986ad227884a97ffbc227230915f032",
+    "bindings": {
+      "local_depth": "bottom_contact_depth",
+      "rear_service_access": "rear_service",
+      "camera_target": "camera_visibility_target_xy",
+      "shell_center": "shell_center_xy",
+      "rear_clearance": "rear_trigger_and_wiring"
+    }
+  },
+  "implementation": {
+    "kind": "custom_openscad",
+    "source": "powkiddy-x55-cradle.scad",
+    "rationale": "The provisional X55 holder uses three local-depth hook profiles on one common front-plane datum; the single-depth perimeter_j_hook_v1 compiler cannot express those explicitly unqualified contacts safely.",
+    "reusable_family_followup": "bead:tsp-bcx.21.27"
+  },
+  "artifacts": {
+    "carrier_body": {
+      "source": "powkiddy-x55-cradle.scad",
+      "part": "presentation_body",
+      "parameters": {}
+    },
+    "fit_coupon": {
+      "source": "powkiddy-x55-cradle.scad",
+      "part": "fit_coupon",
+      "parameters": {}
+    },
+    "j_hook_set": {
+      "source": "powkiddy-x55-cradle.scad",
+      "part": "hook_set",
+      "parameters": {}
+    }
+  },
+  "qualification": {
+    "status": "unqualified",
+    "acceptance_ref": null,
+    "accepted_on": null,
+    "accepted_geometry_revision": null,
+    "fixture_interface_sha256": "4a2a3d2751480e21e9cb7b42fd92e3fca986ad227884a97ffbc227230915f032",
+    "geometry_manifest": null,
+    "artifact_names": []
+  }
+}

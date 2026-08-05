@@ -130,6 +130,25 @@ The resulting manifest must report `production_eligible=false` with both
 two rear-only bottom supports, two side hooks, and one upper hook; quantities
 come from the holder README rather than an assumed six-hook family.
 
+The Powkiddy X55 is likewise a prototype candidate, but uses the core aluminum
+topology with a 247 × 175 mm carrier and three provisional local-depth hook
+profiles. Generate its coupon first; retrofit/full require the explicit
+non-production override until `tsp-bcx.21.28` supplies local-depth calipers and
+`tsp-bcx.21.39` records the printed fit, framing, and layout gates:
+
+```sh
+python3 mechanical/device-packs/build_device_pack.py build \
+  --device powkiddy-x55 \
+  --mode full \
+  --allow-unqualified
+```
+
+The manifest must report `production_eligible=false` with
+`holder_unqualified` and `layout_unqualified`. Print
+`coupon/holder-fit-coupon.stl` before the carrier or full chassis; the 14.4,
+13.8, and 14.6 mm bottom/top/side contact depths are photo-derived prototype
+inputs rather than manufacturing-ready caliper measurements.
+
 Outputs default to
 `mechanical/device-packs/build/<device>/<mode>/`. Existing output is never
 overwritten implicitly. Use `--replace` only to atomically replace a directory
