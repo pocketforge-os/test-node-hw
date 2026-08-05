@@ -1068,7 +1068,7 @@ def _policy(
             "for a non-production pack"
         )
     holder_blocks = not holder_qualified and mode != "coupon"
-    layout_blocks = not layout_qualified and mode == "full"
+    layout_blocks = not layout_qualified and mode in {"full", "retrofit"}
     if (holder_blocks or layout_blocks) and not allow_unqualified:
         requirements = []
         if holder_blocks:
@@ -1090,7 +1090,7 @@ def _policy(
         if mode != "coupon":
             overrides.add("allow_unqualified")
         reasons.append("holder_unqualified")
-    if not layout_qualified and mode == "full":
+    if not layout_qualified and mode in {"full", "retrofit"}:
         overrides.add("allow_unqualified")
         reasons.append("layout_unqualified")
     if mode == "coupon":
