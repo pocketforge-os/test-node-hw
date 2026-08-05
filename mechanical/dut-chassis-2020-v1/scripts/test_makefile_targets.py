@@ -6,6 +6,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from handbook_scene_contract import validate_layout_binding
+
 PROJECT = Path(__file__).resolve().parents[1]
 CORE_BATCHES = tuple(range(1, 6))
 DEVICE_EXAMPLE_BATCHES = (6, 7)
@@ -127,6 +129,74 @@ def dry_run(target: str) -> str:
     return result.stdout
 
 
+def require_handbook_layout_binding_contract() -> None:
+    qualified = {
+        "layout_id": "chassis-dualbar-v1",
+        "qualification": {
+            "status": "physically_qualified",
+            "device_slugs": ["trimui-smart-pro-s"],
+        },
+    }
+    validate_layout_binding(
+        device_slug="trimui-smart-pro-s",
+        registered_layout="layouts/chassis-dualbar-v2.json",
+        layout_relative="layouts/chassis-dualbar-v1.json",
+        layout=qualified,
+    )
+    validate_layout_binding(
+        device_slug="trimui-smart-pro-s",
+        registered_layout="layouts/chassis-dualbar-v1.json",
+        layout_relative="layouts/chassis-dualbar-v1.json",
+        layout=qualified,
+    )
+
+    invalid_cases = (
+        (
+            None,
+            qualified,
+            "has no active registered layout",
+        ),
+        (
+            "layouts/chassis-dualbar-v2.json",
+            {
+                **qualified,
+                "qualification": {
+                    **qualified["qualification"],
+                    "status": "candidate",
+                },
+            },
+            "is not physically qualified",
+        ),
+        (
+            "layouts/chassis-dualbar-v2.json",
+            qualified,
+            "outside chassis-dualbar-v1 qualification scope",
+        ),
+    )
+    for index, (registered, layout, expected) in enumerate(invalid_cases):
+        device_slug = (
+            "trimui-smart-pro" if index == len(invalid_cases) - 1
+            else "trimui-smart-pro-s"
+        )
+        try:
+            validate_layout_binding(
+                device_slug=device_slug,
+                registered_layout=registered,
+                layout_relative="layouts/chassis-dualbar-v1.json",
+                layout=layout,
+            )
+        except ValueError as error:
+            if expected not in str(error):
+                raise SystemExit(
+                    "handbook layout binding failed with the wrong reason: "
+                    f"{error}"
+                ) from error
+        else:
+            raise SystemExit(
+                "unsafe handbook layout binding was unexpectedly accepted"
+            )
+
+
 def output_name(batch: int) -> str:
     names = {
         1: "ironed-interfaces",
@@ -216,6 +286,7 @@ def require_dualbar_assembly_contract(output: str) -> None:
 
 
 def main() -> int:
+    require_handbook_layout_binding_contract()
     core = dry_run("batches")
     dualbar = dry_run("dualbar-batches")
     handbook = dry_run("handbook-assets")
