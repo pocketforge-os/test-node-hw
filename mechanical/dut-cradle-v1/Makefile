@@ -10,6 +10,8 @@ SMART_PRO_S_SOURCE := trimui-smart-pro-s-cradle.scad
 SMART_PRO_SOURCE := trimui-smart-pro-cradle.scad
 # Candidate-only until the physical gates in README-trimui-brick.md pass.
 BRICK_SOURCE := trimui-brick-cradle.scad
+# Candidate-only until the local-depth and physical gates in the X55 README pass.
+X55_SOURCE := powkiddy-x55-cradle.scad
 QUALIFICATION_MANIFEST := qualification/trimui-smart-pro-family-v1.json
 QUALIFIED_ARTIFACTS := $(CHECKS)/smart-pro-unlabelled.stl \
 	$(BUILD)/j-hook.stl $(BUILD)/j-hook-set.stl $(BUILD)/fit-coupon.stl
@@ -37,7 +39,13 @@ all: $(BUILD)/trimui-smart-pro-s-carrier.stl \
 	$(BUILD)/trimui-brick-side-hook.stl \
 	$(BUILD)/trimui-brick-upper-hook.stl \
 	$(BUILD)/trimui-brick-hook-set.stl \
-	$(BUILD)/trimui-brick-fit-coupon.stl
+	$(BUILD)/trimui-brick-fit-coupon.stl \
+	$(BUILD)/powkiddy-x55-carrier.stl \
+	$(BUILD)/powkiddy-x55-bottom-hook.stl \
+	$(BUILD)/powkiddy-x55-top-hook.stl \
+	$(BUILD)/powkiddy-x55-side-hook.stl \
+	$(BUILD)/powkiddy-x55-hook-set.stl \
+	$(BUILD)/powkiddy-x55-fit-coupon.stl
 
 lint:
 	cd ../.. && OPENSCAD='$(OPENSCAD)' scripts/lint-openscad.sh
@@ -107,6 +115,25 @@ $(BUILD)/trimui-brick-hook-set.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="hook_set"' $<
 
 $(BUILD)/trimui-brick-fit-coupon.stl: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' $<
+
+$(BUILD)/powkiddy-x55-carrier.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="plate"' \
+		-D 'SHOW_DEVICE=false' -D 'SHOW_HOOKS=false' $<
+
+$(BUILD)/powkiddy-x55-bottom-hook.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="bottom_hook"' $<
+
+$(BUILD)/powkiddy-x55-top-hook.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="top_hook"' $<
+
+$(BUILD)/powkiddy-x55-side-hook.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="side_hook"' $<
+
+$(BUILD)/powkiddy-x55-hook-set.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="hook_set"' $<
+
+$(BUILD)/powkiddy-x55-fit-coupon.stl: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="fit_coupon"' $<
 
 $(CHECKS)/smart-pro-s-assembly-export.stl: $(SMART_PRO_S_SOURCE) $(FAMILY_SOURCE) $(LIBRARY) | $(CHECKS)
@@ -388,6 +415,21 @@ validate: lint all $(BUILD)/trimui-smart-pro-family-installed-hooks.stl \
 		$(BUILD)/trimui-brick-hook-set.stl
 	$(PYTHON) scripts/stl_bounds.py --max-x 80 --max-y 80 --max-z 18 \
 		$(BUILD)/trimui-brick-fit-coupon.stl
+	$(PYTHON) scripts/stl_bounds.py --bed-x 247 --bed-y 207 \
+		$(BUILD)/powkiddy-x55-carrier.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 35 --max-y 45 --max-z 20 \
+		--min-bed-contact-area 120 \
+		$(BUILD)/powkiddy-x55-bottom-hook.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 35 --max-y 45 --max-z 20 \
+		--min-bed-contact-area 120 \
+		$(BUILD)/powkiddy-x55-top-hook.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 35 --max-y 45 --max-z 20 \
+		--min-bed-contact-area 120 \
+		$(BUILD)/powkiddy-x55-side-hook.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 95 --max-y 95 --max-z 20 \
+		$(BUILD)/powkiddy-x55-hook-set.stl
+	$(PYTHON) scripts/stl_bounds.py --max-x 120 --max-y 85 --max-z 20 \
+		$(BUILD)/powkiddy-x55-fit-coupon.stl
 
 clean:
 	rm -rf $(BUILD)

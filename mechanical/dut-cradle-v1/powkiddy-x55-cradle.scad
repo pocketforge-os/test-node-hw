@@ -13,6 +13,7 @@
 include <lib/dut-cradle-library.scad>;
 
 PART = "assembly";
+DEVICE_LABEL = "Powkiddy X55";
 SHOW_DEVICE = true;
 SHOW_HOOKS = true;
 SHOW_KEEP_OUTS = true;
@@ -53,7 +54,7 @@ frame_tie_features = [
 ];
 
 // ---- X55 measured/reference profile --------------------------------------
-device_name = "Powkiddy X55";
+device_name = DEVICE_LABEL;
 
 // Owner trace/calipers: fit authority for the front shell and hooks.
 device_max_width = 210.0;

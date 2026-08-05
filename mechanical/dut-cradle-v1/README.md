@@ -10,6 +10,11 @@ same proven M3/keyway hook mechanism; see
 [`README-trimui-brick.md`](README-trimui-brick.md).
 That profile remains a qualification candidate until the owner accepts its
 printed fit, retention, service clearance, and webcam framing.
+The landscape **Powkiddy X55** candidate preserves the owner-traced contact
+outline, three provisional local-depth hook profiles, crowded top/bottom edge
+keep-outs, and open short ends; see
+[`README-powkiddy-x55.md`](README-powkiddy-x55.md). Print its fit coupon first;
+exact local depths remain gated by `tsp-bcx.21.28`.
 
 The carrier is deliberately not a tight six-point vise. Two lower hooks carry
 the device, the removable upper pair captures it, and the two lateral hooks are
@@ -32,6 +37,9 @@ OpenSCAD modules are the template mechanism:
 - [`trimui-brick-cradle.scad`](trimui-brick-cradle.scad) supplies the Brick's
   portrait plate, stepped-depth preview, five contact poses, and two hook
   profiles while importing the same reusable hook implementation.
+- [`powkiddy-x55-cradle.scad`](powkiddy-x55-cradle.scad) supplies the X55's
+  247 × 175 mm landscape carrier, curved-shell preview, six contact poses, and
+  three edge-specific hook profiles.
 
 A future handheld gets a new wrapper/profile while reusing the library. The
 carrier envelope and eight corner frame anchors remain standardized; the

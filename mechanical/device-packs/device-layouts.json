@@ -1,6 +1,9 @@
 {
   "schema": "pocketforge-device-layout-registry-v1",
   "devices": {
+    "powkiddy-x55": {
+      "layout": "mechanical/device-packs/layouts/chassis-core-powkiddy-x55-v1.json"
+    },
     "trimui-brick": {
       "layout": "mechanical/device-packs/layouts/chassis-dualbar-brick-v2.json"
     },
