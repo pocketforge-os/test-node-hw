@@ -348,9 +348,9 @@ def validate_catalog(catalog: Mapping[str, Any]) -> None:
                 raise BrowserBundleError(
                     f"{mode_field}.artifacts must contain one row"
                 )
-            if mode == "retrofit" and len(artifacts) != 6:
+            if mode == "retrofit" and len(artifacts) < 6:
                 raise BrowserBundleError(
-                    f"{mode_field}.artifacts must contain six rows"
+                    f"{mode_field}.artifacts must contain at least six rows"
                 )
             if mode == "full" and len(artifacts) <= 6:
                 raise BrowserBundleError(

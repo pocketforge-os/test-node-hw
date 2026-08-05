@@ -537,6 +537,38 @@ def guard_qualified_layouts(
     )
     mappings = load_layout_registry(root, registry)
     layouts_relative = Path("mechanical/device-packs/layouts")
+    layout_paths_by_id: dict[str, Path] = {}
+    for candidate_path in sorted((root / layouts_relative).glob("*.json")):
+        candidate = load_layout(root, candidate_path)
+        if candidate.layout_id in layout_paths_by_id:
+            raise PackError(
+                f"duplicate chassis layout ID {candidate.layout_id!r}"
+            )
+        layout_paths_by_id[candidate.layout_id] = candidate_path
+
+    def supersedes_in_scope(
+        successor: ResolvedLayout, ancestor_id: str, slug: str
+    ) -> bool:
+        seen = {successor.layout_id}
+        current = successor
+        while current.supersedes_layout_id is not None:
+            parent_id = current.supersedes_layout_id
+            if parent_id == ancestor_id:
+                return True
+            if parent_id in seen:
+                raise PackError(
+                    f"layout {successor.layout_id!r} has a cyclic "
+                    "supersedes_layout_id chain"
+                )
+            seen.add(parent_id)
+            parent_path = layout_paths_by_id.get(parent_id)
+            if parent_path is None:
+                return False
+            current = load_layout(root, parent_path)
+            if slug not in current.qualification["device_slugs"]:
+                return False
+        return False
+
     base_layouts = base_root / layouts_relative
     if not base_layouts.is_dir():
         raise PackError(
@@ -586,8 +618,8 @@ def guard_qualified_layouts(
                 )
                 if (
                     successor is not None
-                    and successor.supersedes_layout_id == layout_id
                     and slug in successor.qualification["device_slugs"]
+                    and supersedes_in_scope(successor, layout_id, slug)
                 ):
                     continue
                 registered_text = (
@@ -1760,7 +1792,12 @@ def _verify_materialized_pack(
         )
 
 
-def verify_pack(root: Path, pack: Path) -> None:
+def verify_pack(
+    root: Path,
+    pack: Path,
+    *,
+    allow_historical_qualified_layout: bool = False,
+) -> None:
     root = root.resolve()
     pack = pack.expanduser().resolve()
     if not pack.is_dir() or pack.is_symlink():
@@ -1777,9 +1814,20 @@ def verify_pack(root: Path, pack: Path) -> None:
     )
     device_slug = _string(device_record.get("slug"), "manifest.device.slug")
     profile = holder_profiles.validate_profile(CRADLE_ROOT, profile_path)
-    layout = resolve_device_layout(
-        root, device_slug, requested_layout=layout_path
-    )
+    if allow_historical_qualified_layout:
+        layout = load_layout(root, layout_path)
+        if (
+            layout.qualification["status"] != "physically_qualified"
+            or device_slug not in layout.qualification["device_slugs"]
+        ):
+            raise PackError(
+                "historical pack verification requires a physically "
+                f"qualified layout covering {device_slug!r}"
+            )
+    else:
+        layout = resolve_device_layout(
+            root, device_slug, requested_layout=layout_path
+        )
     mode = _string(manifest["mode"], "manifest.mode")
     plan = build_plan(root, profile, layout, device_slug, mode)
 

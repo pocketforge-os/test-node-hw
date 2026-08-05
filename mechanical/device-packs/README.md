@@ -83,34 +83,40 @@ After the coupon and holder have passed the physical qualification gate:
 ```sh
 python3 mechanical/device-packs/build_device_pack.py build \
   --device trimui-smart-pro \
-  --mode retrofit
+  --mode retrofit \
+  --allow-unqualified
 
 python3 mechanical/device-packs/build_device_pack.py build \
   --device trimui-smart-pro \
-  --mode full
+  --mode full \
+  --allow-unqualified
 ```
 
-The TrimUI Smart Pro remains mapped to its physically proven two-upright
-gantry successor. The TrimUI Smart Pro S is mapped to the physically qualified
-material-reduced dual-bar layout. Generate either production pack directly:
+The TrimUI Smart Pro and Smart Pro S registries currently select candidate
+side-clear successors to their physically proven layouts. Both successors move
+the four crossbar-joint plates 0.8 mm inside the aluminum side planes and emit
+them as `chassis/side-clear-crossbar-joint-plate-set.stl` in both `retrofit`
+and `full` modes. Generate either candidate pack with the explicit
+non-production override until the replacement plates pass their owner gate:
 
 ```sh
 python3 mechanical/device-packs/build_device_pack.py build \
   --device trimui-smart-pro-s \
-  --mode full
+  --mode full \
+  --allow-unqualified
 ```
 
-Its clean-source manifest reports `production_eligible=true`,
-`nonproduction_reasons=[]`, and
-`layout.qualification.acceptance_ref="tsp-t1zd.2"`. There is no flag that maps
-the Pro S back to the legacy layout or maps the base model onto the dual-bar
-layout.
+Their clean-source manifests report `production_eligible=false`,
+`nonproduction_reasons=["layout_unqualified"]`, and
+`layout.qualification.acceptance_ref="tsp-bcx.21.38"`. There is no flag that
+maps the Pro S back to the legacy layout or maps the base model onto the
+dual-bar layout.
 
 The TrimUI Brick / TG3040 is a prototype candidate on the same qualified
-dual-bar aluminum topology, with its own 180 × 205 mm carrier, screen datum,
-slot datums, and regression-locked carrier-link geometry. Generate its coupon
-normally; generate the retrofit or full prototype with the explicit
-non-production override:
+dual-bar aluminum topology and the same side-clear joint revision, with its own
+180 × 205 mm carrier, screen datum, slot datums, and regression-locked
+carrier-link geometry. Generate its coupon normally; generate the retrofit or
+full prototype with the explicit non-production override:
 
 ```sh
 python3 mechanical/device-packs/build_device_pack.py build \
@@ -205,10 +211,13 @@ and changes only the carrier links to the accepted stack-clear revision.
 `layouts/chassis-dualbar-v1.json` separately freezes the qualified Pro S beds.
 Batch 04 intentionally differs: the immutable qualified legacy bed retains its
 accepted stacking-tab hole, while the current dual-bar bed carries the
-owner-corrected hole 7 mm higher. Dual-bar Batches 01–02 now contain 28 captive
-bars, four fixture links, and four printed crossbar-joint plates. These are
-immutable qualified regression baselines. Changing geometry requires a new
-candidate layout ID and physical gate, not a refreshed digest.
+owner-corrected hole 7 mm higher. Those files remain immutable qualified
+regression baselines. The registered candidate successors are
+`chassis-core-v3`, `chassis-dualbar-v2`, and `chassis-dualbar-brick-v2`; each
+declares its predecessor, separates the revised joint plates into a compact
+retrofit bed, and remains unqualified until `tsp-bcx.21.38` is physically
+accepted. Changing geometry requires a new candidate layout ID and physical
+gate, not a refreshed digest.
 
 ## Immutable production releases
 

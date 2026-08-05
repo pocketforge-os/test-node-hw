@@ -2,13 +2,13 @@
   "schema": "pocketforge-device-layout-registry-v1",
   "devices": {
     "trimui-brick": {
-      "layout": "mechanical/device-packs/layouts/chassis-dualbar-brick-v1.json"
+      "layout": "mechanical/device-packs/layouts/chassis-dualbar-brick-v2.json"
     },
     "trimui-smart-pro": {
-      "layout": "mechanical/device-packs/layouts/chassis-core-v2.json"
+      "layout": "mechanical/device-packs/layouts/chassis-core-v3.json"
     },
     "trimui-smart-pro-s": {
-      "layout": "mechanical/device-packs/layouts/chassis-dualbar-v1.json"
+      "layout": "mechanical/device-packs/layouts/chassis-dualbar-v2.json"
     }
   }
 }

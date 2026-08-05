@@ -1927,7 +1927,26 @@ validate-gantry-travel-guard: | $(BUILD)
 		echo 'ERROR: undersized human-side service bay was not rejected' >&2; exit 1; \
 	fi; \
 	grep -q 'at least 30 mm of human-side service bay' $$service_log; \
-	echo 'gantry_guards=pass rejected_y=20mm rejected_service_y=60mm'
+	joint_log=$(BUILD)/invalid-joint-plate-side-clearance.log; \
+	joint_mesh=$(BUILD)/invalid-joint-plate-side-clearance.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$joint_mesh \
+			-D 'PART="gantry_joint_plate"' \
+			-D 'GANTRY_JOINT_REVISION="side_clear_v2"' \
+			-D 'gantry_joint_plate_size=[36,40.1,4.8]' \
+			$(SOURCE) >$$joint_log 2>&1; then \
+		echo 'ERROR: outward-projecting joint plate was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'inside both outward extrusion planes' $$joint_log; \
+	revision_log=$(BUILD)/invalid-gantry-joint-revision.log; \
+	revision_mesh=$(BUILD)/invalid-gantry-joint-revision.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$revision_mesh \
+			-D 'PART="gantry_joint_plate"' \
+			-D 'GANTRY_JOINT_REVISION="unknown"' \
+			$(SOURCE) >$$revision_log 2>&1; then \
+		echo 'ERROR: unknown gantry-joint revision was not rejected' >&2; exit 1; \
+	fi; \
+	grep -q 'Unknown gantry-joint revision' $$revision_log; \
+	echo 'gantry_guards=pass rejected_y=20mm rejected_service_y=60mm joint_plate_side_clear_v2=38.4mm side_inset=0.8mm'
 
 validate-registration-tab-guard: | $(BUILD)
 	@set -eu; size_log=$(BUILD)/invalid-registration-tab-size.log; \

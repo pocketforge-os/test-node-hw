@@ -336,7 +336,11 @@ face between the upper and lower rails. Seat its perpendicular keys in the
 depth-rail and fixture-bar slots, then clamp both holes through their active
 short bars. The lower plates sit above the lower rails; the upper plates sit
 below the upper rails. These plates index the movable fixture support only and
-never enter the outer-frame or vertical stacking load path.
+never enter the outer-frame or vertical stacking load path. Candidate joint
+revision `side_clear_v2` shortens the plate to 38.4 mm, keeping it 0.8 mm
+inside each corresponding outer aluminum plane so adjacent chassis can sit
+directly side by side. Qualified layouts retain the accepted 44 mm
+`overhang_v1` geometry until the replacement passes its physical gate.
 
 At each fixture-plate side:
 

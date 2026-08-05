@@ -101,6 +101,10 @@ PART = "assembly";
 CHASSIS_VARIANT = "legacy_gantry"; // legacy_gantry or dualbar_v1
 CARRIER_LINK_REVISION = CHASSIS_VARIANT == "dualbar_v1" ?
     "stack_clear_v2" : "legacy_v1"; // legacy_v1 or stack_clear_v2
+// Qualified layouts keep the physically accepted 44 mm plate. New candidate
+// layouts request the side-clear replacement explicitly so immutable releases
+// remain reproducible until the replacement is physically accepted.
+GANTRY_JOINT_REVISION = "overhang_v1"; // overhang_v1 or side_clear_v2
 EXAMPLE_DEVICE_VARIANT = "smart_pro"; // smart_pro, smart_pro_s, or trimui_brick
 DEVICE_LABEL = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
                "TrimUI Smart Pro S" :
@@ -622,7 +626,18 @@ gantry_splice_collar_internal_nut_x =
 // square the joint; ordinary M3 screws and captured metal nuts provide clamp
 // force.  These light-duty plates position payload gantries only and never
 // enter the outer-frame or stacking load path.
-gantry_joint_plate_size = [36.0, 44.0, 4.8];
+// The plate bridges rail centerlines 20 mm apart. Its former 44 mm long
+// dimension projected 2 mm beyond the outer aluminum plane at both the lower
+// and upper legacy-gantry joints. Keep one 0.8 mm nozzle width inboard at each
+// end so neighboring chassis can sit directly side by side despite ordinary
+// print-edge tolerance.
+gantry_joint_flush_span = 2 * profile_size;
+gantry_joint_side_inset = 0.8;
+gantry_joint_plate_size = [36.0,
+                           GANTRY_JOINT_REVISION == "side_clear_v2" ?
+                               gantry_joint_flush_span -
+                                   2 * gantry_joint_side_inset : 44.0,
+                           4.8];
 gantry_joint_corner_radius = 3.0;
 gantry_joint_hole_offset = 10.0;
 gantry_joint_slot = [8.0, m3_clearance];
@@ -879,6 +894,9 @@ assert(CHASSIS_VARIANT == "legacy_gantry" ||
 assert(CARRIER_LINK_REVISION == "legacy_v1" ||
        CARRIER_LINK_REVISION == "stack_clear_v2",
        str("Unknown carrier-link revision: ", CARRIER_LINK_REVISION));
+assert(GANTRY_JOINT_REVISION == "overhang_v1" ||
+       GANTRY_JOINT_REVISION == "side_clear_v2",
+       str("Unknown gantry-joint revision: ", GANTRY_JOINT_REVISION));
 assert(frame_outer == [structural_x_length + 2 * profile_size,
                        structural_y_length + 2 * profile_size,
                        structural_z_length +
@@ -1065,6 +1083,12 @@ assert(gantry_joint_plate_size.x > gantry_joint_key_length &&
        gantry_joint_plate_size.y >
        2 * gantry_joint_hole_offset + gantry_joint_slot.y,
        "Gantry joint plate must surround both keyed fastener interfaces");
+assert(GANTRY_JOINT_REVISION != "side_clear_v2" ||
+       gantry_joint_plate_size.y <= gantry_joint_flush_span -
+                                          2 * gantry_joint_side_inset,
+       str("Crossbar joint plate must stay at least ",
+           gantry_joint_side_inset,
+           " mm inside both outward extrusion planes"));
 assert(placard_center_z + placard_size.y / 2 <
        outer_rail_z.y - profile_size / 2,
        "Front placard must remain completely below the top front rail");
@@ -3061,11 +3085,15 @@ module production_batch_02_splice_collars() {
 }
 
 // Device-independent hardware that makes the gantry and fixture plate
-// adjustable: four keyed gantry joint plates and four fixture spacers.
+// adjustable. The immutable overhang_v1 bed contains four keyed gantry joint
+// plates and four fixture spacers. Candidate successors move the revised joint
+// plates to a dedicated full/retrofit artifact so an assembled chassis needs
+// only the four small replacement pieces.
 // Carrier links moved to the device pack so a retrofit never has to extract
 // them from a shared chassis bed.
 module production_batch_03_movable_mounts() {
-    translate([22.0, 25.0, 0]) gantry_joint_plate_set();
+    if (GANTRY_JOINT_REVISION == "overhang_v1")
+        translate([22.0, 25.0, 0]) gantry_joint_plate_set();
     translate([105.0, 15.0, 0]) plate_spacer_set();
 }
 
@@ -3084,8 +3112,9 @@ module production_batch_dualbar_01_ironed_interfaces() {
 module production_batch_dualbar_02_fixture_links() {
     translate([14.0, 40.0, 0])
         dualbar_fixture_link_set();
-    translate([150.0, 85.0, 0])
-        gantry_joint_plate_set();
+    if (GANTRY_JOINT_REVISION == "overhang_v1")
+        translate([150.0, 85.0, 0])
+            gantry_joint_plate_set();
 }
 
 // Frame completion hardware: eight stacking registration tabs, the placard's
