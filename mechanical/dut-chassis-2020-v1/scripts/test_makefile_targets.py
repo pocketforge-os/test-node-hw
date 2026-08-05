@@ -3,10 +3,17 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
-from handbook_scene_contract import validate_layout_binding
+from handbook_scene_contract import (
+    digest,
+    load_scene_contract,
+    validate_layout_binding,
+)
 
 PROJECT = Path(__file__).resolve().parents[1]
 CORE_BATCHES = tuple(range(1, 6))
@@ -130,6 +137,94 @@ def dry_run(target: str) -> str:
 
 
 def require_handbook_layout_binding_contract() -> None:
+    with TemporaryDirectory() as temporary_directory:
+        repository_root = Path(temporary_directory)
+        layouts = repository_root / "device-packs" / "layouts"
+        layouts.mkdir(parents=True)
+        registry_path = repository_root / "device-packs" / "device-layouts.json"
+        model_path = repository_root / "device-model.scad"
+        model_path.write_text("cube([1, 1, 1]);\n", encoding="utf-8")
+
+        active_relative = "device-packs/layouts/active-candidate.json"
+        historical_relative = "device-packs/layouts/historical-qualified.json"
+        active = {
+            "layout_id": "active-candidate",
+            "qualification": {
+                "status": "candidate",
+                "acceptance_ref": "tsp-active-candidate",
+                "device_slugs": ["trimui-smart-pro-s"],
+            },
+            "artifacts": [
+                {"parameters": {"CHASSIS_VARIANT": "dualbar_v1"}}
+            ],
+        }
+        historical = {
+            "layout_id": "historical-qualified",
+            "qualification": {
+                "status": "physically_qualified",
+                "acceptance_ref": "tsp-historical-qualified",
+                "device_slugs": ["trimui-smart-pro-s"],
+            },
+            "artifacts": [
+                {"parameters": {"CHASSIS_VARIANT": "dualbar_v1"}}
+            ],
+        }
+        registry_path.write_text(
+            json.dumps(
+                {
+                    "devices": {
+                        "trimui-smart-pro-s": {"layout": active_relative}
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        active_path = repository_root / active_relative
+        historical_path = repository_root / historical_relative
+        active_path.write_text(json.dumps(active), encoding="utf-8")
+        historical_path.write_text(json.dumps(historical), encoding="utf-8")
+
+        common = {
+            "device_slug": "trimui-smart-pro-s",
+            "chassis_variant": "dualbar_v1",
+            "device_registry": registry_path,
+            "device_model_source": model_path,
+            "device_model_url": "https://example.invalid/device-models.git",
+            "device_model_commit": "0123456789abcdef",
+            "device_model_sha256": digest(model_path),
+        }
+        active_contract = load_scene_contract(
+            SimpleNamespace(**common, layout_record=active_path), repository_root
+        )
+        historical_contract = load_scene_contract(
+            SimpleNamespace(**common, layout_record=historical_path),
+            repository_root,
+        )
+
+        expected_provenance = {
+            "active-candidate": {
+                "record": active_relative,
+                "status": "candidate",
+                "acceptance_ref": "tsp-active-candidate",
+            },
+            "historical-qualified": {
+                "record": historical_relative,
+                "status": "physically_qualified",
+                "acceptance_ref": "tsp-historical-qualified",
+            },
+        }
+        for contract in (active_contract, historical_contract):
+            expected = expected_provenance[contract["layout_id"]]
+            actual = {
+                "record": contract["layout_record"],
+                **contract["qualification"],
+            }
+            if actual != expected:
+                raise SystemExit(
+                    "handbook scene provenance used the wrong layout record: "
+                    f"{actual!r} != {expected!r}"
+                )
+
     qualified = {
         "layout_id": "chassis-dualbar-v1",
         "qualification": {
@@ -137,18 +232,30 @@ def require_handbook_layout_binding_contract() -> None:
             "device_slugs": ["trimui-smart-pro-s"],
         },
     }
-    validate_layout_binding(
+    historical_qualification = validate_layout_binding(
         device_slug="trimui-smart-pro-s",
         registered_layout="layouts/chassis-dualbar-v2.json",
         layout_relative="layouts/chassis-dualbar-v1.json",
         layout=qualified,
     )
-    validate_layout_binding(
+    active_qualification = validate_layout_binding(
         device_slug="trimui-smart-pro-s",
         registered_layout="layouts/chassis-dualbar-v1.json",
         layout_relative="layouts/chassis-dualbar-v1.json",
         layout=qualified,
     )
+    if historical_qualification is not qualified["qualification"]:
+        raise SystemExit(
+            "historical handbook binding lost its qualification provenance"
+        )
+    if active_qualification is not qualified["qualification"]:
+        raise SystemExit(
+            "active handbook binding lost its qualification provenance"
+        )
+    if historical_qualification.get("status") != "physically_qualified":
+        raise SystemExit(
+            "historical handbook provenance did not retain qualification status"
+        )
 
     invalid_cases = (
         (

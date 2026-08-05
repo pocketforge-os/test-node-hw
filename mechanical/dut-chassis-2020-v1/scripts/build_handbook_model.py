@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -13,7 +12,7 @@ import numpy as np
 import trimesh
 from trimesh.visual.material import PBRMaterial
 
-from handbook_scene_contract import validate_layout_binding
+from handbook_scene_contract import digest, load_scene_contract
 
 
 LAYER_MATERIALS = {
@@ -257,14 +256,6 @@ def git(repository_root: Path, *arguments: str) -> str:
     ).strip()
 
 
-def digest(path: Path) -> str:
-    value = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            value.update(block)
-    return value.hexdigest()
-
-
 def rgba(hex_color: str, alpha: float) -> list[int]:
     color = hex_color.removeprefix("#")
     return [
@@ -284,71 +275,6 @@ def load_layer(path: Path, layer_name: str) -> trimesh.Trimesh:
     loaded.metadata["name"] = layer_name
     loaded.apply_transform(OPENSCAD_TO_GLTF)
     return loaded
-
-
-def load_scene_contract(
-    arguments: argparse.Namespace, repository_root: Path
-) -> dict:
-    registry_path = arguments.device_registry.resolve()
-    layout_path = arguments.layout_record.resolve()
-    device_model_path = arguments.device_model_source.resolve()
-    for path in (registry_path, layout_path, device_model_path):
-        if not path.is_file():
-            raise FileNotFoundError(path)
-
-    registry = json.loads(registry_path.read_text(encoding="utf-8"))
-    layout = json.loads(layout_path.read_text(encoding="utf-8"))
-    layout_relative = layout_path.relative_to(repository_root).as_posix()
-    registered_layout = (
-        registry.get("devices", {})
-        .get(arguments.device_slug, {})
-        .get("layout")
-    )
-    validate_layout_binding(
-        device_slug=arguments.device_slug,
-        registered_layout=registered_layout,
-        layout_relative=layout_relative,
-        layout=layout,
-    )
-    layout_id = layout["layout_id"]
-    artifact_variants = {
-        artifact.get("parameters", {}).get("CHASSIS_VARIANT")
-        for artifact in layout.get("artifacts", [])
-    }
-    if artifact_variants != {arguments.chassis_variant}:
-        raise ValueError(
-            f"{layout_id} artifact variants {artifact_variants!r} do not "
-            f"match {arguments.chassis_variant!r}"
-        )
-
-    actual_device_model_sha256 = digest(device_model_path)
-    if actual_device_model_sha256 != arguments.device_model_sha256:
-        raise ValueError(
-            "device model SHA-256 mismatch: "
-            f"{actual_device_model_sha256} != "
-            f"{arguments.device_model_sha256}"
-        )
-
-    return {
-        "device_slug": arguments.device_slug,
-        "chassis_variant": arguments.chassis_variant,
-        "layout_id": layout_id,
-        "layout_record": layout_relative,
-        "layout_sha256": digest(layout_path),
-        "device_registry": registry_path.relative_to(
-            repository_root
-        ).as_posix(),
-        "device_registry_sha256": digest(registry_path),
-        "qualification": {
-            "status": qualification.get("status"),
-            "acceptance_ref": qualification.get("acceptance_ref"),
-        },
-        "device_model": {
-            "source_repository": arguments.device_model_url,
-            "source_commit": arguments.device_model_commit,
-            "source_sha256": actual_device_model_sha256,
-        },
-    }
 
 
 def main() -> None:
