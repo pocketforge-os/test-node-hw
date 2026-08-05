@@ -27,15 +27,17 @@ topology from `../device-packs/device-layouts.json`; do not choose it by hand.
 
 | Device | Layout | Fixture support | Status |
 | --- | --- | --- | --- |
-| TrimUI Smart Pro | `chassis-core-v2` | Proven gantry + stack-clear carrier links | Physically qualified by `tsp-t1zd.2`; `chassis-core-v1` remains frozen |
-| TrimUI Smart Pro S | `chassis-dualbar-v1` | Two movable 306 mm fixture bars + four printed joints + four printed links | Physically qualified by `tsp-t1zd.2` |
-| TrimUI Brick / TG3040 | `chassis-dualbar-brick-v1` | Unchanged qualified dual-bar frame + Brick-specific 180 × 205 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
+| Powkiddy X55 | `chassis-dualbar-powkiddy-x55-v1` | Two continuous 306 mm fixture bars + X55-specific 247 × 175 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
+| TrimUI Smart Pro / TG5040 | `chassis-dualbar-smart-pro-v1` | Two continuous 306 mm fixture bars + shared-family carrier links | Prototype successor; complete installed gate remains open |
+| TrimUI Smart Pro S / TG5050 | `chassis-dualbar-v2` | Two continuous 306 mm fixture bars + shared-family carrier links | Qualified topology; side-clear plate candidate remains open |
+| TrimUI Brick / TG3040 | `chassis-dualbar-brick-v2` | Two continuous 306 mm fixture bars + Brick-specific 180 × 205 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
 
-Both layouts preserve the same outer frame, fixture plate, plate Y/Z datum,
-camera optical relationship, DUT carrier, placard, power strip, stacking
-interface, and wire anchors; each record locks its accepted stacking-tab
-revision. In the dual-bar layout, a continuous bar
-spans the lower depth rails and another spans the upper depth rails. Four identical
+Each registered successor preserves its predecessor's outer frame, fixture
+plate, plate Y/Z datum, camera optical relationship, device-specific carrier,
+placard, power strip, stacking interface, and wire anchors; each record locks
+its accepted stacking-tab revision. The dual-bar topology is the fleet standard: one continuous bar
+spans the lower depth rails and another spans the upper depth rails, with no
+gantry splice bars or splice collars. Four identical
 71.5 mm keyed links join those bars directly to the plate's existing upper and
 lower slots.
 
