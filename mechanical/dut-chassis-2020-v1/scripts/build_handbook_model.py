@@ -304,7 +304,7 @@ def load_scene_contract(
         .get(arguments.device_slug, {})
         .get("layout")
     )
-    validate_layout_binding(
+    qualification = validate_layout_binding(
         device_slug=arguments.device_slug,
         registered_layout=registered_layout,
         layout_relative=layout_relative,

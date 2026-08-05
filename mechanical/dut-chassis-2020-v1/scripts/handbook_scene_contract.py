@@ -11,8 +11,8 @@ def validate_layout_binding(
     registered_layout: object,
     layout_relative: str,
     layout: dict[str, Any],
-) -> None:
-    """Allow the active layout or an explicitly qualified predecessor."""
+) -> dict[str, Any]:
+    """Validate the binding and return its qualification provenance."""
 
     layout_id = layout.get("layout_id")
     if not isinstance(layout_id, str) or not layout_id:
@@ -27,7 +27,7 @@ def validate_layout_binding(
         )
 
     if registered_layout == layout_relative:
-        return
+        return qualification
     if not isinstance(registered_layout, str) or not registered_layout:
         raise ValueError(f"{device_slug} has no active registered layout")
     if qualification.get("status") != "physically_qualified":
@@ -35,3 +35,4 @@ def validate_layout_binding(
             f"{device_slug} selects {registered_layout!r}; historical "
             f"handbook layout {layout_relative!r} is not physically qualified"
         )
+    return qualification

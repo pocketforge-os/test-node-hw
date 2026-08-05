@@ -137,18 +137,30 @@ def require_handbook_layout_binding_contract() -> None:
             "device_slugs": ["trimui-smart-pro-s"],
         },
     }
-    validate_layout_binding(
+    historical_qualification = validate_layout_binding(
         device_slug="trimui-smart-pro-s",
         registered_layout="layouts/chassis-dualbar-v2.json",
         layout_relative="layouts/chassis-dualbar-v1.json",
         layout=qualified,
     )
-    validate_layout_binding(
+    active_qualification = validate_layout_binding(
         device_slug="trimui-smart-pro-s",
         registered_layout="layouts/chassis-dualbar-v1.json",
         layout_relative="layouts/chassis-dualbar-v1.json",
         layout=qualified,
     )
+    if historical_qualification is not qualified["qualification"]:
+        raise SystemExit(
+            "historical handbook binding lost its qualification provenance"
+        )
+    if active_qualification is not qualified["qualification"]:
+        raise SystemExit(
+            "active handbook binding lost its qualification provenance"
+        )
+    if historical_qualification.get("status") != "physically_qualified":
+        raise SystemExit(
+            "historical handbook provenance did not retain qualification status"
+        )
 
     invalid_cases = (
         (
