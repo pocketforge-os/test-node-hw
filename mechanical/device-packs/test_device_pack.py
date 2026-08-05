@@ -532,9 +532,13 @@ class DevicePackTests(unittest.TestCase):
         pro_s_nameplate = next(
             item for item in pro_s if item.artifact_id == "device_nameplate"
         )
-        self.assertEqual("TrimUI Smart Pro", pro_nameplate.parameters["DEVICE_LABEL"])
         self.assertEqual(
-            "TrimUI Smart Pro S", pro_s_nameplate.parameters["DEVICE_LABEL"]
+            "TrimUI Smart Pro / TG5040",
+            pro_nameplate.parameters["DEVICE_LABEL"],
+        )
+        self.assertEqual(
+            "TrimUI Smart Pro S / TG5050",
+            pro_s_nameplate.parameters["DEVICE_LABEL"],
         )
 
     def test_unknown_device_is_fail_closed(self) -> None:
@@ -887,9 +891,32 @@ class DevicePackTests(unittest.TestCase):
         self.assertEqual(["allow_unqualified"], overrides)
         self.assertEqual(["layout_unqualified"], reasons)
 
+        with self.assertRaisesRegex(
+            packs.PackError, "chassis layout"
+        ):
+            packs._policy(
+                self.profile,
+                candidate_layout,
+                "retrofit",
+                clean,
+                allow_dirty=False,
+                allow_unqualified=False,
+            )
         eligible, overrides, reasons = packs._policy(
             self.profile,
-            self.dualbar_layout,
+            candidate_layout,
+            "retrofit",
+            clean,
+            allow_dirty=False,
+            allow_unqualified=True,
+        )
+        self.assertFalse(eligible)
+        self.assertEqual(["allow_unqualified"], overrides)
+        self.assertEqual(["layout_unqualified"], reasons)
+
+        eligible, overrides, reasons = packs._policy(
+            self.profile,
+            self.layout,
             "retrofit",
             clean,
             allow_dirty=False,
@@ -1038,7 +1065,7 @@ class DevicePackTests(unittest.TestCase):
                     expected_header=header,
                 )
 
-            document["device"]["display_name"] = "TrimUI Smart Pro"
+            document["device"]["display_name"] = "TrimUI Smart Pro / TG5040"
             (pack / "manifest.json").write_text(
                 json.dumps(document, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
@@ -1185,7 +1212,7 @@ endfacet
         )
         command = packs._command(item, Path("/tmp/nameplate.stl"), "openscad")
         self.assertIsInstance(command, list)
-        self.assertIn('DEVICE_LABEL="TrimUI Smart Pro"', command)
+        self.assertIn('DEVICE_LABEL="TrimUI Smart Pro / TG5040"', command)
         definitions = [
             command[index + 1]
             for index, value in enumerate(command[:-1])

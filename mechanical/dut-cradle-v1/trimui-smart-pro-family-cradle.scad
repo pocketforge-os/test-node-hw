@@ -5,8 +5,8 @@
  *
  * Examples:
  * Model wrappers set DEVICE_LABEL and include this family source:
- *   trimui-smart-pro-s-cradle.scad -> "TrimUI Smart Pro S"
- *   trimui-smart-pro-cradle.scad   -> "TrimUI Smart Pro"
+ *   trimui-smart-pro-s-cradle.scad -> "TrimUI Smart Pro S / TG5050"
+ *   trimui-smart-pro-cradle.scad   -> "TrimUI Smart Pro / TG5040"
  *
  * PART choices: assembly, plate, presentation_body, presentation_labels,
  * hook, hook_set, installed_hooks, fit_coupon.
@@ -63,7 +63,8 @@ frame_tie_features = [
 // ---- Smart Pro / Smart Pro S shared mechanical profile -------------------
 // The family source remains directly renderable for development/linting, but
 // production exports use one of the two tiny label-only wrappers.
-device_name = is_undef(DEVICE_LABEL) ? "TrimUI Smart Pro S" : DEVICE_LABEL;
+device_name = is_undef(DEVICE_LABEL)
+    ? "TrimUI Smart Pro S / TG5050" : DEVICE_LABEL;
 device_body_size = [188.35, 79.77];       // owner caliper measurement
 // Preview proxy derived from the owner-fit 11.3 mm throat while preserving the
 // original 0.6 mm passive clearance; the throat itself is authoritative.
@@ -154,13 +155,14 @@ hook_adjustment = 8.0;
 // ---- Raised labels, sized for the owner's 0.8 mm nozzle ------------------
 // The owner-approved Regular face and restrained stroke expansion preserve
 // open counters with the 0.8 mm nozzle. Label boxes, type sizes, positions,
-// and the three-layer-at-0.4-mm emboss remain unchanged.
+// and the three-layer-at-0.4-mm emboss remain unchanged. The marketing plus
+// TG model title uses the same 10 mm size proven on the Brick nameplate.
 label_height = 1.2;
 label_stroke_growth = 0.35;
 label_font = "Liberation Sans:style=Regular";
 title_box_size = [190, 24];
 title_box_centre = [plate_size.x / 2, 176.5];
-title_font_size = 14.4;
+title_font_size = 10.0;
 orientation_font_size = 9.0;
 carrier_body_color = [0.88, 0.88, 0.84];
 carrier_label_color = [0.02, 0.02, 0.02];

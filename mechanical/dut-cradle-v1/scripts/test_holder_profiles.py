@@ -437,7 +437,7 @@ class HolderProfileTests(unittest.TestCase):
         ]
         self.assertIn("SHOW_LABELS=true", variant_definitions)
         self.assertIn(
-            'DEVICE_LABEL="TrimUI Smart Pro S"',
+            'DEVICE_LABEL="TrimUI Smart Pro S / TG5050"',
             variant_definitions,
         )
         self.assertTrue(

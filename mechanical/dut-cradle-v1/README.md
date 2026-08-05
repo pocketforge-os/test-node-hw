@@ -27,8 +27,8 @@ OpenSCAD modules are the template mechanism:
   contact windows, hook poses, labels, and common 4040 datum.
 - [`trimui-smart-pro-s-cradle.scad`](trimui-smart-pro-s-cradle.scad) and
   [`trimui-smart-pro-cradle.scad`](trimui-smart-pro-cradle.scad) are tiny model
-  wrappers that supply only `TrimUI Smart Pro S` or `TrimUI Smart Pro` as the
-  raised title.
+  wrappers that supply `TrimUI Smart Pro S / TG5050` or
+  `TrimUI Smart Pro / TG5040` as the raised marketing/internal-model title.
 - [`trimui-brick-cradle.scad`](trimui-brick-cradle.scad) supplies the Brick's
   portrait plate, stepped-depth preview, five contact poses, and two hook
   profiles while importing the same reusable hook implementation.
