@@ -177,7 +177,7 @@ class DevicePackTests(unittest.TestCase):
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-core-v2.json"
+            / "chassis-core-v3.json"
         )
         cls.current_layout = packs.load_layout(
             cls.root, cls.current_layout_path
@@ -187,7 +187,7 @@ class DevicePackTests(unittest.TestCase):
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-dualbar-v1.json"
+            / "chassis-dualbar-v2.json"
         )
         cls.dualbar_layout = packs.load_layout(
             cls.root, cls.dualbar_layout_path
@@ -203,7 +203,7 @@ class DevicePackTests(unittest.TestCase):
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-dualbar-brick-v1.json"
+            / "chassis-dualbar-brick-v2.json"
         )
         cls.brick_layout = packs.load_layout(
             cls.root, cls.brick_layout_path
@@ -292,13 +292,12 @@ class DevicePackTests(unittest.TestCase):
         pro_s = packs.resolve_device_layout(
             self.root, "trimui-smart-pro-s"
         )
-        self.assertEqual("chassis-core-v2", pro.layout_id)
-        self.assertEqual("chassis-core-v1", pro.supersedes_layout_id)
-        self.assertEqual("physically_qualified", pro.qualification["status"])
-        self.assertEqual("chassis-dualbar-v1", pro_s.layout_id)
-        self.assertEqual(
-            "physically_qualified", pro_s.qualification["status"]
-        )
+        self.assertEqual("chassis-core-v3", pro.layout_id)
+        self.assertEqual("chassis-core-v2", pro.supersedes_layout_id)
+        self.assertEqual("candidate", pro.qualification["status"])
+        self.assertEqual("chassis-dualbar-v2", pro_s.layout_id)
+        self.assertEqual("chassis-dualbar-v1", pro_s.supersedes_layout_id)
+        self.assertEqual("candidate", pro_s.qualification["status"])
         for layout in (pro, pro_s):
             carrier_links = next(
                 artifact
@@ -331,24 +330,52 @@ class DevicePackTests(unittest.TestCase):
             self.profile,
             kind="candidate-layout-devices",
         )
+        self.assertEqual([], production["include"])
         self.assertEqual(
             [
                 {
                     "device_slug": "trimui-smart-pro",
-                    "layout_id": "chassis-core-v2",
-                    "layout_status": "physically_qualified",
+                    "layout_id": "chassis-core-v3",
+                    "layout_status": "candidate",
                     "holder_status": "physically_qualified",
                 },
                 {
                     "device_slug": "trimui-smart-pro-s",
-                    "layout_id": "chassis-dualbar-v1",
-                    "layout_status": "physically_qualified",
+                    "layout_id": "chassis-dualbar-v2",
+                    "layout_status": "candidate",
                     "holder_status": "physically_qualified",
-                }
+                },
             ],
-            production["include"],
+            candidate["include"],
         )
-        self.assertEqual([], candidate["include"])
+
+    def test_side_clear_successors_emit_a_dedicated_retrofit_bed(
+        self,
+    ) -> None:
+        for device_slug, profile, layout in (
+            ("trimui-smart-pro", self.profile, self.current_layout),
+            ("trimui-smart-pro-s", self.profile, self.dualbar_layout),
+            ("trimui-brick", self.brick_profile, self.brick_layout),
+        ):
+            with self.subTest(device=device_slug):
+                retrofit = packs.build_plan(
+                    self.root, profile, layout, device_slug, "retrofit"
+                )
+                joint = next(
+                    item
+                    for item in retrofit
+                    if item.artifact_id
+                    == "chassis_side_clear_joint_plate_set"
+                )
+                self.assertEqual("gantry_joint_plate_set", joint.part)
+                self.assertEqual(
+                    "side_clear_v2",
+                    joint.parameters["GANTRY_JOINT_REVISION"],
+                )
+                self.assertEqual(
+                    "ba6209606b3927a56d865571c41a5f8c45ac6d350d8680780499983b5c575cc2",
+                    joint.expected_normalized_sha256,
+                )
 
     def test_dualbar_full_mode_replaces_only_legacy_core_01_to_03(
         self,
@@ -361,11 +388,12 @@ class DevicePackTests(unittest.TestCase):
             "full",
         )
         ids = {item.artifact_id for item in plan}
-        self.assertEqual(11, len(plan))
+        self.assertEqual(12, len(plan))
         self.assertTrue(
             {
                 "chassis_dualbar_01_ironed_interfaces",
                 "chassis_dualbar_02_fixture_links",
+                "chassis_side_clear_joint_plate_set",
             }
             <= ids
         )
@@ -401,7 +429,8 @@ class DevicePackTests(unittest.TestCase):
         )
         self.assertEqual("candidate", self.brick_layout.qualification["status"])
         self.assertEqual(
-            "chassis-dualbar-v1", self.brick_layout.supersedes_layout_id
+            "chassis-dualbar-brick-v1",
+            self.brick_layout.supersedes_layout_id,
         )
         candidate = packs.all_device_layout_matrix(
             self.root, kind="candidate-layout-devices"
@@ -410,10 +439,22 @@ class DevicePackTests(unittest.TestCase):
             [
                 {
                     "device_slug": "trimui-brick",
-                    "layout_id": "chassis-dualbar-brick-v1",
+                    "layout_id": "chassis-dualbar-brick-v2",
                     "layout_status": "candidate",
                     "holder_status": "unqualified",
-                }
+                },
+                {
+                    "device_slug": "trimui-smart-pro",
+                    "layout_id": "chassis-core-v3",
+                    "layout_status": "candidate",
+                    "holder_status": "physically_qualified",
+                },
+                {
+                    "device_slug": "trimui-smart-pro-s",
+                    "layout_id": "chassis-dualbar-v2",
+                    "layout_status": "candidate",
+                    "holder_status": "physically_qualified",
+                },
             ],
             candidate["include"],
         )
@@ -424,7 +465,7 @@ class DevicePackTests(unittest.TestCase):
             "trimui-brick",
             "full",
         )
-        self.assertEqual(11, len(plan))
+        self.assertEqual(12, len(plan))
         retention = next(
             item for item in plan if item.artifact_id == "device_j_hook_set"
         )
@@ -709,10 +750,29 @@ class DevicePackTests(unittest.TestCase):
                 packs.guard_qualified_layouts(head, base),
             )
 
-            successor.pop("supersedes_layout_id")
-            successor_path.write_text(
-                json.dumps(successor, indent=2) + "\n",
+            chained = copy.deepcopy(successor)
+            chained["layout_id"] = "demo-v3"
+            chained["supersedes_layout_id"] = "demo-v2"
+            chained_path = head_v1.with_name("demo-v3.json")
+            chained_path.write_text(
+                json.dumps(chained, indent=2) + "\n",
                 encoding="utf-8",
+            )
+            registry["devices"]["device-demo"]["layout"] = (
+                "mechanical/device-packs/layouts/demo-v3.json"
+            )
+            registry_path.write_text(
+                json.dumps(registry, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                (1, 0, 0),
+                packs.guard_qualified_layouts(head, base),
+            )
+
+            chained.pop("supersedes_layout_id")
+            chained_path.write_text(
+                json.dumps(chained, indent=2) + "\n", encoding="utf-8"
             )
             with self.assertRaisesRegex(
                 packs.PackError, "proven device/layout mapping is immutable"

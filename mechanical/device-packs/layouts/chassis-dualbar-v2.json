@@ -1,0 +1,256 @@
+{
+  "schema": "pocketforge-device-pack-layout-v1",
+  "layout_id": "chassis-dualbar-v2",
+  "toolchain_lock": "mechanical/dut-cradle-v1/qualification/cad-toolchain.json",
+  "input_paths": [
+    "mechanical/dut-chassis-2020-v1/lib/pf-2020.scad",
+    "mechanical/dut-chassis-2020-v1/CUT_LIST_DUALBAR.md",
+    "mechanical/device-packs/device-layouts.json"
+  ],
+  "qualification": {
+    "status": "candidate",
+    "acceptance_ref": "tsp-bcx.21.38",
+    "accepted_on": null,
+    "device_slugs": [
+      "trimui-smart-pro-s"
+    ],
+    "scope": [
+      "Frozen chassis-dualbar-v1 aluminum topology, fixture links, preload bars, stack-clear carrier links, outer frame, placard hardware, and wire anchors.",
+      "Crossbar joint revision side_clear_v2 shortens each plate from 44.0 mm to 38.4 mm and leaves 0.8 mm inside both outward aluminum planes.",
+      "Open gate: print and install all four replacement plates, then confirm adjacent chassis frames contact aluminum-to-aluminum without printed-part interference."
+    ]
+  },
+  "artifacts": [
+    {
+      "id": "chassis_process_calibration",
+      "output": "calibration/chassis-process-calibration.stl",
+      "role": "Re-run after a printer, material, process, or extrusion change",
+      "scope": "calibration",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_00_calibration",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "9677650b5e925f78c2c7de8166e699a54461f0f3543c64de332e5872daf185d9",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Conditional process-calibration bed; do not print for an unchanged qualified process."
+        ]
+      }
+    },
+    {
+      "id": "chassis_dualbar_01_ironed_interfaces",
+      "output": "chassis/core-01-ironed-interfaces.stl",
+      "role": "Twenty-eight accepted short channel bars for the dual-bar chassis",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_dualbar_01_ironed_interfaces",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "118121e4d5d7e3bc75a19d37bd2b31dfbda56545a0e28c670f5e94f928ba98e2",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Enable ironing on topmost surfaces.",
+          "Load 22 active bars and park six replacements before closing rail ends."
+        ]
+      }
+    },
+    {
+      "id": "chassis_dualbar_02_fixture_links",
+      "output": "chassis/core-02-fixture-links.stl",
+      "role": "Four printed links joining the fixture plate to both fixture bars",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_dualbar_02_fixture_links",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1",
+        "GANTRY_JOINT_REVISION": "side_clear_v2"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "3d3b39d39461aef21bc2659fc4346122da087b2e95e5fc5b64a76ca2678dc8d3",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Print all four fixture links broad-face down; revised joint plates are emitted separately for replacement printing."
+        ]
+      }
+    },
+    {
+      "id": "chassis_core_04_frame_hardware",
+      "output": "chassis/core-04-frame-hardware.stl",
+      "role": "Common chassis registration, placard, and power-strip hardware",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_04_frame_hardware",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "31ddea2c53c3d93cb6f64cca11c123b39d071879b9e172839c0ea87c75307601",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": []
+      }
+    },
+    {
+      "id": "chassis_core_05_placard_holder",
+      "output": "chassis/core-05-placard-holder.stl",
+      "role": "Common reusable chassis placard holder",
+      "scope": "common",
+      "modes": [
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_05_placard_holder",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "01cdd01b5043aae5fca4bac793abfd9952035b420d4fcb928c6805feb787d854",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": []
+      }
+    },
+    {
+      "id": "chassis_side_clear_joint_plate_set",
+      "output": "chassis/side-clear-crossbar-joint-plate-set.stl",
+      "role": "Four side-clear replacement plates joining each gantry crossbar to the chassis",
+      "scope": "common",
+      "modes": [
+        "retrofit",
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "gantry_joint_plate_set",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1",
+        "GANTRY_JOINT_REVISION": "side_clear_v2"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "ba6209606b3927a56d865571c41a5f8c45ac6d350d8680780499983b5c575cc2",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Print this four-piece bed to retrofit an assembled chassis. Each 38.4 mm plate stays 0.8 mm inside both outward extrusion planes."
+        ]
+      }
+    },
+    {
+      "id": "device_carrier_links",
+      "output": "device/carrier-link-set.stl",
+      "role": "Four links joining the selected DUT carrier to the chassis",
+      "scope": "device",
+      "modes": [
+        "retrofit",
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "rear_carrier_link_set",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1",
+        "CARRIER_LINK_REVISION": "stack_clear_v2"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "af43228bdc8c76323e04f40aca12310f4291fcedd0f112ac5ff386cd712ee37e",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Stack-clear revision: every installed link ends 1 mm inside the chassis stack planes."
+        ]
+      }
+    },
+    {
+      "id": "device_nameplate",
+      "output": "device/device-nameplate.stl",
+      "role": "Device-labeled slide-in chassis nameplate",
+      "scope": "device",
+      "modes": [
+        "retrofit",
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_06_device_nameplate",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1"
+      },
+      "parameter_bindings": {
+        "DEVICE_LABEL": "device.display_name"
+      },
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Print white and change to black at 2.4 mm for the raised device name."
+        ]
+      }
+    },
+    {
+      "id": "device_wire_anchors",
+      "output": "device/wire-anchor-set.stl",
+      "role": "Starter set of eight rail-mounted harness anchors",
+      "scope": "device",
+      "modes": [
+        "retrofit",
+        "full"
+      ],
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "part": "production_batch_07_wire_management",
+      "parameters": {
+        "CHASSIS_VARIANT": "dualbar_v1"
+      },
+      "parameter_bindings": {},
+      "expected_normalized_sha256": "dd40ffd1b0903eccaf5cd44fec9c1454466473160a59c7f44c49846ec706c4ee",
+      "print": {
+        "material": "ABS",
+        "scale_percent": 100,
+        "supports": false,
+        "auto_orient": false,
+        "notes": [
+          "Repeat or omit anchors only after the device harness route is known."
+        ]
+      }
+    }
+  ],
+  "supersedes_layout_id": "chassis-dualbar-v1"
+}

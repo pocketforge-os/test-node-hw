@@ -327,17 +327,18 @@ def _validate_release_qualification(
         slug = entry["device_slug"]
         if not isinstance(slug, str):
             raise ReleaseError(f"device_layouts[{index}].device_slug is invalid")
-        layout = packs.resolve_device_layout(root, slug)
         layout_path = root / Path(
             *_safe_relative_file(
                 entry["path"], f"device_layouts[{index}].path"
             ).parts
         )
+        layout = packs.load_layout(root, layout_path)
         if (
             layout.qualification["status"] != "physically_qualified"
             or entry["layout_id"] != layout.layout_id
             or layout_path.resolve() != layout.path.resolve()
             or entry["sha256"] != _sha256(layout.path)
+            or slug not in layout.qualification["device_slugs"]
         ):
             raise ReleaseError(
                 f"release qualification layout binding is stale for {slug}"
@@ -349,6 +350,29 @@ def _validate_release_qualification(
             f"release qualification devices must be exactly {expected}, got {slugs}"
         )
     return document
+
+
+def _release_layouts(
+    root: Path,
+    profile: packs.holder_profiles.ResolvedProfile,
+    identity: ReleaseIdentity,
+) -> dict[str, packs.ResolvedLayout]:
+    """Resolve the immutable layouts bound to this release identity."""
+    if not identity.uses_release_qualification:
+        return {
+            slug: packs.resolve_device_layout(root, slug)
+            for slug in sorted(profile.variants)
+        }
+    document = _validate_release_qualification(
+        root,
+        profile,
+        identity.qualification_path,
+        identity.version,
+    )
+    return {
+        entry["device_slug"]: packs.load_layout(root, root / entry["path"])
+        for entry in document["device_layouts"]
+    }
 
 
 def archive_name(device_slug: str) -> str:
@@ -439,12 +463,18 @@ def _expected_pack_files(manifest: Mapping[str, Any]) -> set[str]:
 PackVerifier = Callable[[Path, Path], None]
 
 
+def _verify_release_pack(root: Path, pack: Path) -> None:
+    packs.verify_pack(
+        root, pack, allow_historical_qualified_layout=True
+    )
+
+
 def _verify_archive(
     root: Path,
     archive: Path,
     *,
     device_slug: str,
-    pack_verifier: PackVerifier = packs.verify_pack,
+    pack_verifier: PackVerifier = _verify_release_pack,
 ) -> Mapping[str, Any]:
     expected_root = f"device-pack-{device_slug}"
     if archive.stat().st_size > MAX_ARCHIVE_BYTES:
@@ -783,7 +813,7 @@ def verify_release_bundle(
     root: Path,
     bundle: Path,
     *,
-    pack_verifier: PackVerifier = packs.verify_pack,
+    pack_verifier: PackVerifier = _verify_release_pack,
 ) -> Mapping[str, Any]:
     root = root.resolve()
     bundle = bundle.expanduser().resolve()
@@ -976,10 +1006,7 @@ def build_release_bundle(
         )
     profile = resolve_profile(root, profile_id)
     identity = release_identity(profile)
-    layouts = {
-        slug: packs.resolve_device_layout(root, slug)
-        for slug in sorted(profile.variants)
-    }
+    layouts = _release_layouts(root, profile, identity)
     unqualified_layouts = [
         f"{slug}={layout.layout_id} ({layout.qualification['acceptance_ref']})"
         for slug, layout in layouts.items()
@@ -1042,7 +1069,11 @@ def build_release_bundle(
                 allow_unqualified=False,
                 state=state,
             )
-            packs.verify_pack(root, pack)
+            packs.verify_pack(
+                root,
+                pack,
+                allow_historical_qualified_layout=True,
+            )
             manifest = _load_json(pack / "manifest.json")
             name = archive_name(slug)
             archive = stage / name

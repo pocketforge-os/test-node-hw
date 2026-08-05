@@ -118,49 +118,34 @@ class ReleaseArchiveTests(unittest.TestCase):
             releases._release_schema(future_holder),
         )
 
-    def test_release_build_rejects_candidate_registered_layout(self) -> None:
-        real_layouts = {
+    def test_release_uses_bound_layouts_despite_candidate_registry(self) -> None:
+        registered = {
             slug: releases.packs.resolve_device_layout(self.root, slug)
             for slug in DEVICE_SLUGS
         }
-        candidate_qualification = copy.deepcopy(
-            real_layouts[DEVICE_SLUGS[1]].qualification
+        bound = releases._release_layouts(
+            self.root, self.profile, self.identity
         )
-        candidate_qualification["status"] = "candidate"
-        candidate_qualification["accepted_on"] = None
-        candidate = replace(
-            real_layouts[DEVICE_SLUGS[1]],
-            qualification=candidate_qualification,
+        self.assertEqual(
+            {
+                "trimui-smart-pro": "chassis-core-v3",
+                "trimui-smart-pro-s": "chassis-dualbar-v2",
+            },
+            {slug: layout.layout_id for slug, layout in registered.items()},
         )
-
-        def layout_for(root: Path, slug: str):
-            del root
-            return candidate if slug == DEVICE_SLUGS[1] else real_layouts[slug]
-
-        with tempfile.TemporaryDirectory(prefix="pf-release-test-") as temp:
-            with mock.patch.object(
-                releases.packs,
-                "source_state",
-                return_value=releases.packs.SourceState(COMMIT, False),
-            ), mock.patch.object(
-                releases, "release_identity", return_value=self.identity
-            ), mock.patch.object(
-                releases.packs,
-                "resolve_device_layout",
-                side_effect=layout_for,
-            ):
-                with self.assertRaisesRegex(
-                    releases.ReleaseError,
-                    "physically qualified registered chassis layouts.*"
-                    "chassis-dualbar-v1.*tsp-t1zd.2",
-                ):
-                    releases.build_release_bundle(
-                        self.root,
-                        profile_id=PROFILE_ID,
-                        output=Path(temp) / self.identity.tag,
-                        openscad="unused-openscad",
-                        replace=False,
-                    )
+        self.assertEqual(
+            {
+                "trimui-smart-pro": "chassis-core-v2",
+                "trimui-smart-pro-s": "chassis-dualbar-v1",
+            },
+            {slug: layout.layout_id for slug, layout in bound.items()},
+        )
+        self.assertTrue(
+            all(
+                layout.qualification["status"] == "physically_qualified"
+                for layout in bound.values()
+            )
+        )
 
     def test_future_holder_v2_schema_v1_rejects_mixed_layouts_early(
         self,
@@ -171,6 +156,14 @@ class ReleaseArchiveTests(unittest.TestCase):
             version=2,
             tag="print-pack-trimui-smart-pro-family-v2",
         )
+        qualified = releases._release_layouts(
+            self.root, self.profile, self.identity
+        )
+
+        def layout_for(root: Path, slug: str):
+            del root
+            return qualified[slug]
+
         with tempfile.TemporaryDirectory(prefix="pf-release-test-") as temp:
             with mock.patch.object(
                 releases.packs,
@@ -178,6 +171,10 @@ class ReleaseArchiveTests(unittest.TestCase):
                 return_value=releases.packs.SourceState(COMMIT, False),
             ), mock.patch.object(
                 releases, "release_identity", return_value=future_holder
+            ), mock.patch.object(
+                releases.packs,
+                "resolve_device_layout",
+                side_effect=layout_for,
             ):
                 with self.assertRaisesRegex(
                     releases.ReleaseError,
@@ -296,12 +293,15 @@ class ReleaseArchiveTests(unittest.TestCase):
         archive_records = []
         source_pack = None
         archive_names = []
+        release_layouts = releases._release_layouts(
+            self.root, self.profile, self.identity
+        )
         for slug in DEVICE_SLUGS:
             pack = root / f"pack-{slug}"
             manifest = minimal_pack(pack, slug)
             # The release profile hash must represent the real committed input.
             manifest["profile"]["sha256"] = releases._sha256(self.profile.path)
-            layout = releases.packs.resolve_device_layout(self.root, slug)
+            layout = release_layouts[slug]
             manifest["layout"] = {
                 "id": layout.layout_id,
                 "path": releases._relative(self.root, layout.path),
