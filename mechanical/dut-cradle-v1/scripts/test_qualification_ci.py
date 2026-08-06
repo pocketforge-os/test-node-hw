@@ -116,6 +116,12 @@ class QualificationCiTests(unittest.TestCase):
             "toolchain_lock_sha256": record.toolchain_lock_sha256,
         }
 
+    def remove_carrier_title_contracts(self, root: Path) -> None:
+        for path in sorted((root / "profiles").glob("*.json")):
+            profile = read_json(path)
+            profile.pop("carrier_title", None)
+            write_json(path, profile)
+
     def waiting_change(
         self,
         root: Path,
@@ -829,6 +835,46 @@ class QualificationCiTests(unittest.TestCase):
         )
         self.assertEqual("invalidate", report["mode"])
         self.assertEqual([], report["summary"]["changed_artifacts"])
+
+    def test_pre_title_contract_base_is_compatible_only_during_planning(
+        self,
+    ) -> None:
+        base = self.clone_root()
+        head = self.clone_root()
+        self.remove_carrier_title_contracts(base)
+
+        with self.assertRaisesRegex(
+            qualification.QualificationCiError,
+            "missing required field.*carrier_title",
+        ):
+            qualification.discover_registry(base)
+
+        plan = qualification.build_plan(head, base)
+        self.assertEqual(
+            [
+                {
+                    "profile_id": "trimui-smart-pro-family",
+                    "profile_path": PROFILE,
+                    "mode": "protect",
+                    "head_status": "physically_qualified",
+                    "change_path": "",
+                    "base_profile_path": PROFILE,
+                }
+            ],
+            plan["matrix"]["include"],
+        )
+
+    def test_current_profile_cannot_use_base_compatibility_to_omit_title(
+        self,
+    ) -> None:
+        base = self.clone_root()
+        head = self.clone_root()
+        self.remove_carrier_title_contracts(head)
+        with self.assertRaisesRegex(
+            qualification.QualificationCiError,
+            "missing required field.*carrier_title",
+        ):
+            qualification.build_plan(head, base)
 
     def test_intentional_candidate_reports_added_and_removed_artifacts(
         self,

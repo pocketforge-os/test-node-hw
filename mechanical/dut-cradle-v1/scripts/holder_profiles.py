@@ -1043,10 +1043,22 @@ def _validate_recipe(
     return recipe
 
 
-def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
+def validate_profile(
+    root: Path,
+    profile_path: Path,
+    *,
+    legacy_carrier_title: Mapping[str, Any] | None = None,
+) -> ResolvedProfile:
     root = root.resolve()
     profile_path = profile_path.resolve()
     document = _object(load_json(profile_path), str(profile_path))
+    # Qualification planning may compare a current profile with the archived
+    # revision that predates the presentation-only carrier-title contract.
+    # Only that caller supplies a compatibility value; ordinary/current
+    # validation remains strict and rejects a missing carrier_title.
+    if "carrier_title" not in document and legacy_carrier_title is not None:
+        document = dict(document)
+        document["carrier_title"] = dict(legacy_carrier_title)
     _keys(
         document,
         str(profile_path),

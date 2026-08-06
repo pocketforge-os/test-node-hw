@@ -207,7 +207,11 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_bytes(_json_bytes(value))
 
 
-def discover_registry(root: Path) -> dict[str, ProfileRecord]:
+def discover_registry(
+    root: Path,
+    *,
+    legacy_carrier_titles: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, ProfileRecord]:
     """Validate and return every source-owned profile, keyed by profile ID."""
     root = root.resolve()
     paths = holder_profiles.discover_profiles(root)
@@ -217,8 +221,18 @@ def discover_registry(root: Path) -> dict[str, ProfileRecord]:
     records: dict[str, ProfileRecord] = {}
     devices: dict[str, str] = {}
     for profile_path in paths:
+        relative_path = _relative(root, profile_path)
+        legacy_carrier_title = (
+            legacy_carrier_titles.get(relative_path)
+            if legacy_carrier_titles is not None
+            else None
+        )
         try:
-            resolved = holder_profiles.validate_profile(root, profile_path)
+            resolved = holder_profiles.validate_profile(
+                root,
+                profile_path,
+                legacy_carrier_title=legacy_carrier_title,
+            )
         except (OSError, holder_profiles.ProfileError) as exc:
             raise QualificationCiError(str(exc)) from exc
         profile_id = str(resolved.document["profile_id"])
@@ -269,7 +283,7 @@ def discover_registry(root: Path) -> dict[str, ProfileRecord]:
 
         records[profile_id] = ProfileRecord(
             profile_id=profile_id,
-            relative_path=_relative(root, profile_path),
+            relative_path=relative_path,
             device_slugs=slugs,
             status=status,
             fixture_sha256=str(resolved.lock_state["hash"]),
@@ -283,6 +297,22 @@ def discover_registry(root: Path) -> dict[str, ProfileRecord]:
             resolved=resolved,
         )
     return dict(sorted(records.items()))
+
+
+def discover_base_registry(
+    base_root: Path,
+    head_registry: Mapping[str, ProfileRecord],
+) -> dict[str, ProfileRecord]:
+    """Read a pre-title-contract base without relaxing current validation."""
+
+    carrier_titles = {
+        record.relative_path: record.resolved.document["carrier_title"]
+        for record in head_registry.values()
+    }
+    return discover_registry(
+        base_root,
+        legacy_carrier_titles=carrier_titles,
+    )
 
 
 def _validate_base(
@@ -944,7 +974,7 @@ def build_plan(head_root: Path, base_root: Path) -> dict[str, Any]:
     head_root = head_root.resolve()
     base_root = base_root.resolve()
     head = discover_registry(head_root)
-    base = discover_registry(base_root)
+    base = discover_base_registry(base_root, head)
     head_changes = discover_changes(head_root)
     base_changes = discover_changes(base_root)
 
@@ -1370,7 +1400,7 @@ def check_job(
         )
     job = matches[0]
     head_registry = discover_registry(head_root)
-    base_registry = discover_registry(base_root)
+    base_registry = discover_base_registry(base_root, head_registry)
     head_changes = discover_changes(head_root)
     record = head_registry[profile_id]
     candidate_toolchain = _candidate_toolchain_for_job(
