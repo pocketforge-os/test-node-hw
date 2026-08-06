@@ -29,6 +29,12 @@ BRICK_DUALBAR_REVIEW = (
     "build/dualbar-brick/layout-front.png",
     "build/dualbar-brick/layout-device-side.png",
 )
+DEVICE_EXAMPLE_VARIANTS = (
+    "smart_pro",
+    "smart_pro_s",
+    "trimui_brick",
+    "powkiddy_x55",
+)
 GUIDE_LAYER_COUNT = 70
 GUIDE_SCENE_DEFINES = (
     """-D 'CHASSIS_VARIANT="dualbar_v1"'""",
@@ -89,20 +95,24 @@ GUIDE_DUALBAR_ASSEMBLY = (
         "guide_dualbar_assembly_13_fixture_board",
     ),
     (
-        "build/handbook/assembly-14-placard.png",
-        "guide_dualbar_assembly_14_placard",
+        "build/handbook/assembly-14-usb-c-interrupter.png",
+        "guide_dualbar_assembly_14_usb_c_interrupter",
     ),
     (
-        "build/handbook/assembly-15-power-strip.png",
-        "guide_dualbar_assembly_15_power_strip",
+        "build/handbook/assembly-15-placard.png",
+        "guide_dualbar_assembly_15_placard",
     ),
     (
-        "build/handbook/assembly-16-stacking-tabs.png",
-        "guide_dualbar_assembly_16_stacking_tabs",
+        "build/handbook/assembly-16-power-strip.png",
+        "guide_dualbar_assembly_16_power_strip",
     ),
     (
-        "build/handbook/assembly-17-final.png",
-        "guide_dualbar_assembly_17_final",
+        "build/handbook/assembly-17-stacking-tabs.png",
+        "guide_dualbar_assembly_17_stacking_tabs",
+    ),
+    (
+        "build/handbook/assembly-18-final.png",
+        "guide_dualbar_assembly_18_final",
     ),
 )
 RETIRED_ASSEMBLY_PART_TOKENS = (
@@ -345,6 +355,30 @@ def require_names(output: str, names: tuple[str, ...], target: str) -> None:
         )
 
 
+def require_usb_c_installed_contract() -> None:
+    source = (PROJECT / "pocketforge-node-chassis.scad").read_text(
+        encoding="utf-8"
+    )
+    required = (
+        "usbci_mount_center_x = fixture_mount_x.x + dualbar_link_width / 2 +",
+        "usbci_fixture_link_edge_gap = 5.0;",
+        "abs(usbci_installed_edge_gap - 5.0) < 0.001",
+        "usbci_lower_face_z - usbci_fixture_top_z >= 20.0",
+        "usbci_operator_service_depth >= 30.0",
+        "usbci_rail_contact_y < camera_lens_y",
+        "usbci_left_joint_max_x + 3.0",
+        "usbci_stack_top_z <= frame_outer.z",
+        '[247.0, 175.0, 3.2]',
+        '[123.5, 85.38]',
+        '[18.0, 7.0]',
+    )
+    missing = [token for token in required if token not in source]
+    if missing:
+        raise SystemExit(
+            f"USB-C installed/X55 semantic contract is incomplete: {missing}"
+        )
+
+
 def require_dualbar_assembly_contract(output: str) -> None:
     logical_output = output.replace("\\\n\t", " ")
     commands = [
@@ -393,12 +427,15 @@ def require_dualbar_assembly_contract(output: str) -> None:
 
 
 def main() -> int:
+    require_usb_c_installed_contract()
     require_handbook_layout_binding_contract()
     core = dry_run("batches")
     dualbar = dry_run("dualbar-batches")
     handbook = dry_run("handbook-assets")
     assembly = dry_run("guide-dualbar-assembly-steps")
     brick_preview = dry_run("brick-dualbar-preview")
+    device_examples = dry_run("device-example-previews")
+    usb_c_interrupter = dry_run("validate-usb-c-interrupter")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
@@ -415,6 +452,26 @@ def main() -> int:
         raise SystemExit(
             "Brick dual-bar evidence is not locked to all three review views"
         )
+    for variant in DEVICE_EXAMPLE_VARIANTS:
+        token = f'EXAMPLE_DEVICE_VARIANT="{variant}"'
+        if device_examples.count(token) != 3:
+            raise SystemExit(
+                f"{variant} does not own exactly three explicit proxy views"
+            )
+        for view in ("assembly", "front", "device-side"):
+            expected = f"build/device-examples/{variant}/layout-{view}.png"
+            if expected not in device_examples:
+                raise SystemExit(f"device-example previews omit {expected}")
+    for required in (
+        'PART="usb_c_interrupter_bracket"',
+        'PART="usb_c_interrupter_installed_preview"',
+        "size=24.800,39.390,5.600",
+        "7c98e46e5ae0435803df79b7d8a0902632c83192047d51635823237d3b584f8a",
+    ):
+        if required not in usb_c_interrupter:
+            raise SystemExit(
+                f"USB-C interrupter production validation omits {required}"
+            )
     require_names(handbook, DUALBAR_CORE_OUTPUTS, "handbook-assets")
     require(handbook, DEVICE_EXAMPLE_BATCHES, "handbook-assets")
     if "production-batch-02-splice-collars.stl" in handbook:
@@ -470,7 +527,8 @@ def main() -> int:
         "makefile_target_contract=pass "
         "legacy_core_batches=5 dualbar_qualified_core_batches=4 "
         "handbook_device_examples=2 handbook_scene=smart-pro-s-dualbar "
-        f"semantic_layers={GUIDE_LAYER_COUNT} assembly_steps=17"
+        f"semantic_layers={GUIDE_LAYER_COUNT} assembly_steps=18 "
+        "device_proxy_examples=4 usb_c_interrupter=locked"
     )
     return 0
 

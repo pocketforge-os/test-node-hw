@@ -4,6 +4,7 @@ PYTHON ?= python3
 BUILD := build
 DUALBAR_BUILD := $(BUILD)/dualbar
 BRICK_DUALBAR_BUILD := $(BUILD)/dualbar-brick
+DEVICE_EXAMPLE_BUILD := $(BUILD)/device-examples
 GUIDE_BUILD := $(BUILD)/handbook
 GUIDE_LAYER_BUILD := $(GUIDE_BUILD)/layers
 GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
@@ -31,6 +32,9 @@ GUIDE_CHASSIS_VARIANT := dualbar_v1
 GUIDE_EXAMPLE_DEVICE_VARIANT := smart_pro_s
 GUIDE_DEVICE_REGISTRY := ../device-packs/device-layouts.json
 GUIDE_LAYOUT_RECORD := ../device-packs/layouts/chassis-dualbar-v1.json
+USB_C_INTERRUPTER_SOURCE := lib/usb-c-interrupter-bracket.scad
+USB_C_INTERRUPTER_STL := $(BUILD)/dual-usb-c-interrupter-rail-bracket.stl
+USB_C_INTERRUPTER_PREVIEW := $(BUILD)/dual-usb-c-interrupter-installed.png
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
 	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
@@ -262,6 +266,11 @@ BRICK_DUALBAR_REVIEW := \
 	$(BRICK_DUALBAR_BUILD)/layout-front.png \
 	$(BRICK_DUALBAR_BUILD)/layout-device-side.png
 
+DEVICE_EXAMPLE_VARIANTS := smart_pro smart_pro_s trimui_brick powkiddy_x55
+DEVICE_EXAMPLE_REVIEW := $(foreach variant,$(DEVICE_EXAMPLE_VARIANTS),\
+	$(foreach view,assembly front device-side,\
+	$(DEVICE_EXAMPLE_BUILD)/$(variant)/layout-$(view).png))
+
 DEVICE_EXAMPLE_BATCHES := \
 	$(BUILD)/production-batch-06-device-nameplate.stl \
 	$(BUILD)/production-batch-07-wire-management.stl
@@ -354,10 +363,11 @@ GUIDE_DUALBAR_ASSEMBLY_STEPS := \
 	$(GUIDE_BUILD)/assembly-11-square-frame.png \
 	$(GUIDE_BUILD)/assembly-12-dut-holder.png \
 	$(GUIDE_BUILD)/assembly-13-fixture-board.png \
-	$(GUIDE_BUILD)/assembly-14-placard.png \
-	$(GUIDE_BUILD)/assembly-15-power-strip.png \
-	$(GUIDE_BUILD)/assembly-16-stacking-tabs.png \
-	$(GUIDE_BUILD)/assembly-17-final.png
+	$(GUIDE_BUILD)/assembly-14-usb-c-interrupter.png \
+	$(GUIDE_BUILD)/assembly-15-placard.png \
+	$(GUIDE_BUILD)/assembly-16-power-strip.png \
+	$(GUIDE_BUILD)/assembly-17-stacking-tabs.png \
+	$(GUIDE_BUILD)/assembly-18-final.png
 
 GUIDE_BATCH_PREVIEWS := \
 	$(GUIDE_BUILD)/batch-00-calibration.png \
@@ -455,7 +465,7 @@ GUIDE_LAYERS := \
 
 GUIDE_CAMERA := --projection=ortho --camera=560,-650,470,173,179,184
 GUIDE_IMAGE := --imgsize=1400,1100 --viewall $(GUIDE_CAMERA)
-GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(PRESENTATION_ASSETS)
+GUIDE_MESH_DEPS := $(SOURCE) lib/pf-2020.scad $(USB_C_INTERRUPTER_SOURCE) $(PRESENTATION_ASSETS)
 
 # The public full-chassis scene is the current Smart Pro S dual-bar layout.
 # `private` prevents these presentation-only selections from leaking into
@@ -467,7 +477,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 .NOTPARALLEL:
 
 .PHONY: all batches core-batches dualbar dualbar-batches dualbar-preview \
-	brick-dualbar-preview \
+	brick-dualbar-preview device-example-previews usb-c-interrupter \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
@@ -479,6 +489,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-power-strip-guard \
+	validate-usb-c-interrupter \
 	validate-cable-anchor-guard \
 	validate-cable-anchor-variants \
 	validate-production-batches validate-dualbar-batches \
@@ -500,6 +511,10 @@ dualbar-preview: $(DUALBAR_REVIEW)
 
 brick-dualbar-preview: $(BRICK_DUALBAR_REVIEW)
 
+device-example-previews: $(DEVICE_EXAMPLE_REVIEW)
+
+usb-c-interrupter: $(USB_C_INTERRUPTER_STL) $(USB_C_INTERRUPTER_PREVIEW)
+
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
 calibration: $(CALIBRATION)
@@ -510,6 +525,42 @@ fabrication-tools: right-angle-checker
 
 right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 	$(RIGHT_ANGLE_CHECKER_PREVIEW)
+
+$(USB_C_INTERRUPTER_STL): Makefile $(SOURCE) $(USB_C_INTERRUPTER_SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="usb_c_interrupter_bracket"' $(SOURCE)
+
+$(USB_C_INTERRUPTER_PREVIEW): Makefile $(SOURCE) $(USB_C_INTERRUPTER_SOURCE) lib/pf-2020.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,1100 \
+		--projection=ortho --viewall \
+		--camera=420,-430,455,137,60,345 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'PART="usb_c_interrupter_installed_preview"' $(SOURCE)
+
+validate-usb-c-interrupter: usb-c-interrupter
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(USB_C_INTERRUPTER_STL)
+	@bounds=$$($(PYTHON) $(BOUNDS) --max-x 24.8 --max-y 39.39 \
+		--max-z 5.6 --bed-x 247 --bed-y 207 $(USB_C_INTERRUPTER_STL)); \
+	printf '%s\n' "$$bounds"; \
+	printf '%s\n' "$$bounds" | grep -q 'size=24.800,39.390,5.600'
+	@fingerprint=$$($(PYTHON) $(FINGERPRINT) $(USB_C_INTERRUPTER_STL)); \
+	printf '%s\n' "$$fingerprint" | grep -q '"sha256":"7c98e46e5ae0435803df79b7d8a0902632c83192047d51635823237d3b584f8a"'; \
+	echo 'usb_c_interrupter_geometry=pass sha256=7c98e46e5ae0435803df79b7d8a0902632c83192047d51635823237d3b584f8a'
+	@test -s $(USB_C_INTERRUPTER_PREVIEW)
+	@set -eu; \
+	log=$(BUILD)/invalid-usb-c-interrupter-pilot.log; \
+	mesh=$(BUILD)/invalid-usb-c-interrupter-pilot.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh \
+			-D 'CHASSIS_VARIANT="dualbar_v1"' \
+			-D 'USB_C_INTERRUPTER_M17_PILOT_DIAMETER=1.8' \
+			-D 'PART="usb_c_interrupter_bracket"' $(SOURCE) \
+			>$$log 2>&1; then \
+		echo 'ERROR: oversize M1.7 starter pilot was not rejected' >&2; \
+		exit 1; \
+	fi; \
+	grep -q 'M1.7 self-tapper pilot must remain a conservative starter hole' $$log; \
+	echo 'usb_c_interrupter_pilot_guard=pass rejected_pilot_mm=1.8'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
@@ -1116,6 +1167,43 @@ $(BRICK_DUALBAR_BUILD)/layout-device-side.png: $(SOURCE) lib/pf-2020.scad | $(BR
 		-D 'EXAMPLE_DEVICE_VARIANT="trimui_brick"' \
 		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $<
 
+# Four explicit device-bound assembly proxy contracts. These renders exercise
+# each carrier datum without importing presentation meshes.
+define DEVICE_EXAMPLE_RULES
+$(DEVICE_EXAMPLE_BUILD)/$(1)/layout-assembly.png: $(SOURCE) $(USB_C_INTERRUPTER_SOURCE) lib/pf-2020.scad
+	mkdir -p $$(@D)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $$@ --imgsize=1600,1200 \
+		--projection=ortho --viewall --camera=560,-650,470,173,179,184 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
+		-D 'GANTRY_JOINT_REVISION="side_clear_v2"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="$(1)"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $$<
+
+$(DEVICE_EXAMPLE_BUILD)/$(1)/layout-front.png: $(SOURCE) $(USB_C_INTERRUPTER_SOURCE) lib/pf-2020.scad
+	mkdir -p $$(@D)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $$@ --imgsize=1600,1200 \
+		--projection=ortho --viewall --camera=173,-600,184,173,179,184 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
+		-D 'GANTRY_JOINT_REVISION="side_clear_v2"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="$(1)"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $$<
+
+$(DEVICE_EXAMPLE_BUILD)/$(1)/layout-device-side.png: $(SOURCE) $(USB_C_INTERRUPTER_SOURCE) lib/pf-2020.scad
+	mkdir -p $$(@D)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $$@ --imgsize=1600,1200 \
+		--projection=ortho --viewall --camera=470,700,330,173,300,184 \
+		-D 'CHASSIS_VARIANT="dualbar_v1"' \
+		-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
+		-D 'GANTRY_JOINT_REVISION="side_clear_v2"' \
+		-D 'EXAMPLE_DEVICE_VARIANT="$(1)"' \
+		-D 'PART="assembly"' -D 'PLATE_DETAIL="proxy"' $$<
+endef
+
+$(foreach variant,$(DEVICE_EXAMPLE_VARIANTS),\
+	$(eval $(call DEVICE_EXAMPLE_RULES,$(variant))))
+
 $(DUALBAR_BUILD)/layout-suspension-detail.png: $(SOURCE) lib/pf-2020.scad | $(DUALBAR_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1300,1500 \
 		--projection=ortho --viewall \
@@ -1273,26 +1361,31 @@ $(GUIDE_BUILD)/assembly-13-fixture-board.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $(GUIDE_IMAGE) \
 		-D 'PART="guide_dualbar_assembly_13_fixture_board"' $<
 
-$(GUIDE_BUILD)/assembly-14-placard.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+$(GUIDE_BUILD)/assembly-14-usb-c-interrupter.png: $(GUIDE_MESH_DEPS) $(USB_C_INTERRUPTER_SOURCE) | $(GUIDE_BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
+		--projection=ortho --camera=280,-260,410,137,60,345 \
+		-D 'PART="guide_dualbar_assembly_14_usb_c_interrupter"' $<
+
+$(GUIDE_BUILD)/assembly-15-placard.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1500,800 \
 		--projection=ortho --viewall --camera=520,-450,470,173,0,330 \
-		-D 'PART="guide_dualbar_assembly_14_placard"' $<
+		-D 'PART="guide_dualbar_assembly_15_placard"' $<
 
-$(GUIDE_BUILD)/assembly-15-power-strip.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+$(GUIDE_BUILD)/assembly-16-power-strip.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,900 \
 		--projection=ortho --autocenter --viewall \
 		--camera=650,-250,300,300,220,28 \
-		-D 'PART="guide_dualbar_assembly_15_power_strip"' $<
+		-D 'PART="guide_dualbar_assembly_16_power_strip"' $<
 
-$(GUIDE_BUILD)/assembly-16-stacking-tabs.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
+$(GUIDE_BUILD)/assembly-17-stacking-tabs.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,1000 \
 		--projection=ortho --viewall --camera=-230,-240,510,20,20,370 \
-		-D 'PART="guide_dualbar_assembly_16_stacking_tabs"' $<
+		-D 'PART="guide_dualbar_assembly_17_stacking_tabs"' $<
 
-$(GUIDE_BUILD)/assembly-17-final.png: $(GUIDE_MESH_DEPS) | $(GUIDE_BUILD)
+$(GUIDE_BUILD)/assembly-18-final.png: $(GUIDE_MESH_DEPS) $(USB_C_INTERRUPTER_SOURCE) | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
 		--viewall $(GUIDE_CAMERA) \
-		-D 'PART="guide_dualbar_assembly_17_final"' $<
+		-D 'PART="guide_dualbar_assembly_18_final"' $<
 
 $(GUIDE_BUILD)/prep-captive-nut.png: $(SOURCE) lib/pf-2020.scad | $(GUIDE_BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1400,600 \
@@ -2227,7 +2320,8 @@ validate-right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 	echo 'right_angle_checker_guard=pass rejected_leg_length_mm=70'
 	@echo 'right_angle_checker_validation=pass default=150x150x5 custom=100x100x4 angle_deg=90'
 
-validate: lint all calibration preview validate-margin-guard \
+validate: lint all calibration preview device-example-previews \
+	validate-usb-c-interrupter validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-power-strip-guard \
@@ -2253,7 +2347,7 @@ validate: lint all calibration preview validate-margin-guard \
 	grep -q 'Fixture-support savings: 656.00 mm (51.74%)' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'three 306.00 mm fixture bars plus three kerfs consume \*\*927.60 mm\*\* and leave \*\*72.40 mm\*\*' $(DUALBAR_BUILD)/cut-list.md
 	grep -q 'Bar 5: fixture_support_bar 306.00, fixture_support_bar 306.00; kerf-inclusive consumed 618.40 mm; remainder 381.60 mm' $(DUALBAR_BUILD)/cut-list.md
-	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_qualified_core_batches=4 device_example_batches=2 legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=25 cable_anchors=8'
+	@echo 'chassis_validation=pass legacy_core_batches=5 dualbar_qualified_core_batches=4 device_example_batches=2 device_proxy_examples=4 usb_c_interrupter=accepted legacy_stock_bars=6 dualbar_stock_bars=5 dualbar_savings_mm=656 handbook_major_steps=8 handbook_detail_panels=25 cable_anchors=8'
 
 clean:
 	rm -rf $(BUILD)

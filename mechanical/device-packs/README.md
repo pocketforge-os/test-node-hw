@@ -73,6 +73,13 @@ views are separately supplied hardware; they are not embedded in either STL.
 Coupon and retrofit packs assume the existing fixture remains in service and
 therefore do not duplicate these two full-build artifacts.
 
+Every active full pack also contains exactly one
+`chassis/dual-usb-c-interrupter-rail-bracket.stl`. Print the accepted holder
+in ABS at 100% scale and 100% infill, broad rail-contact face down, with
+supports and auto-orient disabled. Installation uses four M1.7 × 6 mm
+self-tappers plus two M3 screws and drop-in T-nuts. Coupon and retrofit packs
+intentionally omit it.
+
 Holder coupon/carrier/hook and DUT fixture records specify PETG, matching the
 qualified cradle and fixture guidance. Chassis-core, link, placard, and routing
 records specify ABS. Every record fixes 100% scale, support-free exported
@@ -242,9 +249,9 @@ Batch 04 intentionally differs: the immutable qualified legacy bed retains its
 accepted stacking-tab hole, while the current dual-bar bed carries the
 owner-corrected hole 7 mm higher. Those files remain immutable qualified
 regression baselines. All registered devices now resolve to the physically
-qualified continuous-bar topology through `chassis-dualbar-smart-pro-v1`,
-`chassis-dualbar-v2`, `chassis-dualbar-brick-v2`, or
-`chassis-dualbar-powkiddy-x55-v1`; no active
+qualified continuous-bar topology through `chassis-dualbar-smart-pro-v2`,
+`chassis-dualbar-v3`, `chassis-dualbar-brick-v3`, or
+`chassis-dualbar-powkiddy-x55-v2`; no active
 full pack emits the legacy gantry splice bars or splice collars. Each candidate
 declares its predecessor, separates the revised joint plates into a compact
 retrofit bed, and preserves its device-specific physical gates. Changing
