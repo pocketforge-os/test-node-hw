@@ -389,8 +389,13 @@ They are for the light fixture gantry only.
 
 ## Source layout
 
-- `pocketforge-node-chassis.scad`: assembly, production beds, replacement
-  parts, guide scenes, semantic web-model layers, and assertions.
+- `pocketforge-node-chassis.scad`: byte-stable browser/customizer entrypoint
+  for the production recipes that predate the USB-C interrupter holder.
+- `pocketforge-node-chassis-usb-c.scad`: native OpenSCAD production beds,
+  replacement parts, guide scenes, semantic web-model layers, assertions,
+  and the accepted USB-C interrupter-holder integration. The separate
+  entrypoint is intentional: loading the holder module into the legacy source
+  changes OpenSCAD-WASM Manifold triangulation for unrelated parts.
 - `right-angle-checker.scad`: standalone parametric extrusion squaring tool.
 - `lib/pf-2020.scad`: self-contained measured extrusion visualization.
 - `scripts/check_right_angle_checker.py`: exact reference-face and 90-degree

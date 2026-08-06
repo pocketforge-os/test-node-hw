@@ -356,7 +356,7 @@ def require_names(output: str, names: tuple[str, ...], target: str) -> None:
 
 
 def require_usb_c_installed_contract() -> None:
-    source = (PROJECT / "pocketforge-node-chassis.scad").read_text(
+    source = (PROJECT / "pocketforge-node-chassis-usb-c.scad").read_text(
         encoding="utf-8"
     )
     required = (
