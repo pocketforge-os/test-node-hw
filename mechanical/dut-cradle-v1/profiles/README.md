@@ -50,7 +50,11 @@ compares normalized geometry with the physically accepted manifest:
 Labels are presentation data and remain outside the carrier-body fingerprint.
 Each `device_variants` entry still maps its slug to one exact wrapper and
 display name, so pack generation cannot silently substitute the Smart Pro S
-carrier label for a Smart Pro.
+carrier label for a Smart Pro. Every profile also carries a required
+`carrier_title` contract. `make validate-title-inset` walks every registered
+variant, exports `PART="title_text"` with the production recipe and locked
+toolchain, and requires the glyph mesh to remain at least 2.4 mm inside all
+four inner title-border edges; adding a profile or variant cannot bypass it.
 
 ## Commands
 

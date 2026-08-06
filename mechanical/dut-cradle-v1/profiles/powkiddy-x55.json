@@ -20,6 +20,19 @@
       }
     }
   ],
+  "carrier_title": {
+    "title_box_size_mm": [
+      176,
+      23
+    ],
+    "title_box_center_mm": [
+      123.5,
+      160.5
+    ],
+    "title_font_size_mm": 11.0,
+    "border_inner_inset_mm": 1.2,
+    "minimum_text_clearance_mm": 2.4
+  },
   "fixture": {
     "lock": "profiles/fixture-locks/powkiddy-x55-v1.json",
     "interface_sha256": "4a2a3d2751480e21e9cb7b42fd92e3fca986ad227884a97ffbc227230915f032",

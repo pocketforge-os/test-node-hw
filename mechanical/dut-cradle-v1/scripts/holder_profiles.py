@@ -791,6 +791,49 @@ def _validate_presentation(value: Any, path: str) -> Mapping[str, Any]:
     return presentation
 
 
+def _validate_carrier_title(value: Any, path: str) -> Mapping[str, Any]:
+    title = _object(value, path)
+    _keys(
+        title,
+        path,
+        {
+            "title_box_size_mm",
+            "title_box_center_mm",
+            "title_font_size_mm",
+            "border_inner_inset_mm",
+            "minimum_text_clearance_mm",
+        },
+    )
+    box_size = _vector(
+        title["title_box_size_mm"],
+        f"{path}.title_box_size_mm",
+        2,
+        minimum=Decimal("0.000001"),
+    )
+    _vector(title["title_box_center_mm"], f"{path}.title_box_center_mm", 2)
+    _number(
+        title["title_font_size_mm"],
+        f"{path}.title_font_size_mm",
+        exclusive_minimum=Decimal(0),
+    )
+    border_inset = _number(
+        title["border_inner_inset_mm"],
+        f"{path}.border_inner_inset_mm",
+        exclusive_minimum=Decimal(0),
+    )
+    clearance = _number(
+        title["minimum_text_clearance_mm"],
+        f"{path}.minimum_text_clearance_mm",
+        minimum=Decimal("2.4"),
+    )
+    if any(
+        2 * (border_inset + clearance) >= dimension
+        for dimension in box_size
+    ):
+        _fail(path, "title border and clearance consume the entire title box")
+    return title
+
+
 def _load_manifest(path: Path) -> Mapping[str, Any]:
     manifest = _object(load_json(path), str(path))
     if manifest.get("schema") != "pocketforge-qualified-geometry-v1":
@@ -1000,10 +1043,22 @@ def _validate_recipe(
     return recipe
 
 
-def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
+def validate_profile(
+    root: Path,
+    profile_path: Path,
+    *,
+    legacy_carrier_title: Mapping[str, Any] | None = None,
+) -> ResolvedProfile:
     root = root.resolve()
     profile_path = profile_path.resolve()
     document = _object(load_json(profile_path), str(profile_path))
+    # Qualification planning may compare a current profile with the archived
+    # revision that predates the presentation-only carrier-title contract.
+    # Only that caller supplies a compatibility value; ordinary/current
+    # validation remains strict and rejects a missing carrier_title.
+    if "carrier_title" not in document and legacy_carrier_title is not None:
+        document = dict(document)
+        document["carrier_title"] = dict(legacy_carrier_title)
     _keys(
         document,
         str(profile_path),
@@ -1012,6 +1067,7 @@ def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
             "profile_id",
             "device_slugs",
             "device_variants",
+            "carrier_title",
             "fixture",
             "implementation",
             "artifacts",
@@ -1092,6 +1148,11 @@ def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
             f"{profile_path}.device_variants",
             "must map every device slug exactly once",
         )
+
+    carrier_title = _validate_carrier_title(
+        document["carrier_title"],
+        f"{profile_path}.carrier_title",
+    )
 
     fixture_binding = _object(document["fixture"], f"{profile_path}.fixture")
     _keys(
@@ -1242,6 +1303,19 @@ def validate_profile(root: Path, profile_path: Path) -> ResolvedProfile:
             implementation["presentation"],
             f"{profile_path}.implementation.presentation",
         )
+        presentation = implementation["presentation"]
+        title_matches = {
+            "title_box_size_mm": presentation["title_box_size_mm"],
+            "title_box_center_mm": presentation["title_box_center_mm"],
+            "title_font_size_mm": presentation["title_font_size_mm"],
+        }
+        for field, expected in title_matches.items():
+            actual = carrier_title[field]
+            if _canonical_json(actual) != _canonical_json(expected):
+                _fail(
+                    f"{profile_path}.carrier_title.{field}",
+                    "must match implementation.presentation",
+                )
         contact_rows: dict[str, Mapping[str, Any]] = {}
         for index, item in enumerate(
             _array(

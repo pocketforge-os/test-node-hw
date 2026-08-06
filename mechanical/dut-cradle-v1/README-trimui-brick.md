@@ -5,10 +5,11 @@ This profile centers the portrait **TrimUI Brick (TG3040)** on a compact
 zip-tie anchors. It deliberately uses the same physically accepted J-hook,
 M3 captive-nut, and anti-rotation key mechanism as the Smart Pro family.
 The added top margin carries the same centered outlined device-name box as the
-Smart Pro carriers. Its 124 × 24 mm envelope and 14.4 mm text size stay fixed,
-while the device name and TOP/BOTTOM markings use regular-weight Liberation
-Sans with only 0.35 mm of stroke expansion so their counters remain legible
-with the 0.8 mm nozzle.
+Smart Pro carriers. Its 124 × 24 mm envelope stays fixed, while the device
+name uses an 8.5 mm size proven to remain 2.4 mm inside every inner border
+edge. The title and TOP/BOTTOM markings use regular-weight Liberation Sans
+with only 0.35 mm of stroke expansion so their counters remain legible with
+the 0.8 mm nozzle.
 
 The Brick is not uniformly thick. Its lower 20 mm region is 20 mm deep while
 the upper body is 12 mm deep. A single shelf height would tilt the display or
@@ -100,9 +101,10 @@ make build/trimui-brick-fit-coupon.stl
 | `trimui-brick-fit-coupon.stl` | Print first: one of each contact part and one carrier mount coupon |
 
 The source's `PART` selector accepts `assembly`, `plate`, `presentation_body`,
-`presentation_labels`, `bottom_support`, `side_hook`, `upper_hook`, `hook_set`, and
-`fit_coupon`. The two presentation parts exist only to reproduce the material
-split in higher-level renders; print the fused `plate` export.
+`presentation_labels`, audit-only `title_text`, `bottom_support`, `side_hook`,
+`upper_hook`, `hook_set`, and `fit_coupon`. The two presentation parts exist
+only to reproduce the material split in higher-level renders; print the fused
+`plate` export.
 
 ## Hardware and assembly
 
@@ -148,5 +150,7 @@ preview/export isolation, the 8 mm minimum rear-access rule, exact equality of
 the upper/lower front contact datums, and a negative guard proving the bottom
 supports cannot grow into the I/O insertion plane. A label-clearance guard
 rejects an undersized plate, and a print-foot guard rejects any spine that
-would let the anti-rotation key become the lowest feature. Final closure still
+would let the anti-rotation key become the lowest feature. The registry-driven
+title audit exports the locked 8.5 mm text mesh and checks its four inner-border
+clearances. Final closure still
 requires the owner's explicit physical fit and webcam-view confirmation.

@@ -156,13 +156,14 @@ hook_adjustment = 8.0;
 // The owner-approved Regular face and restrained stroke expansion preserve
 // open counters with the 0.8 mm nozzle. Label boxes, type sizes, positions,
 // and the three-layer-at-0.4-mm emboss remain unchanged. The marketing plus
-// TG model title uses the same 10 mm size proven on the Brick nameplate.
+// Both qualified Smart Pro-family titles retain their passing 10 mm size.
 label_height = 1.2;
 label_stroke_growth = 0.35;
 label_font = "Liberation Sans:style=Regular";
 title_box_size = [190, 24];
 title_box_centre = [plate_size.x / 2, 176.5];
 title_font_size = 10.0;
+title_border_inner_inset = 1.2;
 orientation_font_size = 9.0;
 carrier_body_color = [0.88, 0.88, 0.84];
 carrier_label_color = [0.02, 0.02, 0.02];
@@ -208,21 +209,45 @@ assert(bottom_right_x >=
        "Bottom-right clamp left its measured safe window");
 
 // ---- Carrier --------------------------------------------------------------
-module label_box(centre, size, message, font_size) {
+module carrier_title_contract() {
+    assert(is_undef(EXPECTED_TITLE_BOX_SIZE) ||
+           title_box_size == EXPECTED_TITLE_BOX_SIZE,
+           "Carrier title box size drifted from its profile contract");
+    assert(is_undef(EXPECTED_TITLE_BOX_CENTRE) ||
+           title_box_centre == EXPECTED_TITLE_BOX_CENTRE,
+           "Carrier title box centre drifted from its profile contract");
+    assert(is_undef(EXPECTED_TITLE_FONT_SIZE) ||
+           title_font_size == EXPECTED_TITLE_FONT_SIZE,
+           "Carrier title font size drifted from its profile contract");
+    assert(is_undef(EXPECTED_TITLE_BORDER_INSET) ||
+           title_border_inner_inset == EXPECTED_TITLE_BORDER_INSET,
+           "Carrier title border inset drifted from its profile contract");
+}
+
+module title_border(centre, size) {
     translate([centre.x, centre.y, plate_thickness]) {
         linear_extrude(height = label_height)
             difference() {
                 pf_rounded_rect_2d(size, 2.0);
-                translate([1.2, 1.2])
-                    pf_rounded_rect_2d(size - [2.4, 2.4], 1.2);
+                translate([title_border_inner_inset,
+                           title_border_inner_inset])
+                    pf_rounded_rect_2d(
+                        size - [2 * title_border_inner_inset,
+                                2 * title_border_inner_inset],
+                        title_border_inner_inset
+                    );
             }
-        translate([size.x / 2, size.y / 2, 0])
-            linear_extrude(height = label_height)
-                offset(delta = label_stroke_growth)
-                    text(message, size = font_size,
-                         halign = "center", valign = "center",
-                         font = label_font);
     }
+}
+
+module carrier_title_text() {
+    carrier_title_contract();
+    translate([title_box_centre.x, title_box_centre.y, plate_thickness])
+        linear_extrude(height = label_height)
+            offset(delta = label_stroke_growth)
+                text(device_name, size = title_font_size,
+                     halign = "center", valign = "center",
+                     font = label_font);
 }
 
 module orientation_label(point, message, halign = "center") {
@@ -235,9 +260,9 @@ module orientation_label(point, message, halign = "center") {
 }
 
 module carrier_labels() {
-    // label_box() is defined from its lower-left corner after translation.
-    label_box(title_box_centre - title_box_size / 2,
-              title_box_size, device_name, title_font_size);
+    // title_border() is defined from its lower-left corner after translation.
+    title_border(title_box_centre - title_box_size / 2, title_box_size);
+    carrier_title_text();
     orientation_label([device_origin.x, 154.5], "TOP", "left");
     orientation_label([device_origin.x + device_body_size.x, 154.5],
                       "TOP", "right");
@@ -402,6 +427,8 @@ if (PART == "assembly") {
     carrier_body();
 } else if (PART == "presentation_labels") {
     carrier_labels();
+} else if (PART == "title_text") {
+    carrier_title_text();
 } else if (PART == "hook") {
     one_hook_printable();
 } else if (PART == "hook_set") {
