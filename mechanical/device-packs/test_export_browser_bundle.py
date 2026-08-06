@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import tempfile
 import unittest
@@ -231,6 +232,70 @@ class BrowserBundleTests(unittest.TestCase):
                         if definition["name"] == "PART"
                     )
                 )
+
+    def test_usb_c_holder_uses_separate_browser_compatibility_entrypoint(
+        self,
+    ) -> None:
+        stable_source_path = (
+            ROOT
+            / "mechanical"
+            / "dut-chassis-2020-v1"
+            / "pocketforge-node-chassis.scad"
+        )
+        extended_source_path = stable_source_path.with_name(
+            "pocketforge-node-chassis-usb-c.scad"
+        )
+        stable_source_bytes = stable_source_path.read_bytes()
+        stable_source = stable_source_bytes.decode("utf-8")
+        extended_source = extended_source_path.read_text(encoding="utf-8")
+        holder_import = "<lib/usb-c-interrupter-bracket.scad>;"
+        stable_source_name = stable_source_path.relative_to(ROOT).as_posix()
+        extended_source_name = extended_source_path.relative_to(ROOT).as_posix()
+
+        # OpenSCAD-WASM 2025.03.25 with the Manifold backend assigns
+        # different triangulations to otherwise identical legacy outputs when
+        # the holder dependency is present at all. Keep the legacy entrypoint
+        # free of that module table and route only the holder artifact through
+        # the extended source.
+        self.assertEqual(
+            "75800a9fc4472ea4b80afdf0060870be4a0667844cba89b6f9b2369c8d8260a8",
+            hashlib.sha256(stable_source_bytes).hexdigest(),
+        )
+        self.assertNotIn(holder_import, stable_source)
+        self.assertIn(f"include {holder_import}", extended_source)
+
+        full_artifacts = [
+            artifact
+            for device in self.catalog["devices"]
+            for artifact in device["modes"]["full"]["artifacts"]
+        ]
+        holders = [
+            artifact
+            for artifact in full_artifacts
+            if artifact["id"] == "chassis_usb_c_interrupter_bracket"
+        ]
+        self.assertEqual(len(self.catalog["devices"]), len(holders))
+        self.assertTrue(
+            all(holder["source"] == extended_source_name for holder in holders)
+        )
+        self.assertTrue(
+            all(
+                artifact["source"] == stable_source_name
+                for artifact in full_artifacts
+                if artifact["id"].startswith("chassis_")
+                and artifact["id"] != "chassis_usb_c_interrupter_bracket"
+            )
+        )
+
+        bundled_sources = {
+            source["path"] for source in self.catalog["sources"]
+        }
+        self.assertIn(stable_source_name, bundled_sources)
+        self.assertIn(extended_source_name, bundled_sources)
+        self.assertIn(
+            "mechanical/dut-chassis-2020-v1/lib/usb-c-interrupter-bracket.scad",
+            bundled_sources,
+        )
 
     def test_source_tampering_fails_verification(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

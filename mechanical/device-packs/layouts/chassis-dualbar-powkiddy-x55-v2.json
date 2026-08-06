@@ -274,7 +274,7 @@
       "modes": [
         "full"
       ],
-      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis.scad",
+      "source": "mechanical/dut-chassis-2020-v1/pocketforge-node-chassis-usb-c.scad",
       "part": "usb_c_interrupter_bracket",
       "parameters": {
         "CHASSIS_VARIANT": "dualbar_v1"

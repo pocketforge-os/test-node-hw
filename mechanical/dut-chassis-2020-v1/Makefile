@@ -9,7 +9,9 @@ GUIDE_BUILD := $(BUILD)/handbook
 GUIDE_LAYER_BUILD := $(GUIDE_BUILD)/layers
 GUIDE_BATCH_LAYER_BUILD := $(GUIDE_BUILD)/batch-layers
 GUIDE_MODEL_BUILD := $(GUIDE_BUILD)/model
-SOURCE := pocketforge-node-chassis.scad
+# Keep the pre-holder browser/customizer entrypoint byte-stable.  Native
+# chassis exports and installed scenes use the extended entrypoint below.
+SOURCE := pocketforge-node-chassis-usb-c.scad
 RIGHT_ANGLE_CHECKER_SOURCE := right-angle-checker.scad
 RIGHT_ANGLE_CHECKER_STL := $(BUILD)/right-angle-checker-150mm.stl
 RIGHT_ANGLE_CHECKER_PREVIEW := $(BUILD)/right-angle-checker-150mm.png
