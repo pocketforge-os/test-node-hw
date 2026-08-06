@@ -173,7 +173,8 @@ label_stroke_growth = 0.35;
 label_font = "Liberation Sans:style=Regular";
 title_box_size = [124.0, 24.0];
 title_box_centre = [plate_size.x / 2, plate_size.y - 15.0];
-title_font_size = 10.0;
+title_font_size = 8.5;
+title_border_inner_inset = 1.2;
 orientation_font_size = 10.5;
 label_feature_clearance = 2.4;  // three 0.8 mm nozzle widths
 carrier_body_color = [0.88, 0.88, 0.84];
@@ -276,30 +277,54 @@ module embossed_text(point, message, size, rotation = 0,
                          font = label_font);
 }
 
-// Preserve the accepted 124 x 24 mm placard, title size, and orientation-label
-// sizes while using the owner-approved Regular face throughout.
-module label_box(centre, size, message, font_size) {
+// Preserve the 124 x 24 mm placard and orientation-label sizes while keeping
+// the longer marketing/model title three nozzle widths inside its border.
+module carrier_title_contract() {
+    assert(is_undef(EXPECTED_TITLE_BOX_SIZE) ||
+           title_box_size == EXPECTED_TITLE_BOX_SIZE,
+           "Carrier title box size drifted from its profile contract");
+    assert(is_undef(EXPECTED_TITLE_BOX_CENTRE) ||
+           title_box_centre == EXPECTED_TITLE_BOX_CENTRE,
+           "Carrier title box centre drifted from its profile contract");
+    assert(is_undef(EXPECTED_TITLE_FONT_SIZE) ||
+           title_font_size == EXPECTED_TITLE_FONT_SIZE,
+           "Carrier title font size drifted from its profile contract");
+    assert(is_undef(EXPECTED_TITLE_BORDER_INSET) ||
+           title_border_inner_inset == EXPECTED_TITLE_BORDER_INSET,
+           "Carrier title border inset drifted from its profile contract");
+}
+
+module title_border(centre, size) {
     translate([centre.x - size.x / 2,
                centre.y - size.y / 2,
                plate_thickness]) {
         linear_extrude(height = label_height)
             difference() {
                 pf_rounded_rect_2d(size, 2.0);
-                translate([1.2, 1.2])
-                    pf_rounded_rect_2d(size - [2.4, 2.4], 1.2);
+                translate([title_border_inner_inset,
+                           title_border_inner_inset])
+                    pf_rounded_rect_2d(
+                        size - [2 * title_border_inner_inset,
+                                2 * title_border_inner_inset],
+                        title_border_inner_inset
+                    );
             }
-        translate([size.x / 2, size.y / 2, 0])
-            linear_extrude(height = label_height)
-                offset(delta = label_stroke_growth)
-                    text(message, size = font_size,
-                         halign = "center", valign = "center",
-                         font = label_font);
     }
 }
 
+module carrier_title_text() {
+    carrier_title_contract();
+    translate([title_box_centre.x, title_box_centre.y, plate_thickness])
+        linear_extrude(height = label_height)
+            offset(delta = label_stroke_growth)
+                text(device_name, size = title_font_size,
+                     halign = "center", valign = "center",
+                     font = label_font);
+}
+
 module carrier_labels() {
-    label_box(title_box_centre, title_box_size,
-              device_name, title_font_size);
+    title_border(title_box_centre, title_box_size);
+    carrier_title_text();
     embossed_text(top_label_center, "TOP", orientation_font_size);
     embossed_text(bottom_label_center, "BOTTOM",
                   orientation_font_size);
@@ -552,6 +577,8 @@ if (PART == "assembly") {
     carrier_body();
 } else if (PART == "presentation_labels") {
     carrier_labels();
+} else if (PART == "title_text") {
+    carrier_title_text();
 } else if (PART == "bottom_support") {
     bottom_support_printable();
 } else if (PART == "side_hook" || PART == "lower_hook") {

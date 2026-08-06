@@ -56,6 +56,7 @@ mounts. Orientation labels may move to suit the device-specific keep-outs.
 | `plate` | Carrier plate |
 | `presentation_body` | Presentation-only carrier body below the filament-change layer; do not print separately |
 | `presentation_labels` | Presentation-only title, border, and orientation labels for the selected wrapper; do not print separately |
+| `title_text` | Audit-only export of the registered device title with its production font, size, and stroke growth; do not print separately |
 | `hook` | One J-hook, already laid on its strong printing side |
 | `hook_set` | Six production J-hooks arranged for one print |
 | `installed_hooks` | Presentation-only mesh of all six hooks at their installed carrier coordinates; do not print |
@@ -114,7 +115,9 @@ Validation also bounds-checks the presentation-only installed-hook mesh so the
 chassis view cannot silently drift away from the accepted six-hook layout.
 Brick guards independently reject a non-flat front datum, rear finger
 clearance below 8 mm, contact on the lower corner transition, insufficient
-print-foot area, and title/mount overlap.
+print-foot area, and title/mount overlap. The profile registry also exports the
+actual title text mesh for every registered device and requires at least 2.4 mm
+of clearance from all four inner title-border edges.
 
 ## Qualified geometry regression
 
@@ -245,10 +248,10 @@ windows if that reading is wrong—nothing in the reusable hook changes.
   layers, and 20–30% gyroid. Use the slicer's preview to verify the 1.2 mm-deep
   anti-rotation channels and 1.2 mm raised labels survive the selected layer
   height.
-- The device name and TOP/BOTTOM markings use Regular-weight Liberation Sans
-  with 0.35 mm stroke expansion. Their existing sizes and positions are
-  preserved while the lighter face keeps counters readable with the 0.8 mm
-  nozzle.
+- The device name and TOP/BOTTOM markings use the profile's locked Liberation
+  face with 0.35 mm stroke expansion. Smart Pro and Smart Pro S retain their
+  passing 10 mm titles; Brick uses 8.5 mm and X55 uses 11.5 mm so every title
+  remains at least three 0.8 mm nozzle widths inside its border.
 - Print the carrier body in white, then change to black at `plate_thickness`
   (3.2 mm), where the raised title, title-box border, and TOP/BOTTOM markings
   begin. The OpenSCAD assembly uses this same datum for its material colors.

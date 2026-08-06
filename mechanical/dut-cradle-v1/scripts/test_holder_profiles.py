@@ -209,6 +209,22 @@ class HolderProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(profiles.ProfileError, "finite number"):
             self.validate_temp(wrong_type, self.lock)
 
+        missing_title_contract = copy.deepcopy(self.profile)
+        del missing_title_contract["carrier_title"]
+        with self.assertRaisesRegex(
+            profiles.ProfileError,
+            "missing required field.*carrier_title",
+        ):
+            self.validate_temp(missing_title_contract, self.lock)
+
+        title_drift = copy.deepcopy(self.profile)
+        title_drift["carrier_title"]["title_font_size_mm"] = 9.9
+        with self.assertRaisesRegex(
+            profiles.ProfileError,
+            "must match implementation.presentation",
+        ):
+            self.validate_temp(title_drift, self.lock)
+
         missing_variant = copy.deepcopy(self.profile)
         missing_variant["device_variants"].pop()
         with self.assertRaisesRegex(

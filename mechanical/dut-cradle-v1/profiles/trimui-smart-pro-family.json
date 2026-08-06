@@ -35,6 +35,19 @@
       }
     }
   ],
+  "carrier_title": {
+    "title_box_size_mm": [
+      190,
+      24
+    ],
+    "title_box_center_mm": [
+      123.5,
+      176.5
+    ],
+    "title_font_size_mm": 10,
+    "border_inner_inset_mm": 1.2,
+    "minimum_text_clearance_mm": 2.4
+  },
   "fixture": {
     "lock": "profiles/fixture-locks/trimui-smart-pro-family-v1.json",
     "interface_sha256": "637aa67b32e284af2d5ad1b1655e630392e06fa80af1996f498f8d3cdecb20d5",

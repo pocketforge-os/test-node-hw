@@ -6,8 +6,10 @@ It reuses the keyed M3 captive-nut hook mechanism while giving the X55 a traced
 XY outline, a nonuniform photo-derived rear shell, three edge-specific hook
 profiles, and explicit safe bands for the crowded top and bottom edges.
 Its device name and TOP/BOTTOM labels use Regular Narrow lettering with only
-0.35 mm of stroke expansion for legibility from a 0.8 mm nozzle; their
-established sizes, boxes, positions, and 1.2 mm relief are unchanged.
+0.35 mm of stroke expansion for legibility from a 0.8 mm nozzle. The title is
+11.5 mm so its actual locked-font mesh remains at least 2.4 mm inside every
+inner border edge; the established box, position, and 1.2 mm relief remain
+unchanged.
 
 The owner trace, not the marketing box, governs retention. The front shell is
 210 mm wide at its grips, 200 mm immediately below the shoulder keys, and

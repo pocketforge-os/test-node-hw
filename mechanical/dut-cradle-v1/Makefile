@@ -24,6 +24,7 @@ QUALIFIED_ARTIFACTS := $(CHECKS)/smart-pro-unlabelled.stl \
 	validate-qualified-mutation validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
 	validate-preview-export validate-presentation-split \
+	validate-title-inset \
 	validate-brick-flat-datum-guard \
 	validate-brick-clearance-guard validate-brick-side-contact-guard \
 	validate-brick-bottom-io-guard validate-brick-label-clearance-guard \
@@ -197,12 +198,30 @@ $(BUILD)/layout-trimui-brick-top.png: $(BRICK_SOURCE) $(LIBRARY) | $(BUILD)
 		--projection=ortho --camera=90,102.5,700,90,102.5,0 \
 		-D 'PART="assembly"' $<
 
+$(BUILD)/layout-powkiddy-x55-preview.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --viewall -D 'PART="assembly"' $<
+
+$(BUILD)/layout-powkiddy-x55-top.png: $(X55_SOURCE) $(LIBRARY) | $(BUILD)
+	$(PREVIEW_SETTLE)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1200 \
+		--projection=ortho --camera=123.5,87.5,800,123.5,87.5,0 \
+		-D 'PART="assembly"' $<
+
 preview: $(BUILD)/layout-smart-pro-s-preview.png \
 	$(BUILD)/layout-smart-pro-s-top.png \
 	$(BUILD)/layout-smart-pro-preview.png \
 	$(BUILD)/layout-smart-pro-top.png \
 	$(BUILD)/layout-trimui-brick-preview.png \
-	$(BUILD)/layout-trimui-brick-top.png
+	$(BUILD)/layout-trimui-brick-top.png \
+	$(BUILD)/layout-powkiddy-x55-preview.png \
+	$(BUILD)/layout-powkiddy-x55-top.png
+
+validate-title-inset: | $(CHECKS)
+	$(PYTHON) scripts/audit_carrier_titles.py \
+		--root . --output-dir $(CHECKS)/carrier-titles \
+		--openscad '$(OPENSCAD)'
 
 validate-profile-guard: | $(BUILD)
 	@set -eu; log=$(BUILD)/invalid-throat.log; mesh=$(BUILD)/invalid-throat.stl; \
@@ -381,7 +400,7 @@ validate-qualified-mutation: $(CHECKS)/qualified-mutated-j-hook.stl \
 validate: lint all $(BUILD)/trimui-smart-pro-family-installed-hooks.stl \
 	validate-profile-guard validate-rear-gap-guard \
 	validate-nut-capture-guard validate-family-equivalence \
-	validate-preview-export validate-presentation-split \
+	validate-preview-export validate-presentation-split validate-title-inset \
 	validate-qualified validate-qualified-mutation \
 	validate-brick-flat-datum-guard validate-brick-clearance-guard \
 	validate-brick-side-contact-guard validate-brick-bottom-io-guard \

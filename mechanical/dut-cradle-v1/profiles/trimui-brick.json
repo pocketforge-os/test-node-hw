@@ -20,6 +20,19 @@
       }
     }
   ],
+  "carrier_title": {
+    "title_box_size_mm": [
+      124,
+      24
+    ],
+    "title_box_center_mm": [
+      90,
+      190
+    ],
+    "title_font_size_mm": 8.5,
+    "border_inner_inset_mm": 1.2,
+    "minimum_text_clearance_mm": 2.4
+  },
   "fixture": {
     "lock": "profiles/fixture-locks/trimui-brick-v1.json",
     "interface_sha256": "e52f855585f502405e36f52b393fa34b75b141ed8cd59f678686ca564723d896",
