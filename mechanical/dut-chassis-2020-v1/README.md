@@ -27,10 +27,10 @@ topology from `../device-packs/device-layouts.json`; do not choose it by hand.
 
 | Device | Layout | Fixture support | Status |
 | --- | --- | --- | --- |
-| Powkiddy X55 | `chassis-dualbar-powkiddy-x55-v1` | Two continuous 306 mm fixture bars + X55-specific 247 × 175 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
-| TrimUI Smart Pro / TG5040 | `chassis-dualbar-smart-pro-v1` | Two continuous 306 mm fixture bars + shared-family carrier links | Prototype successor; complete installed gate remains open |
-| TrimUI Smart Pro S / TG5050 | `chassis-dualbar-v2` | Two continuous 306 mm fixture bars + shared-family carrier links | Qualified topology; side-clear plate candidate remains open |
-| TrimUI Brick / TG3040 | `chassis-dualbar-brick-v2` | Two continuous 306 mm fixture bars + Brick-specific 180 × 205 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
+| Powkiddy X55 | `chassis-dualbar-powkiddy-x55-v2` | Two continuous 306 mm fixture bars + X55-specific 247 × 175 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
+| TrimUI Smart Pro / TG5040 | `chassis-dualbar-smart-pro-v2` | Two continuous 306 mm fixture bars + shared-family carrier links | Prototype successor; complete installed gate remains open |
+| TrimUI Smart Pro S / TG5050 | `chassis-dualbar-v3` | Two continuous 306 mm fixture bars + shared-family carrier links | Qualified topology; side-clear plate candidate remains open |
+| TrimUI Brick / TG3040 | `chassis-dualbar-brick-v3` | Two continuous 306 mm fixture bars + Brick-specific 180 × 205 mm carrier links | Prototype candidate; owner holder/framing gate remains open |
 
 Each registered successor preserves its predecessor's outer frame, fixture
 plate, plate Y/Z datum, camera optical relationship, device-specific carrier,
@@ -147,6 +147,14 @@ conservative 247 × 207 mm Prusa printable envelope. The accepted process is
 ABS, 0.8 mm nozzle, 0.4 mm layers, at least three perimeters, at least four
 top/bottom layers, 20–30% infill, supports disabled, and 100% scale. Do not
 auto-orient or auto-arrange a production batch.
+
+Every active full pack also includes one physically accepted two-port USB-C
+interrupter holder at `chassis/dual-usb-c-interrupter-rail-bracket.stl`.
+Print it in ABS at 100% scale and 100% infill, broad 20 mm rail-contact face
+down, with supports and auto-orient disabled. Install its two M3 holes with
+M3 screws and drop-in T-nuts exactly 5.0 mm edge-to-edge right of the left
+upper fixture-board link, then retain the two port boards with four
+M1.7 × 6 mm self-tappers in the accepted 1.35 mm blind starter pilots.
 
 Build the five shared chassis-core batches:
 
@@ -513,7 +521,8 @@ make guide-dualbar-assembly-steps
 ```
 
 The stable outputs are `build/handbook/assembly-01-channel-bar.png` through
-`assembly-17-final.png`. Every render target pins both `dualbar_v1` and
+`assembly-18-final.png`. Step 14 installs the dual USB-C interrupter holder
+immediately after the fixture board. Every render target pins both `dualbar_v1` and
 `smart_pro_s`; the target-contract test rejects a missing/reordered image or a
 recipe that points back to a retired gantry assembly scene.
 

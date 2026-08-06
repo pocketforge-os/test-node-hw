@@ -187,7 +187,7 @@ class DevicePackTests(unittest.TestCase):
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-dualbar-v2.json"
+            / "chassis-dualbar-v3.json"
         )
         cls.dualbar_layout = packs.load_layout(
             cls.root, cls.dualbar_layout_path
@@ -197,7 +197,7 @@ class DevicePackTests(unittest.TestCase):
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-dualbar-smart-pro-v1.json"
+            / "chassis-dualbar-smart-pro-v2.json"
         )
         cls.pro_dualbar_layout = packs.load_layout(
             cls.root, cls.pro_dualbar_layout_path
@@ -213,7 +213,7 @@ class DevicePackTests(unittest.TestCase):
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-dualbar-brick-v2.json"
+            / "chassis-dualbar-brick-v3.json"
         )
         cls.brick_layout = packs.load_layout(
             cls.root, cls.brick_layout_path
@@ -229,7 +229,7 @@ class DevicePackTests(unittest.TestCase):
             / "mechanical"
             / "device-packs"
             / "layouts"
-            / "chassis-dualbar-powkiddy-x55-v1.json"
+            / "chassis-dualbar-powkiddy-x55-v2.json"
         )
         cls.x55_layout = packs.load_layout(cls.root, cls.x55_layout_path)
 
@@ -329,7 +329,7 @@ class DevicePackTests(unittest.TestCase):
                     for mode in packs.MODES
                 }
                 self.assertEqual(
-                    {"coupon": 1, "retrofit": 7, "full": 14},
+                    {"coupon": 1, "retrofit": 7, "full": 15},
                     {mode: len(plan) for mode, plan in plans.items()},
                 )
                 for mode in ("coupon", "retrofit"):
@@ -408,6 +408,54 @@ class DevicePackTests(unittest.TestCase):
                             r"^[0-9a-f]{64}$",
                         )
 
+    def test_accepted_usb_c_holder_is_exactly_once_and_full_only(self) -> None:
+        expected_source = (
+            self.root
+            / "mechanical"
+            / "dut-chassis-2020-v1"
+            / "lib"
+            / "usb-c-interrupter-bracket.scad"
+        ).resolve()
+        for device_slug, profile, layout in (
+            ("powkiddy-x55", self.x55_profile, self.x55_layout),
+            ("trimui-brick", self.brick_profile, self.brick_layout),
+            ("trimui-smart-pro", self.profile, self.pro_dualbar_layout),
+            ("trimui-smart-pro-s", self.profile, self.dualbar_layout),
+        ):
+            with self.subTest(device=device_slug):
+                self.assertIn(expected_source, layout.input_paths)
+                for mode in ("coupon", "retrofit"):
+                    plan = packs.build_plan(
+                        self.root, profile, layout, device_slug, mode
+                    )
+                    self.assertNotIn(
+                        "chassis_usb_c_interrupter_bracket",
+                        {item.artifact_id for item in plan},
+                    )
+                full = packs.build_plan(
+                    self.root, profile, layout, device_slug, "full"
+                )
+                holders = [
+                    item
+                    for item in full
+                    if item.artifact_id
+                    == "chassis_usb_c_interrupter_bracket"
+                ]
+                self.assertEqual(1, len(holders))
+                holder = holders[0]
+                self.assertEqual(
+                    "chassis/dual-usb-c-interrupter-rail-bracket.stl",
+                    holder.output.as_posix(),
+                )
+                self.assertEqual(
+                    "7c98e46e5ae0435803df79b7d8a0902632c83192047d51635823237d3b584f8a",
+                    holder.expected_normalized_sha256,
+                )
+                self.assertEqual("ABS", holder.print_contract["material"])
+                self.assertEqual(100, holder.print_contract["scale_percent"])
+                self.assertFalse(holder.print_contract["supports"])
+                self.assertFalse(holder.print_contract["auto_orient"])
+
     def test_device_registry_selects_layout_and_rejects_mismatch(self) -> None:
         pro = packs.resolve_device_layout(
             self.root, "trimui-smart-pro"
@@ -415,11 +463,11 @@ class DevicePackTests(unittest.TestCase):
         pro_s = packs.resolve_device_layout(
             self.root, "trimui-smart-pro-s"
         )
-        self.assertEqual("chassis-dualbar-smart-pro-v1", pro.layout_id)
-        self.assertEqual("chassis-core-v3", pro.supersedes_layout_id)
+        self.assertEqual("chassis-dualbar-smart-pro-v2", pro.layout_id)
+        self.assertEqual("chassis-dualbar-smart-pro-v1", pro.supersedes_layout_id)
         self.assertEqual("candidate", pro.qualification["status"])
-        self.assertEqual("chassis-dualbar-v2", pro_s.layout_id)
-        self.assertEqual("chassis-dualbar-v1", pro_s.supersedes_layout_id)
+        self.assertEqual("chassis-dualbar-v3", pro_s.layout_id)
+        self.assertEqual("chassis-dualbar-v2", pro_s.supersedes_layout_id)
         self.assertEqual("candidate", pro_s.qualification["status"])
         for layout in (pro, pro_s):
             carrier_links = next(
@@ -458,13 +506,13 @@ class DevicePackTests(unittest.TestCase):
             [
                 {
                     "device_slug": "trimui-smart-pro",
-                    "layout_id": "chassis-dualbar-smart-pro-v1",
+                    "layout_id": "chassis-dualbar-smart-pro-v2",
                     "layout_status": "candidate",
                     "holder_status": "physically_qualified",
                 },
                 {
                     "device_slug": "trimui-smart-pro-s",
-                    "layout_id": "chassis-dualbar-v2",
+                    "layout_id": "chassis-dualbar-v3",
                     "layout_status": "candidate",
                     "holder_status": "physically_qualified",
                 },
@@ -515,7 +563,7 @@ class DevicePackTests(unittest.TestCase):
                     self.root, profile, layout, device_slug, "full"
                 )
                 ids = {item.artifact_id for item in plan}
-                self.assertEqual(14, len(plan))
+                self.assertEqual(15, len(plan))
                 self.assertTrue(
                     {
                         "chassis_dualbar_01_ironed_interfaces",
@@ -540,6 +588,7 @@ class DevicePackTests(unittest.TestCase):
                         "device_wire_anchors",
                         "fixture_dut_plate",
                         "fixture_dut_fit_coupon",
+                        "chassis_usb_c_interrupter_bracket",
                     }
                     <= ids
                 )
@@ -559,7 +608,7 @@ class DevicePackTests(unittest.TestCase):
         )
         self.assertEqual("candidate", self.brick_layout.qualification["status"])
         self.assertEqual(
-            "chassis-dualbar-brick-v1",
+            "chassis-dualbar-brick-v2",
             self.brick_layout.supersedes_layout_id,
         )
         candidate = packs.all_device_layout_matrix(
@@ -569,25 +618,25 @@ class DevicePackTests(unittest.TestCase):
             [
                 {
                     "device_slug": "powkiddy-x55",
-                    "layout_id": "chassis-dualbar-powkiddy-x55-v1",
+                    "layout_id": "chassis-dualbar-powkiddy-x55-v2",
                     "layout_status": "candidate",
                     "holder_status": "unqualified",
                 },
                 {
                     "device_slug": "trimui-brick",
-                    "layout_id": "chassis-dualbar-brick-v2",
+                    "layout_id": "chassis-dualbar-brick-v3",
                     "layout_status": "candidate",
                     "holder_status": "unqualified",
                 },
                 {
                     "device_slug": "trimui-smart-pro",
-                    "layout_id": "chassis-dualbar-smart-pro-v1",
+                    "layout_id": "chassis-dualbar-smart-pro-v2",
                     "layout_status": "candidate",
                     "holder_status": "physically_qualified",
                 },
                 {
                     "device_slug": "trimui-smart-pro-s",
-                    "layout_id": "chassis-dualbar-v2",
+                    "layout_id": "chassis-dualbar-v3",
                     "layout_status": "candidate",
                     "holder_status": "physically_qualified",
                 },
@@ -601,7 +650,7 @@ class DevicePackTests(unittest.TestCase):
             "trimui-brick",
             "full",
         )
-        self.assertEqual(14, len(plan))
+        self.assertEqual(15, len(plan))
         retention = next(
             item for item in plan if item.artifact_id == "device_j_hook_set"
         )
@@ -647,7 +696,7 @@ class DevicePackTests(unittest.TestCase):
         )
         self.assertEqual("candidate", self.x55_layout.qualification["status"])
         self.assertEqual(
-            "chassis-core-powkiddy-x55-v1",
+            "chassis-dualbar-powkiddy-x55-v1",
             self.x55_layout.supersedes_layout_id,
         )
         plan = packs.build_plan(
@@ -657,7 +706,7 @@ class DevicePackTests(unittest.TestCase):
             "powkiddy-x55",
             "full",
         )
-        self.assertEqual(14, len(plan))
+        self.assertEqual(15, len(plan))
         carrier = next(
             item for item in plan if item.artifact_id == "device_carrier"
         )

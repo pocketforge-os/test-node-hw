@@ -18,6 +18,7 @@
  *   rear_carrier_link_top, rear_carrier_link_bottom,
  *   rear_carrier_link_fit_pair, rear_carrier_link_set,
  *   dualbar_fixture_link, dualbar_fixture_link_set,
+ *   usb_c_interrupter_bracket, usb_c_interrupter_installed_preview,
  *   gantry_splice_internal_bar,
  *   gantry_splice_full_collar,
  *   gantry_splice_full_collar_internal_bar,
@@ -93,6 +94,7 @@
  */
 
 include <lib/pf-2020.scad>;
+use <lib/usb-c-interrupter-bracket.scad>;
 
 PART = "assembly";
 // The default is the physically proven TrimUI Smart Pro chassis and is
@@ -105,11 +107,13 @@ CARRIER_LINK_REVISION = CHASSIS_VARIANT == "dualbar_v1" ?
 // layouts request the side-clear replacement explicitly so immutable releases
 // remain reproducible until the replacement is physically accepted.
 GANTRY_JOINT_REVISION = "overhang_v1"; // overhang_v1 or side_clear_v2
-EXAMPLE_DEVICE_VARIANT = "smart_pro"; // smart_pro, smart_pro_s, or trimui_brick
+EXAMPLE_DEVICE_VARIANT = "smart_pro"; // smart_pro, smart_pro_s, trimui_brick, or powkiddy_x55
 DEVICE_LABEL = EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ?
                "TrimUI Smart Pro S" :
                EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
-               "TrimUI Brick / TG3040" : "TrimUI Smart Pro";
+               "TrimUI Brick / TG3040" :
+               EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ?
+               "Powkiddy X55" : "TrimUI Smart Pro";
 PLATE_DETAIL = "proxy";       // proxy or mesh
 EXTRUSION_DETAIL = "slot";    // envelope or slot
 SHOW_PLATES = true;
@@ -118,6 +122,7 @@ SHOW_CAMERA_FRUSTUM = true;
 SHOW_CONNECTOR_PROXIES = true;
 SHOW_REGISTRATION_GUIDES = true;
 SHOW_POWER_STRIP = true;
+USB_C_INTERRUPTER_M17_PILOT_DIAMETER = 1.35;
 
 // `make preview` stages these exact production meshes beside this source so
 // presentation mode is portable with the Desktop export.  Proxy mode never
@@ -353,10 +358,16 @@ fixture_webcam_datum = [83.70, 132.0];
 fixture_slot_inset = [19.0, 8.0];
 
 cradle_plate_size = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
-                    [180.0, 205.0, 3.2] : [247.0, 200.0, 3.2];
+                    [180.0, 205.0, 3.2] :
+                    EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ?
+                    [247.0, 175.0, 3.2] : [247.0, 200.0, 3.2];
 cradle_screen_datum = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
-                      [90.0, 131.375] : [123.5, 100.0];
+                      [90.0, 131.375] :
+                      EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ?
+                      [123.5, 85.38] : [123.5, 100.0];
 cradle_slot_inset = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+                    [18.0, 7.0] :
+                    EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ?
                     [18.0, 7.0] : [19.0, 8.0];
 
 // Center the taller 247 mm fixture plate inside the 328 mm clear height while
@@ -433,12 +444,16 @@ camera_assumed_vfov =
     2 * atan(tan(camera_diagonal_fov / 2) * camera_capture_aspect.y /
              camera_aspect_diagonal);
 device_body = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
-              [72.8, 110.75, 20.0] : [188.35, 79.77, 10.7];
-device_rear_gap = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ? 10.0 : 11.0;
+              [72.8, 110.75, 20.0] :
+              EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ?
+              [210.0, 88.76, 19.0] : [188.35, 79.77, 10.7];
+device_rear_gap = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ||
+                  EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ? 10.0 : 11.0;
 // Screen-centered Brick placement leaves its taller shell 28.875 mm below
 // the optical axis. Pro-family screens remain centered in their shell proxy.
 device_body_offset_from_optical =
-    EXAMPLE_DEVICE_VARIANT == "trimui_brick" ? [0.0, -28.875] : [0.0, 0.0];
+    EXAMPLE_DEVICE_VARIANT == "trimui_brick" ? [0.0, -28.875] :
+    EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ? [0.0, -1.0] : [0.0, 0.0];
 device_screen_y = cradle_plane_y - device_rear_gap - device_body.z;
 optical_distance = device_screen_y - camera_lens_y;
 // Pro-family framing covers the complete device body. The taller Brick is
@@ -449,8 +464,14 @@ optical_distance = device_screen_y - camera_lens_y;
 // margin around the selected target.
 framing_margin = [10.0, 10.0];
 camera_framing_body = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
-                      [65.02, 48.77] : [device_body.x, device_body.y];
+                      [65.02, 48.77] :
+                      EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ?
+                      [139.7 * 16 / sqrt(337),
+                       139.7 * 9 / sqrt(337)] :
+                      [device_body.x, device_body.y];
 camera_framing_offset = EXAMPLE_DEVICE_VARIANT == "trimui_brick" ?
+                        [0.0, 0.0] :
+                        EXAMPLE_DEVICE_VARIANT == "powkiddy_x55" ?
                         [0.0, 0.0] : device_body_offset_from_optical;
 framing_target = [camera_framing_body.x +
                       2 * (framing_margin.x +
@@ -518,6 +539,29 @@ dualbar_link_set_size = [
     2 * dualbar_link_width + dualbar_link_batch_gap,
     2 * dualbar_link_length + dualbar_link_batch_gap
 ];
+
+// Owner-accepted dual USB-C interrupter holder. Its installed X datum is
+// derived from the left upper fixture-link edge, retaining an exact 5 mm
+// service gap rather than freezing a scene-specific absolute coordinate.
+usbci_fixture_link_edge_gap = 5.0;
+usbci_mount_center_x = fixture_mount_x.x + dualbar_link_width / 2 +
+                       usbci_fixture_link_edge_gap +
+                       usbci_mount_pad_size().x / 2;
+usbci_face_center_z = fixture_bar_z.y - profile_size / 2 - 8.0;
+usbci_rail_contact_y = fixture_bar_y - profile_size / 2;
+usbci_installed_edge_gap = usbci_mount_center_x -
+                           usbci_mount_pad_size().x / 2 -
+                           (fixture_mount_x.x + dualbar_link_width / 2);
+usbci_lower_face_z = usbci_face_center_z +
+                     min(usbci_face_row_centres()) -
+                     usbci_face_size().y / 2;
+usbci_fixture_top_z = fixture_origin.z + fixture_plate_size.y;
+usbci_operator_service_depth = usbci_rail_contact_y -
+                               usbci_retention_depth() -
+                               human_side_inner_face_y;
+usbci_stack_top_z = usbci_face_center_z +
+                    usbci_mount_pad_centre_y() +
+                    usbci_mount_pad_size().y / 2;
 
 // Six outer-width-rail locations remain active. Four power-strip locations
 // move to the lower operator-right depth rail. The keyed fixture links add two
@@ -638,6 +682,11 @@ gantry_joint_plate_size = [36.0,
                                gantry_joint_flush_span -
                                    2 * gantry_joint_side_inset : 44.0,
                            4.8];
+usbci_left_joint_max_x = profile_size + profile_size / 2 +
+                         gantry_joint_plate_size.y / 2;
+usbci_right_joint_min_x = frame_outer.x - profile_size -
+                          profile_size / 2 -
+                          gantry_joint_plate_size.y / 2;
 gantry_joint_corner_radius = 3.0;
 gantry_joint_hole_offset = 10.0;
 gantry_joint_slot = [8.0, m3_clearance];
@@ -886,7 +935,8 @@ cradle_margins = [cradle_origin.x - inner_min.x,
 
 assert(EXAMPLE_DEVICE_VARIANT == "smart_pro" ||
        EXAMPLE_DEVICE_VARIANT == "smart_pro_s" ||
-       EXAMPLE_DEVICE_VARIANT == "trimui_brick",
+       EXAMPLE_DEVICE_VARIANT == "trimui_brick" ||
+       EXAMPLE_DEVICE_VARIANT == "powkiddy_x55",
        str("Unknown example device variant: ", EXAMPLE_DEVICE_VARIANT));
 assert(CHASSIS_VARIANT == "legacy_gantry" ||
        CHASSIS_VARIANT == "dualbar_v1",
@@ -980,6 +1030,33 @@ assert(dualbar_link_set_size.x <= 247.0 &&
        dualbar_link_set_size.y <= 207.0,
        str("Four-link dual-bar batch must fit the 247 x 207 mm print bed: ",
            dualbar_link_set_size));
+assert(abs(usbci_mount_center_x - 136.7) < 0.001,
+       str("USB-C interrupter derived center changed: ",
+           usbci_mount_center_x));
+assert(abs(usbci_installed_edge_gap - 5.0) < 0.001,
+       str("USB-C interrupter must remain exactly 5 mm right of the left upper fixture link; actual ",
+           usbci_installed_edge_gap, " mm"));
+assert(usbci_lower_face_z - usbci_fixture_top_z >= 20.0,
+       "USB-C interrupter must clear fixture plate and components vertically");
+assert(usbci_operator_service_depth >= 30.0,
+       "Both USB-C receptacles need an unobstructed operator-side cable bay");
+assert(usbci_mount_center_x + usbci_mount_pad_size().x / 2 <
+       fixture_mount_x.y - dualbar_link_width / 2,
+       "USB-C interrupter must clear the adjacent fixture link");
+assert(usbci_mount_center_x - usbci_mount_pad_size().x / 2 >=
+           usbci_left_joint_max_x + 3.0 &&
+       usbci_mount_center_x + usbci_mount_pad_size().x / 2 <=
+           usbci_right_joint_min_x - 3.0,
+       "USB-C interrupter must clear both fixture-bar joint plates by 3 mm");
+assert(usbci_rail_contact_y < camera_lens_y,
+       "USB-C interrupter must remain operator-side of the camera/frustum");
+assert(usbci_rail_contact_y < cradle_plane_y - device_rear_gap - device_body.z,
+       "USB-C interrupter must clear the carrier and DUT envelope");
+assert(usbci_mount_center_x - usbci_mount_pad_size().x / 2 >= profile_size &&
+       usbci_mount_center_x + usbci_mount_pad_size().x / 2 <=
+           frame_outer.x - profile_size &&
+       usbci_stack_top_z <= frame_outer.z,
+       "USB-C interrupter must remain inside the chassis stacking envelope");
 assert(min(fixture_mount_x) -
            dualbar_link_width / 2 >= profile_size &&
        max(fixture_mount_x) +
@@ -1321,6 +1398,39 @@ module fixture_support(tint = [0.72, 0.74, 0.77]) {
         fixture_dualbars(tint);
     else
         fixture_gantry(tint);
+}
+
+module usb_c_interrupter_at_installed_datum() {
+    // Printable local +Z points toward the operator; local +Y becomes world
+    // +Z so the paired receptacles hang below the upper fixture rail.
+    multmatrix([
+        [1, 0, 0, usbci_mount_center_x],
+        [0, 0, -1, usbci_rail_contact_y],
+        [0, 1, 0, usbci_face_center_z],
+        [0, 0, 0, 1]
+    ]) children();
+}
+
+module installed_usb_c_interrupter_bracket(show_module = false,
+                                            tint = [0.95, 0.53, 0.12]) {
+    color(tint)
+        usb_c_interrupter_at_installed_datum()
+            usb_c_interrupter_bracket(
+                USB_C_INTERRUPTER_M17_PILOT_DIAMETER);
+    if (show_module)
+        usb_c_interrupter_at_installed_datum()
+            usb_c_interrupter_proxy();
+}
+
+module usb_c_interrupter_installed_preview() {
+    assert(CHASSIS_VARIANT == "dualbar_v1",
+           "USB-C interrupter is installed only on the dual-bar fixture");
+    translate([profile_size, fixture_bar_y, fixture_bar_z.y])
+        extrusion(fixture_bar_length, "x", [0.72, 0.74, 0.77, 0.72]);
+    dualbar_joint_plate_previews();
+    fixture_plate_preview("proxy", [0.88, 0.88, 0.84, 0.45]);
+    dualbar_fixture_mount_previews();
+    installed_usb_c_interrupter_bracket(true);
 }
 
 module three_way_end_connector_proxy(x_right = false,
@@ -4244,19 +4354,29 @@ module guide_dualbar_assembly_13_fixture_board() {
     webcam_preview("mesh");
 }
 
-module guide_dualbar_assembly_14_placard() {
+module guide_dualbar_assembly_14_usb_c_interrupter() {
+    guide_layer_aluminum();
+    guide_layer_connectors();
+    guide_dualbar_carrier();
+    fixture_plate_preview("mesh");
+    dualbar_fixture_mount_previews();
+    webcam_preview("mesh");
+    installed_usb_c_interrupter_bracket(true, guide_new_tint);
+}
+
+module guide_dualbar_assembly_15_placard() {
     guide_detail_08_placard();
 }
 
-module guide_dualbar_assembly_15_power_strip() {
+module guide_dualbar_assembly_16_power_strip() {
     guide_detail_08_power_strip();
 }
 
-module guide_dualbar_assembly_16_stacking_tabs() {
+module guide_dualbar_assembly_17_stacking_tabs() {
     guide_detail_08_stacking_corner();
 }
 
-module guide_dualbar_assembly_17_final() {
+module guide_dualbar_assembly_18_final() {
     assembly("mesh");
 }
 
@@ -4675,6 +4795,8 @@ module guide_layer_printed_hardware() {
     installed_registration_guides();
     power_strip_mounts_preview();
     placard_risers_preview();
+    if (CHASSIS_VARIANT == "dualbar_v1")
+        installed_usb_c_interrupter_bracket();
 }
 
 module guide_layer_fixture_plate() {
@@ -5014,6 +5136,8 @@ module assembly(plate_detail = PLATE_DETAIL) {
     if (SHOW_CAMERA_FRUSTUM) camera_frustum_preview();
     if (SHOW_REGISTRATION_GUIDES) installed_registration_guides();
     if (SHOW_POWER_STRIP) power_strip_system_preview();
+    if (CHASSIS_VARIANT == "dualbar_v1")
+        installed_usb_c_interrupter_bracket(true);
     placard_assembly_preview();
 }
 
@@ -5102,6 +5226,10 @@ if (PART == "assembly") {
     dualbar_fixture_link();
 } else if (PART == "dualbar_fixture_link_set") {
     dualbar_fixture_link_set();
+} else if (PART == "usb_c_interrupter_bracket") {
+    usb_c_interrupter_bracket(USB_C_INTERRUPTER_M17_PILOT_DIAMETER);
+} else if (PART == "usb_c_interrupter_installed_preview") {
+    usb_c_interrupter_installed_preview();
 } else if (PART == "gantry_joint_plate") {
     gantry_joint_plate();
 } else if (PART == "gantry_joint_plate_set") {
@@ -5174,14 +5302,16 @@ if (PART == "assembly") {
     guide_dualbar_assembly_12_dut_holder();
 } else if (PART == "guide_dualbar_assembly_13_fixture_board") {
     guide_dualbar_assembly_13_fixture_board();
-} else if (PART == "guide_dualbar_assembly_14_placard") {
-    guide_dualbar_assembly_14_placard();
-} else if (PART == "guide_dualbar_assembly_15_power_strip") {
-    guide_dualbar_assembly_15_power_strip();
-} else if (PART == "guide_dualbar_assembly_16_stacking_tabs") {
-    guide_dualbar_assembly_16_stacking_tabs();
-} else if (PART == "guide_dualbar_assembly_17_final") {
-    guide_dualbar_assembly_17_final();
+} else if (PART == "guide_dualbar_assembly_14_usb_c_interrupter") {
+    guide_dualbar_assembly_14_usb_c_interrupter();
+} else if (PART == "guide_dualbar_assembly_15_placard") {
+    guide_dualbar_assembly_15_placard();
+} else if (PART == "guide_dualbar_assembly_16_power_strip") {
+    guide_dualbar_assembly_16_power_strip();
+} else if (PART == "guide_dualbar_assembly_17_stacking_tabs") {
+    guide_dualbar_assembly_17_stacking_tabs();
+} else if (PART == "guide_dualbar_assembly_18_final") {
+    guide_dualbar_assembly_18_final();
 } else if (PART == "production_batch_04_frame_hardware") {
     production_batch_04_frame_hardware();
 } else if (PART == "production_batch_05_placard_holder") {

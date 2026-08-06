@@ -169,7 +169,7 @@ class BrowserBundleTests(unittest.TestCase):
             with self.subTest(device=device["slug"]):
                 modes = device["modes"]
                 self.assertEqual(
-                    {"coupon": 1, "retrofit": 7, "full": 14},
+                    {"coupon": 1, "retrofit": 7, "full": 15},
                     {
                         mode: len(record["artifacts"])
                         for mode, record in modes.items()
@@ -187,6 +187,19 @@ class BrowserBundleTests(unittest.TestCase):
                     artifact["id"]: artifact
                     for artifact in modes["full"]["artifacts"]
                 }
+                bracket = full["chassis_usb_c_interrupter_bracket"]
+                self.assertEqual(
+                    "chassis/dual-usb-c-interrupter-rail-bracket.stl",
+                    bracket["output"],
+                )
+                self.assertEqual(
+                    "7c98e46e5ae0435803df79b7d8a0902632c83192047d51635823237d3b584f8a",
+                    bracket["expected_normalized_sha256"],
+                )
+                self.assertIn(
+                    "mechanical/dut-chassis-2020-v1/lib/usb-c-interrupter-bracket.scad",
+                    {source["path"] for source in self.catalog["sources"]},
+                )
                 self.assertTrue(set(expected_artifacts) <= set(full))
                 for artifact_id, contract in expected_artifacts.items():
                     artifact = full[artifact_id]
