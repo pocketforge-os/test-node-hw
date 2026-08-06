@@ -57,16 +57,26 @@ matches an accepted or regression-locked mesh.
 | --- | --- | --- |
 | `coupon` | Validate a new or changed physical fit cheaply | Holder fit coupon |
 | `retrofit` | Change the DUT on an existing chassis | Coupon, selected labeled carrier, complete profile-defined retention set, four carrier links, device nameplate, eight wire anchors |
-| `full` | Build a complete test node | Retrofit pack, optional process-calibration bed, and every core bed owned by the selected chassis layout |
+| `full` | Build a complete test node | Retrofit pack, the canonical DUT fixture plate and its printer fit coupon, optional process-calibration bed, and every core bed owned by the selected chassis layout |
 
 The calibration bed is included in a full export so the pack is complete, but
 it only needs printing after the printer, material, process, or extrusion
 changes.
 
-Holder coupon/carrier/hook records specify PETG, matching the qualified cradle
-guidance. Chassis-core, link, placard, and routing records specify ABS. Every
-record fixes 100% scale, support-free exported orientation, and any
-artifact-specific ironing or filament-change exception.
+Every full pack also contains `fixture/dut-fixture-plate.stl`, the canonical
+**unpopulated electronics mounting tray**, and
+`fixture/dut-fixture-fit-coupon.stl`. Print the coupon first to verify the
+printer-specific pilot holes, tie slots, frame slot, and camera opening before
+spending a full plate of filament. The BPI, USB hubs, relay/interrupter,
+DP100, camera, wiring, cable ties, screws, and other fasteners shown in assembly
+views are separately supplied hardware; they are not embedded in either STL.
+Coupon and retrofit packs assume the existing fixture remains in service and
+therefore do not duplicate these two full-build artifacts.
+
+Holder coupon/carrier/hook and DUT fixture records specify PETG, matching the
+qualified cradle and fixture guidance. Chassis-core, link, placard, and routing
+records specify ABS. Every record fixes 100% scale, support-free exported
+orientation, and any artifact-specific ironing or filament-change exception.
 
 ## Build and verify
 

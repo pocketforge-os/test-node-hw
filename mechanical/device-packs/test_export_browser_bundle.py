@@ -126,6 +126,99 @@ class BrowserBundleTests(unittest.TestCase):
             )
             self.assertFalse(any(path.endswith(".stl") for path in members))
 
+    def test_fixture_sources_and_full_only_artifacts_are_complete(
+        self,
+    ) -> None:
+        expected_fixture_sources = {
+            "mechanical/dut-fixture-v1/alientek-dp100.scad",
+            "mechanical/dut-fixture-v1/bpi-m2-zero-v1.scad",
+            "mechanical/dut-fixture-v1/ceksezx-mtsd001.scad",
+            "mechanical/dut-fixture-v1/dut-fixture.scad",
+            "mechanical/dut-fixture-v1/eightwood-ewua0205.scad",
+            "mechanical/dut-fixture-v1/elegoo-4-channel-relay.scad",
+            "mechanical/dut-fixture-v1/esp32-s3-supermini-hw747-v0.0.2.scad",
+            "mechanical/dut-fixture-v1/hiletgo-xl6009.scad",
+            "mechanical/dut-fixture-v1/logitech-c270.scad",
+            "mechanical/dut-fixture-v1/smays-microb-hub-8152.scad",
+            "mechanical/dut-fixture-v1/vienon-usb-001.scad",
+        }
+        actual_fixture_sources = {
+            item["path"]
+            for item in self.catalog["sources"]
+            if item["path"].startswith("mechanical/dut-fixture-v1/")
+        }
+        self.assertEqual(expected_fixture_sources, actual_fixture_sources)
+
+        expected_artifacts = {
+            "fixture_dut_plate": {
+                "output": "fixture/dut-fixture-plate.stl",
+                "definitions": {
+                    "PART": '\"plate\"',
+                    "SHOW_COMPONENTS": "false",
+                },
+            },
+            "fixture_dut_fit_coupon": {
+                "output": "fixture/dut-fixture-fit-coupon.stl",
+                "definitions": {
+                    "PART": '\"fit_coupon\"',
+                    "SHOW_COMPONENTS": "false",
+                },
+            },
+        }
+        for device in self.catalog["devices"]:
+            with self.subTest(device=device["slug"]):
+                modes = device["modes"]
+                self.assertEqual(
+                    {"coupon": 1, "retrofit": 7, "full": 14},
+                    {
+                        mode: len(record["artifacts"])
+                        for mode, record in modes.items()
+                    },
+                )
+                for mode in ("coupon", "retrofit"):
+                    self.assertTrue(
+                        set(expected_artifacts).isdisjoint(
+                            artifact["id"]
+                            for artifact in modes[mode]["artifacts"]
+                        )
+                    )
+
+                full = {
+                    artifact["id"]: artifact
+                    for artifact in modes["full"]["artifacts"]
+                }
+                self.assertTrue(set(expected_artifacts) <= set(full))
+                for artifact_id, contract in expected_artifacts.items():
+                    artifact = full[artifact_id]
+                    self.assertEqual(contract["output"], artifact["output"])
+                    self.assertEqual(
+                        "mechanical/dut-fixture-v1/dut-fixture.scad",
+                        artifact["source"],
+                    )
+                    self.assertEqual(
+                        contract["definitions"],
+                        {
+                            row["name"]: row["literal"]
+                            for row in artifact["definitions"]
+                        },
+                    )
+                    self.assertEqual("PETG", artifact["print"]["material"])
+                    self.assertIsNone(
+                        artifact["expected_normalized_sha256"]
+                    )
+                self.assertTrue(
+                    all(
+                        not definition["literal"]
+                        .strip('\"')
+                        .startswith("presentation")
+                        and definition["literal"].strip('\"')
+                        not in {"plate_lower", "plate_upper", "joiner"}
+                        for artifact in full.values()
+                        for definition in artifact["definitions"]
+                        if definition["name"] == "PART"
+                    )
+                )
+
     def test_source_tampering_fails_verification(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "browser"
