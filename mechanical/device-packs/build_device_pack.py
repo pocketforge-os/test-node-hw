@@ -60,6 +60,7 @@ STL_SERIALIZATION = CANONICAL_ASCII_STL_SCHEMA
 DEFAULT_LAYOUT_REGISTRY = Path(
     "mechanical/device-packs/device-layouts.json"
 )
+FIXTURE_SOURCE = Path("mechanical/dut-fixture-v1/dut-fixture.scad")
 
 
 class PackError(ValueError):
@@ -884,6 +885,60 @@ def _profile_item(
     )
 
 
+def _fixture_full_items(root: Path) -> tuple[PlanItem, PlanItem]:
+    source = (root / FIXTURE_SOURCE).resolve()
+    common_print_contract = {
+        "material": "PETG",
+        "scale_percent": 100,
+        "supports": False,
+        "auto_orient": False,
+    }
+    return (
+        PlanItem(
+            artifact_id="fixture_dut_plate",
+            output=PurePosixPath("fixture/dut-fixture-plate.stl"),
+            role=(
+                "Canonical unpopulated electronics mounting tray for the "
+                "separately supplied DUT harness components"
+            ),
+            scope="common",
+            source=source,
+            part="plate",
+            parameters={"PART": "plate", "SHOW_COMPONENTS": False},
+            print_contract={
+                **common_print_contract,
+                "notes": [
+                    "Print flat with standoffs upward.",
+                    "The BPI, hubs, relay/interrupter, DP100, camera, wiring, "
+                    "and fasteners are separately supplied and are not part "
+                    "of this unpopulated printable plate.",
+                ],
+            },
+            expected_normalized_sha256=None,
+        ),
+        PlanItem(
+            artifact_id="fixture_dut_fit_coupon",
+            output=PurePosixPath("fixture/dut-fixture-fit-coupon.stl"),
+            role=(
+                "Printer fit coupon for the canonical electronics mounting "
+                "tray holes, tie slots, and camera opening"
+            ),
+            scope="common",
+            source=source,
+            part="fit_coupon",
+            parameters={"PART": "fit_coupon", "SHOW_COMPONENTS": False},
+            print_contract={
+                **common_print_contract,
+                "notes": [
+                    "Print and accept this coupon before spending a full "
+                    "plate of filament.",
+                ],
+            },
+            expected_normalized_sha256=None,
+        ),
+    )
+
+
 def build_plan(
     root: Path,
     profile: holder_profiles.ResolvedProfile,
@@ -965,6 +1020,8 @@ def build_plan(
                 ),
             ]
         )
+    if mode == "full":
+        items.extend(_fixture_full_items(root))
 
     display_name = variant["display_name"]
     for artifact in layout.artifacts:
@@ -996,7 +1053,8 @@ def build_plan(
         raise PackError("profile and layout produce duplicate artifact IDs or paths")
     profile_count = 3 if mode in {"retrofit", "full"} else 1
     layout_count = sum(mode in artifact.modes for artifact in layout.artifacts)
-    expected_count = profile_count + layout_count
+    fixture_count = 2 if mode == "full" else 0
+    expected_count = profile_count + layout_count + fixture_count
     if len(ordered) != expected_count:
         raise PackError(
             f"{mode} layout must contain exactly {expected_count} "

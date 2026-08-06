@@ -257,6 +257,8 @@ class DevicePackTests(unittest.TestCase):
                 "chassis_core_03_movable_mounts",
                 "chassis_core_04_frame_hardware",
                 "chassis_core_05_placard_holder",
+                "fixture_dut_plate",
+                "fixture_dut_fit_coupon",
             },
         }
         for mode, artifact_ids in expected.items():
@@ -277,6 +279,8 @@ class DevicePackTests(unittest.TestCase):
                             "holder_fit_coupon",
                             "device_carrier",
                             "device_j_hook_set",
+                            "fixture_dut_plate",
+                            "fixture_dut_fit_coupon",
                         }
                         else "ABS"
                     )
@@ -284,6 +288,99 @@ class DevicePackTests(unittest.TestCase):
                         expected_material,
                         item.print_contract["material"],
                     )
+
+    def test_fixture_artifacts_are_canonical_and_full_only(self) -> None:
+        fixture_source = (
+            self.root
+            / "mechanical"
+            / "dut-fixture-v1"
+            / "dut-fixture.scad"
+        ).resolve()
+        expected = {
+            "fixture_dut_plate": {
+                "output": "fixture/dut-fixture-plate.stl",
+                "part": "plate",
+                "parameters": {
+                    "PART": "plate",
+                    "SHOW_COMPONENTS": False,
+                },
+            },
+            "fixture_dut_fit_coupon": {
+                "output": "fixture/dut-fixture-fit-coupon.stl",
+                "part": "fit_coupon",
+                "parameters": {
+                    "PART": "fit_coupon",
+                    "SHOW_COMPONENTS": False,
+                },
+            },
+        }
+        fixtures_by_device = []
+        for device_slug, profile, layout in (
+            ("trimui-smart-pro", self.profile, self.pro_dualbar_layout),
+            ("trimui-smart-pro-s", self.profile, self.dualbar_layout),
+            ("trimui-brick", self.brick_profile, self.brick_layout),
+            ("powkiddy-x55", self.x55_profile, self.x55_layout),
+        ):
+            with self.subTest(device=device_slug):
+                plans = {
+                    mode: packs.build_plan(
+                        self.root, profile, layout, device_slug, mode
+                    )
+                    for mode in packs.MODES
+                }
+                self.assertEqual(
+                    {"coupon": 1, "retrofit": 7, "full": 14},
+                    {mode: len(plan) for mode, plan in plans.items()},
+                )
+                for mode in ("coupon", "retrofit"):
+                    self.assertTrue(
+                        set(expected).isdisjoint(
+                            item.artifact_id for item in plans[mode]
+                        )
+                    )
+
+                fixtures = tuple(
+                    item
+                    for item in plans["full"]
+                    if item.artifact_id in expected
+                )
+                self.assertEqual(2, len(fixtures))
+                fixtures_by_device.append(fixtures)
+                for item in fixtures:
+                    contract = expected[item.artifact_id]
+                    self.assertEqual(fixture_source, item.source)
+                    self.assertEqual(contract["output"], item.output.as_posix())
+                    self.assertEqual(contract["part"], item.part)
+                    self.assertEqual(contract["parameters"], item.parameters)
+                    self.assertEqual("common", item.scope)
+                    self.assertEqual("PETG", item.print_contract["material"])
+                    self.assertEqual(100, item.print_contract["scale_percent"])
+                    self.assertFalse(item.print_contract["supports"])
+                    self.assertFalse(item.print_contract["auto_orient"])
+                    self.assertIsNone(item.expected_normalized_sha256)
+
+                plate = next(
+                    item
+                    for item in fixtures
+                    if item.artifact_id == "fixture_dut_plate"
+                )
+                self.assertIn("unpopulated", plate.role)
+                self.assertIn("separately supplied", plate.role)
+                self.assertTrue(
+                    all(
+                        not item.part.startswith("presentation")
+                        and item.part
+                        not in {"plate_lower", "plate_upper", "joiner"}
+                        for item in plans["full"]
+                    )
+                )
+
+        self.assertTrue(
+            all(
+                fixtures == fixtures_by_device[0]
+                for fixtures in fixtures_by_device[1:]
+            )
+        )
 
     def test_static_layout_geometry_is_regression_locked(self) -> None:
         for layout in (
@@ -418,7 +515,7 @@ class DevicePackTests(unittest.TestCase):
                     self.root, profile, layout, device_slug, "full"
                 )
                 ids = {item.artifact_id for item in plan}
-                self.assertEqual(12, len(plan))
+                self.assertEqual(14, len(plan))
                 self.assertTrue(
                     {
                         "chassis_dualbar_01_ironed_interfaces",
@@ -441,6 +538,8 @@ class DevicePackTests(unittest.TestCase):
                         "chassis_core_05_placard_holder",
                         "device_carrier_links",
                         "device_wire_anchors",
+                        "fixture_dut_plate",
+                        "fixture_dut_fit_coupon",
                     }
                     <= ids
                 )
@@ -502,7 +601,7 @@ class DevicePackTests(unittest.TestCase):
             "trimui-brick",
             "full",
         )
-        self.assertEqual(12, len(plan))
+        self.assertEqual(14, len(plan))
         retention = next(
             item for item in plan if item.artifact_id == "device_j_hook_set"
         )
@@ -558,7 +657,7 @@ class DevicePackTests(unittest.TestCase):
             "powkiddy-x55",
             "full",
         )
-        self.assertEqual(12, len(plan))
+        self.assertEqual(14, len(plan))
         carrier = next(
             item for item in plan if item.artifact_id == "device_carrier"
         )
