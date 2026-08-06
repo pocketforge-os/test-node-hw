@@ -235,7 +235,7 @@ label_stroke_growth = 0.35;
 label_font = "Liberation Sans Narrow:style=Regular";
 title_box_size = [176.0, 23.0];
 title_box_centre = [plate_size.x / 2, plate_size.y - 14.5];
-title_font_size = 11.5;
+title_font_size = 11.0;
 title_border_inner_inset = 1.2;
 orientation_font_size = 9.5;
 label_feature_clearance = 2.4;

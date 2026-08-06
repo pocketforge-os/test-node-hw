@@ -250,7 +250,7 @@ windows if that reading is wrong—nothing in the reusable hook changes.
   height.
 - The device name and TOP/BOTTOM markings use the profile's locked Liberation
   face with 0.35 mm stroke expansion. Smart Pro and Smart Pro S retain their
-  passing 10 mm titles; Brick uses 8.5 mm and X55 uses 11.5 mm so every title
+  passing 10 mm titles; Brick uses 8.5 mm and X55 uses 11.0 mm so every title
   remains at least three 0.8 mm nozzle widths inside its border.
 - Print the carrier body in white, then change to black at `plate_thickness`
   (3.2 mm), where the raised title, title-box border, and TOP/BOTTOM markings
