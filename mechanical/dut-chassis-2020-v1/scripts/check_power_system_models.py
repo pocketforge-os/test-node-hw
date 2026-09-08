@@ -3,12 +3,15 @@
 
 import ast
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PSU = (ROOT / "lib/alt-1205t-power-supply.scad").read_text()
 IEC = (ROOT / "lib/iec-c14-fused-switch.scad").read_text()
 DISPATCH = (ROOT / "power-system-models.scad").read_text()
+sys.path.insert(0, str(ROOT / "scripts"))
+from check_stl_topology import triangles  # noqa: E402
 
 
 def require(text: str, fragments: tuple[str, ...], label: str) -> None:
@@ -44,7 +47,13 @@ require(IEC, (
     'iecc14_tab_bounds("right", iecc14_tab_widths().y) == [10.5, 16, 10.5, 15.5]',
     'for (y = [bounds.x - iecc14_tab_relief(), bounds.y])',
     "iecc14_tab_height() + iecc14_tab_relief()",
+    "module iecc14_rigid_insertion_body_keepout",
+    "module iecc14_complete_rest_state_keepout",
     "module iecc14_keepout", "module iecc14_panel_cutout_negative",
+    'iecc14_locking_tab("left", iecc14_tab_widths().x)',
+    'iecc14_locking_tab("right", iecc14_tab_widths().y)',
+    "iecc14_complete_rest_state_keepout(include_schematic_terminals)",
+    "iecc14_rigid_insertion_body_keepout(depth + 0.02, clearance, -0.01)",
     "module iecc14_tab_relief_negatives",
     "full lower edge",
     "never the rejected 4.5 mm interpretation",
@@ -88,9 +97,24 @@ left = [-profile[1] / 2 + inset, -profile[1] / 2 + inset + widths[0], setback, s
 right = [profile[1] / 2 - inset - widths[1], profile[1] / 2 - inset, setback, setback + height]
 check_equal([left, right], [[-16, -8, 10.5, 15.5], [10.5, 16, 10.5, 15.5]], "IEC tongue extents")
 check_equal(relief, 1, "IEC three-sided relief")
+check_equal(literal_function(IEC, "iecc14_unmeasured_resting_tab_projection_assumption"), 0.6,
+            "IEC provisional unmeasured tongue projection")
 if "iecc14_tab_wall_x() + 0.61" not in IEC or "bounds.z])" not in IEC:
     raise SystemExit("IEC evidence must map both tongues and three-sided relief to the photographed wall")
 if "square([3.5, alt1205t_label_top_right_slot_height()])" in PSU:
     raise SystemExit("ALT label evidence must not invent a 3.5 mm slot depth")
+
+
+def points(path: Path) -> set[tuple[float, float, float]]:
+    return {point for triangle in triangles(path) for point in triangle}
+
+
+component_points = points(ROOT / "build/iec-c14-fused-switch.stl")
+cutout_points = points(ROOT / "build/iec-c14-panel-cutout-negative.stl")
+outer_tongue_y = sorted({y for x, y, z in component_points if x == 14.1 and z >= 10.5})
+check_equal(outer_tongue_y, [-16.0, -8.0, 10.5, 16.0],
+            "IEC complete STL must contain both outward tongues")
+check_equal((min(x for x, _, _ in cutout_points), max(x for x, _, _ in cutout_points)),
+            (-13.5, 13.5), "IEC rigid panel-cutout STL X bounds")
 
 print("power_system_model_contract=pass psu_datum=top-left-underbody iec_face_datum=z0")

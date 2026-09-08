@@ -39,7 +39,8 @@ USB_C_INTERRUPTER_STL := $(BUILD)/dual-usb-c-interrupter-rail-bracket.stl
 USB_C_INTERRUPTER_PREVIEW := $(BUILD)/dual-usb-c-interrupter-installed.png
 POWER_SYSTEM_SOURCE := power-system-models.scad
 POWER_SYSTEM_CHECK := scripts/check_power_system_models.py
-POWER_SYSTEM_STLS := $(BUILD)/alt-1205t-psu.stl $(BUILD)/iec-c14-fused-switch.stl
+POWER_SYSTEM_STLS := $(BUILD)/alt-1205t-psu.stl $(BUILD)/iec-c14-fused-switch.stl \
+	$(BUILD)/iec-c14-panel-cutout-negative.stl
 POWER_SYSTEM_EVIDENCE := \
 	$(BUILD)/layout-alt-1205t-underside.png \
 	$(BUILD)/layout-alt-1205t-label-side.png \
@@ -586,6 +587,10 @@ $(BUILD)/iec-c14-fused-switch.stl: $(POWER_SYSTEM_SOURCE) \
 		lib/iec-c14-fused-switch.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="iec_c14_fused_switch"' $<
 
+$(BUILD)/iec-c14-panel-cutout-negative.stl: $(POWER_SYSTEM_SOURCE) \
+		lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="iec_c14_panel_cutout_negative"' $<
+
 $(BUILD)/layout-alt-1205t-underside.png: $(POWER_SYSTEM_SOURCE) \
 		lib/alt-1205t-power-supply.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,900 \
@@ -634,9 +639,11 @@ validate-power-system-models: power-system-models
 	$(PYTHON) $(POWER_SYSTEM_CHECK)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/alt-1205t-psu.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/iec-c14-fused-switch.stl
-	@test -s $(BUILD)/alt-1205t-psu.stl -a -s $(BUILD)/iec-c14-fused-switch.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/iec-c14-panel-cutout-negative.stl
+	@test -s $(BUILD)/alt-1205t-psu.stl -a -s $(BUILD)/iec-c14-fused-switch.stl \
+		-a -s $(BUILD)/iec-c14-panel-cutout-negative.stl
 	@for image in $(POWER_SYSTEM_EVIDENCE); do test -s $$image; done
-	@echo 'power_system_models=pass hardwarnings=true stls=2 evidence_pngs=7'
+	@echo 'power_system_models=pass hardwarnings=true stls=3 evidence_pngs=7'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \

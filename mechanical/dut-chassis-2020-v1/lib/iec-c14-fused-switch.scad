@@ -11,6 +11,10 @@ function iecc14_tab_height() = 5;
 function iecc14_tab_top_setback() = 10.5;
 function iecc14_tab_relief() = 1;
 function iecc14_tab_lateral_inset() = 4.5;
+// Provisional modeling assumption: the owner evidence establishes outward
+// projection, but not its dimension. Replace this when it is measured.
+function iecc14_unmeasured_resting_tab_projection_assumption() = 0.6;
+function iecc14_tab_body_overlap() = 0.01;
 function iecc14_tab_wall_x() = iecc14_body_profile_size().x / 2;
 function iecc14_tab_y(side, width) = side == "left"
     ? -iecc14_body_profile_size().y / 2 + iecc14_tab_lateral_inset()
@@ -34,6 +38,10 @@ module iecc14_contract() {
            "Both IEC locking tabs must occupy the same photographed broad side wall");
     assert(iecc14_tab_relief() == 1 && iecc14_tab_top_setback() == 10.5,
            "IEC three-sided relief or top setback changed");
+    assert(iecc14_unmeasured_resting_tab_projection_assumption() == 0.6,
+           "IEC unmeasured resting tongue projection assumption changed");
+    assert(iecc14_tab_body_overlap() > 0,
+           "IEC tongue must overlap its parent wall for a manifold union");
     assert(abs(sqrt(pow((iecc14_body_profile_size().x - iecc14_top_straight_length()) / 2, 2) + pow(iecc14_chamfer_rise(), 2)) - 8) < 0.001,
            "IEC literal diagonal chamfer edges must remain 8 mm");
     assert(!iecc14_terminal_projection_known(), "IEC terminal projection remains unmeasured");
@@ -52,8 +60,16 @@ module iecc14_panel_profile_2d(clearance = 0) {
 // Independently callable panel negative, front face at Z=0 and body behind +Z.
 module iecc14_panel_cutout_negative(depth = 24, clearance = 0) {
     iecc14_contract()
-        translate([0, 0, -0.01]) linear_extrude(height = depth + 0.02)
-            iecc14_panel_profile_2d(clearance);
+        iecc14_rigid_insertion_body_keepout(depth + 0.02, clearance, -0.01);
+}
+
+// Rigid/compressed insertion contract. This nominal 27 x 41 profile is the
+// sole source for panel cutouts and insertion paths; relaxed tongues are absent.
+module iecc14_rigid_insertion_body_keepout(
+    depth = iecc14_body_depth(), clearance = 0, z_offset = 0
+) {
+    translate([0, 0, z_offset])
+        linear_extrude(height = depth) iecc14_panel_profile_2d(clearance);
 }
 
 module iecc14_locking_tab(side = "left", width = 8) {
@@ -62,8 +78,10 @@ module iecc14_locking_tab(side = "left", width = 8) {
     bounds = iecc14_tab_bounds(side, width);
     // Thin tongue remains connected at its bottom; the surrounding 1 mm gap
     // is represented in evidence by the contrasting parent side wall.
-    translate([iecc14_tab_wall_x(), bounds.x, bounds.z])
-        cube([0.6, bounds.y - bounds.x, bounds[3] - bounds.z]);
+    projection = iecc14_unmeasured_resting_tab_projection_assumption();
+    overlap = iecc14_tab_body_overlap();
+    translate([iecc14_tab_wall_x() - overlap, bounds.x, bounds.z])
+        cube([projection + overlap, bounds.y - bounds.x, bounds[3] - bounds.z]);
 }
 
 module iecc14_tab_relief_negatives(side = "left", width = 8) {
@@ -96,23 +114,31 @@ module iecc14_tab_relief_evidence(side = "left", width = 8) {
     }
 }
 
-module iecc14_keepout(include_schematic_terminals = false) {
+// Complete relaxed/rest-state component contract for enclosure clearances.
+module iecc14_complete_rest_state_keepout(include_schematic_terminals = false) {
     iecc14_contract() {
         union() {
             translate([-iecc14_faceplate_size().x/2, -iecc14_faceplate_size().y/2,
                        -iecc14_faceplate_size().z])
                 cube(iecc14_faceplate_size());
             difference() {
-                linear_extrude(height = iecc14_body_depth()) iecc14_panel_profile_2d();
+                iecc14_rigid_insertion_body_keepout();
                 iecc14_tab_relief_negatives("left", iecc14_tab_widths().x);
                 iecc14_tab_relief_negatives("right", iecc14_tab_widths().y);
             }
+            iecc14_locking_tab("left", iecc14_tab_widths().x);
+            iecc14_locking_tab("right", iecc14_tab_widths().y);
             if (include_schematic_terminals)
                 // Schematic only: not part of the measured keep-out contract.
                 color([0.85, 0.55, 0.12]) translate([-7, -8, iecc14_body_depth()])
                     cube([14, 16, 3]);
         }
     }
+}
+
+// Stable downstream default: a complete physical envelope at rest.
+module iecc14_keepout(include_schematic_terminals = false) {
+    iecc14_complete_rest_state_keepout(include_schematic_terminals);
 }
 
 module iecc14_evidence(view = "front") {
@@ -127,8 +153,8 @@ module iecc14_evidence(view = "front") {
             color([0.25, 0.27, 0.29]) linear_extrude(height = 0.4) iecc14_panel_profile_2d();
         } else if (view == "side") {
             color([0.12, 0.13, 0.14]) iecc14_keepout();
-            // Semantic overlay identifies the flexible tongues; it does not
-            // participate in the printable/exported keep-out.
+            // Semantic overlay identifies tongues already present in the
+            // printable/exported complete rest-state keep-out.
             color([0.90, 0.42, 0.10]) {
                 iecc14_locking_tab("left", 8);
                 iecc14_locking_tab("right", 5.5);
