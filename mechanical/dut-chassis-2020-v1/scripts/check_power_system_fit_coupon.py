@@ -60,11 +60,35 @@ topology = inspect_topology(mesh)
 if topology["invalid_edges"] or topology["components"] != 1 or topology["degenerate_facets"]:
     raise SystemExit(f"coupon topology failure: {topology}")
 points = [point for tri in triangles(mesh) for point in tri]
+facets = triangles(mesh)
 mins = tuple(min(p[axis] for p in points) for axis in range(3))
 maxs = tuple(max(p[axis] for p in points) for axis in range(3))
-if mins[2] != 0 or maxs[2] != 3:
-    raise SystemExit(f"coupon must lie flat at Z=0 with 3.0 mm wall, got {mins[2]}..{maxs[2]}")
+if mins[2] != 0 or maxs[2] != 5:
+    raise SystemExit(
+        "coupon must lie flat at Z=0 with a 3.0 mm bed and 2.0 mm register, "
+        f"got {mins[2]}..{maxs[2]}"
+    )
 if mins[0] > -36.5 or maxs[0] < 91 or mins[1] > -5 or maxs[1] < 112:
     raise SystemExit(f"coupon absolute L/datum bounds unexpectedly contracted: min={mins} max={maxs}")
 
-print("power_system_fit_coupon_contract=pass wall_mm=3.0 iec_clearance_per_side_mm=0.20 m3_hole_diameter_mm=3.4 nut_pocket_af_mm=5.75")
+
+def is_register_face(triangle, axis: int) -> bool:
+    """Match a real vertical mesh face on a nominal PSU datum axis."""
+    other = 1 - axis
+    return (
+        all(abs(point[axis]) < 1e-6 for point in triangle)
+        and max(point[2] for point in triangle) == 5
+        and min(point[2] for point in triangle) == 3
+        and min(point[other] for point in triangle) >= 0
+        and max(point[other] for point in triangle) >= 20
+    )
+
+
+if not any(is_register_face(triangle, 0) for triangle in facets):
+    raise SystemExit("printable mesh lacks the PSU X=0 left registration shoulder")
+if not any(is_register_face(triangle, 1) for triangle in facets):
+    raise SystemExit("printable mesh lacks the PSU Y=0 top registration shoulder")
+if any(x > 1e-6 and y > 1e-6 and z > 3 + 1e-6 for x, y, z in points):
+    raise SystemExit("origin register overlaps the PSU plan envelope above its seating face")
+
+print("power_system_fit_coupon_contract=pass wall_mm=3.0 register_axes=X0,Y0 register_height_mm=2.0 iec_clearance_per_side_mm=0.20 m3_hole_diameter_mm=3.4 nut_pocket_af_mm=5.75")

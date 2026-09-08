@@ -36,6 +36,9 @@ function coupon_panel_size() = [35, 54];
 function coupon_nut_centre() = [85, 8];
 function coupon_rib_width() = 7;
 function coupon_pad_diameter() = 11;
+function coupon_register_height() = 2.0;
+function coupon_register_thickness() = 2.0;
+function coupon_register_length() = 24;
 
 module coupon_contract() {
     assert(alt1205t_base_size() == [77.5, 110], "PSU absolute datum outline changed");
@@ -98,8 +101,23 @@ module nut_sampler_2d() {
 }
 
 module coupon_blank() {
-    linear_extrude(height=WALL_THICKNESS)
-        union() { psu_sparse_outline_2d(); iec_panel_2d(); nut_sampler_2d(); }
+    union() {
+        linear_extrude(height=WALL_THICKNESS)
+            union() { psu_sparse_outline_2d(); iec_panel_2d(); nut_sampler_2d(); }
+        // The PSU sits on the Z=WALL_THICKNESS face and is pushed up/left.
+        // These outside-only legs expose crisp inside faces at the exact X=0
+        // and Y=0 datum axes without occupying any of the PSU plan envelope.
+        translate([-coupon_register_thickness(), 0, WALL_THICKNESS])
+            cube([coupon_register_thickness(), coupon_register_length(),
+                  coupon_register_height()]);
+        translate([0, -coupon_register_thickness(), WALL_THICKNESS])
+            cube([coupon_register_length(), coupon_register_thickness(),
+                  coupon_register_height()]);
+        translate([-coupon_register_thickness(), -coupon_register_thickness(),
+                   WALL_THICKNESS])
+            cube([coupon_register_thickness(), coupon_register_thickness(),
+                  coupon_register_height()]);
+    }
 }
 
 module hex_prism(af, height) {
@@ -158,6 +176,9 @@ module evidence_overlay() {
         }
     color([0.85,0.05,0.05]) translate([-35,109,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("FIT COUPON — NO MAINS", size=4.2, font="Liberation Sans:style=Bold");
+    color([0.55,0.05,0.75]) translate([3,9,WALL_THICKNESS+coupon_register_height()+0.04])
+        linear_extrude(height=0.16) text("SLIDE -X / -Y TO REGISTER", size=2.2,
+                                         font="Liberation Sans:style=Bold");
     color([0.15,0.15,0.15]) translate([-37,105,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("orange=PSU centres  green=IEC +0.20/side", size=2.5);
     color([0.1,0.1,0.1]) translate([-35,55,WALL_THICKNESS+0.04])

@@ -30,7 +30,9 @@ Print the exact committed candidate and report every correction numerically.
 The owner must explicitly confirm that:
 
 - all three selected PSU holes and the upper-right slot drop over the real PSU
-  without forcing while the positive top-left datum edges align;
+  without forcing after placing its underside on the coupon and sliding the
+  PSU left and up until its outer left edge seats against the crisp `X=0`
+  shoulder and its outer top edge seats against the crisp `Y=0` shoulder;
 - the IEC rigid body and both 5 mm locking tongues insert through the 3.0 mm
   panel, the tongues spring outward after insertion, and they retain behind the
   wall;
