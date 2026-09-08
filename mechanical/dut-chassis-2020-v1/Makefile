@@ -37,6 +37,18 @@ GUIDE_LAYOUT_RECORD := ../device-packs/layouts/chassis-dualbar-v1.json
 USB_C_INTERRUPTER_SOURCE := lib/usb-c-interrupter-bracket.scad
 USB_C_INTERRUPTER_STL := $(BUILD)/dual-usb-c-interrupter-rail-bracket.stl
 USB_C_INTERRUPTER_PREVIEW := $(BUILD)/dual-usb-c-interrupter-installed.png
+POWER_SYSTEM_SOURCE := power-system-models.scad
+POWER_SYSTEM_CHECK := scripts/check_power_system_models.py
+POWER_SYSTEM_STLS := $(BUILD)/alt-1205t-psu.stl $(BUILD)/iec-c14-fused-switch.stl \
+	$(BUILD)/iec-c14-panel-cutout-negative.stl
+POWER_SYSTEM_EVIDENCE := \
+	$(BUILD)/layout-alt-1205t-underside.png \
+	$(BUILD)/layout-alt-1205t-label-side.png \
+	$(BUILD)/layout-alt-1205t-side.png \
+	$(BUILD)/layout-iec-c14-front.png \
+	$(BUILD)/layout-iec-c14-side.png \
+	$(BUILD)/layout-iec-c14-rear.png \
+	$(BUILD)/layout-power-system-review.png
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
 	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
@@ -480,6 +492,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 
 .PHONY: all batches core-batches dualbar dualbar-batches dualbar-preview \
 	brick-dualbar-preview device-example-previews usb-c-interrupter \
+	power-system-models validate-power-system-models \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
@@ -516,6 +529,8 @@ brick-dualbar-preview: $(BRICK_DUALBAR_REVIEW)
 device-example-previews: $(DEVICE_EXAMPLE_REVIEW)
 
 usb-c-interrupter: $(USB_C_INTERRUPTER_STL) $(USB_C_INTERRUPTER_PREVIEW)
+
+power-system-models: $(POWER_SYSTEM_STLS) $(POWER_SYSTEM_EVIDENCE)
 
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
@@ -563,6 +578,72 @@ validate-usb-c-interrupter: usb-c-interrupter
 	fi; \
 	grep -q 'M1.7 self-tapper pilot must remain a conservative starter hole' $$log; \
 	echo 'usb_c_interrupter_pilot_guard=pass rejected_pilot_mm=1.8'
+
+$(BUILD)/alt-1205t-psu.stl: $(POWER_SYSTEM_SOURCE) \
+		lib/alt-1205t-power-supply.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="alt_1205t_psu"' $<
+
+$(BUILD)/iec-c14-fused-switch.stl: $(POWER_SYSTEM_SOURCE) \
+		lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="iec_c14_fused_switch"' $<
+
+$(BUILD)/iec-c14-panel-cutout-negative.stl: $(POWER_SYSTEM_SOURCE) \
+		lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="iec_c14_panel_cutout_negative"' $<
+
+$(BUILD)/layout-alt-1205t-underside.png: $(POWER_SYSTEM_SOURCE) \
+		lib/alt-1205t-power-supply.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,900 \
+		--projection=ortho --viewall --camera=0,0,0,0,0,0,140 \
+		-D 'PART="alt_1205t_psu_evidence"' \
+		-D 'VIEW="underside"' $<
+
+$(BUILD)/layout-alt-1205t-label-side.png: $(POWER_SYSTEM_SOURCE) \
+		lib/alt-1205t-power-supply.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,700 \
+		--projection=ortho --viewall --camera=0,0,0,0,0,0,140 \
+		-D 'PART="alt_1205t_psu_evidence"' \
+		-D 'VIEW="label_side"' $<
+
+$(BUILD)/layout-alt-1205t-side.png: $(POWER_SYSTEM_SOURCE) \
+		lib/alt-1205t-power-supply.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,800 \
+		--projection=ortho --viewall --camera=0,0,0,90,0,90,160 \
+		-D 'PART="alt_1205t_psu_evidence"' -D 'VIEW="side"' $<
+
+$(BUILD)/layout-iec-c14-front.png: $(POWER_SYSTEM_SOURCE) \
+		lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=800,1100 \
+		--projection=ortho --viewall --camera=0,0,0,0,0,0,100 \
+		-D 'PART="iec_c14_fused_switch_evidence"' \
+		-D 'VIEW="front"' $<
+
+$(BUILD)/layout-iec-c14-side.png: $(POWER_SYSTEM_SOURCE) \
+		lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1100,900 \
+		--projection=ortho --viewall --camera=0,0,0,90,0,90,100 \
+		-D 'PART="iec_c14_fused_switch_evidence"' -D 'VIEW="side"' $<
+
+$(BUILD)/layout-iec-c14-rear.png: $(POWER_SYSTEM_SOURCE) \
+		lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=800,1100 \
+		--projection=ortho --viewall --camera=0,0,0,0,0,0,100 \
+		-D 'PART="iec_c14_fused_switch_evidence"' -D 'VIEW="rear"' $<
+
+$(BUILD)/layout-power-system-review.png: $(POWER_SYSTEM_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1600,1000 \
+		--projection=ortho --viewall -D 'PART="power_system_review"' $<
+
+validate-power-system-models: power-system-models
+	$(PYTHON) $(POWER_SYSTEM_CHECK)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/alt-1205t-psu.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/iec-c14-fused-switch.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/iec-c14-panel-cutout-negative.stl
+	@test -s $(BUILD)/alt-1205t-psu.stl -a -s $(BUILD)/iec-c14-fused-switch.stl \
+		-a -s $(BUILD)/iec-c14-panel-cutout-negative.stl
+	@for image in $(POWER_SYSTEM_EVIDENCE); do test -s $$image; done
+	@echo 'power_system_models=pass hardwarnings=true stls=3 evidence_pngs=7'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
@@ -2323,7 +2404,7 @@ validate-right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 	@echo 'right_angle_checker_validation=pass default=150x150x5 custom=100x100x4 angle_deg=90'
 
 validate: lint all calibration preview device-example-previews \
-	validate-usb-c-interrupter validate-margin-guard \
+	validate-usb-c-interrupter validate-power-system-models validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-power-strip-guard \

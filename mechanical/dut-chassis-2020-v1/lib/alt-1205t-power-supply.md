@@ -1,0 +1,5 @@
+# ALT-1205T semantic model provenance
+
+The model uses the owner-approved 2026-09-07 measurement worksheet derived from private files `20260907_155711.jpg`, `20260907_155715.jpg`, `20260907_155723.jpg`, `20260907_155809.jpg`, and `20260907_155927.jpg`. Filenames identify the evidence set; no image bytes, crops, metadata, or location data are stored here.
+
+The underside datum is the top-left corner of the 77.5 × 110 mm base, with +X right, +Y down, and +Z toward the 110 × 36.86 mm label side. The three internal M3 centres are the unequivocal minimal-coupon pattern. The lower-left leader values 5.75, 4, 10.4, 2.28, and 2.61 mm are retained by `alt1205t_lower_left_unresolved_leaders()` but their endpoints remain unresolved, so they do not create holes or safety-critical geometry. The label-side top-right slot has a known 6.9 mm vertical extent but unknown horizontal depth, so evidence shows only a semantic edge marker and does not subtract an invented aperture. The small upper-right square is explicitly not a hole. Terminal and wire-bend projection is unknown and excluded from the measured keep-out; enclosure design must establish that clearance separately.
