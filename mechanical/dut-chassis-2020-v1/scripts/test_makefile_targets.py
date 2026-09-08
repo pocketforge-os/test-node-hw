@@ -479,6 +479,8 @@ def main() -> int:
         'PART="iec_c14_fused_switch"',
         "build/alt-1205t-psu.stl",
         "build/iec-c14-fused-switch.stl",
+        "build/iec-c14-panel-cutout-clearance-0.20.stl",
+        "IEC_CLEARANCE=0.20",
         "build/layout-alt-1205t-underside.png",
         "build/layout-alt-1205t-label-side.png",
         "build/layout-alt-1205t-side.png",

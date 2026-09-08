@@ -159,10 +159,54 @@ def points(path: Path) -> set[tuple[float, float, float]]:
 
 component_points = points(ROOT / "build/iec-c14-fused-switch.stl")
 cutout_points = points(ROOT / "build/iec-c14-panel-cutout-negative.stl")
+clearanced_cutout_points = points(
+    ROOT / "build/iec-c14-panel-cutout-clearance-0.20.stl"
+)
 outer_tongue_y = sorted({y for x, y, z in component_points if x == 14.1 and z >= 10.5})
 check_equal(outer_tongue_y, [-16.0, -8.0, 10.5, 16.0],
             "IEC complete STL must contain both outward tongues")
 check_equal((min(x for x, _, _ in cutout_points), max(x for x, _, _ in cutout_points)),
             (-13.5, 13.5), "IEC rigid panel-cutout STL X bounds")
+
+nominal_xy = {(x, y) for x, y, _ in cutout_points}
+clearanced_xy = {(x, y) for x, y, _ in clearanced_cutout_points}
+check_equal(
+    (
+        min(x for x, _ in nominal_xy), max(x for x, _ in nominal_xy),
+        min(y for _, y in nominal_xy), max(y for _, y in nominal_xy),
+    ),
+    (-13.5, 13.5, -20.5, 20.5),
+    "IEC nominal rendered profile bounds",
+)
+check_equal(
+    tuple(round(value, 6) for value in (
+        min(x for x, _ in clearanced_xy), max(x for x, _ in clearanced_xy),
+        min(y for _, y in clearanced_xy), max(y for _, y in clearanced_xy),
+    )),
+    (-13.7, 13.7, -20.7, 20.7),
+    "IEC 0.20 mm rendered clearanced profile bounds",
+)
+
+# Measure the rendered upper-right chamfer against the nominal supporting line.
+# Bounding-box growth produces the same overall bounds but moves this line by
+# a different normal distance, so it cannot pass this geometry-level check.
+clearanced_chamfer = [
+    (x, y) for x, y in clearanced_xy
+    if x > 8 and y > profile[1] / 2 - rise
+    and math.isclose(abs(a * x + b * y + nominal_c),
+                     clearance * normal_length, abs_tol=2e-4)
+]
+if len(clearanced_chamfer) < 2:
+    raise SystemExit(
+        "IEC rendered clearanced chamfer does not contain two vertices at "
+        "0.20 mm normal offset"
+    )
+for x, y in clearanced_chamfer:
+    rendered_distance = abs(a * x + b * y + nominal_c) / normal_length
+    if not math.isclose(rendered_distance, clearance, abs_tol=2e-5):
+        raise SystemExit(
+            f"IEC rendered chamfer clearance must be {clearance}, got "
+            f"{rendered_distance} at {(x, y)}"
+        )
 
 print("power_system_model_contract=pass psu_datum=top-left-underbody iec_face_datum=z0")
