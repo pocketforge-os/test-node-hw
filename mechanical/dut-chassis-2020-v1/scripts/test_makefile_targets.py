@@ -498,7 +498,12 @@ def main() -> int:
         "power-system-fit-coupon.scad",
         "scripts/check_power_system_fit_coupon.py",
         "--min-bed-contact-area 900",
-        "orientation=flat supports=none wall_mm=3.0",
+        "IEC_CLEARANCE=0.30",
+        "M3_HOLE_CLEARANCE=0.50",
+        "NUT_TRAP_CLEARANCE=0.35",
+        "WALL_THICKNESS=3.2",
+        "LABEL_DEPTH=0.25",
+        "orientation=flat supports=none wall_mm=3.0 overrides=pass",
     ):
         if required not in power_coupon:
             raise SystemExit(

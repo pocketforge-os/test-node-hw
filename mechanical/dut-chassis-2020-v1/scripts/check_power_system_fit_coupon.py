@@ -45,12 +45,15 @@ for assertion in (
     "alt1205t_m3_centres() == [[23.8,29.9], [23.8,66], [51.8,66]]",
     "coupon_slot_origin() == [71.05, 2.94]",
     "coupon_iec_nominal_profile() == [27,41]",
-    "coupon_iec_clearanced_profile() == [27.4,41.4]",
+    "[27 + 2*IEC_CLEARANCE, 41 + 2*IEC_CLEARANCE]",
     "coupon_nut_nominal_af() == 5.5",
     "coupon_nut_nominal_thickness() == 2.4",
 ):
     if assertion not in SOURCE:
         raise SystemExit(f"missing executable assertion: {assertion}")
+
+# Every requested process variable must actually survive a non-default export;
+# source-level is_undef declarations are insufficient if an assertion rejects it.
 
 mesh = ROOT / "build/power-system-fit-coupon.stl"
 topology = inspect_topology(mesh)

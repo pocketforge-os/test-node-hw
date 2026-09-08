@@ -659,16 +659,20 @@ $(POWER_SYSTEM_COUPON_STL): $(POWER_SYSTEM_COUPON_SOURCE) \
 $(POWER_SYSTEM_COUPON_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
 		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
-		--projection=ortho --viewall --camera=0,0,0,0,0,0,90 \
+		--projection=ortho --viewall --camera=0,0,0,0,0,0,50 \
 		-D 'EVIDENCE=true' $<
 
 validate-power-system-fit-coupon: power-system-fit-coupon
 	$(PYTHON) $(POWER_SYSTEM_COUPON_CHECK)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-fit-coupon-overrides.csg \
+		-D 'IEC_CLEARANCE=0.30' -D 'M3_HOLE_CLEARANCE=0.50' \
+		-D 'NUT_TRAP_CLEARANCE=0.35' -D 'WALL_THICKNESS=3.2' \
+		-D 'LABEL_DEPTH=0.25' $(POWER_SYSTEM_COUPON_SOURCE)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_COUPON_STL)
 	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 125 --max-z 3 \
 		--bed-x 247 --bed-y 207 --min-bed-contact-area 900 $(POWER_SYSTEM_COUPON_STL)
 	@test -s $(POWER_SYSTEM_COUPON_EVIDENCE)
-	@echo 'power_system_fit_coupon=pass orientation=flat supports=none wall_mm=3.0'
+	@echo 'power_system_fit_coupon=pass orientation=flat supports=none wall_mm=3.0 overrides=pass'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \

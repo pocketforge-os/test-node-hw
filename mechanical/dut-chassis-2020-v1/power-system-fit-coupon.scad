@@ -46,17 +46,20 @@ module coupon_contract() {
                alt1205t_base_size().x - 3.15,
            "PSU slot tangent contract changed");
     assert(coupon_iec_nominal_profile() == [27,41] &&
-           coupon_iec_clearanced_profile() == [27.4,41.4],
-           "IEC nominal and 0.20 mm-per-side profiles must remain distinct");
-    assert(WALL_THICKNESS == 3.0, "Initial coupon wall must be 3.0 mm");
+           coupon_iec_clearanced_profile() ==
+               [27 + 2*IEC_CLEARANCE, 41 + 2*IEC_CLEARANCE],
+           "IEC nominal and clearanced profiles must remain distinct");
+    assert(WALL_THICKNESS > 0, "Coupon wall thickness must be positive");
     assert(IEC_CLEARANCE >= 0 && M3_HOLE_CLEARANCE >= 0 && NUT_TRAP_CLEARANCE >= 0,
            "Print clearances cannot be negative");
     assert(LABEL_DEPTH > 0 && LABEL_DEPTH < WALL_THICKNESS,
            "Label depth must remain within the coupon wall");
-    assert(coupon_m3_hole_diameter() == 3.4, "Initial M3 printable clearance changed");
+    assert(coupon_m3_hole_diameter() == 3 + M3_HOLE_CLEARANCE,
+           "M3 clearance must apply to the nominal diameter");
     assert(coupon_nut_nominal_af() == 5.5 && coupon_nut_nominal_thickness() == 2.4 &&
-           coupon_nut_pocket_af() == 5.75 && coupon_nut_pocket_depth() == 2.6,
-           "M3 nut-trap nominal or initial clearance changed");
+           coupon_nut_pocket_af() == 5.5 + NUT_TRAP_CLEARANCE &&
+           coupon_nut_pocket_depth() == 2.6,
+           "M3 nut-trap nominal or clearance mapping changed");
     assert(coupon_nut_pocket_depth() < WALL_THICKNESS,
            "Nut pocket must retain a printable floor");
     children();
@@ -153,8 +156,8 @@ module evidence_overlay() {
             iecc14_panel_profile_2d(IEC_CLEARANCE);
             iecc14_panel_profile_2d(0);
         }
-    color([0.85,0.05,0.05]) translate([-37,111,WALL_THICKNESS+0.04])
-        linear_extrude(height=0.16) text("FIT COUPON — NO MAINS", size=5, font="Liberation Sans:style=Bold");
+    color([0.85,0.05,0.05]) translate([-35,109,WALL_THICKNESS+0.04])
+        linear_extrude(height=0.16) text("FIT COUPON — NO MAINS", size=4.2, font="Liberation Sans:style=Bold");
     color([0.15,0.15,0.15]) translate([-37,105,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("orange=PSU centres  green=IEC +0.20/side", size=2.5);
     color([0.1,0.1,0.1]) translate([-35,55,WALL_THICKNESS+0.04])
