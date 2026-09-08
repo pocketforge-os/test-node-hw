@@ -39,13 +39,17 @@ def check_equal(actual, expected, label: str) -> None:
 
 require(PSU, (
     "function alt1205t_upper_right_square_is_hole() = false",
+    "function alt1205t_upper_left_m3_centre() = [3.45, 3.45]",
+    "function alt1205t_lower_left_m3_centre() = [",
+    "function alt1205t_bottom_slot_origin() = [",
+    "module alt1205t_bottom_open_slot_negative",
     "module alt1205t_keepout()", "module alt1205t_mounting_negatives",
 ), "ALT-1205T")
 
 require(IEC, (
     "function iecc14_tab_wall_x() = iecc14_body_profile_size().x / 2",
-    'iecc14_tab_bounds("left", iecc14_tab_widths().x) == [-16, -8, 10.5, 15.5]',
-    'iecc14_tab_bounds("right", iecc14_tab_widths().y) == [10.5, 16, 10.5, 15.5]',
+    'iecc14_tab_bounds("left", iecc14_tab_widths().x) == [-18.93, -10.93, 10.5, 15.5]',
+    'iecc14_tab_bounds("right", iecc14_tab_widths().y) == [13.43, 18.93, 10.5, 15.5]',
     'for (y = [bounds.x - iecc14_tab_relief(), bounds.y])',
     "iecc14_tab_height() + iecc14_tab_relief()",
     "module iecc14_rigid_insertion_body_keepout",
@@ -73,8 +77,16 @@ label = literal_function(PSU, "alt1205t_label_side_size")
 m3 = literal_function(PSU, "alt1205t_m3_centres")
 check_equal(base, [77.5, 110], "ALT base axes")
 check_equal(label, [110, 36.86], "ALT label-side axes")
-check_equal(m3, [[23.8, 29.9], [23.8, 66], [51.8, 66]], "ALT M3 coordinates")
-check_equal(literal_function(PSU, "alt1205t_upper_left_aperture_size"), [3.45, 3.45], "ALT upper-left aperture")
+check_equal(m3, [[26.8, 32.9], [26.8, 69], [54.8, 69]], "ALT corrected internal M3 coordinates")
+check_equal(literal_function(PSU, "alt1205t_m3_nominal_diameter"), 3, "ALT nominal M3 diameter")
+check_equal(literal_function(PSU, "alt1205t_upper_left_m3_centre"), [3.45, 3.45], "ALT upper-left M3 centre")
+check_equal(literal_function(PSU, "alt1205t_lower_left_m3_left_tangent"), 5.75, "ALT lower-left M3 left tangent")
+check_equal(literal_function(PSU, "alt1205t_lower_left_m3_bottom_centre_datum"), 10.4, "ALT lower-left M3 bottom centre datum")
+lower_left_m3 = [5.75 + 3 / 2, base[1] - 10.4]
+check_equal(lower_left_m3, [7.25, 99.6], "ALT derived lower-left M3 centre")
+check_equal(literal_function(PSU, "alt1205t_bottom_slot_left_tangent"), 2.28, "ALT bottom-slot left tangent")
+check_equal(literal_function(PSU, "alt1205t_bottom_slot_size"), [2.61, 4], "ALT bottom-open slot axes")
+check_equal([2.28, base[1] - 4], [2.28, 106], "ALT derived bottom-slot origin")
 check_equal(literal_function(PSU, "alt1205t_upper_right_slot_size"), [3.3, 4.7], "ALT underside slot axes")
 check_equal(literal_function(PSU, "alt1205t_upper_right_slot_top_tangent"), 2.94, "ALT underside slot top tangent")
 check_equal(literal_function(PSU, "alt1205t_upper_right_slot_right_tangent"), 3.15, "ALT underside slot right tangent")
@@ -85,7 +97,7 @@ check_equal(literal_function(PSU, "alt1205t_label_top_right_slot_horizontal_dept
 
 profile = literal_function(IEC, "iecc14_body_profile_size")
 check_equal(literal_function(IEC, "iecc14_faceplate_size"), [31, 50.3, 2], "IEC faceplate axes")
-check_equal(profile, [27, 41], "IEC body profile axes")
+check_equal(profile, [27, 46.86], "IEC body profile axes")
 check_equal(literal_function(IEC, "iecc14_body_depth"), 21.8, "IEC insertion depth")
 check_equal(literal_function(IEC, "iecc14_top_straight_length"), 16, "IEC top straight length")
 check_equal(literal_function(IEC, "iecc14_chamfer_edge_length"), 8, "IEC chamfer edge length")
@@ -96,7 +108,7 @@ relief = literal_function(IEC, "iecc14_tab_relief")
 inset = literal_function(IEC, "iecc14_tab_lateral_inset")
 left = [-profile[1] / 2 + inset, -profile[1] / 2 + inset + widths[0], setback, setback + height]
 right = [profile[1] / 2 - inset - widths[1], profile[1] / 2 - inset, setback, setback + height]
-check_equal([left, right], [[-16, -8, 10.5, 15.5], [10.5, 16, 10.5, 15.5]], "IEC tongue extents")
+check_equal([left, right], [[-18.93, -10.93, 10.5, 15.5], [13.43, 18.93, 10.5, 15.5]], "IEC tongue extents")
 check_equal(relief, 1, "IEC three-sided relief")
 check_equal(literal_function(IEC, "iecc14_unmeasured_resting_tab_projection_assumption"), 0.6,
             "IEC provisional unmeasured tongue projection")
@@ -122,7 +134,7 @@ clearanced_bounds = (
     -profile[0] / 2 - clearance, profile[0] / 2 + clearance,
     -profile[1] / 2 - clearance, profile[1] / 2 + clearance,
 )
-check_equal(clearanced_bounds, (-13.7, 13.7, -20.7, 20.7),
+check_equal(clearanced_bounds, (-13.7, 13.7, -23.63, 23.63),
             "IEC 0.20 mm clearanced bounds")
 # An OpenSCAD delta offset translates every supporting line by exactly delta.
 # Check the chamfer line explicitly so changing back to bounding-box growth
@@ -163,7 +175,7 @@ clearanced_cutout_points = points(
     ROOT / "build/iec-c14-panel-cutout-clearance-0.20.stl"
 )
 outer_tongue_y = sorted({y for x, y, z in component_points if x == 14.1 and z >= 10.5})
-check_equal(outer_tongue_y, [-16.0, -8.0, 10.5, 16.0],
+check_equal(outer_tongue_y, [-18.93, -10.93, 13.43, 18.93],
             "IEC complete STL must contain both outward tongues")
 check_equal((min(x for x, _, _ in cutout_points), max(x for x, _, _ in cutout_points)),
             (-13.5, 13.5), "IEC rigid panel-cutout STL X bounds")
@@ -175,7 +187,7 @@ check_equal(
         min(x for x, _ in nominal_xy), max(x for x, _ in nominal_xy),
         min(y for _, y in nominal_xy), max(y for _, y in nominal_xy),
     ),
-    (-13.5, 13.5, -20.5, 20.5),
+    (-13.5, 13.5, -23.43, 23.43),
     "IEC nominal rendered profile bounds",
 )
 check_equal(
@@ -183,7 +195,7 @@ check_equal(
         min(x for x, _ in clearanced_xy), max(x for x, _ in clearanced_xy),
         min(y for _, y in clearanced_xy), max(y for _, y in clearanced_xy),
     )),
-    (-13.7, 13.7, -20.7, 20.7),
+    (-13.7, 13.7, -23.63, 23.63),
     "IEC 0.20 mm rendered clearanced profile bounds",
 )
 

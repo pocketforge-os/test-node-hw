@@ -2,6 +2,7 @@
 """Focused source and generated-mesh contract for the power-system fit coupon."""
 
 from pathlib import Path
+import math
 import re
 import sys
 
@@ -20,12 +21,18 @@ def require(*fragments: str) -> None:
 require(
     "include <lib/alt-1205t-power-supply.scad>",
     "include <lib/iec-c14-fused-switch.scad>",
-    "alt1205t_mounting_negatives(WALL_THICKNESS, coupon_m3_hole_diameter())",
+    "alt1205t_mounting_negatives(",
+    "coupon_psu_outline_margin() + 0.02",
     "iecc14_panel_cutout_negative(WALL_THICKNESS, IEC_CLEARANCE)",
     "coupon_iec_nominal_profile() = iecc14_body_profile_size()",
-    "FIT COUPON — NO MAINS",
+    "function coupon_iec_faceplate_overlap_per_side()",
+    "IEC faceplate must cover the clearanced panel opening on every side",
+    'text("FIT COUPON"',
+    'text("NO MAINS"',
     "relaxed tongues are deliberately",
     "spring out and retain",
+    'text("NUT SAMPLE"',
+    'text("NOT PSU"',
 )
 
 expected_defaults = {
@@ -42,10 +49,15 @@ for name, expected in expected_defaults.items():
 
 for assertion in (
     "alt1205t_base_size() == [77.5, 110]",
-    "alt1205t_m3_centres() == [[23.8,29.9], [23.8,66], [51.8,66]]",
+    "alt1205t_m3_centres() == [[26.8,32.9], [26.8,69], [54.8,69]]",
+    "alt1205t_upper_left_m3_centre() == [3.45,3.45]",
+    "alt1205t_lower_left_m3_centre() == [7.25,99.6]",
+    "[[3.45,3.45], [26.8,32.9], [26.8,69], [54.8,69], [7.25,99.6]]",
     "coupon_slot_origin() == [71.05, 2.94]",
-    "coupon_iec_nominal_profile() == [27,41]",
-    "[27 + 2*IEC_CLEARANCE, 41 + 2*IEC_CLEARANCE]",
+    "coupon_bottom_slot_origin() == [2.28,106]",
+    "coupon_bottom_slot_size() == [2.61,4]",
+    "coupon_iec_nominal_profile() == [27,46.86]",
+    "[27 + 2*IEC_CLEARANCE, 46.86 + 2*IEC_CLEARANCE]",
     "coupon_nut_nominal_af() == 5.5",
     "coupon_nut_nominal_thickness() == 2.4",
 ):
@@ -91,4 +103,50 @@ if not any(is_register_face(triangle, 1) for triangle in facets):
 if any(x > 1e-6 and y > 1e-6 and z > 3 + 1e-6 for x, y, z in points):
     raise SystemExit("origin register overlaps the PSU plan envelope above its seating face")
 
-print("power_system_fit_coupon_contract=pass wall_mm=3.0 register_axes=X0,Y0 register_height_mm=2.0 iec_clearance_per_side_mm=0.20 m3_hole_diameter_mm=3.4 nut_pocket_af_mm=5.75")
+# Prove that the rendered coupon, not just its source text, contains the five
+# physical M3 checks at the corrected/reinterpreted centers. OpenSCAD's 36-sided
+# cylinders give 36 vertices at each of the Z=0 and Z=3 rim planes.
+m3_centres = ((3.45, 3.45), (26.8, 32.9), (26.8, 69),
+              (54.8, 69), (7.25, 99.6))
+m3_radius = 1.7
+for centre in m3_centres:
+    rim = {
+        point for point in points
+        if math.isclose(
+            math.hypot(point[0] - centre[0], point[1] - centre[1]),
+            m3_radius,
+            abs_tol=5e-4,
+        )
+    }
+    rim_planes = {point[2] for point in rim}
+    if len(rim) < 60 or rim_planes != {0.0, 3.0}:
+        raise SystemExit(
+            f"coupon lacks a complete 3.4 mm through-hole rim at {centre}: "
+            f"vertices={len(rim)} z={sorted(rim_planes)}"
+        )
+
+# The measured 2.61 x 4.0 mm lower slot must remain an actual +Y edge opening,
+# even though the sparse coupon adds a 2 mm registration outline around the PSU.
+slot_xs = (2.28, 2.28 + 2.61)
+for slot_x in slot_xs:
+    side_vertices = {
+        point for point in points
+        if math.isclose(point[0], slot_x, abs_tol=1e-6)
+        and point[1] >= 106
+    }
+    if not side_vertices or max(point[1] for point in side_vertices) != 112:
+        raise SystemExit(
+            f"bottom-slot side at X={slot_x} does not reach the coupon edge"
+        )
+    if {point[2] for point in side_vertices} != {0.0, 3.0}:
+        raise SystemExit(f"bottom-slot side at X={slot_x} is not through-wall")
+if any(
+    all(math.isclose(point[1], 112, abs_tol=1e-6) for point in triangle)
+    and min(point[0] for point in triangle) >= slot_xs[0] - 1e-6
+    and max(point[0] for point in triangle) <= slot_xs[1] + 1e-6
+    and max(point[2] for point in triangle) - min(point[2] for point in triangle) > 2.9
+    for triangle in facets
+):
+    raise SystemExit("bottom slot is closed by a vertical face at the coupon edge")
+
+print("power_system_fit_coupon_contract=pass wall_mm=3.0 register_axes=X0,Y0 register_height_mm=2.0 iec_profile_mm=27x46.86 iec_clearance_per_side_mm=0.20 m3_checks=5 m3_hole_diameter_mm=3.4 bottom_open_slot_mm=2.61x4 nut_pocket_af_mm=5.75")

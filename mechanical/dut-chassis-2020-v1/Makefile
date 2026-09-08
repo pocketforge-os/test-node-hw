@@ -667,7 +667,7 @@ $(POWER_SYSTEM_COUPON_STL): $(POWER_SYSTEM_COUPON_SOURCE) \
 $(POWER_SYSTEM_COUPON_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
 		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
-		--projection=ortho --viewall --camera=0,0,0,0,0,0,50 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,0,0,0,50 \
 		-D 'EVIDENCE=true' $<
 
 validate-power-system-fit-coupon: power-system-fit-coupon

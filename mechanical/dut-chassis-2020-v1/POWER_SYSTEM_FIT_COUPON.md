@@ -1,10 +1,10 @@
 # Power-system fit coupon
 
 This disposable planar coupon checks the owner-approved ALT-1205T underside
-datums, the rigid IEC C14 insertion profile in a 3.0 mm test panel, and an M3
-nut-trap/process sample. It prints at the source orientation: broad face flat on
-the bed, Z upward, with no supports. It is **not an electrical part** and must
-never be used as a mains enclosure or powered-wire guard.
+datums, the rigid 27 × 46.86 mm IEC C14 insertion profile in a 3.0 mm test panel,
+and a separate M3 nut-trap/process sample. It prints at the source orientation:
+broad face flat on the bed, Z upward, with no supports. It is **not an electrical
+part** and must never be used as a mains enclosure or powered-wire guard.
 
 Build and validate it with:
 
@@ -12,6 +12,12 @@ Build and validate it with:
 make power-system-fit-coupon
 make validate-power-system-fit-coupon
 ```
+
+The PSU region checks all five M3 features, including the reinterpreted upper-left
+centre and derived lower-left centre, plus the unchanged upper-right 3.3 × 4.7 mm
+slot and the new 2.61 × 4.0 mm bottom-open slot. The IEC opening applies a true
+uniform 0.20 mm contour offset per side. The nut sampler is connected for printing
+but is explicitly process-only geometry, not part of the PSU pattern.
 
 The validation output's `pocketforge-normalized-stl-v1` fingerprint is the
 reproducible acceptance identity for the coupon mesh. A raw STL SHA-256 checks
@@ -29,10 +35,12 @@ with the matching OpenSCAD define without changing component-library constants.
 Print the exact committed candidate and report every correction numerically.
 The owner must explicitly confirm that:
 
-- all three selected PSU holes and the upper-right slot drop over the real PSU
-  without forcing after placing its underside on the coupon and sliding the
-  PSU left and up until its outer left edge seats against the crisp `X=0`
-  shoulder and its outer top edge seats against the crisp `Y=0` shoulder;
+- all five PSU M3 checks and the upper-right slot align with the real PSU without
+  forcing after placing its underside on the coupon and sliding the PSU left and
+  up until its outer left edge seats against the crisp `X=0` shoulder and its
+  outer top edge seats against the crisp `Y=0` shoulder;
+- the 2.61 × 4.0 mm bottom slot aligns at X=2.28 and remains genuinely open at
+  the bottom edge;
 - the IEC rigid body and both 5 mm locking tongues insert through the 3.0 mm
   panel, the tongues spring outward after insertion, and they retain behind the
   wall;
@@ -40,7 +48,11 @@ The owner must explicitly confirm that:
   the required correction is reported numerically;
 - the 31 × 50.3 mm IEC faceplate fully covers the clearanced opening; and
 - a real M3 screw passes and a real nominal 5.5 mm-across-flats, 2.4 mm-thick
-  nut fits and remains captured in the sampler.
+  nut fits and remains captured in the separate sampler.
+
+The first printed coupon was evaluated in private physical-fit photos
+`1-Photo-1.jpg`, `2-Photo-2.jpg`, and `3-Photo-3.jpg`. These provenance identifiers
+are basenames only; the private files are not copied into Git.
 
 Physical acceptance applies only to the exact candidate revision and stated
 printer, nozzle, material, layer height, compensation, and orientation. It does

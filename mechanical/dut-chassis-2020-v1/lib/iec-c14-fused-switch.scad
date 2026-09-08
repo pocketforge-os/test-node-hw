@@ -1,7 +1,7 @@
 /* Owner-measured fused switched IEC C14 inlet; dimensions in millimetres. */
 
 function iecc14_faceplate_size() = [31, 50.3, 2];
-function iecc14_body_profile_size() = [27, 41];
+function iecc14_body_profile_size() = [27, 46.86];
 function iecc14_body_depth() = 21.8;
 function iecc14_top_straight_length() = 16;
 function iecc14_chamfer_edge_length() = 8;
@@ -27,12 +27,14 @@ function iecc14_terminal_projection_known() = false;
 
 module iecc14_contract() {
     assert(iecc14_faceplate_size() == [31, 50.3, 2], "IEC corrected faceplate envelope changed");
+    assert(iecc14_body_profile_size() == [27, 46.86],
+           "IEC physical-fit-corrected rigid body profile changed");
     assert(iecc14_body_depth() == 21.8, "IEC corrected plastic-body depth changed");
     assert(iecc14_tab_height() == 5, "IEC tab height is 5 mm, never the rejected 4.5 mm interpretation");
     assert(iecc14_tab_widths() == [8, 5.5],
-           "IEC tab widths must remain on the 41 mm side-profile axis");
-    assert(iecc14_tab_bounds("left", iecc14_tab_widths().x) == [-16, -8, 10.5, 15.5] &&
-           iecc14_tab_bounds("right", iecc14_tab_widths().y) == [10.5, 16, 10.5, 15.5],
+           "IEC tab widths must remain on the 46.86 mm side-profile axis");
+    assert(iecc14_tab_bounds("left", iecc14_tab_widths().x) == [-18.93, -10.93, 10.5, 15.5] &&
+           iecc14_tab_bounds("right", iecc14_tab_widths().y) == [13.43, 18.93, 10.5, 15.5],
            "IEC tab bounds must preserve width, height, setback, and 4.5 mm outer edge insets");
     assert(iecc14_tab_wall_x() == 13.5,
            "Both IEC locking tabs must occupy the same photographed broad side wall");
@@ -56,7 +58,7 @@ module iecc14_panel_profile_2d(clearance = 0) {
     // Offset the whole nominal contour, rather than growing its bounding box:
     // this keeps clearance normal to the two diagonal edges as well as to the
     // horizontal and vertical edges. The zero-clearance polygon remains the
-    // literal owner-measured 27 x 41 profile with 8 mm diagonals.
+    // literal owner-measured 27 x 46.86 profile with 8 mm diagonals.
     offset(delta=clearance)
         polygon([[-w/2, -h/2], [w/2, -h/2], [w/2, h/2-rise],
                  [iecc14_top_straight_length()/2, h/2],
@@ -69,7 +71,7 @@ module iecc14_panel_cutout_negative(depth = 24, clearance = 0) {
         iecc14_rigid_insertion_body_keepout(depth + 0.02, clearance, -0.01);
 }
 
-// Rigid/compressed insertion contract. This nominal 27 x 41 profile is the
+// Rigid/compressed insertion contract. This nominal 27 x 46.86 profile is the
 // sole source for panel cutouts and insertion paths; relaxed tongues are absent.
 module iecc14_rigid_insertion_body_keepout(
     depth = iecc14_body_depth(), clearance = 0, z_offset = 0
