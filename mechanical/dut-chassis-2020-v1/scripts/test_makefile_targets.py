@@ -436,6 +436,7 @@ def main() -> int:
     brick_preview = dry_run("brick-dualbar-preview")
     device_examples = dry_run("device-example-previews")
     usb_c_interrupter = dry_run("validate-usb-c-interrupter")
+    power_system = dry_run("validate-power-system-models")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
@@ -471,6 +472,24 @@ def main() -> int:
         if required not in usb_c_interrupter:
             raise SystemExit(
                 f"USB-C interrupter production validation omits {required}"
+            )
+    for required in (
+        'PART="alt_1205t_psu"',
+        'PART="iec_c14_fused_switch"',
+        "build/alt-1205t-psu.stl",
+        "build/iec-c14-fused-switch.stl",
+        "build/layout-alt-1205t-underside.png",
+        "build/layout-alt-1205t-label-side.png",
+        "build/layout-alt-1205t-side.png",
+        "build/layout-iec-c14-front.png",
+        "build/layout-iec-c14-side.png",
+        "build/layout-iec-c14-rear.png",
+        "build/layout-power-system-review.png",
+        "scripts/check_power_system_models.py",
+    ):
+        if required not in power_system:
+            raise SystemExit(
+                f"power-system production validation omits {required}"
             )
     require_names(handbook, DUALBAR_CORE_OUTPUTS, "handbook-assets")
     require(handbook, DEVICE_EXAMPLE_BATCHES, "handbook-assets")
@@ -528,7 +547,8 @@ def main() -> int:
         "legacy_core_batches=5 dualbar_qualified_core_batches=4 "
         "handbook_device_examples=2 handbook_scene=smart-pro-s-dualbar "
         f"semantic_layers={GUIDE_LAYER_COUNT} assembly_steps=18 "
-        "device_proxy_examples=4 usb_c_interrupter=locked"
+        "device_proxy_examples=4 usb_c_interrupter=locked "
+        "power_system_models=locked"
     )
     return 0
 
