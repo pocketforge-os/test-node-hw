@@ -437,6 +437,7 @@ def main() -> int:
     device_examples = dry_run("device-example-previews")
     usb_c_interrupter = dry_run("validate-usb-c-interrupter")
     power_system = dry_run("validate-power-system-models")
+    power_coupon = dry_run("validate-power-system-fit-coupon")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
@@ -490,6 +491,18 @@ def main() -> int:
         if required not in power_system:
             raise SystemExit(
                 f"power-system production validation omits {required}"
+            )
+    for required in (
+        "build/power-system-fit-coupon.stl",
+        "build/layout-power-system-fit-coupon-top.png",
+        "power-system-fit-coupon.scad",
+        "scripts/check_power_system_fit_coupon.py",
+        "--min-bed-contact-area 900",
+        "orientation=flat supports=none wall_mm=3.0",
+    ):
+        if required not in power_coupon:
+            raise SystemExit(
+                f"power-system coupon validation omits {required}"
             )
     require_names(handbook, DUALBAR_CORE_OUTPUTS, "handbook-assets")
     require(handbook, DEVICE_EXAMPLE_BATCHES, "handbook-assets")

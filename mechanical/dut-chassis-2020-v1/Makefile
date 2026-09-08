@@ -49,6 +49,10 @@ POWER_SYSTEM_EVIDENCE := \
 	$(BUILD)/layout-iec-c14-side.png \
 	$(BUILD)/layout-iec-c14-rear.png \
 	$(BUILD)/layout-power-system-review.png
+POWER_SYSTEM_COUPON_SOURCE := power-system-fit-coupon.scad
+POWER_SYSTEM_COUPON_STL := $(BUILD)/power-system-fit-coupon.stl
+POWER_SYSTEM_COUPON_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-top.png
+POWER_SYSTEM_COUPON_CHECK := scripts/check_power_system_fit_coupon.py
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
 	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
@@ -493,6 +497,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 .PHONY: all batches core-batches dualbar dualbar-batches dualbar-preview \
 	brick-dualbar-preview device-example-previews usb-c-interrupter \
 	power-system-models validate-power-system-models \
+	power-system-fit-coupon validate-power-system-fit-coupon \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
@@ -531,6 +536,8 @@ device-example-previews: $(DEVICE_EXAMPLE_REVIEW)
 usb-c-interrupter: $(USB_C_INTERRUPTER_STL) $(USB_C_INTERRUPTER_PREVIEW)
 
 power-system-models: $(POWER_SYSTEM_STLS) $(POWER_SYSTEM_EVIDENCE)
+
+power-system-fit-coupon: $(POWER_SYSTEM_COUPON_STL) $(POWER_SYSTEM_COUPON_EVIDENCE)
 
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
@@ -644,6 +651,24 @@ validate-power-system-models: power-system-models
 		-a -s $(BUILD)/iec-c14-panel-cutout-negative.stl
 	@for image in $(POWER_SYSTEM_EVIDENCE); do test -s $$image; done
 	@echo 'power_system_models=pass hardwarnings=true stls=3 evidence_pngs=7'
+
+$(POWER_SYSTEM_COUPON_STL): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $<
+
+$(POWER_SYSTEM_COUPON_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
+		--projection=ortho --viewall --camera=0,0,0,0,0,0,90 \
+		-D 'EVIDENCE=true' $<
+
+validate-power-system-fit-coupon: power-system-fit-coupon
+	$(PYTHON) $(POWER_SYSTEM_COUPON_CHECK)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_COUPON_STL)
+	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 125 --max-z 3 \
+		--bed-x 247 --bed-y 207 --min-bed-contact-area 900 $(POWER_SYSTEM_COUPON_STL)
+	@test -s $(POWER_SYSTEM_COUPON_EVIDENCE)
+	@echo 'power_system_fit_coupon=pass orientation=flat supports=none wall_mm=3.0'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
@@ -2404,7 +2429,8 @@ validate-right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 	@echo 'right_angle_checker_validation=pass default=150x150x5 custom=100x100x4 angle_deg=90'
 
 validate: lint all calibration preview device-example-previews \
-	validate-usb-c-interrupter validate-power-system-models validate-margin-guard \
+	validate-usb-c-interrupter validate-power-system-models \
+	validate-power-system-fit-coupon validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-power-strip-guard \
