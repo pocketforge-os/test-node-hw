@@ -2,6 +2,7 @@
 """Focused source contract for the owner-approved power component models."""
 
 import ast
+import math
 import re
 import sys
 from pathlib import Path
@@ -101,6 +102,53 @@ check_equal(literal_function(IEC, "iecc14_unmeasured_resting_tab_projection_assu
             "IEC provisional unmeasured tongue projection")
 if "iecc14_tab_wall_x() + 0.61" not in IEC or "bounds.z])" not in IEC:
     raise SystemExit("IEC evidence must map both tongues and three-sided relief to the photographed wall")
+
+# Guard the cutout's geometric mechanism and independently derive its contract.
+# A width/height-only growth can preserve the bounds below, but cannot preserve
+# this signed distance from the clearanced chamfer to the nominal chamfer.
+require(IEC, (
+    "offset(delta=clearance)",
+    "assert(clearance >= 0",
+    "w = iecc14_body_profile_size().x;",
+    "h = iecc14_body_profile_size().y;",
+), "IEC C14 contour clearance")
+rise = math.sqrt(8**2 - ((profile[0] - 16) / 2) ** 2)
+nominal_chamfer = ((profile[0] / 2, profile[1] / 2 - rise), (8, profile[1] / 2))
+diagonal = math.dist(*nominal_chamfer)
+if not math.isclose(diagonal, 8.0, abs_tol=1e-12):
+    raise SystemExit(f"IEC nominal chamfer must be 8 mm, got {diagonal}")
+clearance = 0.20
+clearanced_bounds = (
+    -profile[0] / 2 - clearance, profile[0] / 2 + clearance,
+    -profile[1] / 2 - clearance, profile[1] / 2 + clearance,
+)
+check_equal(clearanced_bounds, (-13.7, 13.7, -20.7, 20.7),
+            "IEC 0.20 mm clearanced bounds")
+# An OpenSCAD delta offset translates every supporting line by exactly delta.
+# Check the chamfer line explicitly so changing back to bounding-box growth
+# cannot satisfy the executable source contract above.
+(x1, y1), (x2, y2) = nominal_chamfer
+a, b = y1 - y2, x2 - x1
+normal_length = math.hypot(a, b)
+translated_c_delta = clearance * normal_length
+normal_distance = abs(translated_c_delta) / normal_length
+if not math.isclose(normal_distance, clearance, abs_tol=1e-12):
+    raise SystemExit(f"IEC chamfer normal clearance must be {clearance}, got {normal_distance}")
+# Prove the rejected bounding-box-growth construction is discriminated: its
+# corresponding chamfer is farther than 0.20 mm from the nominal supporting
+# line even though its overall X/Y bounds look correct.
+grown_box_chamfer_point = (
+    profile[0] / 2 + clearance,
+    profile[1] / 2 + clearance - rise,
+)
+nominal_c = -(a * x1 + b * y1)
+grown_box_normal_distance = abs(
+    a * grown_box_chamfer_point[0]
+    + b * grown_box_chamfer_point[1]
+    + nominal_c
+) / normal_length
+if math.isclose(grown_box_normal_distance, clearance, abs_tol=1e-9):
+    raise SystemExit("IEC validation does not reject width/height-only growth")
 if "square([3.5, alt1205t_label_top_right_slot_height()])" in PSU:
     raise SystemExit("ALT label evidence must not invent a 3.5 mm slot depth")
 

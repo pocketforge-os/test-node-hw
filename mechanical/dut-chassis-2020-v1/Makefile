@@ -664,6 +664,7 @@ $(POWER_SYSTEM_COUPON_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
 
 validate-power-system-fit-coupon: power-system-fit-coupon
 	$(PYTHON) $(POWER_SYSTEM_COUPON_CHECK)
+	$(PYTHON) $(FINGERPRINT) $(POWER_SYSTEM_COUPON_STL)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-fit-coupon-overrides.csg \
 		-D 'IEC_CLEARANCE=0.30' -D 'M3_HOLE_CLEARANCE=0.50' \
 		-D 'NUT_TRAP_CLEARANCE=0.35' -D 'WALL_THICKNESS=3.2' \
@@ -672,7 +673,7 @@ validate-power-system-fit-coupon: power-system-fit-coupon
 	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 125 --max-z 3 \
 		--bed-x 247 --bed-y 207 --min-bed-contact-area 900 $(POWER_SYSTEM_COUPON_STL)
 	@test -s $(POWER_SYSTEM_COUPON_EVIDENCE)
-	@echo 'power_system_fit_coupon=pass orientation=flat supports=none wall_mm=3.0 overrides=pass'
+	@echo 'power_system_fit_coupon=pass orientation=flat supports=none wall_mm=3.0 overrides=pass identity=normalized-mesh-fingerprint raw-stl-sha256=build-instance-specific'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \

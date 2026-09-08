@@ -49,12 +49,18 @@ module iecc14_contract() {
 }
 
 module iecc14_panel_profile_2d(clearance = 0) {
-    w = iecc14_body_profile_size().x + 2 * clearance;
-    h = iecc14_body_profile_size().y + 2 * clearance;
+    assert(clearance >= 0, "IEC panel clearance cannot be negative");
+    w = iecc14_body_profile_size().x;
+    h = iecc14_body_profile_size().y;
     rise = iecc14_chamfer_rise();
-    polygon([[-w/2, -h/2], [w/2, -h/2], [w/2, h/2-rise],
-             [iecc14_top_straight_length()/2, h/2],
-             [-iecc14_top_straight_length()/2, h/2], [-w/2, h/2-rise]]);
+    // Offset the whole nominal contour, rather than growing its bounding box:
+    // this keeps clearance normal to the two diagonal edges as well as to the
+    // horizontal and vertical edges. The zero-clearance polygon remains the
+    // literal owner-measured 27 x 41 profile with 8 mm diagonals.
+    offset(delta=clearance)
+        polygon([[-w/2, -h/2], [w/2, -h/2], [w/2, h/2-rise],
+                 [iecc14_top_straight_length()/2, h/2],
+                 [-iecc14_top_straight_length()/2, h/2], [-w/2, h/2-rise]]);
 }
 
 // Independently callable panel negative, front face at Z=0 and body behind +Z.

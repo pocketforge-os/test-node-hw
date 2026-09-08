@@ -13,6 +13,12 @@ make power-system-fit-coupon
 make validate-power-system-fit-coupon
 ```
 
+The validation output's `pocketforge-normalized-stl-v1` fingerprint is the
+reproducible acceptance identity for the coupon mesh. A raw STL SHA-256 checks
+only one exported file's transport integrity: OpenSCAD may emit equivalent
+facets in a different order, so every raw hash must be labeled
+**build-instance-specific** and must not be used as the acceptance identity.
+
 The defaults are 0.20 mm IEC clearance per side, 0.40 mm added to the nominal
 M3 screw-hole diameter, 0.25 mm added across the nominal 5.5 mm nut flats, a
 3.0 mm wall, and 0.35 mm recessed labels. Each is independently overridable

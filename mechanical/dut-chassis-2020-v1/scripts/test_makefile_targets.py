@@ -504,6 +504,9 @@ def main() -> int:
         "WALL_THICKNESS=3.2",
         "LABEL_DEPTH=0.25",
         "orientation=flat supports=none wall_mm=3.0 overrides=pass",
+        "identity=normalized-mesh-fingerprint",
+        "raw-stl-sha256=build-instance-specific",
+        "mesh_fingerprint.py",
     ):
         if required not in power_coupon:
             raise SystemExit(
