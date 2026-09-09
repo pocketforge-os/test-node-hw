@@ -438,6 +438,7 @@ def main() -> int:
     usb_c_interrupter = dry_run("validate-usb-c-interrupter")
     power_system = dry_run("validate-power-system-models")
     power_coupon = dry_run("validate-power-system-fit-coupon")
+    power_enclosure = dry_run("validate-power-system-enclosure")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
@@ -521,6 +522,44 @@ def main() -> int:
         if required not in power_coupon:
             raise SystemExit(
                 f"power-system coupon validation omits {required}"
+            )
+    for required in (
+        "build/power-system-enclosure-base.stl",
+        "build/power-system-enclosure-hood.stl",
+        "build/power-system-terminal-barrier-template.dxf",
+        "build/power-system-terminal-barrier-template.svg",
+        "build/layout-power-system-enclosure-assembly.png",
+        "build/layout-power-system-enclosure-top.png",
+        "build/layout-power-system-enclosure-rear.png",
+        "build/layout-power-system-enclosure-section.png",
+        "power-system-enclosure.scad",
+        "scripts/check_power_system_enclosure.py",
+        'PART="base"',
+        'PART="hood"',
+        'PART="barrier_template"',
+        'PART="evidence_top"',
+        'PART="evidence_rear"',
+        'PART="evidence_section"',
+        "size=220.270,136.000,20.000",
+        "size=136.000,140.000,74.000",
+        "hood_psu_interference",
+        "base_hood_interference",
+        "candidate=pre-DUT02",
+        "fuse=TBD certification=none",
+    ):
+        if required not in power_enclosure:
+            raise SystemExit(
+                f"power-system enclosure validation omits {required}"
+            )
+    for forbidden in (
+        "production-batch-04-frame-hardware.stl",
+        "pocketforge-node-chassis-usb-c.scad",
+        "power-strip-system",
+    ):
+        if forbidden in power_enclosure:
+            raise SystemExit(
+                "standalone power-system enclosure target reaches immutable "
+                f"production path {forbidden}"
             )
     require_names(handbook, DUALBAR_CORE_OUTPUTS, "handbook-assets")
     require(handbook, DEVICE_EXAMPLE_BATCHES, "handbook-assets")

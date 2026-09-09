@@ -57,6 +57,18 @@ POWER_SYSTEM_COUPON_CLEAN_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-cl
 POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-isometric.png
 POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-thickness.png
 POWER_SYSTEM_COUPON_CHECK := scripts/check_power_system_fit_coupon.py
+POWER_SYSTEM_ENCLOSURE_SOURCE := power-system-enclosure.scad
+POWER_SYSTEM_ENCLOSURE_BASE := $(BUILD)/power-system-enclosure-base.stl
+POWER_SYSTEM_ENCLOSURE_HOOD := $(BUILD)/power-system-enclosure-hood.stl
+POWER_SYSTEM_ENCLOSURE_BARRIER_DXF := $(BUILD)/power-system-terminal-barrier-template.dxf
+POWER_SYSTEM_ENCLOSURE_BARRIER_SVG := $(BUILD)/power-system-terminal-barrier-template.svg
+POWER_SYSTEM_ENCLOSURE_BASE_HOOD_INTERSECTION := $(BUILD)/power-system-enclosure-base-hood-interference.stl
+POWER_SYSTEM_ENCLOSURE_EVIDENCE := \
+	$(BUILD)/layout-power-system-enclosure-assembly.png \
+	$(BUILD)/layout-power-system-enclosure-top.png \
+	$(BUILD)/layout-power-system-enclosure-rear.png \
+	$(BUILD)/layout-power-system-enclosure-section.png
+POWER_SYSTEM_ENCLOSURE_CHECK := scripts/check_power_system_enclosure.py
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
 	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
@@ -502,6 +514,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 	brick-dualbar-preview device-example-previews usb-c-interrupter \
 	power-system-models validate-power-system-models \
 	power-system-fit-coupon validate-power-system-fit-coupon \
+	power-system-enclosure validate-power-system-enclosure \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
@@ -544,6 +557,10 @@ power-system-models: $(POWER_SYSTEM_STLS) $(POWER_SYSTEM_EVIDENCE)
 power-system-fit-coupon: $(POWER_SYSTEM_COUPON_STL) $(POWER_SYSTEM_COUPON_EVIDENCE) \
 	$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE) $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE) \
 	$(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE)
+
+power-system-enclosure: $(POWER_SYSTEM_ENCLOSURE_BASE) \
+	$(POWER_SYSTEM_ENCLOSURE_HOOD) $(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF) \
+	$(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG) $(POWER_SYSTEM_ENCLOSURE_EVIDENCE)
 
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
@@ -711,6 +728,79 @@ validate-power-system-fit-coupon: power-system-fit-coupon
 		-a -s $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE) \
 		-a -s $(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE)
 	@echo 'power_system_fit_coupon=pass physical_text=none evidence_annotations=isolated orientation=flat supports=none structural_wall_mm=3.0 iec_snap_wall_mm=1.2 iec_surface_allowance_mm=0.1 iec_budgeted_wall_max_mm=1.3 iec_owner_wall_hard_limit_mm=1.5 overrides=pass identity=normalized-mesh-fingerprint raw-stl-sha256=build-instance-specific'
+
+$(POWER_SYSTEM_ENCLOSURE_BASE): $(POWER_SYSTEM_ENCLOSURE_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="base"' $<
+
+$(POWER_SYSTEM_ENCLOSURE_HOOD): $(POWER_SYSTEM_ENCLOSURE_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="hood"' $<
+
+$(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="barrier_template"' $<
+
+$(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="barrier_template"' $<
+
+$(BUILD)/layout-power-system-enclosure-assembly.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,55,0,25,260 \
+		-D 'PART="assembly"' $<
+
+$(BUILD)/layout-power-system-enclosure-top.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,0,0,0,260 \
+		-D 'PART="evidence_top"' $<
+
+$(BUILD)/layout-power-system-enclosure-rear.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,-90,0,0,260 \
+		-D 'PART="evidence_rear"' $<
+
+$(BUILD)/layout-power-system-enclosure-section.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,62,0,28,220 \
+		-D 'PART="evidence_section"' $<
+
+validate-power-system-enclosure: power-system-enclosure
+	@set -eu; \
+	log=$(BUILD)/power-system-enclosure-base-hood-interference.log; \
+	mesh=$(POWER_SYSTEM_ENCLOSURE_BASE_HOOD_INTERSECTION); \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="base_hood_interference"' \
+			$(POWER_SYSTEM_ENCLOSURE_SOURCE) >$$log 2>&1; then \
+		echo 'ERROR: base interior features intersect the hood' >&2; exit 1; \
+	fi; \
+	grep -q 'Current top level object is empty' $$log; \
+	echo 'power_system_enclosure_base_hood_interference=clear'
+	$(PYTHON) $(POWER_SYSTEM_ENCLOSURE_CHECK)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_BASE)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_HOOD)
+	@base_bounds=$$($(PYTHON) $(BOUNDS) --max-x 220.27 --max-y 136 --max-z 20 \
+		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_BASE)); \
+	printf '%s\n' "$$base_bounds"; \
+	printf '%s\n' "$$base_bounds" | grep -q 'size=220.270,136.000,20.000'
+	@hood_bounds=$$($(PYTHON) $(BOUNDS) --max-x 136 --max-y 140 --max-z 74 \
+		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_HOOD)); \
+	printf '%s\n' "$$hood_bounds"; \
+	printf '%s\n' "$$hood_bounds" | grep -q 'size=136.000,140.000,74.000'
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-enclosure-overrides.csg \
+		-D 'DC_BUNDLE_OD=7.0' -D 'BARRIER_THICKNESS=1.2' \
+		-D 'AC_TERMINAL_PROJECTION=16.0' -D 'PART="installed_preview"' \
+		$(POWER_SYSTEM_ENCLOSURE_SOURCE)
+	@set -eu; \
+	log=$(BUILD)/power-system-enclosure-hood-psu-interference.log; \
+	mesh=$(BUILD)/power-system-enclosure-hood-psu-interference.stl; \
+	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="hood_psu_interference"' \
+			$(POWER_SYSTEM_ENCLOSURE_SOURCE) >$$log 2>&1; then \
+		echo 'ERROR: hood intersects the exact PSU keepout' >&2; exit 1; \
+	fi; \
+	grep -q 'Current top level object is empty' $$log; \
+	echo 'power_system_enclosure_psu_interference=clear'
+	@test -s $(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF) \
+		-a -s $(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG)
+	@for image in $(POWER_SYSTEM_ENCLOSURE_EVIDENCE); do test -s $$image; done
+	@echo 'power_system_enclosure=pass candidate=pre-DUT02 printable_parts=2 barrier=nonprinted world_bounds_mm=190..326x160..300x0..78 c14_snap_wall_mm=1.2 supports=none fuse=TBD certification=none'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
@@ -2472,7 +2562,7 @@ validate-right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 
 validate: lint all calibration preview device-example-previews \
 	validate-usb-c-interrupter validate-power-system-models \
-	validate-power-system-fit-coupon validate-margin-guard \
+	validate-power-system-fit-coupon validate-power-system-enclosure validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-power-strip-guard \
