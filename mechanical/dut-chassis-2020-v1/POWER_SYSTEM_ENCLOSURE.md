@@ -83,7 +83,8 @@ snap wall; surrounding rear structure remains 3.2 mm.
 ## Print and assembly assumptions
 
 - Base: print floor-down, no supports; 220.27 × 136 × 32 mm. The rail remains
-  20 mm tall; only the four exterior hood-fastener bosses reach 32 mm.
+  20 mm tall; only the three exterior side hood-fastener bosses reach 32 mm.
+  The rear-panel boss reaches 20 mm.
 - Hood: print roof-down, no supports; 136 × 140 × 74 mm.
 - Initial process: 0.8 mm nozzle; 3.2 mm walls and 4.0 mm floor/roof are nozzle
   multiples. Material, layer height, temperatures, and flammability/temperature
@@ -94,7 +95,7 @@ snap wall; surrounding rear structure remains 3.2 mm.
   standard M3 nut point-up
   from the directly visible side mouth into a blind 5.60 mm-AF × 2.80 mm-deep
   socket. A 6.20 mm-AF × 0.80 mm tapered lead-in starts the press; that lead-in
-  is provisional until the coupon passes. Each boss reaches Z=32 mm, has at
+  is provisional until the coupon passes. Each side boss reaches Z=32 mm, has at
   least 2.4 mm complete radial material and a 2.8 mm left/3.2 mm right solid
   protected-cavity backstop, and presents no nut-sized path into the enclosure.
   The installed hood caps each mouth while exposing only the 3.6 mm screw bore.
