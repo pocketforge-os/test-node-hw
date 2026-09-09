@@ -26,9 +26,10 @@ require(
     "iecc14_panel_cutout_negative(coupon_iec_snap_wall_target(), IEC_CLEARANCE)",
     "coupon_iec_nominal_profile() = iecc14_body_profile_size()",
     "function coupon_iec_faceplate_overlap_per_side()",
-    "function coupon_iec_snap_wall_target() = 1.4",
+    "function coupon_iec_snap_wall_target() = 1.2",
     "function coupon_iec_surface_allowance() = 0.1",
-    "function coupon_iec_snap_wall_max() = 1.5",
+    "function coupon_iec_budgeted_wall_max() = 1.3",
+    "function coupon_iec_owner_wall_hard_limit() = 1.5",
     "coupon_upper_left_register_clearance_negative();",
     "linear_extrude(height=coupon_iec_snap_wall_target()) iec_panel_2d();",
     "IEC faceplate must cover the clearanced panel opening on every side",
@@ -75,17 +76,21 @@ for assertion in (
     "alt1205t_base_size() == [77.5, 110]",
     "[[25.3,30.9], [25.3,67], [53.3,67]]",
     "alt1205t_upper_left_m3_centre() == [0.95,5.95]",
-    "alt1205t_lower_left_m3_centre() == [5.75,97.6]",
-    "[[0.95,5.95], [25.3,30.9], [25.3,67], [53.3,67], [5.75,97.6]]",
+    "alt1205t_lower_left_m3_centre() == [6.25,98.6]",
+    "[[0.95,5.95], [25.3,30.9], [25.3,67], [53.3,67], [6.25,98.6]]",
     "coupon_slot_origin() == [71.05, 2.94]",
     "coupon_bottom_slot_origin() == [2.28,106]",
     "coupon_bottom_slot_size() == [2.61,4]",
     "coupon_iec_nominal_profile() == [27,46.86]",
     "[27 + 2*IEC_CLEARANCE, 46.86 + 2*IEC_CLEARANCE]",
+    "coupon_iec_centre() == [-19,80] && coupon_panel_size() == [35,54]",
     "coupon_nut_nominal_af() == 5.5",
     "coupon_nut_nominal_thickness() == 2.4",
-    "coupon_iec_snap_wall_target() + coupon_iec_surface_allowance() <=",
-    "coupon_iec_snap_wall_max()",
+    "coupon_nut_centre() == [85,8]",
+    "coupon_register_height() == 2.0",
+    "coupon_iec_snap_wall_target() + coupon_iec_surface_allowance() ==",
+    "coupon_iec_budgeted_wall_max()",
+    "coupon_iec_budgeted_wall_max() < coupon_iec_owner_wall_hard_limit()",
 ):
     if assertion not in SOURCE:
         raise SystemExit(f"missing executable assertion: {assertion}")
@@ -101,11 +106,11 @@ facets = triangles(mesh)
 points = [point for tri in facets for point in tri]
 mins = tuple(min(p[axis] for p in points) for axis in range(3))
 maxs = tuple(max(p[axis] for p in points) for axis in range(3))
-approved_corrected_bounds = ((-36.5, -5.0, 0.0), (91.5, 112.0, 5.0))
-if (mins, maxs) != approved_corrected_bounds:
+approved_frozen_bounds = ((-36.5, -5.0, 0.0), (91.5, 112.0, 5.0))
+if (mins, maxs) != approved_frozen_bounds:
     raise SystemExit(
-        "second-fit correction changed the approved coupon bounds: "
-        f"expected={approved_corrected_bounds} got={(mins, maxs)}"
+        "third-fit correction changed the frozen coupon bounds: "
+        f"expected={approved_frozen_bounds} got={(mins, maxs)}"
     )
 
 
@@ -120,18 +125,18 @@ def signed_volume(triangle) -> float:
 
 
 volume_mm3 = abs(sum(signed_volume(triangle) for triangle in facets))
-approved_first_correction_label_free_volume_mm3 = 9127.349
-if volume_mm3 >= approved_first_correction_label_free_volume_mm3:
+approved_second_correction_volume_mm3 = 8123.559
+if volume_mm3 >= approved_second_correction_volume_mm3:
     raise SystemExit(
         "local IEC wall reduction must reduce volume from the approved "
-        f"first-correction baseline={approved_first_correction_label_free_volume_mm3}; "
+        f"second-correction baseline={approved_second_correction_volume_mm3}; "
         f"got={volume_mm3:.3f}"
     )
-expected_second_fit_volume_mm3 = 8123.559
-if not math.isclose(volume_mm3, expected_second_fit_volume_mm3, abs_tol=0.01):
+expected_third_fit_volume_mm3 = 8006.327
+if not math.isclose(volume_mm3, expected_third_fit_volume_mm3, abs_tol=0.01):
     raise SystemExit(
-        "second-fit coupon solid volume drifted: "
-        f"expected={expected_second_fit_volume_mm3} got={volume_mm3:.3f}"
+        "third-fit coupon solid volume drifted: "
+        f"expected={expected_third_fit_volume_mm3} got={volume_mm3:.3f}"
     )
 
 
@@ -155,11 +160,11 @@ if any(x > 1e-6 and y > 1e-6 and z > 3 + 1e-6 for x, y, z in points):
     raise SystemExit("origin register overlaps the PSU plan envelope above its seating face")
 
 # Prove that the rendered coupon, not just its source text, contains the five
-# physical M3 checks at the owner-confirmed second-fit centers. OpenSCAD's
+# physical M3 checks at the owner-confirmed third-fit centers. OpenSCAD's
 # 36-sided cylinders give complete rims at Z=0 and the local wall top. The
 # upper-left rim also extends through the intersecting outside-only X register.
 m3_centres = ((0.95, 5.95), (25.3, 30.9), (25.3, 67),
-              (53.3, 67), (5.75, 97.6))
+              (53.3, 67), (6.25, 98.6))
 m3_radius = 1.7
 for centre in m3_centres:
     rim = {
@@ -195,15 +200,59 @@ for x, y in upper_right_slot_cardinals:
                 f"{(x, y, z)}"
             )
 
-# The inlet's whole faceplate/tab seating footprint must be the local 1.4 mm
+# Freeze the IEC XY/profile/clearance at the six vertices of the true 0.20 mm
+# contour-offset cavity. Only their top Z changes with the local panel target.
+iec_clearanced_profile_xy = (
+    (-32.7, 56.37), (-32.7, 97.7002),
+    (-27.0861, 103.63), (-10.9139, 103.63),
+    (-5.3, 97.7002), (-5.3, 56.37),
+)
+for x, y in iec_clearanced_profile_xy:
+    for z in (0.0, 1.2):
+        if (x, y, z) not in mesh_points:
+            raise SystemExit(
+                "frozen IEC +0.20 mm contour vertex is missing: "
+                f"{(x, y, z)}"
+            )
+
+# Freeze the separate nut sampler directly in the exported mesh: outside
+# D=13 cardinals, D=3.4 screw rim/floor, and 5.75 mm-AF pocket corners.
+for x, y in ((91.5, 8), (78.5, 8), (85, 1.5), (85, 14.5)):
+    for z in (0.0, 3.0):
+        if (x, y, z) not in mesh_points:
+            raise SystemExit(f"frozen nut-sampler outer cardinal is missing: {(x,y,z)}")
+nut_rim = {
+    point for point in points
+    if math.isclose(math.hypot(point[0] - 85, point[1] - 8), 1.7, abs_tol=5e-4)
+}
+if len(nut_rim) < 60 or {point[2] for point in nut_rim} != {0.0, 0.4}:
+    raise SystemExit("frozen nut-sampler M3 rim or retained floor changed")
+nut_hex_xy = (
+    (88.3198, 8.0), (86.6599, 10.875), (83.3401, 10.875),
+    (81.6802, 8.0), (83.3401, 5.125), (86.6599, 5.125),
+)
+for x, y in nut_hex_xy:
+    for z in (0.4, 3.0):
+        if (x, y, z) not in mesh_points:
+            raise SystemExit(f"frozen nut-sampler hex vertex is missing: {(x,y,z)}")
+
+# The inlet's whole faceplate/tab seating footprint must be the local 1.2 mm
 # snap panel: 3.0 mm structural material may connect outside this footprint but
 # may not intrude into it. Surface roughness allowance is a process budget, not
-# modeled thickness, so 1.4 + 0.1 must remain within the hard 1.5 mm maximum.
-iec_snap_wall_target = 1.4
+# modeled thickness, so 1.2 + 0.1 produces a 1.3 mm budget below the owner's
+# hard 1.5 mm maximum.
+iec_snap_wall_target = 1.2
 iec_surface_allowance = 0.1
-iec_snap_wall_max = 1.5
-if iec_snap_wall_target + iec_surface_allowance > iec_snap_wall_max + 1e-9:
-    raise SystemExit("IEC local wall and surface allowance exceed 1.5 mm")
+iec_budgeted_wall_max = 1.3
+iec_owner_wall_hard_limit = 1.5
+if not math.isclose(
+    iec_snap_wall_target + iec_surface_allowance,
+    iec_budgeted_wall_max,
+    abs_tol=1e-9,
+):
+    raise SystemExit("IEC local wall and surface allowance must total 1.3 mm")
+if iec_budgeted_wall_max >= iec_owner_wall_hard_limit:
+    raise SystemExit("IEC 1.3 mm budget must remain below owner 1.5 mm limit")
 faceplate_bounds = (-34.5, -3.5, 54.85, 105.15)
 faceplate_points = {
     point for point in points
@@ -214,7 +263,7 @@ faceplate_z = {point[2] for point in faceplate_points}
 if not faceplate_points or faceplate_z != {0.0, iec_snap_wall_target}:
     raise SystemExit(
         "IEC faceplate/tab seating footprint is not exclusively the local "
-        f"1.4 mm panel: z={sorted(faceplate_z)}"
+        f"1.2 mm panel: z={sorted(faceplate_z)}"
     )
 if any(point[2] > iec_snap_wall_target + 1e-6 for point in faceplate_points):
     raise SystemExit("3.0 mm coupon structure intrudes into the IEC retention envelope")
@@ -245,4 +294,4 @@ if any(
 ):
     raise SystemExit("bottom slot is closed by a vertical face at the coupon edge")
 
-print(f"power_system_fit_coupon_contract=pass physical_text=none evidence_annotations=isolated structural_wall_mm=3.0 iec_snap_wall_mm=1.4 iec_surface_allowance_mm=0.1 iec_wall_max_mm=1.5 iec_retention_intrusion=none register_axes=X0,Y0 register_height_mm=2.0 iec_profile_mm=27x46.86 iec_clearance_per_side_mm=0.20 m3_centres={m3_centres} m3_hole_diameter_mm=3.4 upper_right_slot=frozen bottom_open_slot_mm=2.61x4 nut_pocket_af_mm=5.75 volume_mm3={volume_mm3:.3f}")
+print(f"power_system_fit_coupon_contract=pass physical_text=none evidence_annotations=isolated structural_wall_mm=3.0 iec_snap_wall_mm=1.2 iec_surface_allowance_mm=0.1 iec_budgeted_wall_max_mm=1.3 iec_owner_wall_hard_limit_mm=1.5 iec_retention_intrusion=none register_axes=X0,Y0 register_height_mm=2.0 iec_profile_mm=27x46.86 iec_clearance_per_side_mm=0.20 m3_centres={m3_centres} m3_hole_diameter_mm=3.4 upper_right_slot=frozen bottom_open_slot_mm=2.61x4 nut_pocket_af_mm=5.75 volume_mm3={volume_mm3:.3f}")

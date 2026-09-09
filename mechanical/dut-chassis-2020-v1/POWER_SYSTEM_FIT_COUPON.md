@@ -1,7 +1,7 @@
 # Power-system fit coupon
 
 This disposable planar coupon checks the owner-approved ALT-1205T underside
-datums, the rigid 27 × 46.86 mm IEC C14 insertion profile in a local 1.4 mm snap panel,
+datums, the rigid 27 × 46.86 mm IEC C14 insertion profile in a local 1.2 mm snap panel,
 and a separate M3 nut-trap/process sample. It prints at the source orientation:
 broad face flat on the bed, Z upward, with no supports. It is **not an electrical
 part** and must never be used as a mains enclosure or powered-wire guard.
@@ -13,8 +13,10 @@ make power-system-fit-coupon
 make validate-power-system-fit-coupon
 ```
 
-The PSU region checks all five second-fit M3 centres: `(0.95, 5.95)`,
-`(25.3, 30.9)`, `(25.3, 67)`, `(53.3, 67)`, and `(5.75, 97.6)`. It also checks
+The PSU region checks the third-fit M3 centres: `(0.95, 5.95)`,
+`(25.3, 30.9)`, `(25.3, 67)`, `(53.3, 67)`, and `(6.25, 98.6)`. Only the
+lower-left centre moved in this revision, by +0.5 mm X/right and +1.0 mm Y/down
+from `(5.75, 97.6)`. It also checks
 the frozen upper-right 3.3 × 4.7 mm slot and frozen 2.61 × 4.0 mm bottom-open
 slot. The IEC opening applies a true
 uniform 0.20 mm contour offset per side. The nut sampler is connected for printing
@@ -28,12 +30,13 @@ facets in a different order, so every raw hash must be labeled
 
 The defaults are 0.20 mm IEC clearance per side, 0.40 mm added to the nominal
 M3 screw-hole diameter, 0.25 mm added across the nominal 5.5 mm nut flats, and
-a 3.0 mm structural wall. The IEC snap-in region alone is 1.4 mm thick, with a
-named 0.1 mm printed-surface allowance and a hard 1.5 mm physical maximum.
+a 3.0 mm structural wall. The IEC snap-in region alone is 1.2 mm thick, with a
+named 0.1 mm printed-surface allowance. Its budgeted maximum is therefore
+1.3 mm, comfortably below the owner's hard 1.5 mm physical limit.
 The 31 × 50.3 mm faceplate/tab seating and retention footprint is protected from
 the surrounding 3.0 mm structure. Process-clearance and structural-wall defaults
 remain independently overridable without changing component-library constants;
-the 1.4 mm IEC snap wall is a fit-critical local contract.
+the 1.2 mm IEC snap wall is a fit-critical local contract.
 
 After the corrected coupon was printed with a 0.8 mm nozzle, the owner found
 the physical lettering unreadable and mostly unable to fit on the sparse part.
@@ -54,9 +57,10 @@ The owner must explicitly confirm that:
 - the 2.61 × 4.0 mm bottom slot aligns at X=2.28 and remains genuinely open at
   the bottom edge;
 - the IEC rigid body and both 5 mm locking tongues insert through the local
-  1.4 mm panel, whose printed thickness including surface roughness must be no
-  more than 1.5 mm; the tongues spring outward after insertion and retain behind
-  the wall without interference from the surrounding 3.0 mm structure;
+  1.2 mm panel, whose budgeted printed thickness including surface roughness is
+  1.3 mm and must remain below the 1.5 mm hard limit; the tongues spring outward
+  after insertion and retain behind the wall without interference from the
+  surrounding 3.0 mm structure;
 - the provisional, unmeasured 0.6 mm resting tongue projection is adequate, or
   the required correction is reported numerically;
 - the 31 × 50.3 mm IEC faceplate fully covers the clearanced opening; and

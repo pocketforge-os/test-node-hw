@@ -31,7 +31,11 @@ function alt1205t_first_fit_lower_left_m3_centre() = [
     alt1205t_base_size().y - alt1205t_lower_left_m3_bottom_centre_datum()
 ];
 function alt1205t_second_fit_lower_left_m3_correction() = [-1.5, -2];
-function alt1205t_lower_left_m3_centre() = [5.75, 97.6];
+function alt1205t_second_fit_lower_left_m3_centre() = [5.75, 97.6];
+// Third physical fit: only this PSU M3 moves +0.5 mm X/right and
+// +1.0 mm Y/down. All other mounting features remain frozen.
+function alt1205t_third_fit_lower_left_m3_correction() = [0.5, 1];
+function alt1205t_lower_left_m3_centre() = [6.25, 98.6];
 function alt1205t_all_m3_centres() = concat(
     [alt1205t_upper_left_m3_centre()],
     alt1205t_m3_centres(),
@@ -78,9 +82,14 @@ module alt1205t_contract() {
            alt1205t_first_fit_lower_left_m3_centre() == [7.25, 99.6] &&
            alt1205t_second_fit_lower_left_m3_correction() == [-1.5, -2] &&
            norm(alt1205t_first_fit_lower_left_m3_centre() +
-                alt1205t_second_fit_lower_left_m3_correction() - [5.75, 97.6]) < 0.000001 &&
-           alt1205t_lower_left_m3_centre() == [5.75, 97.6],
-           "ALT-1205T second-fit lower-left M3 centre changed");
+                alt1205t_second_fit_lower_left_m3_correction() -
+                alt1205t_second_fit_lower_left_m3_centre()) < 0.000001 &&
+           alt1205t_second_fit_lower_left_m3_centre() == [5.75, 97.6] &&
+           alt1205t_third_fit_lower_left_m3_correction() == [0.5, 1] &&
+           norm(alt1205t_second_fit_lower_left_m3_centre() +
+                alt1205t_third_fit_lower_left_m3_correction() - [6.25, 98.6]) < 0.000001 &&
+           alt1205t_lower_left_m3_centre() == [6.25, 98.6],
+           "ALT-1205T third-fit lower-left M3 centre changed");
     assert(alt1205t_bottom_slot_left_tangent() == 2.28 &&
            alt1205t_bottom_slot_size() == [2.61, 4] &&
            alt1205t_bottom_slot_origin() == [2.28, 106],

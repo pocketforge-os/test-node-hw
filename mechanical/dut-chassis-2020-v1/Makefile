@@ -55,6 +55,7 @@ POWER_SYSTEM_COUPON_STL := $(BUILD)/power-system-fit-coupon.stl
 POWER_SYSTEM_COUPON_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-top.png
 POWER_SYSTEM_COUPON_CLEAN_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-top.png
 POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-isometric.png
+POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-thickness.png
 POWER_SYSTEM_COUPON_CHECK := scripts/check_power_system_fit_coupon.py
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
@@ -541,7 +542,8 @@ usb-c-interrupter: $(USB_C_INTERRUPTER_STL) $(USB_C_INTERRUPTER_PREVIEW)
 power-system-models: $(POWER_SYSTEM_STLS) $(POWER_SYSTEM_EVIDENCE)
 
 power-system-fit-coupon: $(POWER_SYSTEM_COUPON_STL) $(POWER_SYSTEM_COUPON_EVIDENCE) \
-	$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE) $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE)
+	$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE) $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE) \
+	$(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE)
 
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
@@ -685,12 +687,18 @@ $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
 		--projection=ortho --viewall --autocenter --camera=0,0,0,55,0,25,200 \
 		-D 'PART="printable_coupon"' $<
 
+$(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,800 \
+		--projection=ortho --camera=-13,80,2.5,90,0,0,55 \
+		-D 'PART="printable_coupon"' $<
+
 validate-power-system-fit-coupon: power-system-fit-coupon
 	$(PYTHON) $(POWER_SYSTEM_COUPON_CHECK)
 	@fingerprint=$$($(PYTHON) $(FINGERPRINT) $(POWER_SYSTEM_COUPON_STL)); \
 	printf '%s\n' "$$fingerprint"; \
 	printf '%s\n' "$$fingerprint" | \
-		grep -q '"sha256":"e4df90a17ee408316f1ce58041d85255cc97fdad0a3cd6918e03791df2f7a249"'
+		grep -q '"sha256":"650ac2056ff6876047647757c962aa93be85b81bfc11abab0c19f0150d36edbb"'
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-fit-coupon-overrides.csg \
 		-D 'IEC_CLEARANCE=0.30' -D 'M3_HOLE_CLEARANCE=0.50' \
 		-D 'NUT_TRAP_CLEARANCE=0.35' -D 'WALL_THICKNESS=3.2' \
@@ -700,8 +708,9 @@ validate-power-system-fit-coupon: power-system-fit-coupon
 		--bed-x 247 --bed-y 207 --min-bed-contact-area 900 $(POWER_SYSTEM_COUPON_STL)
 	@test -s $(POWER_SYSTEM_COUPON_EVIDENCE) \
 		-a -s $(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE) \
-		-a -s $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE)
-	@echo 'power_system_fit_coupon=pass physical_text=none evidence_annotations=isolated orientation=flat supports=none structural_wall_mm=3.0 iec_snap_wall_mm=1.4 iec_surface_allowance_mm=0.1 iec_wall_max_mm=1.5 overrides=pass identity=normalized-mesh-fingerprint raw-stl-sha256=build-instance-specific'
+		-a -s $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE) \
+		-a -s $(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE)
+	@echo 'power_system_fit_coupon=pass physical_text=none evidence_annotations=isolated orientation=flat supports=none structural_wall_mm=3.0 iec_snap_wall_mm=1.2 iec_surface_allowance_mm=0.1 iec_budgeted_wall_max_mm=1.3 iec_owner_wall_hard_limit_mm=1.5 overrides=pass identity=normalized-mesh-fingerprint raw-stl-sha256=build-instance-specific'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \

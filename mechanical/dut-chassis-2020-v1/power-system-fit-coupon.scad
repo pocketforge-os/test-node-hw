@@ -25,9 +25,10 @@ function coupon_iec_clearanced_profile() = [
     coupon_iec_nominal_profile().x + 2 * IEC_CLEARANCE,
     coupon_iec_nominal_profile().y + 2 * IEC_CLEARANCE
 ];
-function coupon_iec_snap_wall_target() = 1.4;
+function coupon_iec_snap_wall_target() = 1.2;
 function coupon_iec_surface_allowance() = 0.1;
-function coupon_iec_snap_wall_max() = 1.5;
+function coupon_iec_budgeted_wall_max() = 1.3;
+function coupon_iec_owner_wall_hard_limit() = 1.5;
 function coupon_iec_faceplate_overlap_per_side() = [
     (iecc14_faceplate_size().x - coupon_iec_clearanced_profile().x) / 2,
     (iecc14_faceplate_size().y - coupon_iec_clearanced_profile().y) / 2
@@ -55,10 +56,10 @@ module coupon_contract() {
                [[25.3,30.9], [25.3,67], [53.3,67]],
            "PSU second-fit internal coupon centres changed");
     assert(alt1205t_upper_left_m3_centre() == [0.95,5.95] &&
-           alt1205t_lower_left_m3_centre() == [5.75,97.6] &&
+           alt1205t_lower_left_m3_centre() == [6.25,98.6] &&
            alt1205t_all_m3_centres() ==
-               [[0.95,5.95], [25.3,30.9], [25.3,67], [53.3,67], [5.75,97.6]],
-           "PSU second-fit corner M3 checks or combined five-hole contract changed");
+               [[0.95,5.95], [25.3,30.9], [25.3,67], [53.3,67], [6.25,98.6]],
+           "PSU third-fit corner M3 checks or combined five-hole contract changed");
     assert(coupon_slot_origin() == [71.05, 2.94] &&
            coupon_slot_origin().x + alt1205t_upper_right_slot_size().x ==
                alt1205t_base_size().x - 3.15,
@@ -75,12 +76,16 @@ module coupon_contract() {
     assert(coupon_iec_faceplate_overlap_per_side().x > 0 &&
            coupon_iec_faceplate_overlap_per_side().y > 0,
            "IEC faceplate must cover the clearanced panel opening on every side");
-    assert(coupon_iec_snap_wall_target() == 1.4 &&
+    assert(coupon_iec_centre() == [-19,80] && coupon_panel_size() == [35,54],
+           "IEC coupon XY placement or panel outline changed");
+    assert(coupon_iec_snap_wall_target() == 1.2 &&
            coupon_iec_surface_allowance() == 0.1 &&
-           coupon_iec_snap_wall_max() == 1.5 &&
-           coupon_iec_snap_wall_target() + coupon_iec_surface_allowance() <=
-               coupon_iec_snap_wall_max(),
-           "IEC snap wall plus surface allowance must not exceed 1.5 mm");
+           coupon_iec_budgeted_wall_max() == 1.3 &&
+           coupon_iec_owner_wall_hard_limit() == 1.5 &&
+           coupon_iec_snap_wall_target() + coupon_iec_surface_allowance() ==
+               coupon_iec_budgeted_wall_max() &&
+           coupon_iec_budgeted_wall_max() < coupon_iec_owner_wall_hard_limit(),
+           "IEC 1.2 + 0.1 mm budget must remain below the 1.5 mm owner limit");
     assert(coupon_iec_snap_wall_target() < WALL_THICKNESS,
            "IEC snap panel must remain distinct from the structural coupon wall");
     assert(WALL_THICKNESS > 0, "Coupon wall thickness must be positive");
@@ -92,6 +97,12 @@ module coupon_contract() {
            coupon_nut_pocket_af() == 5.5 + NUT_TRAP_CLEARANCE &&
            coupon_nut_pocket_depth() == 2.6,
            "M3 nut-trap nominal or clearance mapping changed");
+    assert(coupon_nut_centre() == [85,8],
+           "Separate M3 nut-sampler placement changed");
+    assert(coupon_register_height() == 2.0 &&
+           coupon_register_thickness() == 2.0 &&
+           coupon_register_length() == 24,
+           "PSU datum-register geometry changed");
     assert(coupon_nut_pocket_depth() < WALL_THICKNESS,
            "Nut pocket must retain a printable floor");
     assert(coupon_pad_diameter()/2 - coupon_m3_hole_diameter()/2 >= 3,
@@ -218,7 +229,7 @@ module evidence_overlay() {
     color([0.1,0.1,0.1]) translate([8,5,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("UL M3 (0.95,5.95)",size=1.7);
     color([0.1,0.1,0.1]) translate([12,99,WALL_THICKNESS+0.04])
-        linear_extrude(height=0.16) text("LL M3 (5.75,97.6)",size=1.7);
+        linear_extrude(height=0.16) text("LL M3 (6.25,98.6)",size=1.7);
     color([0.1,0.1,0.1]) translate([coupon_slot_origin().x-25,8,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("SLOT 3.3x4.7  T2.94  R3.15",size=1.45);
     color([0.1,0.1,0.1])
@@ -247,7 +258,7 @@ module evidence_overlay() {
     color([0.1,0.1,0.1]) translate([-35,53,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("IEC NOM 27x46.86",size=2.4);
     color([0.1,0.1,0.1]) translate([-35,94.5,WALL_THICKNESS+0.04])
-        linear_extrude(height=0.16) text("IEC WALL 1.4 + 0.1 <= 1.5",size=1.35);
+        linear_extrude(height=0.16) text("IEC WALL 1.2 + 0.1 = 1.3 < 1.5",size=1.2);
     color([0.1,0.1,0.1]) translate([-35,92,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("STRUCTURE 3.0",size=1.6);
     color([0.55,0.05,0.75]) translate([72,18,WALL_THICKNESS+0.04])
