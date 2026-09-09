@@ -8,7 +8,7 @@ the hood or servicing the fuse drawer.
 
 ## Artifacts
 
-`power-system-enclosure.scad` owns five stable selectors:
+`power-system-enclosure.scad` owns six stable build selectors:
 
 - `PART="base"`: floor-down base/tray, PSU mount pattern, exterior nut traps,
   barrier capture, conductor saddles, and the existing rail interface;
@@ -18,11 +18,16 @@ the hood or servicing the fuse drawer.
   shield (DXF and SVG outputs; this part is not printed);
 - `PART="assembly"`: clean candidate assembly preview;
 - `PART="installed_preview"`: evidence assembly with rail proxy and named
-  service volumes.
+  service volumes;
+- `PART="nut_fit_coupon"`: a small, text-free process coupon containing the
+  exact final rail-side hood socket and obstruction, its installed hood-cap/
+  screw-path proxy, and one exact PSU top socket. It is a fit-test artifact,
+  not a third enclosure piece.
 
-The four evidence-only selectors (`evidence_top`, `evidence_rear`,
-`evidence_section`, and `installed_preview`) may display colored service
-keep-outs. No `text()` geometry occurs in either printable selector.
+The evidence-only selectors (`evidence_top`, `evidence_rear`,
+`evidence_section`, `evidence_nut_section`, and `installed_preview`) may
+display colored service keep-outs or hardware proxies. No `text()` geometry
+occurs in any printable selector.
 
 Validation also exports `partition_slice` and `dc_route_keepout` meshes. These
 are measurement evidence only: the former isolates the complete printed
@@ -33,6 +38,7 @@ Build and validate with:
 
 ```sh
 make power-system-enclosure
+make power-system-enclosure-nut-coupon
 make validate-power-system-enclosure
 ```
 
@@ -74,20 +80,30 @@ snap wall; surrounding rear structure remains 3.2 mm.
 
 ## Print and assembly assumptions
 
-- Base: print floor-down, no supports; 220.27 × 136 × 20 mm.
+- Base: print floor-down, no supports; 220.27 × 136 × 32 mm. The rail remains
+  20 mm tall; only the four exterior hood-fastener bosses reach 32 mm.
 - Hood: print roof-down, no supports; 136 × 140 × 74 mm.
 - Initial process: 0.8 mm nozzle; 3.2 mm walls and 4.0 mm floor/roof are nozzle
   multiples. Material, layer height, temperatures, and flammability/temperature
   suitability remain unapproved.
-- Hood: four short horizontal M3 screws. Each matching 5.75 mm-AF × 2.6 mm nut
-  pocket is fed from a full-size exterior underside chute, then necks to a
-  5.2 mm opening through a nominal 0.8 mm-high press-retaining lip before
-  reopening into the seated pocket. The nut must be deliberately pressed past
-  the throat and cannot slide or fall back through it under gravity before the
-  screw is installed. The pocket remains isolated from the protected cavity.
-  Screw length must be selected so it cannot enter that cavity.
-- PSU: M3 hardware through the approved pattern into underside/exterior
-  retained nuts. Verify the actual screw stack before installation.
+- Hood: four short horizontal M3 screws on world Z=25.6 mm, at unchanged
+  Y=170/290 mm. Before fitting the hood, press each standard M3 nut point-up
+  from the directly visible side mouth into a blind 5.60 mm-AF × 2.80 mm-deep
+  socket. A 6.20 mm-AF × 0.80 mm tapered lead-in starts the press; that lead-in
+  is provisional until the coupon passes. Each boss reaches Z=32 mm, has at
+  least 2.4 mm complete radial material and a 2.8 mm left/3.2 mm right solid
+  protected-cavity backstop, and presents no nut-sized path into the enclosure.
+  The installed hood caps each mouth while exposing only the 3.6 mm screw bore.
+  Screw length must be selected so it cannot enter the protected cavity.
+- PSU: before placing the PSU, visibly press five measured 2.30 mm-thick M3
+  nuts into the straight top-open 5.60 mm-AF × 2.60 mm-deep sockets at the
+  approved hole centers. Each socket retains 1.40 mm of floor below it; there
+  is no underside feeder or hidden support-removal passage. Verify the actual
+  screw stack before installation.
+- The superseded base with 5.2 mm throats and bed-facing nut chutes failed the
+  physical insertion trial. Do not force nuts into that print and do not use it
+  for assembly. Print the new nut-fit coupon first, in its exported orientation;
+  it needs no supports and intentionally reproduces the right-rail obstruction.
 - Joint: 0.8 mm nominal lateral gap and 6.4 mm overlap. The left tongue routes
   around the PSU, and both affected tongue runs clear the hood's internal
   partition crossings. The PSU metal side and the intersecting partition walls
@@ -169,8 +185,8 @@ not a declaration of creepage, clearance, regulatory category, or compliance.
    retain the metal hardware, then perform and record a protective-earth
    continuity test. The print must not carry fault current.
 8. Confirm tool-only hood access, screw lengths, nut retention, strain relief,
-   seam engagement, baffle integrity, and absence of any touch/tool path to
-   energized terminals.
+   the physical coupon's pressure fit and lead-in, seam engagement, baffle
+   integrity, and absence of any touch/tool path to energized terminals.
 9. Unplug before fuse service or hood removal. Never work live. Complete the
    separately authorized DUT02 integration/inspection procedure before any
    fleet rollout.

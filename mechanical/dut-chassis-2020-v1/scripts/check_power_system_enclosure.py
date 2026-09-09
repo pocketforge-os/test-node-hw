@@ -30,6 +30,8 @@ require(
     'else if (PART == "barrier_template") barrier_template_2d();',
     'else if (PART == "assembly") assembly_evidence(false);',
     'else if (PART == "installed_preview") installed_preview();',
+    'else if (PART == "nut_fit_coupon") nut_fit_coupon();',
+    'else if (PART == "evidence_nut_section") nut_socket_section_evidence();',
     "function enclosure_outer_min() = [190, 160, 0]",
     "function enclosure_outer_max() = [326, 300, 78]",
     "function enclosure_rail_min() = [322.8, 117.73, 0]",
@@ -49,8 +51,19 @@ require(
     "iecc14_panel_cutout_negative(IEC_SNAP_WALL,IEC_CLEARANCE)",
     "iecc14_body_profile_size() == [27,46.86]",
     "iecc14_faceplate_size() == [31,50.3,2]",
-    "M3_NUT_RETAINING_OPENING_AF == 5.2",
-    "M3_NUT_RETAINING_LIP == 0.8",
+    "HOOD_NUT_AF == 5.60",
+    "HOOD_NUT_DEPTH == 2.80",
+    "HOOD_NUT_LEAD_AF == 6.20",
+    "HOOD_NUT_LEAD_DEPTH == 0.80",
+    "HOOD_NUT_CAPTURE_WALL == 2.40",
+    "PSU_NUT_AF == 5.60",
+    "PSU_NUT_DEPTH == 2.60",
+    "FLOOR-PSU_NUT_DEPTH == 1.40",
+    "function enclosure_hood_screw_z() = 25.6",
+    "function enclosure_hood_nut_boss_top() = 32.0",
+    "module hood_nut_cap_missing()",
+    "module hood_nut_backstop_missing()",
+    "module psu_nut_floor_missing()",
     "module barrier_lower_capture()",
     "module barrier_upper_capture()",
     "module separation_partition()",
@@ -95,10 +108,14 @@ defaults = {
     "IEC_CLEARANCE": "0.20",
     "IEC_SNAP_WALL": "1.2",
     "M3_CLEARANCE_DIAMETER": "3.6",
-    "M3_NUT_AF": "5.75",
-    "M3_NUT_DEPTH": "2.6",
-    "M3_NUT_RETAINING_OPENING_AF": "5.2",
-    "M3_NUT_RETAINING_LIP": "0.8",
+    "HOOD_NUT_AF": "5.60",
+    "HOOD_NUT_DEPTH": "2.80",
+    "HOOD_NUT_LEAD_AF": "6.20",
+    "HOOD_NUT_LEAD_DEPTH": "0.80",
+    "HOOD_NUT_CAPTURE_WALL": "2.40",
+    "PSU_NUT_MEASURED_DEPTH": "2.30",
+    "PSU_NUT_AF": "5.60",
+    "PSU_NUT_DEPTH": "2.60",
     "SEAM_GAP": "0.8",
     "SEAM_OVERLAP": "6.4",
     "SAFETY_DISTANCE": "8.0",
@@ -140,21 +157,34 @@ require(
     "flammability",
     "full-load thermal/ventilation test",
     "No certification or powered-use approval",
+    "5.60 mm-AF × 2.80 mm-deep",
+    "5.60 mm-AF × 2.60 mm-deep",
+    "world Z=25.6 mm",
+    "superseded base with 5.2 mm throats",
+    "Do not force nuts into that print",
 )
 
 require(
     MAKEFILE,
     "power-system-enclosure: $(POWER_SYSTEM_ENCLOSURE_BASE)",
+    "power-system-enclosure-nut-coupon: $(POWER_SYSTEM_ENCLOSURE_NUT_COUPON)",
     'PART="base"',
     'PART="hood"',
     'PART="barrier_template"',
     'PART="evidence_top"',
     'PART="evidence_rear"',
     'PART="evidence_section"',
+    'PART="evidence_nut_section"',
+    'PART="nut_fit_coupon"',
+    "layout-power-system-enclosure-nut-coupon-isometric.png",
+    "layout-power-system-enclosure-nut-coupon-top.png",
     'PART="partition_slice"',
     'PART="dc_route_keepout"',
     "partition_missing_material",
     "dc_route_hood_interference",
+    "hood_nut_cap_missing",
+    "hood_nut_backstop_missing",
+    "psu_nut_floor_missing",
     "scripts/check_power_system_enclosure.py",
     "power-system-terminal-barrier-template.dxf",
     "power-system-terminal-barrier-template.svg",
@@ -162,6 +192,7 @@ require(
 
 base_path = ROOT / "build/power-system-enclosure-base.stl"
 hood_path = ROOT / "build/power-system-enclosure-hood.stl"
+coupon_path = ROOT / "build/power-system-enclosure-nut-fit-coupon.stl"
 partition_path = ROOT / "build/power-system-terminal-partition-slice.stl"
 dc_route_path = ROOT / "build/power-system-dc-route-keepout.stl"
 
@@ -193,11 +224,98 @@ def mesh_contract(path: Path, expected_bounds: tuple[tuple[float, ...], tuple[fl
 
 
 base_facets, base_points = mesh_contract(
-    base_path, ((0.0, 0.0, 0.0), (220.27, 136.0, 20.0))
+    base_path, ((0.0, 0.0, 0.0), (220.27, 136.0, 32.0))
 )
 hood_facets, hood_points = mesh_contract(
     hood_path, ((0.0, 0.0, 0.0), (136.0, 140.0, 74.0))
 )
+coupon_topology = inspect_topology(coupon_path)
+if (
+    coupon_topology["invalid_edges"]
+    or coupon_topology["components"] != 3
+    or coupon_topology["degenerate_facets"]
+):
+    raise SystemExit(f"nut-fit coupon topology failure: {coupon_topology}")
+coupon_facets = triangles(coupon_path)
+coupon_points = [point for triangle in coupon_facets for point in triangle]
+coupon_bounds = (
+    tuple(min(point[axis] for point in coupon_points) for axis in range(3)),
+    tuple(max(point[axis] for point in coupon_points) for axis in range(3)),
+)
+if coupon_bounds != ((0.0, 0.0, 0.0), (50.0, 16.0, 32.0)):
+    raise SystemExit(f"nut-fit coupon bounds changed: {coupon_bounds}")
+
+
+def split_components(facets):
+    """Return edge-connected facet groups for per-piece print contracts."""
+    edge_faces = {}
+    for index, triangle in enumerate(facets):
+        rounded = [tuple(round(value, 6) for value in point) for point in triangle]
+        for a, b in ((0, 1), (1, 2), (2, 0)):
+            edge = tuple(sorted((rounded[a], rounded[b])))
+            edge_faces.setdefault(edge, []).append(index)
+    adjacency = [set() for _ in facets]
+    for indexes in edge_faces.values():
+        for index in indexes:
+            adjacency[index].update(indexes)
+    groups = []
+    seen = set()
+    for start in range(len(facets)):
+        if start in seen:
+            continue
+        pending = [start]
+        seen.add(start)
+        group = []
+        while pending:
+            index = pending.pop()
+            group.append(facets[index])
+            for neighbor in adjacency[index]:
+                if neighbor not in seen:
+                    seen.add(neighbor)
+                    pending.append(neighbor)
+        groups.append(group)
+    return groups
+
+
+coupon_component_bounds = []
+for component in split_components(coupon_facets):
+    points = [point for triangle in component for point in triangle]
+    bounds = (
+        tuple(min(point[axis] for point in points) for axis in range(3)),
+        tuple(max(point[axis] for point in points) for axis in range(3)),
+    )
+    if bounds[0][2] != 0.0:
+        raise SystemExit(f"coupon component does not contact Z=0: {bounds}")
+    bed_points = {
+        (round(point[0], 6), round(point[1], 6))
+        for point in points if math.isclose(point[2], 0.0, abs_tol=1e-6)
+    }
+    if len(bed_points) < 4:
+        raise SystemExit(f"coupon component lacks meaningful bed contact: {bounds}")
+    bed_area = 0.0
+    for triangle in component:
+        if all(math.isclose(point[2], 0.0, abs_tol=1e-6) for point in triangle):
+            a, b, c = triangle
+            bed_area += abs(
+                (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
+            ) / 2.0
+    if bed_area < 20.0:
+        raise SystemExit(
+            f"coupon component bed contact is below 20 mm2: {bed_area} {bounds}"
+        )
+    coupon_component_bounds.append(bounds)
+
+coupon_component_bounds.sort(key=lambda bounds: bounds[0][0])
+expected_coupon_components = (
+    ((0.0, 0.0, 0.0), (12.0, 16.0, 32.0)),
+    ((20.0, 0.0, 0.0), (23.2, 12.0, 12.0)),
+    ((38.0, 0.0, 0.0), (50.0, 12.0, 4.0)),
+)
+if tuple(coupon_component_bounds) != expected_coupon_components:
+    raise SystemExit(f"coupon component bounds changed: {coupon_component_bounds}")
+for left, right in zip(coupon_component_bounds, coupon_component_bounds[1:]):
+    if left[1][0] >= right[0][0]:
+        raise SystemExit("coupon projected component footprints overlap")
 partition_facets, partition_points = mesh_contract(
     partition_path, ((304.0, 177.98, 40.86), (307.2, 259.52, 74.02))
 )
@@ -212,48 +330,90 @@ def require_vertex(points, target, label, tolerance=5e-4):
         raise SystemExit(f"{label} mesh vertex missing at {target}")
 
 
-# All four horizontal hood nuts load from below through a 5.75 mm feeder, pass
-# a 5.2 mm throat bounded by a nominal 0.8 mm-high retaining lip, and seat in
-# a 5.75-AF x 2.6 mm-deep pocket.  These vertices are measured on the final
-# printable base mesh after its installed-to-print transform.
-nut_z = 13.0
-nut_radius = 5.75 / math.sqrt(3)
-nut_low = nut_z - nut_radius
-throat_low = nut_low - 0.8
-for centre_x in (338.0 - 170.0, 338.0 - 290.0):
-    for depth_min in (5.0, 126.0):
-        depth_max = depth_min + 2.6
-        for depth in (depth_min, depth_max):
-            for x in (centre_x - 5.75 / 2, centre_x + 5.75 / 2):
-                require_vertex(
-                    base_points, (x, depth, throat_low),
-                    "hood-nut 5.75 mm exterior feeder",
-                )
-                require_vertex(
-                    base_points, (x, depth, nut_low),
-                    "hood-nut 5.75 mm seated pocket",
-                )
-                require_vertex(
-                    base_points, (x, depth, nut_z + nut_radius / 2),
-                    "hood-nut 5.75 mm hex pocket",
-                )
-            for x in (centre_x - 5.2 / 2, centre_x + 5.2 / 2):
-                require_vertex(
-                    base_points, (x, depth, throat_low),
-                    "hood-nut 5.2 mm retaining throat",
-                )
-                require_vertex(
-                    base_points, (x, depth, nut_low),
-                    "hood-nut 0.8 mm retaining lip",
-                )
+# All four hood nuts now press directly through visible seam-side mouths along
+# the screw axis.  Production-print coordinates map Y=170/290 to X=168/48;
+# the left mouth is print Y=4 and the rail-side mouth is print Y=128.8.
+nut_z = 25.6
+lead_radius = 6.2 / math.sqrt(3)
+# The negative begins 0.01 mm outside the boss to make CSG robust, so the
+# final mesh at the physical face samples 0.01/0.82 into the taper.
+lead_face_radius = (6.2-(6.2-5.6)*0.01/0.82) / math.sqrt(3)
+pocket_radius = 5.6 / math.sqrt(3)
+for centre_x in (168.0, 48.0):
+    for mouth, lead_inner, pocket_inner in (
+        (4.0, 4.81, 7.61),
+        (128.8, 127.99, 125.19),
+    ):
+        direction = 1 if mouth < 10 else -1
+        require_vertex(
+            base_points, (centre_x, mouth, nut_z-lead_face_radius),
+            "hood-nut 6.20 AF visible lead-in mouth",
+        )
+        require_vertex(
+            base_points, (centre_x, lead_inner, nut_z-pocket_radius),
+            "hood-nut 5.60 AF pressure-fit transition",
+        )
+        require_vertex(
+            base_points, (centre_x, pocket_inner, nut_z-pocket_radius),
+            "hood-nut 2.80 mm blind pocket extent",
+        )
+        if not math.isclose(
+            abs(pocket_inner-lead_inner), 2.8, abs_tol=1e-6
+        ):
+            raise SystemExit("hood-nut pocket is not 2.80 mm deep")
+        if nut_z-lead_radius-20.0 < 2.0:
+            raise SystemExit("rail-side nut lead-in lacks 2 mm vertical clearance")
+        mouth_profile = {
+            (round(point[0], 4), round(point[2], 4))
+            for point in base_points
+            if math.isclose(point[1], mouth, abs_tol=2e-4)
+            and abs(point[0]-centre_x) < 3.2
+            and abs(point[2]-nut_z) < 3.7
+        }
+        lowest = min(z for _, z in mouth_profile)
+        highest = max(z for _, z in mouth_profile)
+        if not (
+            {x for x, z in mouth_profile if z == lowest} == {centre_x}
+            and {x for x, z in mouth_profile if z == highest} == {centre_x}
+        ):
+            raise SystemExit("hood socket is not point-up/support-free in print Z")
 
-if not math.isclose(nut_low - throat_low, 0.8, abs_tol=1e-6):
-    raise SystemExit("hood-nut retaining lip is not 0.8 mm high")
+# Installed hood walls cap all four 6.20-AF mouths.  Their only opening is the
+# 3.6 mm screw bore at roof-down Z=52.4; the Make empty-solid diagnostic proves
+# the complete annulus, while these rim planes measure the final hood mesh.
+for centre_y in (130.0, 10.0):
+    for wall_plane in (0.0, 3.2, 129.6, 132.8):
+        if not any(
+            math.isclose(point[0], wall_plane, abs_tol=2e-4)
+            and math.isclose(point[1], centre_y, abs_tol=2e-4)
+            and math.isclose(
+                math.hypot(point[1]-centre_y, point[2]-52.4),
+                0.0,
+                abs_tol=2e-4,
+            )
+            for point in hood_points
+        ):
+            # A circular mesh has no centre vertex; verify its 1.8 mm rim.
+            rim = {
+                point for point in hood_points
+                if math.isclose(point[0], wall_plane, abs_tol=2e-4)
+                and math.isclose(
+                    math.hypot(point[1]-centre_y, point[2]-52.4),
+                    1.8,
+                    abs_tol=5e-4,
+                )
+            }
+            if len(rim) < 30:
+                raise SystemExit(
+                    f"hood screw/cap rim missing at print {(wall_plane,centre_y,52.4)}"
+                )
 
 print(
-    "hood_nut_retention=pass traps=4 exterior_feeder_af_mm=5.75 "
-    "throat_af_mm=5.20 retaining_lip_height_mm=0.80 "
-    "pocket_af_mm=5.75 pocket_depth_mm=2.60 insertion=exterior-press"
+    "hood_nut_retention=pass traps=4 insertion=direct-side-pressure "
+    "lead_af_mm=6.20 lead_depth_mm=0.80 pocket_af_mm=5.60 "
+    "pocket_depth_mm=2.80 screw_axis_z_mm=25.60 boss_top_z_mm=32.00 "
+    "rail_clearance_min_mm=2.02 left_backstop_mm=2.80 right_backstop_mm=3.20 "
+    "hood_cap=annular-only-screw-bore"
 )
 
 # The isolated actual partition slice is one closed connected mesh with one
@@ -320,21 +480,52 @@ print(
     "hood_interference=clear psu_interference=clear"
 )
 
-# The five approved M3 centers survive the installed-to-print transform.  The
-# library's -0.01 overlap can create both 3.99 and 4.00 rim planes.
+# The five approved M3 centers survive the installed-to-print transform as
+# visible top-open pressure sockets.  The hex extends from Z=1.40 to Z=4.00,
+# proving the exact 2.60 mm depth and retained 1.40 mm floor.
 for u, v in ((4.95, 4.95), (25.3, 30.9), (25.3, 67.0),
              (53.3, 67.0), (6.75, 98.6)):
     centre = (80.5 + u, 4.0 + v)
-    rim = {
-        point for point in base_points
-        if math.isclose(
-            math.hypot(point[0] - centre[0], point[1] - centre[1]),
-            1.8,
-            abs_tol=5e-4,
+    for z in (1.4, 4.0):
+        require_vertex(
+            base_points,
+            (centre[0], centre[1]-pocket_radius, z),
+            f"approved PSU 5.60 AF socket at local {(u,v)}",
         )
-    }
-    if len(rim) < 60 or not {3.99, 4.0}.issubset({point[2] for point in rim}):
-        raise SystemExit(f"approved PSU M3 rim missing at local {(u,v)} / print {centre}")
+
+# The third coupon component is the same exact PSU socket in floor-down
+# orientation.  The first component carries the rail-side hood socket at the
+# same Z=25.6 and with the exact rail obstruction; the middle component is the
+# actual 3.2 mm hood wall and screw-bore crop in roof-down orientation.
+for z in (1.4, 4.0):
+    require_vertex(
+        coupon_points, (44.0-pocket_radius, 6.0, z),
+        "coupon PSU 5.60 AF socket",
+    )
+require_vertex(
+    coupon_points, (6.0, 8.8, nut_z-lead_face_radius),
+    "coupon rail-side 6.20 AF hood lead-in",
+)
+hood_coupon_rim = {
+    point for point in coupon_points
+    if math.isclose(point[0], 20.0, abs_tol=2e-4)
+    and math.isclose(
+        math.hypot(point[1]-6.0, point[2]-6.4),
+        1.8,
+        abs_tol=5e-4,
+    )
+}
+if len(hood_coupon_rim) < 32:
+    raise SystemExit("coupon roof-down hood-cap screw-bore rim missing")
+
+print(
+    "psu_nut_pressure_fit=pass traps=5 top_open=true af_mm=5.60 "
+    "nut_measured_mm=2.30 pocket_depth_mm=2.60 floor_mm=1.40"
+)
+print(
+    "nut_fit_coupon=pass components=3 bounds_mm=50x16x32 "
+    "each_min_z_mm=0 projected_footprints=disjoint supports=none text=none"
+)
 
 # Four rail holes remain exactly on their existing Y/Z axes; print rotation
 # maps world Y to X and the world X hole axis to printer Y.
