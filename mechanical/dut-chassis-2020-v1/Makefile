@@ -785,7 +785,7 @@ $(BUILD)/layout-power-system-enclosure-section.png: $(POWER_SYSTEM_ENCLOSURE_SOU
 
 $(BUILD)/layout-power-system-enclosure-nut-section.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
-		--projection=ortho --camera=317.5,173,18,80,0,30,115 \
+		--projection=ortho --camera=317.5,266.5,18,80,0,30,115 \
 		-D 'PART="evidence_nut_section"' $<
 
 $(BUILD)/layout-power-system-enclosure-nut-coupon-isometric.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
@@ -812,6 +812,9 @@ validate-power-system-enclosure: power-system-enclosure \
 	@set -eu; \
 	for selector in partition_missing_material terminal_service_hood_interference \
 			dc_route_hood_interference dc_route_psu_interference \
+			base_c14_body_interference base_c14_faceplate_interference \
+			hood_fastener_ac_service_interference \
+			hood_fastener_dc_route_interference \
 			hood_nut_cap_missing hood_nut_backstop_missing \
 			psu_nut_floor_missing; do \
 		log=$(BUILD)/power-system-enclosure-$$selector.log; \
@@ -857,7 +860,7 @@ validate-power-system-enclosure: power-system-enclosure \
 	@test -s $(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF) \
 		-a -s $(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG)
 	@for image in $(POWER_SYSTEM_ENCLOSURE_EVIDENCE); do test -s $$image; done
-	@echo 'power_system_enclosure=pass candidate=pre-DUT02 printable_parts=2 coupon=test-only barrier=nonprinted world_bounds_mm=190..326x160..300x0..78 c14_snap_wall_mm=1.2 hood_nut_af_mm=5.60 hood_nut_z_mm=25.6 psu_nut_af_mm=5.60 supports=none fuse=TBD certification=none'
+	@echo 'power_system_enclosure=pass candidate=pre-DUT02 printable_parts=2 coupon=test-only barrier=nonprinted world_bounds_mm=190..326x160..300x0..78 c14_snap_wall_mm=1.2 hood_nut_af_mm=5.60 hood_nut_z_mm=25.6 rear_right_y_mm=263.5 ac_bend_gap_mm=0.5 c14_rigid_gap_mm=8.7 psu_nut_af_mm=5.60 supports=none fuse=TBD certification=none'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \

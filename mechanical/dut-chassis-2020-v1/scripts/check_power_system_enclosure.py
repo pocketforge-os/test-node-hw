@@ -60,10 +60,15 @@ require(
     "PSU_NUT_DEPTH == 2.60",
     "FLOOR-PSU_NUT_DEPTH == 1.40",
     "function enclosure_hood_screw_z() = 25.6",
+    'function enclosure_hood_screw_y(side) = side=="left" ? [170,290] : [170,263.5]',
     "function enclosure_hood_nut_boss_top() = 32.0",
     "module hood_nut_cap_missing()",
     "module hood_nut_backstop_missing()",
     "module psu_nut_floor_missing()",
+    "module base_c14_body_interference()",
+    "module base_c14_faceplate_interference()",
+    "module hood_fastener_ac_service_interference()",
+    "module hood_fastener_dc_route_interference()",
     "module barrier_lower_capture()",
     "module barrier_upper_capture()",
     "module separation_partition()",
@@ -160,6 +165,9 @@ require(
     "5.60 mm-AF × 2.80 mm-deep",
     "5.60 mm-AF × 2.60 mm-deep",
     "world Z=25.6 mm",
+    "rear-right axis is Y=263.5 mm",
+    "0.5 mm nominal gap to the AC bend",
+    "8.7 mm from the rigid C14 body",
     "superseded base with 5.2 mm throats",
     "Do not force nuts into that print",
 )
@@ -182,6 +190,10 @@ require(
     'PART="dc_route_keepout"',
     "partition_missing_material",
     "dc_route_hood_interference",
+    "base_c14_body_interference",
+    "base_c14_faceplate_interference",
+    "hood_fastener_ac_service_interference",
+    "hood_fastener_dc_route_interference",
     "hood_nut_cap_missing",
     "hood_nut_backstop_missing",
     "psu_nut_floor_missing",
@@ -330,59 +342,84 @@ def require_vertex(points, target, label, tolerance=5e-4):
         raise SystemExit(f"{label} mesh vertex missing at {target}")
 
 
-# All four hood nuts now press directly through visible seam-side mouths along
-# the screw axis.  Production-print coordinates map Y=170/290 to X=168/48;
-# the left mouth is print Y=4 and the rail-side mouth is print Y=128.8.
+# The full-width rear-right boss occupies a 12.5 mm service corridor. Its
+# accepted asymmetric datum is the only full-12-mm placement that avoids a
+# positive-volume intrusion below while retaining space above.
+rear_right_axis_y = 263.5
+boss_half_y = 6.0
+terminal_service_max_y = 257.5
+ac_bend_min_y = 270.0
+c14_rigid_min_y = 300.0 - 21.8
+if not (
+    math.isclose(rear_right_axis_y-boss_half_y, terminal_service_max_y)
+    and math.isclose(ac_bend_min_y-(rear_right_axis_y+boss_half_y), 0.5)
+    and math.isclose(c14_rigid_min_y-(rear_right_axis_y+boss_half_y), 8.7)
+):
+    raise SystemExit("rear-right fastener lost its audited service corridor")
+
+
+# All four hood nuts press directly through visible seam-side mouths along the
+# screw axis. The left pair remains at world Y=170/290; the rail-side pair is
+# at Y=170/263.5 so the rear boss clears the exact inlet and service envelopes.
+# World Y maps to print X=338-Y. The left mouth is print Y=4 and the rail-side
+# mouth is print Y=128.8.
 nut_z = 25.6
 lead_radius = 6.2 / math.sqrt(3)
 # The negative begins 0.01 mm outside the boss to make CSG robust, so the
 # final mesh at the physical face samples 0.01/0.82 into the taper.
 lead_face_radius = (6.2-(6.2-5.6)*0.01/0.82) / math.sqrt(3)
 pocket_radius = 5.6 / math.sqrt(3)
-for centre_x in (168.0, 48.0):
-    for mouth, lead_inner, pocket_inner in (
-        (4.0, 4.81, 7.61),
-        (128.8, 127.99, 125.19),
+socket_print_contracts = (
+    (168.0, 4.0, 4.81, 7.61),
+    (48.0, 4.0, 4.81, 7.61),
+    (168.0, 128.8, 127.99, 125.19),
+    (74.5, 128.8, 127.99, 125.19),
+)
+for centre_x, mouth, lead_inner, pocket_inner in socket_print_contracts:
+    require_vertex(
+        base_points, (centre_x, mouth, nut_z-lead_face_radius),
+        "hood-nut 6.20 AF visible lead-in mouth",
+    )
+    require_vertex(
+        base_points, (centre_x, lead_inner, nut_z-pocket_radius),
+        "hood-nut 5.60 AF pressure-fit transition",
+    )
+    require_vertex(
+        base_points, (centre_x, pocket_inner, nut_z-pocket_radius),
+        "hood-nut 2.80 mm blind pocket extent",
+    )
+    if not math.isclose(
+        abs(pocket_inner-lead_inner), 2.8, abs_tol=1e-6
     ):
-        direction = 1 if mouth < 10 else -1
-        require_vertex(
-            base_points, (centre_x, mouth, nut_z-lead_face_radius),
-            "hood-nut 6.20 AF visible lead-in mouth",
-        )
-        require_vertex(
-            base_points, (centre_x, lead_inner, nut_z-pocket_radius),
-            "hood-nut 5.60 AF pressure-fit transition",
-        )
-        require_vertex(
-            base_points, (centre_x, pocket_inner, nut_z-pocket_radius),
-            "hood-nut 2.80 mm blind pocket extent",
-        )
-        if not math.isclose(
-            abs(pocket_inner-lead_inner), 2.8, abs_tol=1e-6
-        ):
-            raise SystemExit("hood-nut pocket is not 2.80 mm deep")
-        if nut_z-lead_radius-20.0 < 2.0:
-            raise SystemExit("rail-side nut lead-in lacks 2 mm vertical clearance")
-        mouth_profile = {
-            (round(point[0], 4), round(point[2], 4))
-            for point in base_points
-            if math.isclose(point[1], mouth, abs_tol=2e-4)
-            and abs(point[0]-centre_x) < 3.2
-            and abs(point[2]-nut_z) < 3.7
-        }
-        lowest = min(z for _, z in mouth_profile)
-        highest = max(z for _, z in mouth_profile)
-        if not (
-            {x for x, z in mouth_profile if z == lowest} == {centre_x}
-            and {x for x, z in mouth_profile if z == highest} == {centre_x}
-        ):
-            raise SystemExit("hood socket is not point-up/support-free in print Z")
+        raise SystemExit("hood-nut pocket is not 2.80 mm deep")
+    if nut_z-lead_radius-20.0 < 2.0:
+        raise SystemExit("rail-side nut lead-in lacks 2 mm vertical clearance")
+    mouth_profile = {
+        (round(point[0], 4), round(point[2], 4))
+        for point in base_points
+        if math.isclose(point[1], mouth, abs_tol=2e-4)
+        and abs(point[0]-centre_x) < 3.2
+        and abs(point[2]-nut_z) < 3.7
+    }
+    lowest = min(z for _, z in mouth_profile)
+    highest = max(z for _, z in mouth_profile)
+    if not (
+        {x for x, z in mouth_profile if z == lowest} == {centre_x}
+        and {x for x, z in mouth_profile if z == highest} == {centre_x}
+    ):
+        raise SystemExit("hood socket is not point-up/support-free in print Z")
 
-# Installed hood walls cap all four 6.20-AF mouths.  Their only opening is the
+# Installed hood walls cap all four 6.20-AF mouths. Their only opening is the
 # 3.6 mm screw bore at roof-down Z=52.4; the Make empty-solid diagnostic proves
 # the complete annulus, while these rim planes measure the final hood mesh.
-for centre_y in (130.0, 10.0):
-    for wall_plane in (0.0, 3.2, 129.6, 132.8):
+hood_cap_print_contracts = (
+    (130.0, (0.0, 3.2)),
+    (10.0, (0.0, 3.2)),
+    (130.0, (129.6, 132.8)),
+    (36.5, (129.6, 132.8)),
+)
+for centre_y, wall_planes in hood_cap_print_contracts:
+    for wall_plane in wall_planes:
         if not any(
             math.isclose(point[0], wall_plane, abs_tol=2e-4)
             and math.isclose(point[1], centre_y, abs_tol=2e-4)
@@ -413,6 +450,8 @@ print(
     "lead_af_mm=6.20 lead_depth_mm=0.80 pocket_af_mm=5.60 "
     "pocket_depth_mm=2.80 screw_axis_z_mm=25.60 boss_top_z_mm=32.00 "
     "rail_clearance_min_mm=2.02 left_backstop_mm=2.80 right_backstop_mm=3.20 "
+    "rear_right_axis_y_mm=263.50 lower_terminal_contact=boundary-only "
+    "ac_bend_gap_mm=0.50 c14_rigid_gap_mm=8.70 "
     "hood_cap=annular-only-screw-bore"
 )
 

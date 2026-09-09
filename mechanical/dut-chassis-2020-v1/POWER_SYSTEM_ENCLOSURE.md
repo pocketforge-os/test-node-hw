@@ -86,8 +86,10 @@ snap wall; surrounding rear structure remains 3.2 mm.
 - Initial process: 0.8 mm nozzle; 3.2 mm walls and 4.0 mm floor/roof are nozzle
   multiples. Material, layer height, temperatures, and flammability/temperature
   suitability remain unapproved.
-- Hood: four short horizontal M3 screws on world Z=25.6 mm, at unchanged
-  Y=170/290 mm. Before fitting the hood, press each standard M3 nut point-up
+- Hood: four short horizontal M3 screws on world Z=25.6 mm. The left pair
+  remains at Y=170/290 mm and the right/front fastener remains at Y=170 mm;
+  the rear-right axis is Y=263.5 mm. Before fitting the hood, press each
+  standard M3 nut point-up
   from the directly visible side mouth into a blind 5.60 mm-AF × 2.80 mm-deep
   socket. A 6.20 mm-AF × 0.80 mm tapered lead-in starts the press; that lead-in
   is provisional until the coupon passes. Each boss reaches Z=32 mm, has at
@@ -95,6 +97,13 @@ snap wall; surrounding rear structure remains 3.2 mm.
   protected-cavity backstop, and presents no nut-sized path into the enclosure.
   The installed hood caps each mouth while exposing only the 3.6 mm screw bore.
   Screw length must be selected so it cannot enter the protected cavity.
+- The asymmetric rear-right datum keeps its full 12 mm boss in the only
+  12.5 mm corridor between the lower terminal envelope ending at Y=257.5 and
+  the AC bend envelope beginning at Y=270. The lower face is boundary-tangent,
+  with no positive overlap, and there is a 0.5 mm nominal gap to the AC bend
+  envelope. It is 8.7 mm from the rigid C14 body beginning at Y=278.2. The
+  other rear fastener remains at Y=290 because its X=194..200.4 boss is
+  disjoint from the PSU, C14, AC service, and DC routing envelopes.
 - PSU: before placing the PSU, visibly press five measured 2.30 mm-thick M3
   nuts into the straight top-open 5.60 mm-AF × 2.60 mm-deep sockets at the
   approved hole centers. Each socket retains 1.40 mm of floor below it; there
@@ -175,7 +184,9 @@ not a declaration of creepage, clearance, regulatory category, or compliance.
 3. Confirm the exact cable and gland part, thread/retention envelope, pull-out
    rating, bend radius, and the 12 V bundle OD/count/gauge.
 4. Confirm AC terminal, insulated-lug, IEC rear, wire-bend, and slack envelopes;
-   edit the named assumptions if required and rerun validation.
+   edit the named assumptions if required and rerun validation. In particular,
+   physically confirm the terminal wiring/service fit around the rear-right
+   fastener corridor before any powered use; CAD clearance is not that gate.
 5. Approve the barrier material, thickness, temperature/flammability rating,
    partition bushing, and final continuous cut template against the dressed
    real terminal strip.

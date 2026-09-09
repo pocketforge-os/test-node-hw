@@ -72,7 +72,12 @@ function enclosure_barrier_world_z() = [4,4+BARRIER_HEIGHT];
 function enclosure_barrier_world_x() = 318.6;
 function enclosure_partition_x() = [304,304+WALL];
 function enclosure_partition_y() = [261.8,261.8+WALL];
-function enclosure_hood_screw_y() = [170,290];
+// The rear-right boss occupies the only 12.5 mm corridor between the lower
+// terminal-service envelope (ending Y=257.5) and the upper AC bend envelope
+// (starting Y=270).  Centering its full 12 mm width at Y=263.5 permits only
+// boundary contact below and leaves 0.5 mm above.  The other three accepted
+// fasteners stay fixed.
+function enclosure_hood_screw_y(side) = side=="left" ? [170,290] : [170,263.5];
 function enclosure_hood_screw_z() = 25.6;
 function enclosure_hood_nut_boss_min_x(side) = side=="left" ? 194.0 : 312.0;
 function enclosure_hood_nut_boss_max_x(side) = side=="left" ? 200.4 : 318.8;
@@ -165,8 +170,14 @@ module enclosure_contract() {
            PSU_NUT_DEPTH == 2.60 && FLOOR-PSU_NUT_DEPTH == 1.40,
            "PSU top-loaded nut socket/floor contract changed");
     assert(enclosure_hood_screw_z() == 25.6 &&
+           enclosure_hood_screw_y("left") == [170,290] &&
+           enclosure_hood_screw_y("right") == [170,263.5] &&
            enclosure_hood_nut_boss_top() == 32.0,
            "Hood screw axes/boss tops must remain above the rail");
+    assert(enclosure_hood_screw_y("right").y-6 ==
+               enclosure_psu_keepout_max().y &&
+           270-(enclosure_hood_screw_y("right").y+6) == 0.5,
+           "Rear-right boss must remain between terminal and bend envelopes");
     assert(enclosure_hood_screw_z()-HOOD_NUT_LEAD_AF/sqrt(3)-
                enclosure_rail_max().z >= 2.0,
            "Rail-side nut lead-in needs at least 2.0 mm vertical clearance");
@@ -300,7 +311,7 @@ module installed_base() {
             rail_spine_blank();
             seam_tongue();
             barrier_lower_capture();
-            for (side=["left","right"], y=enclosure_hood_screw_y())
+            for (side=["left","right"], y=enclosure_hood_screw_y(side))
                 vertical_nut_insert_boss(side,y);
             // Separate retention points for IEC/PE and insulated DC routing.
             conductor_retention_saddle([309,268,FLOOR-0.02]);
@@ -309,7 +320,7 @@ module installed_base() {
         }
         rail_mount_negatives();
         psu_mount_negatives();
-        for (side=["left","right"], y=enclosure_hood_screw_y())
+        for (side=["left","right"], y=enclosure_hood_screw_y(side))
             vertical_nut_insert_negative(side,y);
     }
 }
@@ -328,12 +339,12 @@ module c14_panel_negative() {
 
 module hood_screw_negatives() {
     z=enclosure_hood_screw_z();
-    for (y=enclosure_hood_screw_y()) {
+    for (y=enclosure_hood_screw_y("left"))
         translate([189.99,y,z]) rotate([0,90,0])
             cylinder(d=M3_CLEARANCE_DIAMETER,h=8,$fn=36);
+    for (y=enclosure_hood_screw_y("right"))
         translate([318.8,y,z]) rotate([0,90,0])
             cylinder(d=M3_CLEARANCE_DIAMETER,h=7.22,$fn=36);
-    }
 }
 
 module front_outer_vent_negatives() {
@@ -500,6 +511,27 @@ module ac_terminal_service_clearance_core() {
               FLOOR+BARRIER_HEIGHT-enclosure_psu_keepout_max().z-0.04]);
 }
 
+module ac_wire_bend_service_clearance_core() {
+    // Inset only to distinguish allowed boundary contact from intrusion.
+    translate([296.02,270.02,25.02])
+        cube([23.96,AC_WIRE_BEND_RADIUS-0.04,34.96]);
+    translate([302,276,38]) sphere(d=PE_LUG_SERVICE_DIAMETER-0.04,$fn=32);
+}
+
+module c14_rigid_body_world_keepout() {
+    in_c14_frame()
+        iecc14_rigid_insertion_body_keepout(iecc14_body_depth(),0,0);
+}
+
+module c14_faceplate_world_keepout() {
+    // The physical faceplate extends outward from the local insertion face.
+    in_c14_frame()
+        translate([-iecc14_faceplate_size().x/2,
+                   -iecc14_faceplate_size().y/2,
+                   -iecc14_faceplate_size().z])
+            cube(iecc14_faceplate_size());
+}
+
 module service_keepouts() {
     // Transparent evidence volumes; every value is an overridable assumption.
     ac_terminal_service_keepout();
@@ -619,6 +651,42 @@ module dc_route_psu_interference() {
     }
 }
 
+module hood_fastener_bosses_solid() {
+    for (side=["left","right"], y=enclosure_hood_screw_y(side))
+        vertical_nut_insert_boss(side,y);
+}
+
+module base_c14_body_interference() {
+    intersection() {
+        installed_base();
+        c14_rigid_body_world_keepout();
+    }
+}
+
+module base_c14_faceplate_interference() {
+    intersection() {
+        installed_base();
+        c14_faceplate_world_keepout();
+    }
+}
+
+module hood_fastener_ac_service_interference() {
+    intersection() {
+        hood_fastener_bosses_solid();
+        union() {
+            ac_terminal_service_clearance_core();
+            ac_wire_bend_service_clearance_core();
+        }
+    }
+}
+
+module hood_fastener_dc_route_interference() {
+    intersection() {
+        hood_fastener_bosses_solid();
+        dc_bundle_route_keepout();
+    }
+}
+
 module psu_forbidden_interior() {
     // The partition intentionally begins on the PSU shell's Z=40.86 boundary
     // so the metal top and printed wall close the vestibule together.  Test
@@ -669,7 +737,7 @@ module hood_nut_backstop_required_solid(side,y) {
 }
 
 module hood_nut_cap_missing() {
-    for (side=["left","right"], y=enclosure_hood_screw_y())
+    for (side=["left","right"], y=enclosure_hood_screw_y(side))
         difference() {
             hood_nut_cap_required_solid(side,y);
             installed_hood();
@@ -677,7 +745,7 @@ module hood_nut_cap_missing() {
 }
 
 module hood_nut_backstop_missing() {
-    for (side=["left","right"], y=enclosure_hood_screw_y())
+    for (side=["left","right"], y=enclosure_hood_screw_y(side))
         difference() {
             hood_nut_backstop_required_solid(side,y);
             installed_base();
@@ -697,15 +765,15 @@ module psu_nut_floor_missing() {
 }
 
 module installed_right_hood_nut_coupon_base() {
-    // Exact right/front base neighborhood: floor, socket boss, 3.2 mm gap,
-    // and the frozen 20 mm rail obstruction.  It remains floor-down.
+    // Exact relocated right/rear base neighborhood: floor, socket boss,
+    // 3.2 mm gap, and the frozen 20 mm rail obstruction. It remains floor-down.
     difference() {
         union() {
-            translate([310,164,0]) cube([16,12,FLOOR]);
-            vertical_nut_insert_boss("right",170);
-            translate([322.8,164,0]) cube([3.2,12,20]);
+            translate([310,257.5,0]) cube([16,12,FLOOR]);
+            vertical_nut_insert_boss("right",263.5);
+            translate([322.8,257.5,0]) cube([3.2,12,20]);
         }
-        vertical_nut_insert_negative("right",170);
+        vertical_nut_insert_negative("right",263.5);
     }
 }
 
@@ -714,7 +782,7 @@ module installed_right_hood_cap_coupon() {
     // roof-down orientation but translates this remote wall segment to Z=0.
     intersection() {
         installed_hood();
-        translate([313.2,164,20]) cube([9.6,12,12]);
+        translate([313.2,257.5,20]) cube([9.6,12,12]);
     }
 }
 
@@ -728,10 +796,10 @@ module psu_nut_coupon() {
 module nut_fit_coupon() {
     // Three support-free, text-free pieces in the production orientations:
     // exact right base socket/rail, roof-down hood cap, and floor-down PSU pad.
-    translate([-162,-120,0])
+    translate([-68.5,-120,0])
         translate([338,-190,0]) rotate([0,0,90])
             installed_right_hood_nut_coupon_base();
-    translate([20-129.6,-124,-46])
+    translate([20-129.6,-30.5,-46])
         translate([-190,300,78]) rotate([180,0,0])
             installed_right_hood_cap_coupon();
     translate([38,0,0]) psu_nut_coupon();
@@ -754,20 +822,20 @@ module nut_socket_section_evidence() {
     color([0.18,0.48,0.78])
         intersection() {
             installed_base();
-            translate([308,170,0]) cube([19,6,36]);
+            translate([308,263.5,0]) cube([19,6,36]);
         }
     color([0.78,0.82,0.86,0.72])
         intersection() {
             installed_hood();
-            translate([308,170,20]) cube([19,6,16]);
+            translate([308,263.5,20]) cube([19,6,16]);
         }
     color([0.85,0.56,0.12])
         intersection() {
-            hood_nut_proxy("right",170);
-            translate([308,170,0]) cube([19,6,36]);
+            hood_nut_proxy("right",263.5);
+            translate([308,263.5,0]) cube([19,6,36]);
         }
     color([0.68,0.70,0.74])
-        translate([318.4,170,enclosure_hood_screw_z()]) rotate([0,90,0])
+        translate([318.4,263.5,enclosure_hood_screw_z()]) rotate([0,90,0])
             cylinder(d=3,h=7.8,$fn=32);
 }
 
@@ -796,6 +864,12 @@ else if (PART == "terminal_service_hood_interference") terminal_service_hood_int
 else if (PART == "dc_route_keepout") dc_bundle_route_keepout();
 else if (PART == "dc_route_hood_interference") dc_route_hood_interference();
 else if (PART == "dc_route_psu_interference") dc_route_psu_interference();
+else if (PART == "base_c14_body_interference") base_c14_body_interference();
+else if (PART == "base_c14_faceplate_interference") base_c14_faceplate_interference();
+else if (PART == "hood_fastener_ac_service_interference")
+    hood_fastener_ac_service_interference();
+else if (PART == "hood_fastener_dc_route_interference")
+    hood_fastener_dc_route_interference();
 else if (PART == "hood_nut_cap_missing") hood_nut_cap_missing();
 else if (PART == "hood_nut_backstop_missing") hood_nut_backstop_missing();
 else if (PART == "psu_nut_floor_missing") psu_nut_floor_missing();
