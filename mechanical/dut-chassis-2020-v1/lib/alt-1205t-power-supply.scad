@@ -16,7 +16,9 @@ function alt1205t_first_fit_upper_left_m3_centre() = [3.45, 3.45];
 function alt1205t_second_fit_upper_left_m3_correction() = [-2.5, 2.5];
 function alt1205t_final_fit_upper_left_m3_baseline() = [0.95, 5.95];
 function alt1205t_final_fit_upper_left_m3_correction() = [3, -2];
-function alt1205t_upper_left_m3_centre() = [3.95, 3.95];
+function alt1205t_release_upper_left_m3_baseline() = [3.95, 3.95];
+function alt1205t_release_upper_left_m3_correction() = [1, 1];
+function alt1205t_upper_left_m3_centre() = [4.95, 4.95];
 function alt1205t_upper_right_slot_size() = [3.3, 4.7];
 function alt1205t_upper_right_slot_top_tangent() = 2.94;
 function alt1205t_upper_right_slot_right_tangent() = 3.15;
@@ -72,9 +74,14 @@ module alt1205t_contract() {
            alt1205t_final_fit_upper_left_m3_baseline() == [0.95, 5.95] &&
            alt1205t_final_fit_upper_left_m3_correction() == [3, -2] &&
            norm(alt1205t_final_fit_upper_left_m3_baseline() +
-                alt1205t_final_fit_upper_left_m3_correction() - [3.95, 3.95]) < 0.000001 &&
-           alt1205t_upper_left_m3_centre() == [3.95, 3.95],
-           "ALT-1205T final-fit upper-left M3 centre datum changed");
+                alt1205t_final_fit_upper_left_m3_correction() -
+                alt1205t_release_upper_left_m3_baseline()) < 0.000001 &&
+           alt1205t_release_upper_left_m3_baseline() == [3.95, 3.95] &&
+           alt1205t_release_upper_left_m3_correction() == [1, 1] &&
+           norm(alt1205t_release_upper_left_m3_baseline() +
+                alt1205t_release_upper_left_m3_correction() - [4.95, 4.95]) < 0.000001 &&
+           alt1205t_upper_left_m3_centre() == [4.95, 4.95],
+           "ALT-1205T release upper-left M3 centre datum changed");
     assert(alt1205t_upper_right_slot_size() == [3.3, 4.7] && alt1205t_upper_right_slot_top_tangent() == 2.94 && alt1205t_upper_right_slot_right_tangent() == 3.15, "ALT-1205T underside upper-right slot mapping changed");
     assert(alt1205t_first_fit_m3_centres() ==
                [[26.8, 32.9], [26.8, 69], [54.8, 69]] &&

@@ -55,11 +55,11 @@ module coupon_contract() {
     assert(alt1205t_m3_centres() ==
                [[25.3,30.9], [25.3,67], [53.3,67]],
            "PSU second-fit internal coupon centres changed");
-    assert(alt1205t_upper_left_m3_centre() == [3.95,3.95] &&
+    assert(alt1205t_upper_left_m3_centre() == [4.95,4.95] &&
            alt1205t_lower_left_m3_centre() == [6.75,98.6] &&
            alt1205t_all_m3_centres() ==
-               [[3.95,3.95], [25.3,30.9], [25.3,67], [53.3,67], [6.75,98.6]],
-           "PSU final-fit edge M3 checks or combined five-hole contract changed");
+               [[4.95,4.95], [25.3,30.9], [25.3,67], [53.3,67], [6.75,98.6]],
+           "PSU release edge M3 checks or combined five-hole contract changed");
     assert(coupon_slot_origin() == [71.05, 2.94] &&
            coupon_slot_origin().x + alt1205t_upper_right_slot_size().x ==
                alt1205t_base_size().x - 3.15,
@@ -227,7 +227,7 @@ module evidence_overlay() {
             linear_extrude(height=0.16) text(str("(",p.x,",",p.y,")"),size=2.2);
     }
     color([0.1,0.1,0.1]) translate([8,5,WALL_THICKNESS+0.04])
-        linear_extrude(height=0.16) text("UL M3 (3.95,3.95)",size=1.7);
+        linear_extrude(height=0.16) text("UL M3 (4.95,4.95)",size=1.7);
     color([0.1,0.1,0.1]) translate([12,99,WALL_THICKNESS+0.04])
         linear_extrude(height=0.16) text("LL M3 (6.75,98.6)",size=1.7);
     color([0.1,0.1,0.1]) translate([coupon_slot_origin().x-25,8,WALL_THICKNESS+0.04])

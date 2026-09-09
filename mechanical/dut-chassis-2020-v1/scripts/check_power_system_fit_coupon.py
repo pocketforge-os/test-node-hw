@@ -75,9 +75,9 @@ for name, expected in expected_defaults.items():
 for assertion in (
     "alt1205t_base_size() == [77.5, 110]",
     "[[25.3,30.9], [25.3,67], [53.3,67]]",
-    "alt1205t_upper_left_m3_centre() == [3.95,3.95]",
+    "alt1205t_upper_left_m3_centre() == [4.95,4.95]",
     "alt1205t_lower_left_m3_centre() == [6.75,98.6]",
-    "[[3.95,3.95], [25.3,30.9], [25.3,67], [53.3,67], [6.75,98.6]]",
+    "[[4.95,4.95], [25.3,30.9], [25.3,67], [53.3,67], [6.75,98.6]]",
     "coupon_slot_origin() == [71.05, 2.94]",
     "coupon_bottom_slot_origin() == [2.28,106]",
     "coupon_bottom_slot_size() == [2.61,4]",
@@ -125,18 +125,13 @@ def signed_volume(triangle) -> float:
 
 
 volume_mm3 = abs(sum(signed_volume(triangle) for triangle in facets))
-approved_pre_final_volume_mm3 = 8006.327
-if volume_mm3 >= approved_pre_final_volume_mm3:
+approved_pre_release_volume_mm3 = 7994.313
+expected_release_volume_mm3 = 7994.985
+if not math.isclose(volume_mm3, expected_release_volume_mm3, abs_tol=0.01):
     raise SystemExit(
-        "final edge-hole moves unexpectedly failed to reduce volume from the "
-        f"approved pre-final baseline={approved_pre_final_volume_mm3}; "
-        f"got={volume_mm3:.3f}"
-    )
-expected_final_fit_volume_mm3 = 7994.313
-if not math.isclose(volume_mm3, expected_final_fit_volume_mm3, abs_tol=0.01):
-    raise SystemExit(
-        "final-fit coupon solid volume drifted: "
-        f"expected={expected_final_fit_volume_mm3} got={volume_mm3:.3f}"
+        "release coupon solid volume drifted after the isolated upper-left move: "
+        f"baseline={approved_pre_release_volume_mm3} "
+        f"expected={expected_release_volume_mm3} got={volume_mm3:.3f}"
     )
 
 
@@ -162,7 +157,7 @@ if any(x > 1e-6 and y > 1e-6 and z > 3 + 1e-6 for x, y, z in points):
 # Prove that the rendered coupon, not just its source text, contains the five
 # physical M3 checks at the owner-confirmed final-fit centers. OpenSCAD's
 # 36-sided cylinders give complete rims at Z=0 and the 3.0 mm wall top.
-m3_centres = ((3.95, 3.95), (25.3, 30.9), (25.3, 67),
+m3_centres = ((4.95, 4.95), (25.3, 30.9), (25.3, 67),
               (53.3, 67), (6.75, 98.6))
 m3_radius = 1.7
 for centre in m3_centres:

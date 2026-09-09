@@ -39,7 +39,7 @@ def check_equal(actual, expected, label: str) -> None:
 
 require(PSU, (
     "function alt1205t_upper_right_square_is_hole() = false",
-    "function alt1205t_upper_left_m3_centre() = [3.95, 3.95]",
+    "function alt1205t_upper_left_m3_centre() = [4.95, 4.95]",
     "function alt1205t_lower_left_m3_centre() = [6.75, 98.6]",
     "function alt1205t_second_fit_upper_left_m3_correction() = [-2.5, 2.5]",
     "function alt1205t_second_fit_internal_m3_correction() = [-1.5, -2]",
@@ -47,6 +47,8 @@ require(PSU, (
     "function alt1205t_third_fit_lower_left_m3_correction() = [0.5, 1]",
     "function alt1205t_final_fit_upper_left_m3_baseline() = [0.95, 5.95]",
     "function alt1205t_final_fit_upper_left_m3_correction() = [3, -2]",
+    "function alt1205t_release_upper_left_m3_baseline() = [3.95, 3.95]",
+    "function alt1205t_release_upper_left_m3_correction() = [1, 1]",
     "function alt1205t_final_fit_lower_left_m3_baseline() = [6.25, 98.6]",
     "function alt1205t_final_fit_lower_left_m3_correction() = [0.5, 0]",
     "function alt1205t_bottom_slot_origin() = [",
@@ -91,7 +93,9 @@ check_equal(literal_function(PSU, "alt1205t_first_fit_upper_left_m3_centre"), [3
 check_equal(literal_function(PSU, "alt1205t_second_fit_upper_left_m3_correction"), [-2.5, 2.5], "ALT upper-left second-fit correction")
 check_equal(literal_function(PSU, "alt1205t_final_fit_upper_left_m3_baseline"), [0.95, 5.95], "ALT upper-left final-fit baseline")
 check_equal(literal_function(PSU, "alt1205t_final_fit_upper_left_m3_correction"), [3, -2], "ALT upper-left final-fit correction")
-check_equal(literal_function(PSU, "alt1205t_upper_left_m3_centre"), [3.95, 3.95], "ALT upper-left final-fit M3 centre")
+check_equal(literal_function(PSU, "alt1205t_release_upper_left_m3_baseline"), [3.95, 3.95], "ALT upper-left release baseline")
+check_equal(literal_function(PSU, "alt1205t_release_upper_left_m3_correction"), [1, 1], "ALT upper-left release correction")
+check_equal(literal_function(PSU, "alt1205t_upper_left_m3_centre"), [4.95, 4.95], "ALT upper-left release M3 centre")
 check_equal(literal_function(PSU, "alt1205t_first_fit_m3_centres"), [[26.8, 32.9], [26.8, 69], [54.8, 69]], "ALT first-fit internal M3 coordinates")
 check_equal(literal_function(PSU, "alt1205t_second_fit_internal_m3_correction"), [-1.5, -2], "ALT internal second-fit correction")
 check_equal(literal_function(PSU, "alt1205t_lower_left_m3_left_tangent"), 5.75, "ALT lower-left M3 left tangent")

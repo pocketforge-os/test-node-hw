@@ -13,11 +13,11 @@ make power-system-fit-coupon
 make validate-power-system-fit-coupon
 ```
 
-The PSU region checks the owner-finalized M3 centres: `(3.95, 3.95)`,
+The PSU region checks the owner-release M3 centres: `(4.95, 4.95)`,
 `(25.3, 30.9)`, `(25.3, 67)`, `(53.3, 67)`, and `(6.75, 98.6)`. This final
-revision moves only the upper-left centre by +3.0 mm X/right and -2.0 mm Y/up
-from `(0.95, 5.95)`, and the lower-left centre by +0.5 mm X/right with no Y
-change from `(6.25, 98.6)`. It also checks
+source correction moves only the upper-left centre by +1.0 mm X/right and
++1.0 mm Y/down from `(3.95, 3.95)`. The lower-left and three internal centres
+remain frozen. It also checks
 the frozen upper-right 3.3 × 4.7 mm slot and frozen 2.61 × 4.0 mm bottom-open
 slot. The IEC opening applies a true
 uniform 0.20 mm contour offset per side. The nut sampler is connected for printing
@@ -46,10 +46,9 @@ raised, recessed, embossed, engraved, coordinate, warning, or process text.
 Annotations exist only in the separately selected PNG evidence scene and are
 never part of the default STL export.
 
-## Physical acceptance gate
+## Physical acceptance record
 
-Print the exact committed candidate and report every correction numerically.
-The owner must explicitly confirm that:
+The physical coupon established these checks before the release correction:
 
 - all five PSU M3 checks and the upper-right slot align with the real PSU without
   forcing after placing its underside on the coupon and sliding the PSU left and
@@ -68,11 +67,15 @@ The owner must explicitly confirm that:
 - a real M3 screw passes and a real nominal 5.5 mm-across-flats, 2.4 mm-thick
   nut fits and remains captured in the separate sampler.
 
-The physical-fit iterations, including the final two-edge-hole correction, were
-evaluated in private photos
+The physical-fit iterations, including the owner-authorized release correction,
+were evaluated in private photos
 `1-Photo-1.jpg`, `2-Photo-2.jpg`, and `3-Photo-3.jpg`. These provenance identifiers
 are basenames only; the private files are not copied into Git.
 
-Physical acceptance applies only to the exact candidate revision and stated
-printer, nozzle, material, layer height, compensation, and orientation. It does
-not qualify a final enclosure or authorize wiring or powered use.
+The owner approved the C14 interface and every frozen feature above, then
+accepted the small residual risk of applying the final upper-left-hole
+correction from `1-Photo-1.jpg` without another coupon print. That explicit
+waiver authorizes proceeding to complete-enclosure work.
+
+This coupon evidence does not qualify a final enclosure or authorize wiring or
+powered use.
