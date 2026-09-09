@@ -45,18 +45,28 @@ require(
     "function enclosure_c14_origin() = [308,300,49.15]",
     "function enclosure_c14_rotation() = [90,0,0]",
     "function enclosure_c14_face_direction() = [0,1,0]",
+    "DC_BUSHING_CENTRE = is_undef(DC_BUSHING_CENTRE) ? [305.6,191,54]",
     "iecc14_panel_cutout_negative(IEC_SNAP_WALL,IEC_CLEARANCE)",
     "iecc14_body_profile_size() == [27,46.86]",
     "iecc14_faceplate_size() == [31,50.3,2]",
-    "M3_NUT_RETAINING_OPENING_AF < M3_NUT_AF",
+    "M3_NUT_RETAINING_OPENING_AF == 5.2",
+    "M3_NUT_RETAINING_LIP == 0.8",
     "module barrier_lower_capture()",
     "module barrier_upper_capture()",
     "module separation_partition()",
+    "module terminal_partition_required_solid()",
+    "module partition_dc_bushing_negative(clearance=0)",
     "module conductor_retention_saddle",
     "module front_outer_vent_negatives()",
     "module front_inner_baffle_negative()",
     "module gland_negative()",
     "module service_keepouts()",
+    "module dc_bundle_route_keepout()",
+    "function dc_route_points() = [",
+    "[312,191,54], [300,191,54], [270,191,54], [270,173,54]",
+    "module ac_terminal_service_keepout()",
+    'else if (PART == "partition_slice") terminal_partition_slice();',
+    'else if (PART == "dc_route_keepout") dc_bundle_route_keepout();',
     "AC_TERMINAL_PROJECTION = is_undef(AC_TERMINAL_PROJECTION)",
     "AC_WIRE_BEND_RADIUS = is_undef(AC_WIRE_BEND_RADIUS)",
     "IEC_TERMINAL_PROJECTION = is_undef(IEC_TERMINAL_PROJECTION)",
@@ -75,6 +85,8 @@ require(
 
 if "text(" in SOURCE:
     raise SystemExit("printable enclosure source must contain no text geometry")
+if "BARRIER_DC_BUSHING" in SOURCE:
+    raise SystemExit("nonprinted terminal shield must remain continuous")
 
 defaults = {
     "WALL": "3.2",
@@ -85,11 +97,14 @@ defaults = {
     "M3_CLEARANCE_DIAMETER": "3.6",
     "M3_NUT_AF": "5.75",
     "M3_NUT_DEPTH": "2.6",
+    "M3_NUT_RETAINING_OPENING_AF": "5.2",
+    "M3_NUT_RETAINING_LIP": "0.8",
     "SEAM_GAP": "0.8",
     "SEAM_OVERLAP": "6.4",
     "SAFETY_DISTANCE": "8.0",
     "BARRIER_THICKNESS": "1.0",
-    "BARRIER_DC_BUSHING_DIAMETER": "8.0",
+    "DC_BUSHING_DIAMETER": "8.0",
+    "DC_ROUTE_BEND_ENVELOPE": "10.0",
     "DC_CONDUCTOR_COUNT": "2",
     "DC_CONDUCTOR_GAUGE_AWG": "18",
     "DC_BUNDLE_OD": "6.0",
@@ -119,6 +134,9 @@ require(
     "screws are never part of protective-earth bonding",
     "No PSU chassis bonding hole",
     "M12/PG7-class",
+    "continuous terminal shield",
+    "X=305.6, Y=191, Z=54",
+    "installed rail-bearing envelope",
     "flammability",
     "full-load thermal/ventilation test",
     "No certification or powered-use approval",
@@ -133,6 +151,10 @@ require(
     'PART="evidence_top"',
     'PART="evidence_rear"',
     'PART="evidence_section"',
+    'PART="partition_slice"',
+    'PART="dc_route_keepout"',
+    "partition_missing_material",
+    "dc_route_hood_interference",
     "scripts/check_power_system_enclosure.py",
     "power-system-terminal-barrier-template.dxf",
     "power-system-terminal-barrier-template.svg",
@@ -140,6 +162,19 @@ require(
 
 base_path = ROOT / "build/power-system-enclosure-base.stl"
 hood_path = ROOT / "build/power-system-enclosure-hood.stl"
+partition_path = ROOT / "build/power-system-terminal-partition-slice.stl"
+dc_route_path = ROOT / "build/power-system-dc-route-keepout.stl"
+
+barrier_svg = (ROOT / "build/power-system-terminal-barrier-template.svg").read_text()
+barrier_dxf = (ROOT / "build/power-system-terminal-barrier-template.dxf").read_text()
+if (
+    barrier_svg.count("<path d=") != 1
+    or barrier_svg.count("M ") != 1
+    or "81.5,-46" not in barrier_svg
+    or barrier_dxf.splitlines().count("LINE") != 4
+    or "CIRCLE" in barrier_dxf
+):
+    raise SystemExit("terminal barrier template must be one continuous 81.5 x 46 plate")
 
 
 def mesh_contract(path: Path, expected_bounds: tuple[tuple[float, ...], tuple[float, ...]]):
@@ -162,6 +197,127 @@ base_facets, base_points = mesh_contract(
 )
 hood_facets, hood_points = mesh_contract(
     hood_path, ((0.0, 0.0, 0.0), (136.0, 140.0, 74.0))
+)
+partition_facets, partition_points = mesh_contract(
+    partition_path, ((304.0, 177.98, 40.86), (307.2, 259.52, 74.02))
+)
+
+
+def require_vertex(points, target, label, tolerance=5e-4):
+    if not any(
+        all(math.isclose(value, expected, abs_tol=tolerance)
+            for value, expected in zip(point, target))
+        for point in points
+    ):
+        raise SystemExit(f"{label} mesh vertex missing at {target}")
+
+
+# All four horizontal hood nuts load from below through a 5.75 mm feeder, pass
+# a 5.2 mm throat bounded by a nominal 0.8 mm-high retaining lip, and seat in
+# a 5.75-AF x 2.6 mm-deep pocket.  These vertices are measured on the final
+# printable base mesh after its installed-to-print transform.
+nut_z = 13.0
+nut_radius = 5.75 / math.sqrt(3)
+nut_low = nut_z - nut_radius
+throat_low = nut_low - 0.8
+for centre_x in (338.0 - 170.0, 338.0 - 290.0):
+    for depth_min in (5.0, 126.0):
+        depth_max = depth_min + 2.6
+        for depth in (depth_min, depth_max):
+            for x in (centre_x - 5.75 / 2, centre_x + 5.75 / 2):
+                require_vertex(
+                    base_points, (x, depth, throat_low),
+                    "hood-nut 5.75 mm exterior feeder",
+                )
+                require_vertex(
+                    base_points, (x, depth, nut_low),
+                    "hood-nut 5.75 mm seated pocket",
+                )
+                require_vertex(
+                    base_points, (x, depth, nut_z + nut_radius / 2),
+                    "hood-nut 5.75 mm hex pocket",
+                )
+            for x in (centre_x - 5.2 / 2, centre_x + 5.2 / 2):
+                require_vertex(
+                    base_points, (x, depth, throat_low),
+                    "hood-nut 5.2 mm retaining throat",
+                )
+                require_vertex(
+                    base_points, (x, depth, nut_low),
+                    "hood-nut 0.8 mm retaining lip",
+                )
+
+if not math.isclose(nut_low - throat_low, 0.8, abs_tol=1e-6):
+    raise SystemExit("hood-nut retaining lip is not 0.8 mm high")
+
+print(
+    "hood_nut_retention=pass traps=4 exterior_feeder_af_mm=5.75 "
+    "throat_af_mm=5.20 retaining_lip_height_mm=0.80 "
+    "pocket_af_mm=5.75 pocket_depth_mm=2.60 insertion=exterior-press"
+)
+
+# The isolated actual partition slice is one closed connected mesh with one
+# through-bushing (Euler characteristic zero).  Together with the Makefile's
+# empty missing-material selector this proves no second slit or opening exists.
+partition_vertices = {
+    tuple(round(value, 6) for value in point)
+    for point in partition_points
+}
+partition_topology = inspect_topology(partition_path)
+partition_euler = (
+    len(partition_vertices)
+    - partition_topology["edges"]
+    + partition_topology["facets"]
+)
+if partition_euler != 0:
+    raise SystemExit(
+        "terminal partition must contain exactly the intended through-bushing: "
+        f"euler={partition_euler}"
+    )
+for x in (304.0, 307.2):
+    rim = {
+        point for point in partition_points
+        if math.isclose(point[0], x, abs_tol=2e-4)
+        and math.isclose(
+            math.hypot(point[1] - 191.0, point[2] - 54.0),
+            4.0,
+            abs_tol=5e-4,
+        )
+    }
+    if len(rim) < 48:
+        raise SystemExit(f"8 mm partition bushing rim missing at X={x}")
+
+print(
+    "terminal_partition=pass bounds_mm=3.20x81.54x33.16 "
+    "components=1 euler=0 intentional_openings=1 "
+    "dc_bushing_diameter_mm=8.00 centre_world_mm=305.6,191,54 "
+    "barrier_template_mm=81.5x46 barrier_openings=0"
+)
+
+# The evidence route must itself be a single closed sweep, reach both sides of
+# the named bushing and front gland, and reserve enlarged bend envelopes.
+dc_route_topology = inspect_topology(dc_route_path)
+if (
+    dc_route_topology["invalid_edges"]
+    or dc_route_topology["components"] != 1
+    or dc_route_topology["degenerate_facets"]
+):
+    raise SystemExit(f"DC route topology failure: {dc_route_topology}")
+dc_route_facets = triangles(dc_route_path)
+dc_route_points = [point for facet in dc_route_facets for point in facet]
+route_mins = tuple(min(point[axis] for point in dc_route_points) for axis in range(3))
+route_maxs = tuple(max(point[axis] for point in dc_route_points) for axis in range(3))
+if not (
+    route_mins[0] < 265.1 and route_maxs[0] > 314.9
+    and route_mins[1] < 154.1 and route_maxs[1] > 195.9
+    and route_mins[2] < 28.1 and route_maxs[2] > 58.9
+):
+    raise SystemExit(f"DC route lost bushing/gland/bend extent: {(route_mins,route_maxs)}")
+
+print(
+    "dc_route=pass components=1 bundle_od_mm=6.00 bend_envelope_mm=10.00 "
+    "partition_bushing_world_mm=305.6,191,54 front_gland_world_mm=270,160,31 "
+    "hood_interference=clear psu_interference=clear"
 )
 
 # The five approved M3 centers survive the installed-to-print transform.  The

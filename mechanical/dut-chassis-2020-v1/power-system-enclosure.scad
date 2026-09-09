@@ -29,8 +29,9 @@ SAFETY_DISTANCE = is_undef(SAFETY_DISTANCE) ? 8.0 : SAFETY_DISTANCE;
 BARRIER_THICKNESS = is_undef(BARRIER_THICKNESS) ? 1.0 : BARRIER_THICKNESS;
 BARRIER_CLEARANCE = is_undef(BARRIER_CLEARANCE) ? 0.4 : BARRIER_CLEARANCE;
 BARRIER_HEIGHT = is_undef(BARRIER_HEIGHT) ? 46.0 : BARRIER_HEIGHT;
-BARRIER_DC_BUSHING_DIAMETER = is_undef(BARRIER_DC_BUSHING_DIAMETER) ? 8.0 : BARRIER_DC_BUSHING_DIAMETER;
-BARRIER_DC_BUSHING_LOCAL = is_undef(BARRIER_DC_BUSHING_LOCAL) ? [13.0, 13.0] : BARRIER_DC_BUSHING_LOCAL;
+DC_BUSHING_DIAMETER = is_undef(DC_BUSHING_DIAMETER) ? 8.0 : DC_BUSHING_DIAMETER;
+DC_BUSHING_CENTRE = is_undef(DC_BUSHING_CENTRE) ? [305.6,191,54] : DC_BUSHING_CENTRE;
+DC_ROUTE_BEND_ENVELOPE = is_undef(DC_ROUTE_BEND_ENVELOPE) ? 10.0 : DC_ROUTE_BEND_ENVELOPE;
 
 DC_CONDUCTOR_COUNT = is_undef(DC_CONDUCTOR_COUNT) ? 2 : DC_CONDUCTOR_COUNT;
 DC_CONDUCTOR_GAUGE_AWG = is_undef(DC_CONDUCTOR_GAUGE_AWG) ? 18 : DC_CONDUCTOR_GAUGE_AWG;
@@ -79,6 +80,11 @@ function enclosure_psu_point_world(p) = [enclosure_psu_origin().x + p.y,
                                          enclosure_psu_origin().y - p.x];
 function enclosure_barrier_size() = [enclosure_barrier_world_y().y-enclosure_barrier_world_y().x,
                                      BARRIER_HEIGHT];
+function enclosure_upper_service_max_x() = min(
+    enclosure_partition_x().x+AC_TERMINAL_PROJECTION,
+    enclosure_barrier_world_x()
+        -(BARRIER_THICKNESS+2*BARRIER_CLEARANCE)/2-WALL
+);
 
 module hex_prism(af, height) {
     cylinder(r=af/sqrt(3), h=height, $fn=6);
@@ -121,11 +127,18 @@ module enclosure_contract() {
            "Prototype AC separation guard may not be reduced below 8 mm");
     assert(BARRIER_THICKNESS > 0 && BARRIER_HEIGHT > alt1205t_label_side_size().y,
            "Separate barrier must cover the full PSU terminal edge");
+    assert(DC_BUSHING_DIAMETER == 8.0 && DC_BUSHING_CENTRE == [305.6,191,54],
+           "Provisional insulated DC bushing contract changed");
+    assert(DC_ROUTE_BEND_ENVELOPE >= DC_BUNDLE_OD,
+           "DC bend envelope must contain the complete bundle");
+    assert(enclosure_upper_service_max_x()-(304+WALL) >= DC_BUNDLE_OD,
+           "Upper terminal service corridor must fit the provisional DC bundle");
     assert(DC_CONDUCTOR_COUNT >= 2 && DC_BUNDLE_OD > 0 &&
            DC_GLAND_CUTOUT_DIAMETER == 12.5,
            "Provisional DC conductor/gland contract changed");
     assert(M3_NUT_AF == 5.75 && M3_NUT_DEPTH == 2.6 &&
-           M3_NUT_RETAINING_OPENING_AF < M3_NUT_AF,
+           M3_NUT_RETAINING_OPENING_AF == 5.2 &&
+           M3_NUT_RETAINING_LIP == 0.8,
            "Positive M3 nut-retention geometry changed");
     assert(enclosure_base_print_size().x <= enclosure_print_bed().x &&
            enclosure_base_print_size().y <= enclosure_print_bed().y,
@@ -206,9 +219,21 @@ module vertical_nut_insert_negative(side,y) {
     z=enclosure_hood_screw_z();
     // Horizontal nut axis, but insertion rises from the safe underside.
     xnut=side=="left" ? 195.0 : 316.0;
+    nut_low=z-M3_NUT_AF/sqrt(3);
+    throat_low=nut_low-M3_NUT_RETAINING_LIP;
     translate([xnut,y,z]) rotate([0,90,0]) hex_prism(M3_NUT_AF,M3_NUT_DEPTH);
+    // Full-size exterior loading chute stops below a one-layer retaining lip.
     translate([xnut,y-M3_NUT_AF/2,-0.01])
-        cube([M3_NUT_DEPTH,M3_NUT_AF,z+0.02]);
+        cube([M3_NUT_DEPTH,M3_NUT_AF,throat_low+0.01]);
+    // A 5.2 mm throat through a robust 0.8 mm lip requires a deliberate
+    // press past the smaller opening before the nut reaches its exact pocket.
+    translate([xnut,y-M3_NUT_RETAINING_OPENING_AF/2,throat_low])
+        cube([M3_NUT_DEPTH,M3_NUT_RETAINING_OPENING_AF,
+              M3_NUT_RETAINING_LIP+0.002]);
+    // Restore the full AF above the lip so the pressed nut can seat in the
+    // hex pocket; the 0.8 mm-high shoulders prevent gravity withdrawal.
+    translate([xnut,y-M3_NUT_AF/2,nut_low])
+        cube([M3_NUT_DEPTH,M3_NUT_AF,z-nut_low+0.02]);
     if (side=="left")
         translate([189.99,y,z]) rotate([0,90,0])
             cylinder(d=M3_CLEARANCE_DIAMETER,h=xnut-189.99+M3_NUT_DEPTH+0.2,$fn=36);
@@ -300,6 +325,22 @@ module barrier_lower_capture_clearance_negative() {
     translate([319.4,177.8,FLOOR-0.2]) cube([3.42,81.9,4.4]);
 }
 
+module partition_dc_bushing_negative(clearance=0) {
+    c=DC_BUSHING_CENTRE;
+    translate([enclosure_partition_x().x-0.01,c.y,c.z])
+        rotate([0,90,0])
+            cylinder(d=DC_BUSHING_DIAMETER+2*clearance,
+                     h=WALL+0.02,$fn=48);
+}
+
+module terminal_partition_required_solid() {
+    // Complete X=304 boundary from the PSU metal-shell top to the roof-side
+    // partition.  The DC bushing below is the only intentional breach.
+    translate([enclosure_partition_x().x,177.98,
+               enclosure_psu_keepout_max().z])
+        cube([WALL,81.54,74.02-enclosure_psu_keepout_max().z]);
+}
+
 module separation_partition() {
     // Composite L-shaped boundary.  The removable nonprinted plate fills the
     // lower gap over the PSU's entire terminal edge; printed wall continues
@@ -307,8 +348,10 @@ module separation_partition() {
     x0=enclosure_partition_x().x;
     translate([x0,160,FLOOR]) cube([WALL,18.02,FLOOR+BARRIER_HEIGHT]);
     translate([x0,259.48,FLOOR]) cube([WALL,5.54,70.02]);
-    translate([x0,177.98,FLOOR+BARRIER_HEIGHT-0.02])
-        cube([WALL,81.54,74-(FLOOR+BARRIER_HEIGHT)+0.04]);
+    difference() {
+        terminal_partition_required_solid();
+        partition_dc_bushing_negative();
+    }
     translate([190,enclosure_partition_y().x,FLOOR])
         cube([117.22,WALL,70.02]);
 }
@@ -359,38 +402,69 @@ module installed_hood() {
 }
 
 module barrier_template_2d() {
-    size=enclosure_barrier_size();
-    difference() {
-        square(size);
-        translate(BARRIER_DC_BUSHING_LOCAL)
-            circle(d=BARRIER_DC_BUSHING_DIAMETER,$fn=48);
-    }
+    // Continuous finger shield: insulated DC now crosses the printed X=304
+    // partition above the PSU instead of entering the former dead side gap.
+    square(enclosure_barrier_size());
 }
 
 module installed_barrier() {
     y0=enclosure_barrier_world_y().x;
     z0=enclosure_barrier_world_z().x;
-    difference() {
-        translate([enclosure_barrier_world_x()-BARRIER_THICKNESS/2,y0,z0])
-            cube([BARRIER_THICKNESS,enclosure_barrier_size().x,enclosure_barrier_size().y]);
-        translate([enclosure_barrier_world_x()-BARRIER_THICKNESS/2-0.01,
-                   y0+BARRIER_DC_BUSHING_LOCAL.x,z0+BARRIER_DC_BUSHING_LOCAL.y])
-            rotate([0,90,0]) cylinder(d=BARRIER_DC_BUSHING_DIAMETER,
-                                      h=BARRIER_THICKNESS+0.02,$fn=48);
+    translate([enclosure_barrier_world_x()-BARRIER_THICKNESS/2,y0,z0])
+        cube([BARRIER_THICKNESS,enclosure_barrier_size().x,enclosure_barrier_size().y]);
+}
+
+function dc_route_points() = [
+    [312,191,54], [300,191,54], [270,191,54], [270,173,54],
+    [270,173,38], [270,164,31], [270,157,31]
+];
+
+module dc_bundle_route_keepout() {
+    pts=dc_route_points();
+    // A connected 6 mm sweep crosses only the named partition bushing and
+    // front gland.  Enlarged elbow envelopes reserve provisional bend space.
+    color([0.1,0.55,0.95,0.42]) {
+        for (i=[0:len(pts)-2])
+            hull() for (p=[pts[i],pts[i+1]])
+                translate(p) sphere(d=DC_BUNDLE_OD,$fn=32);
+        for (p=[pts[2],pts[4]])
+            translate(p) sphere(d=DC_ROUTE_BEND_ENVELOPE,$fn=32);
     }
+}
+
+module ac_terminal_service_keepout() {
+    // Full projection below the PSU top; above it the envelope steps outward
+    // to X>=307.2 so the continuous printed partition remains honest.
+    color([1,0.3,0.05,0.25]) {
+        translate([304,180,8])
+            cube([AC_TERMINAL_PROJECTION,77.5,
+                  enclosure_psu_keepout_max().z-8]);
+        translate([304+WALL,180,enclosure_psu_keepout_max().z])
+            cube([enclosure_upper_service_max_x()-(304+WALL),77.5,
+                  FLOOR+BARRIER_HEIGHT-enclosure_psu_keepout_max().z]);
+    }
+}
+
+module ac_terminal_service_clearance_core() {
+    // The 0.02 mm inset removes intentional tangencies from the interference
+    // proof while retaining the complete two-level service-volume topology.
+    translate([304.02,180.02,8.02])
+        cube([AC_TERMINAL_PROJECTION-0.04,77.46,
+              enclosure_psu_keepout_max().z-8.04]);
+    translate([304+WALL+0.02,180.02,
+               enclosure_psu_keepout_max().z+0.02])
+        cube([enclosure_upper_service_max_x()-(304+WALL)-0.04,77.46,
+              FLOOR+BARRIER_HEIGHT-enclosure_psu_keepout_max().z-0.04]);
 }
 
 module service_keepouts() {
     // Transparent evidence volumes; every value is an overridable assumption.
-    color([1,0.3,0.05,0.25])
-        translate([304,180,8]) cube([AC_TERMINAL_PROJECTION,77.5,36]);
+    ac_terminal_service_keepout();
     color([1,0.75,0.05,0.22])
         translate([296,270,25]) cube([24,AC_WIRE_BEND_RADIUS,35]);
     color([0.95,0.8,0.15,0.30])
         translate([302,276,38]) sphere(d=PE_LUG_SERVICE_DIAMETER,$fn=32);
-    color([0.1,0.55,0.95,0.20])
-        translate([enclosure_gland_centre().x,170,enclosure_gland_centre().z])
-            rotate([90,0,0]) cylinder(d=DC_BUNDLE_OD,h=20,$fn=32);
+    dc_bundle_route_keepout();
     color([0.85,0.4,0.12,0.18])
         translate([294.5,278.2-IEC_TERMINAL_PROJECTION,25.72])
             cube([27,IEC_TERMINAL_PROJECTION,46.86]);
@@ -464,6 +538,54 @@ module base_hood_forbidden_intersection() {
     }
 }
 
+module partition_missing_material() {
+    difference() {
+        difference() {
+            terminal_partition_required_solid();
+            partition_dc_bushing_negative();
+        }
+        installed_hood();
+    }
+}
+
+module terminal_partition_slice() {
+    intersection() {
+        terminal_partition_required_solid();
+        installed_hood();
+    }
+}
+
+module terminal_service_hood_interference() {
+    intersection() {
+        ac_terminal_service_clearance_core();
+        installed_hood();
+    }
+}
+
+module dc_route_hood_interference() {
+    intersection() {
+        dc_bundle_route_keepout();
+        installed_hood();
+    }
+}
+
+module dc_route_psu_interference() {
+    intersection() {
+        dc_bundle_route_keepout();
+        in_psu_frame() alt1205t_keepout();
+    }
+}
+
+module psu_forbidden_interior() {
+    // The partition intentionally begins on the PSU shell's Z=40.86 boundary
+    // so the metal top and printed wall close the vestibule together.  Test
+    // the keepout interior, inset by 0.01 mm, to distinguish that shared
+    // zero-thickness boundary from a forbidden positive-volume intrusion.
+    p=enclosure_psu_keepout_min();
+    q=enclosure_psu_keepout_max();
+    translate(p+[0.01,0.01,0.01]) cube(q-p-[0.02,0.02,0.02]);
+}
+
 module printable_base() {
     // Floor down; long rail spine becomes printer X (220.27 x 136 mm).
     translate([338,-190,0]) rotate([0,0,90]) installed_base();
@@ -483,7 +605,13 @@ else if (PART == "evidence_top") open_top_evidence();
 else if (PART == "evidence_rear") assembly_evidence(false,true);
 else if (PART == "evidence_section") assembly_evidence(true,true);
 else if (PART == "base_hood_interference") base_hood_forbidden_intersection();
+else if (PART == "partition_missing_material") partition_missing_material();
+else if (PART == "partition_slice") terminal_partition_slice();
+else if (PART == "terminal_service_hood_interference") terminal_service_hood_interference();
+else if (PART == "dc_route_keepout") dc_bundle_route_keepout();
+else if (PART == "dc_route_hood_interference") dc_route_hood_interference();
+else if (PART == "dc_route_psu_interference") dc_route_psu_interference();
 else if (PART == "hood_psu_interference") intersection() {
-    installed_hood(); in_psu_frame() alt1205t_keepout();
+    installed_hood(); psu_forbidden_interior();
 }
 else assert(false,str("Unknown power-system enclosure PART: ",PART));

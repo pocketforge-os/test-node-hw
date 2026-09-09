@@ -24,6 +24,11 @@ The four evidence-only selectors (`evidence_top`, `evidence_rear`,
 `evidence_section`, and `installed_preview`) may display colored service
 keep-outs. No `text()` geometry occurs in either printable selector.
 
+Validation also exports `partition_slice` and `dc_route_keepout` meshes. These
+are measurement evidence only: the former isolates the complete printed
+partition and its single intended bushing, while the latter isolates the
+continuous provisional 12 V routing envelope. Neither is a printable part.
+
 Build and validate with:
 
 ```sh
@@ -33,11 +38,13 @@ make validate-power-system-enclosure
 
 ## Coordinate and fit contract
 
-The installed printed envelope is X=190..326, Y=160..300, Z=0..78 mm. The
-provisional audit envelope began at X=191, but a 3.2 mm wall there would overlap
-the exact PSU keep-out by 0.2 mm. The reviewed X=190 expansion preserves the
-exact PSU transform while providing 0.8 mm nominal side clearance. It does not
-move a chassis rail datum.
+The sealed case envelope is X=190..326, Y=160..300, Z=0..78 mm. The complete
+installed rail-bearing envelope extends to Y=117.73..338 because the exposed
+rail spine reaches beyond both sealed case walls. The provisional case audit
+envelope began at X=191, but a 3.2 mm wall there would overlap the exact PSU
+keep-out by 0.2 mm. The reviewed X=190 expansion preserves the exact PSU
+transform while providing 0.8 mm nominal side clearance. It does not move a
+chassis rail datum.
 
 The base rail spine is X=322.8..326, Y=117.73..338, Z=0..20 mm. Its four M3
 axes remain at `(Y,Z)=(125.73,10), (149.73,10), (306,10), (330,10)` and are
@@ -72,9 +79,13 @@ snap wall; surrounding rear structure remains 3.2 mm.
 - Initial process: 0.8 mm nozzle; 3.2 mm walls and 4.0 mm floor/roof are nozzle
   multiples. Material, layer height, temperatures, and flammability/temperature
   suitability remain unapproved.
-- Hood: four short horizontal M3 screws. The matching 5.75 mm-AF × 2.6 mm nut
-  traps are fed from exterior underside channels and use a smaller retaining
-  throat. Screw length must be selected so it cannot enter the protected cavity.
+- Hood: four short horizontal M3 screws. Each matching 5.75 mm-AF × 2.6 mm nut
+  pocket is fed from a full-size exterior underside chute, then necks to a
+  5.2 mm opening through a nominal 0.8 mm-high press-retaining lip before
+  reopening into the seated pocket. The nut must be deliberately pressed past
+  the throat and cannot slide or fall back through it under gravity before the
+  screw is installed. The pocket remains isolated from the protected cavity.
+  Screw length must be selected so it cannot enter that cavity.
 - PSU: M3 hardware through the approved pattern into underside/exterior
   retained nuts. Verify the actual screw stack before installation.
 - Joint: 0.8 mm nominal lateral gap and 6.4 mm overlap. The left tongue routes
@@ -87,13 +98,26 @@ snap wall; surrounding rear structure remains 3.2 mm.
 
 ## Barrier, wiring, and protective earth
 
-Fabricate the exported terminal barrier from **1.0 mm G10/FR-4 or a suitably
-rated polycarbonate**, only after the exact material and temperature/
-flammability properties are approved. The template covers the whole terminal
-edge instead of inventing individual L/N/PE/DC screw positions. Its provisional
-8.0 mm bushing location and all terminal projections must be checked against
-the real dressed wiring before fabrication. The barrier is captured at its
+Fabricate the exported continuous terminal shield from **1.0 mm G10/FR-4 or a
+suitably rated polycarbonate**, only after the exact material and temperature/
+flammability properties are approved. The template is a continuous 81.5 × 46 mm
+plate covering the whole terminal edge instead of inventing individual
+L/N/PE/DC screw positions. It has no cable hole. The barrier is captured at its
 base and hood; it is not a decorative insert.
+
+The printed X=304..307.2 partition is continuous from the PSU shell top at
+Z=40.86 through the upper partition, closing the former Z=40.86..49.98 slit.
+Its only intentional breach is the provisional 8.0 mm insulating-bushing hole
+at world X=305.6, Y=191, Z=54, safely above the PSU. Below the PSU top the
+terminal service envelope retains the full X=304..318 projection; above the
+PSU it steps outward to X=307.2..314.5 to avoid the continuous wall and barrier
+capture while preserving a real service corridor.
+
+The partition deliberately shares the zero-thickness Z=40.86 boundary with
+the PSU shell top so those surfaces close the vestibule together. The
+interference proof checks the PSU keep-out interior with a 0.01 mm numerical
+inset; it permits that boundary contact but still rejects any positive-volume
+hood intrusion.
 
 AC L/N/PE and inlet terminal volumes stay in the protected vestibule. Printed
 saddles provide separate conductor retention before the terminal bends. The
@@ -105,8 +129,12 @@ is assumed or invented.
 The front/operator wall contains a provisional flattened 12.5 mm opening for a
 recognized M12/PG7-class gland around a named 6.0 mm, two-conductor 18-AWG
 bundle. Those defaults are geometry placeholders, not a gland selection.
-Insulated 12 V conductors may cross the terminal shield only through its rated
-bushing and must remain on the SELV route afterward.
+Insulated 12 V conductors cross from the terminal vestibule only through the
+printed partition's rated bushing at X=305.6, Y=191, Z=54. The modeled connected
+route then passes over the PSU with more than 10 mm nominal vertical clearance,
+moves forward of the PSU, drops below the vent baffle, and reaches the existing
+front gland center at X=270, Y=160, Z=31. It remains provisional and powered use
+is blocked until the actual cable, insulating bushing, and gland are confirmed.
 
 The 8.0 mm separation parameter is a conservative prototype geometry target,
 not a declaration of creepage, clearance, regulatory category, or compliance.
@@ -133,7 +161,8 @@ not a declaration of creepage, clearance, regulatory category, or compliance.
 4. Confirm AC terminal, insulated-lug, IEC rear, wire-bend, and slack envelopes;
    edit the named assumptions if required and rerun validation.
 5. Approve the barrier material, thickness, temperature/flammability rating,
-   bushing, and final cut template against the dressed real terminal strip.
+   partition bushing, and final continuous cut template against the dressed
+   real terminal strip.
 6. Approve the printed polymer/process for temperature and flammability, then
    perform a full-load thermal/ventilation test with the hood installed.
 7. Establish direct metal PE bonding with a competent wiring review; torque and

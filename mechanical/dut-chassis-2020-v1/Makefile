@@ -63,6 +63,8 @@ POWER_SYSTEM_ENCLOSURE_HOOD := $(BUILD)/power-system-enclosure-hood.stl
 POWER_SYSTEM_ENCLOSURE_BARRIER_DXF := $(BUILD)/power-system-terminal-barrier-template.dxf
 POWER_SYSTEM_ENCLOSURE_BARRIER_SVG := $(BUILD)/power-system-terminal-barrier-template.svg
 POWER_SYSTEM_ENCLOSURE_BASE_HOOD_INTERSECTION := $(BUILD)/power-system-enclosure-base-hood-interference.stl
+POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE := $(BUILD)/power-system-terminal-partition-slice.stl
+POWER_SYSTEM_ENCLOSURE_DC_ROUTE := $(BUILD)/power-system-dc-route-keepout.stl
 POWER_SYSTEM_ENCLOSURE_EVIDENCE := \
 	$(BUILD)/layout-power-system-enclosure-assembly.png \
 	$(BUILD)/layout-power-system-enclosure-top.png \
@@ -743,6 +745,12 @@ $(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUIL
 $(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="barrier_template"' $<
 
+$(POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="partition_slice"' $<
+
+$(POWER_SYSTEM_ENCLOSURE_DC_ROUTE): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="dc_route_keepout"' $<
+
 $(BUILD)/layout-power-system-enclosure-assembly.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
 		--projection=ortho --viewall --autocenter --camera=0,0,0,55,0,25,260 \
@@ -763,7 +771,8 @@ $(BUILD)/layout-power-system-enclosure-section.png: $(POWER_SYSTEM_ENCLOSURE_SOU
 		--projection=ortho --viewall --autocenter --camera=0,0,0,62,0,28,220 \
 		-D 'PART="evidence_section"' $<
 
-validate-power-system-enclosure: power-system-enclosure
+validate-power-system-enclosure: power-system-enclosure \
+		$(POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE) $(POWER_SYSTEM_ENCLOSURE_DC_ROUTE)
 	@set -eu; \
 	log=$(BUILD)/power-system-enclosure-base-hood-interference.log; \
 	mesh=$(POWER_SYSTEM_ENCLOSURE_BASE_HOOD_INTERSECTION); \
@@ -773,9 +782,23 @@ validate-power-system-enclosure: power-system-enclosure
 	fi; \
 	grep -q 'Current top level object is empty' $$log; \
 	echo 'power_system_enclosure_base_hood_interference=clear'
+	@set -eu; \
+	for selector in partition_missing_material terminal_service_hood_interference \
+			dc_route_hood_interference dc_route_psu_interference; do \
+		log=$(BUILD)/power-system-enclosure-$$selector.log; \
+		mesh=$(BUILD)/power-system-enclosure-$$selector.stl; \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D "PART=\"$$selector\"" \
+				$(POWER_SYSTEM_ENCLOSURE_SOURCE) >$$log 2>&1; then \
+			echo "ERROR: nonempty enclosure diagnostic $$selector" >&2; exit 1; \
+		fi; \
+		grep -q 'Current top level object is empty' $$log; \
+	done; \
+	echo 'power_system_enclosure_partition_route_interference=clear'
 	$(PYTHON) $(POWER_SYSTEM_ENCLOSURE_CHECK)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_BASE)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_HOOD)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_DC_ROUTE)
 	@base_bounds=$$($(PYTHON) $(BOUNDS) --max-x 220.27 --max-y 136 --max-z 20 \
 		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_BASE)); \
 	printf '%s\n' "$$base_bounds"; \
