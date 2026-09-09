@@ -60,8 +60,20 @@ require(
     "PSU_NUT_DEPTH == 2.60",
     "FLOOR-PSU_NUT_DEPTH == 1.40",
     "function enclosure_hood_screw_z() = 25.6",
-    'function enclosure_hood_screw_y(side) = side=="left" ? [170,290] : [170,263.5]',
+    'function enclosure_hood_screw_y(side) = side=="left" ? [170,290] : [170]',
     "function enclosure_hood_nut_boss_top() = 32.0",
+    "function enclosure_rear_hood_screw_x() = 282.0",
+    "function enclosure_rear_hood_screw_y() = 296.0",
+    "function enclosure_rear_hood_screw_z() = 13.0",
+    "function enclosure_rear_hood_nut_backstop_depth()",
+    "module rear_nut_insert_boss()",
+    "module rear_nut_insert_negative()",
+    "module rear_hood_nut_cap_required_solid()",
+    "module hood_fastener_audit_solid()",
+    "module hood_fastener_metal_screw_axes_solid()",
+    "module hood_fastener_nut_service_axes_solid()",
+    "module iec_terminal_projection_keepout_core()",
+    "module pe_route_keepout_core()",
     "module hood_nut_cap_missing()",
     "module hood_nut_backstop_missing()",
     "module psu_nut_floor_missing()",
@@ -165,9 +177,9 @@ require(
     "5.60 mm-AF × 2.80 mm-deep",
     "5.60 mm-AF × 2.60 mm-deep",
     "world Z=25.6 mm",
-    "rear-right axis is Y=263.5 mm",
-    "0.5 mm nominal gap to the AC bend",
-    "8.7 mm from the rigid C14 body",
+    "rear-panel axis is X=282, Y=296, Z=13 mm",
+    "8.66 mm from the rigid C14 body",
+    "terminal-projection volume",
     "superseded base with 5.2 mm throats",
     "Do not force nuts into that print",
 )
@@ -194,6 +206,10 @@ require(
     "base_c14_faceplate_interference",
     "hood_fastener_ac_service_interference",
     "hood_fastener_dc_route_interference",
+    "hood_fastener_c14_interference",
+    "hood_fastener_iec_terminal_interference",
+    "hood_fastener_pe_route_interference",
+    "hood_fastener_psu_interference",
     "hood_nut_cap_missing",
     "hood_nut_backstop_missing",
     "psu_nut_floor_missing",
@@ -342,27 +358,30 @@ def require_vertex(points, target, label, tolerance=5e-4):
         raise SystemExit(f"{label} mesh vertex missing at {target}")
 
 
-# The full-width rear-right boss occupies a 12.5 mm service corridor. Its
-# accepted asymmetric datum is the only full-12-mm placement that avoids a
-# positive-volume intrusion below while retaining space above.
-rear_right_axis_y = 263.5
-boss_half_y = 6.0
-terminal_service_max_y = 257.5
-ac_bend_min_y = 270.0
-c14_rigid_min_y = 300.0 - 21.8
+# The relocated rear boss is diagonally separated from the exact rigid inlet
+# by X and Z, and is also behind the terminal/bend volumes in Y. These are
+# conservative AABB distances; the empty CSG selectors below are authoritative.
+rear_axis = (282.0, 296.0, 13.0)
+rear_boss = ((276.0, 290.0, 3.98), (288.0, 296.0, 20.0))
+c14_body = ((294.5, 278.2, 25.72), (321.5, 300.0, 72.58))
+rigid_dx = c14_body[0][0] - rear_boss[1][0]
+rigid_dz = c14_body[0][2] - rear_boss[1][2]
+rigid_clearance = math.hypot(rigid_dx, rigid_dz)
 if not (
-    math.isclose(rear_right_axis_y-boss_half_y, terminal_service_max_y)
-    and math.isclose(ac_bend_min_y-(rear_right_axis_y+boss_half_y), 0.5)
-    and math.isclose(c14_rigid_min_y-(rear_right_axis_y+boss_half_y), 8.7)
+    rear_axis == (282.0, 296.0, 13.0)
+    and math.isclose(rigid_dx, 6.5)
+    and math.isclose(rigid_dz, 5.72)
+    and math.isclose(rigid_clearance, 8.658429, abs_tol=1e-6)
+    and math.isclose(290.0-288.0, 2.0)
+    and math.isclose(296.0-288.0, 8.0)
+    and math.isclose(25.0-20.0, 5.0)
 ):
-    raise SystemExit("rear-right fastener lost its audited service corridor")
+    raise SystemExit("rear-panel fastener lost its audited C14/AC-bend margins")
 
 
-# All four hood nuts press directly through visible seam-side mouths along the
-# screw axis. The left pair remains at world Y=170/290; the rail-side pair is
-# at Y=170/263.5 so the rear boss clears the exact inlet and service envelopes.
-# World Y maps to print X=338-Y. The left mouth is print Y=4 and the rail-side
-# mouth is print Y=128.8.
+# Three hood nuts press through visible side mouths: left Y=170/290 and right
+# Y=170. World Y maps to print X=338-Y. The fourth uses the equally direct
+# rear-panel mouth measured separately below.
 nut_z = 25.6
 lead_radius = 6.2 / math.sqrt(3)
 # The negative begins 0.01 mm outside the boss to make CSG robust, so the
@@ -373,7 +392,6 @@ socket_print_contracts = (
     (168.0, 4.0, 4.81, 7.61),
     (48.0, 4.0, 4.81, 7.61),
     (168.0, 128.8, 127.99, 125.19),
-    (74.5, 128.8, 127.99, 125.19),
 )
 for centre_x, mouth, lead_inner, pocket_inner in socket_print_contracts:
     require_vertex(
@@ -409,6 +427,34 @@ for centre_x, mouth, lead_inner, pocket_inner in socket_print_contracts:
     ):
         raise SystemExit("hood socket is not point-up/support-free in print Z")
 
+# Rear world +Y insertion maps to printer -X. The 0.01 mm robust-CSG start
+# produces X=42.00 at the physical face, X=42.81 at the 5.60-AF transition,
+# and X=45.61 at the blind pocket end. World X=282 maps to print Y=92.
+rear_print_y = 92.0
+for target, label in (
+    ((42.0, rear_print_y, 13.0-lead_face_radius),
+     "rear hood-nut 6.20 AF visible lead-in mouth"),
+    ((42.81, rear_print_y, 13.0-pocket_radius),
+     "rear hood-nut 5.60 AF pressure-fit transition"),
+    ((45.61, rear_print_y, 13.0-pocket_radius),
+     "rear hood-nut 2.80 mm blind pocket extent"),
+):
+    require_vertex(base_points, target, label)
+rear_mouth_profile = {
+    (round(point[1], 4), round(point[2], 4))
+    for point in base_points
+    if math.isclose(point[0], 42.0, abs_tol=2e-4)
+    and abs(point[1]-rear_print_y) < 3.7
+    and abs(point[2]-13.0) < 3.7
+}
+rear_lowest = min(z for _, z in rear_mouth_profile)
+rear_highest = max(z for _, z in rear_mouth_profile)
+if not (
+    {y for y, z in rear_mouth_profile if z == rear_lowest} == {rear_print_y}
+    and {y for y, z in rear_mouth_profile if z == rear_highest} == {rear_print_y}
+):
+    raise SystemExit("rear hood socket is not point-up/support-free in print Z")
+
 # Installed hood walls cap all four 6.20-AF mouths. Their only opening is the
 # 3.6 mm screw bore at roof-down Z=52.4; the Make empty-solid diagnostic proves
 # the complete annulus, while these rim planes measure the final hood mesh.
@@ -416,7 +462,6 @@ hood_cap_print_contracts = (
     (130.0, (0.0, 3.2)),
     (10.0, (0.0, 3.2)),
     (130.0, (129.6, 132.8)),
-    (36.5, (129.6, 132.8)),
 )
 for centre_y, wall_planes in hood_cap_print_contracts:
     for wall_plane in wall_planes:
@@ -445,13 +490,30 @@ for centre_y, wall_planes in hood_cap_print_contracts:
                     f"hood screw/cap rim missing at print {(wall_plane,centre_y,52.4)}"
                 )
 
+# Rear cap is in the roof-down hood's Y=0..3.2 wall at print X=92/Z=65.
+for wall_plane in (0.0, 3.2):
+    rim = {
+        point for point in hood_points
+        if math.isclose(point[1], wall_plane, abs_tol=2e-4)
+        and math.isclose(
+            math.hypot(point[0]-92.0, point[2]-65.0),
+            1.8,
+            abs_tol=5e-4,
+        )
+    }
+    if len(rim) < 30:
+        raise SystemExit(
+            f"rear hood screw/cap rim missing at print {(92.0,wall_plane,65.0)}"
+        )
+
 print(
-    "hood_nut_retention=pass traps=4 insertion=direct-side-pressure "
+    "hood_nut_retention=pass traps=4 insertion=direct-visible-pressure "
+    "side_traps=3 rear_traps=1 "
     "lead_af_mm=6.20 lead_depth_mm=0.80 pocket_af_mm=5.60 "
     "pocket_depth_mm=2.80 screw_axis_z_mm=25.60 boss_top_z_mm=32.00 "
     "rail_clearance_min_mm=2.02 left_backstop_mm=2.80 right_backstop_mm=3.20 "
-    "rear_right_axis_y_mm=263.50 lower_terminal_contact=boundary-only "
-    "ac_bend_gap_mm=0.50 c14_rigid_gap_mm=8.70 "
+    "rear_axis_xyz_mm=282,296,13 rear_backstop_mm=2.40 "
+    "c14_rigid_clearance_mm=8.66 ac_bend_clearance_mm=9.64 "
     "hood_cap=annular-only-screw-bore"
 )
 

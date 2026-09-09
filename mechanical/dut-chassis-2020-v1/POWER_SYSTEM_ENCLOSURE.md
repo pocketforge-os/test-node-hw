@@ -20,9 +20,11 @@ the hood or servicing the fuse drawer.
 - `PART="installed_preview"`: evidence assembly with rail proxy and named
   service volumes;
 - `PART="nut_fit_coupon"`: a small, text-free process coupon containing the
-  exact final rail-side hood socket and obstruction, its installed hood-cap/
-  screw-path proxy, and one exact PSU top socket. It is a fit-test artifact,
-  not a third enclosure piece.
+  exact final right/front rail-side hood socket and obstruction, its installed
+  hood-cap/screw-path proxy, and one exact PSU top socket. The rear socket is
+  the same pressure geometry under a world-Z rotation, so it does not add a
+  redundant coupon component. This is a fit-test artifact, not a third
+  enclosure piece.
 
 The evidence-only selectors (`evidence_top`, `evidence_rear`,
 `evidence_section`, `evidence_nut_section`, and `installed_preview`) may
@@ -86,9 +88,9 @@ snap wall; surrounding rear structure remains 3.2 mm.
 - Initial process: 0.8 mm nozzle; 3.2 mm walls and 4.0 mm floor/roof are nozzle
   multiples. Material, layer height, temperatures, and flammability/temperature
   suitability remain unapproved.
-- Hood: four short horizontal M3 screws on world Z=25.6 mm. The left pair
-  remains at Y=170/290 mm and the right/front fastener remains at Y=170 mm;
-  the rear-right axis is Y=263.5 mm. Before fitting the hood, press each
+- Hood: three short horizontal side M3 screws remain on world Z=25.6 mm: the
+  left pair at Y=170/290 and the right/front fastener at Y=170. The fourth
+  rear-panel axis is X=282, Y=296, Z=13 mm. Before fitting the hood, press each
   standard M3 nut point-up
   from the directly visible side mouth into a blind 5.60 mm-AF × 2.80 mm-deep
   socket. A 6.20 mm-AF × 0.80 mm tapered lead-in starts the press; that lead-in
@@ -97,13 +99,17 @@ snap wall; surrounding rear structure remains 3.2 mm.
   protected-cavity backstop, and presents no nut-sized path into the enclosure.
   The installed hood caps each mouth while exposing only the 3.6 mm screw bore.
   Screw length must be selected so it cannot enter the protected cavity.
-- The asymmetric rear-right datum keeps its full 12 mm boss in the only
-  12.5 mm corridor between the lower terminal envelope ending at Y=257.5 and
-  the AC bend envelope beginning at Y=270. The lower face is boundary-tangent,
-  with no positive overlap, and there is a 0.5 mm nominal gap to the AC bend
-  envelope. It is 8.7 mm from the rigid C14 body beginning at Y=278.2. The
-  other rear fastener remains at Y=290 because its X=194..200.4 boss is
-  disjoint from the PSU, C14, AC service, and DC routing envelopes.
+- The rear socket loads from exterior +Y at its directly visible Y=296 face
+  toward -Y, through the same 6.20-to-5.60 mm pressure geometry. Its 12 mm-wide
+  boss is X=276..288, Y=290..296, Z=3.98..20, with an exact 2.40 mm solid
+  protected-cavity backstop. The rear hood wall at Y=296.8..300 caps the mouth
+  across the 0.8 mm seam gap. The boss is 8.66 mm from the rigid C14 body by
+  combined X/Z separation and 9.64 mm from the AC bend envelope by combined
+  X/Y/Z separation. Its nut/tool service axis has still larger clearance.
+  Mesh selectors collide every boss, cap, screw axis, and conservative 6.20 mm
+  nut/service sweep against the exact C14 body/faceplate, the complete IEC
+  terminal-projection volume, AC terminal/bend and PE-lug service volumes, the
+  PE route, PSU, and DC route; every selector must remain empty.
 - PSU: before placing the PSU, visibly press five measured 2.30 mm-thick M3
   nuts into the straight top-open 5.60 mm-AF × 2.60 mm-deep sockets at the
   approved hole centers. Each socket retains 1.40 mm of floor below it; there
@@ -185,8 +191,9 @@ not a declaration of creepage, clearance, regulatory category, or compliance.
    rating, bend radius, and the 12 V bundle OD/count/gauge.
 4. Confirm AC terminal, insulated-lug, IEC rear, wire-bend, and slack envelopes;
    edit the named assumptions if required and rerun validation. In particular,
-   physically confirm the terminal wiring/service fit around the rear-right
-   fastener corridor before any powered use; CAD clearance is not that gate.
+   physically confirm the terminal wiring/service fit around the rear-panel
+   fastener and its exterior tool path before any powered use; CAD clearance
+   is not that gate.
 5. Approve the barrier material, thickness, temperature/flammability rating,
    partition bushing, and final continuous cut template against the dressed
    real terminal strip.
