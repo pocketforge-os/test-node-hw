@@ -23,9 +23,14 @@ require(
     "include <lib/iec-c14-fused-switch.scad>",
     "alt1205t_mounting_negatives(",
     "coupon_psu_outline_margin() + 0.02",
-    "iecc14_panel_cutout_negative(WALL_THICKNESS, IEC_CLEARANCE)",
+    "iecc14_panel_cutout_negative(coupon_iec_snap_wall_target(), IEC_CLEARANCE)",
     "coupon_iec_nominal_profile() = iecc14_body_profile_size()",
     "function coupon_iec_faceplate_overlap_per_side()",
+    "function coupon_iec_snap_wall_target() = 1.4",
+    "function coupon_iec_surface_allowance() = 0.1",
+    "function coupon_iec_snap_wall_max() = 1.5",
+    "coupon_upper_left_register_clearance_negative();",
+    "linear_extrude(height=coupon_iec_snap_wall_target()) iec_panel_2d();",
     "IEC faceplate must cover the clearanced panel opening on every side",
     'PART = is_undef(PART) ? "printable_coupon" : PART;',
     'if (PART == "printable_coupon") printable_coupon();',
@@ -68,10 +73,10 @@ for name, expected in expected_defaults.items():
 
 for assertion in (
     "alt1205t_base_size() == [77.5, 110]",
-    "alt1205t_m3_centres() == [[26.8,32.9], [26.8,69], [54.8,69]]",
-    "alt1205t_upper_left_m3_centre() == [3.45,3.45]",
-    "alt1205t_lower_left_m3_centre() == [7.25,99.6]",
-    "[[3.45,3.45], [26.8,32.9], [26.8,69], [54.8,69], [7.25,99.6]]",
+    "[[25.3,30.9], [25.3,67], [53.3,67]]",
+    "alt1205t_upper_left_m3_centre() == [0.95,5.95]",
+    "alt1205t_lower_left_m3_centre() == [5.75,97.6]",
+    "[[0.95,5.95], [25.3,30.9], [25.3,67], [53.3,67], [5.75,97.6]]",
     "coupon_slot_origin() == [71.05, 2.94]",
     "coupon_bottom_slot_origin() == [2.28,106]",
     "coupon_bottom_slot_size() == [2.61,4]",
@@ -79,6 +84,8 @@ for assertion in (
     "[27 + 2*IEC_CLEARANCE, 46.86 + 2*IEC_CLEARANCE]",
     "coupon_nut_nominal_af() == 5.5",
     "coupon_nut_nominal_thickness() == 2.4",
+    "coupon_iec_snap_wall_target() + coupon_iec_surface_allowance() <=",
+    "coupon_iec_snap_wall_max()",
 ):
     if assertion not in SOURCE:
         raise SystemExit(f"missing executable assertion: {assertion}")
@@ -97,7 +104,7 @@ maxs = tuple(max(p[axis] for p in points) for axis in range(3))
 approved_corrected_bounds = ((-36.5, -5.0, 0.0), (91.5, 112.0, 5.0))
 if (mins, maxs) != approved_corrected_bounds:
     raise SystemExit(
-        "label removal changed the approved corrected coupon bounds: "
+        "second-fit correction changed the approved coupon bounds: "
         f"expected={approved_corrected_bounds} got={(mins, maxs)}"
     )
 
@@ -113,18 +120,18 @@ def signed_volume(triangle) -> float:
 
 
 volume_mm3 = abs(sum(signed_volume(triangle) for triangle in facets))
-approved_corrected_recessed_text_volume_mm3 = 9114.568
-if volume_mm3 <= approved_corrected_recessed_text_volume_mm3:
+approved_first_correction_label_free_volume_mm3 = 9127.349
+if volume_mm3 >= approved_first_correction_label_free_volume_mm3:
     raise SystemExit(
-        "removing recessed text must restore solid material without changing "
-        f"the mating envelope: baseline={approved_corrected_recessed_text_volume_mm3} "
+        "local IEC wall reduction must reduce volume from the approved "
+        f"first-correction baseline={approved_first_correction_label_free_volume_mm3}; "
         f"got={volume_mm3:.3f}"
     )
-expected_label_free_volume_mm3 = 9127.349
-if not math.isclose(volume_mm3, expected_label_free_volume_mm3, abs_tol=0.01):
+expected_second_fit_volume_mm3 = 8123.559
+if not math.isclose(volume_mm3, expected_second_fit_volume_mm3, abs_tol=0.01):
     raise SystemExit(
-        "label-free solid volume drifted from its reviewed geometry: "
-        f"expected={expected_label_free_volume_mm3} got={volume_mm3:.3f}"
+        "second-fit coupon solid volume drifted: "
+        f"expected={expected_second_fit_volume_mm3} got={volume_mm3:.3f}"
     )
 
 
@@ -148,10 +155,11 @@ if any(x > 1e-6 and y > 1e-6 and z > 3 + 1e-6 for x, y, z in points):
     raise SystemExit("origin register overlaps the PSU plan envelope above its seating face")
 
 # Prove that the rendered coupon, not just its source text, contains the five
-# physical M3 checks at the corrected/reinterpreted centers. OpenSCAD's 36-sided
-# cylinders give 36 vertices at each of the Z=0 and Z=3 rim planes.
-m3_centres = ((3.45, 3.45), (26.8, 32.9), (26.8, 69),
-              (54.8, 69), (7.25, 99.6))
+# physical M3 checks at the owner-confirmed second-fit centers. OpenSCAD's
+# 36-sided cylinders give complete rims at Z=0 and the local wall top. The
+# upper-left rim also extends through the intersecting outside-only X register.
+m3_centres = ((0.95, 5.95), (25.3, 30.9), (25.3, 67),
+              (53.3, 67), (5.75, 97.6))
 m3_radius = 1.7
 for centre in m3_centres:
     rim = {
@@ -163,11 +171,55 @@ for centre in m3_centres:
         )
     }
     rim_planes = {point[2] for point in rim}
-    if len(rim) < 60 or rim_planes != {0.0, 3.0}:
+    expected_rim_planes = {0.0, 3.0, 5.0} if centre == m3_centres[0] else {0.0, 3.0}
+    if len(rim) < 60 or rim_planes != expected_rim_planes:
         raise SystemExit(
             f"coupon lacks a complete 3.4 mm through-hole rim at {centre}: "
             f"vertices={len(rim)} z={sorted(rim_planes)}"
         )
+
+# Freeze the approved upper-right 3.3 x 4.7 oblong slot in the generated mesh,
+# including the 2.94 top and 3.15 right tangencies. These are the six cardinal
+# points of the two D=3.3 end circles at Y=4.59 and Y=5.99.
+mesh_points = set(points)
+upper_right_slot_cardinals = (
+    (71.05, 4.59), (71.05, 5.99),
+    (74.35, 4.59), (74.35, 5.99),
+    (72.7, 2.94), (72.7, 7.64),
+)
+for x, y in upper_right_slot_cardinals:
+    for z in (0.0, 3.0):
+        if (x, y, z) not in mesh_points:
+            raise SystemExit(
+                "approved upper-right slot mesh cardinal is missing: "
+                f"{(x, y, z)}"
+            )
+
+# The inlet's whole faceplate/tab seating footprint must be the local 1.4 mm
+# snap panel: 3.0 mm structural material may connect outside this footprint but
+# may not intrude into it. Surface roughness allowance is a process budget, not
+# modeled thickness, so 1.4 + 0.1 must remain within the hard 1.5 mm maximum.
+iec_snap_wall_target = 1.4
+iec_surface_allowance = 0.1
+iec_snap_wall_max = 1.5
+if iec_snap_wall_target + iec_surface_allowance > iec_snap_wall_max + 1e-9:
+    raise SystemExit("IEC local wall and surface allowance exceed 1.5 mm")
+faceplate_bounds = (-34.5, -3.5, 54.85, 105.15)
+faceplate_points = {
+    point for point in points
+    if faceplate_bounds[0] - 1e-6 <= point[0] <= faceplate_bounds[1] + 1e-6
+    and faceplate_bounds[2] - 1e-6 <= point[1] <= faceplate_bounds[3] + 1e-6
+}
+faceplate_z = {point[2] for point in faceplate_points}
+if not faceplate_points or faceplate_z != {0.0, iec_snap_wall_target}:
+    raise SystemExit(
+        "IEC faceplate/tab seating footprint is not exclusively the local "
+        f"1.4 mm panel: z={sorted(faceplate_z)}"
+    )
+if any(point[2] > iec_snap_wall_target + 1e-6 for point in faceplate_points):
+    raise SystemExit("3.0 mm coupon structure intrudes into the IEC retention envelope")
+if not any(math.isclose(point[2], 3.0, abs_tol=1e-6) for point in points):
+    raise SystemExit("structural PSU/nut coupon wall no longer reaches 3.0 mm")
 
 # The measured 2.61 x 4.0 mm lower slot must remain an actual +Y edge opening,
 # even though the sparse coupon adds a 2 mm registration outline around the PSU.
@@ -193,4 +245,4 @@ if any(
 ):
     raise SystemExit("bottom slot is closed by a vertical face at the coupon edge")
 
-print(f"power_system_fit_coupon_contract=pass physical_text=none evidence_annotations=isolated wall_mm=3.0 register_axes=X0,Y0 register_height_mm=2.0 iec_profile_mm=27x46.86 iec_clearance_per_side_mm=0.20 m3_checks=5 m3_hole_diameter_mm=3.4 bottom_open_slot_mm=2.61x4 nut_pocket_af_mm=5.75 volume_mm3={volume_mm3:.3f}")
+print(f"power_system_fit_coupon_contract=pass physical_text=none evidence_annotations=isolated structural_wall_mm=3.0 iec_snap_wall_mm=1.4 iec_surface_allowance_mm=0.1 iec_wall_max_mm=1.5 iec_retention_intrusion=none register_axes=X0,Y0 register_height_mm=2.0 iec_profile_mm=27x46.86 iec_clearance_per_side_mm=0.20 m3_centres={m3_centres} m3_hole_diameter_mm=3.4 upper_right_slot=frozen bottom_open_slot_mm=2.61x4 nut_pocket_af_mm=5.75 volume_mm3={volume_mm3:.3f}")

@@ -39,8 +39,11 @@ def check_equal(actual, expected, label: str) -> None:
 
 require(PSU, (
     "function alt1205t_upper_right_square_is_hole() = false",
-    "function alt1205t_upper_left_m3_centre() = [3.45, 3.45]",
-    "function alt1205t_lower_left_m3_centre() = [",
+    "function alt1205t_upper_left_m3_centre() = [0.95, 5.95]",
+    "function alt1205t_lower_left_m3_centre() = [5.75, 97.6]",
+    "function alt1205t_second_fit_upper_left_m3_correction() = [-2.5, 2.5]",
+    "function alt1205t_second_fit_internal_m3_correction() = [-1.5, -2]",
+    "function alt1205t_second_fit_lower_left_m3_correction() = [-1.5, -2]",
     "function alt1205t_bottom_slot_origin() = [",
     "module alt1205t_bottom_open_slot_negative",
     "module alt1205t_keepout()", "module alt1205t_mounting_negatives",
@@ -77,13 +80,19 @@ label = literal_function(PSU, "alt1205t_label_side_size")
 m3 = literal_function(PSU, "alt1205t_m3_centres")
 check_equal(base, [77.5, 110], "ALT base axes")
 check_equal(label, [110, 36.86], "ALT label-side axes")
-check_equal(m3, [[26.8, 32.9], [26.8, 69], [54.8, 69]], "ALT corrected internal M3 coordinates")
+check_equal(m3, [[25.3, 30.9], [25.3, 67], [53.3, 67]], "ALT second-fit internal M3 coordinates")
 check_equal(literal_function(PSU, "alt1205t_m3_nominal_diameter"), 3, "ALT nominal M3 diameter")
-check_equal(literal_function(PSU, "alt1205t_upper_left_m3_centre"), [3.45, 3.45], "ALT upper-left M3 centre")
+check_equal(literal_function(PSU, "alt1205t_first_fit_upper_left_m3_centre"), [3.45, 3.45], "ALT first-fit upper-left M3 centre")
+check_equal(literal_function(PSU, "alt1205t_second_fit_upper_left_m3_correction"), [-2.5, 2.5], "ALT upper-left second-fit correction")
+check_equal(literal_function(PSU, "alt1205t_upper_left_m3_centre"), [0.95, 5.95], "ALT upper-left second-fit M3 centre")
+check_equal(literal_function(PSU, "alt1205t_first_fit_m3_centres"), [[26.8, 32.9], [26.8, 69], [54.8, 69]], "ALT first-fit internal M3 coordinates")
+check_equal(literal_function(PSU, "alt1205t_second_fit_internal_m3_correction"), [-1.5, -2], "ALT internal second-fit correction")
 check_equal(literal_function(PSU, "alt1205t_lower_left_m3_left_tangent"), 5.75, "ALT lower-left M3 left tangent")
 check_equal(literal_function(PSU, "alt1205t_lower_left_m3_bottom_centre_datum"), 10.4, "ALT lower-left M3 bottom centre datum")
-lower_left_m3 = [5.75 + 3 / 2, base[1] - 10.4]
-check_equal(lower_left_m3, [7.25, 99.6], "ALT derived lower-left M3 centre")
+first_fit_lower_left_m3 = [5.75 + 3 / 2, base[1] - 10.4]
+check_equal(first_fit_lower_left_m3, [7.25, 99.6], "ALT first-fit derived lower-left M3 centre")
+check_equal(literal_function(PSU, "alt1205t_second_fit_lower_left_m3_correction"), [-1.5, -2], "ALT lower-left second-fit correction")
+check_equal(literal_function(PSU, "alt1205t_lower_left_m3_centre"), [5.75, 97.6], "ALT lower-left second-fit M3 centre")
 check_equal(literal_function(PSU, "alt1205t_bottom_slot_left_tangent"), 2.28, "ALT bottom-slot left tangent")
 check_equal(literal_function(PSU, "alt1205t_bottom_slot_size"), [2.61, 4], "ALT bottom-open slot axes")
 check_equal([2.28, base[1] - 4], [2.28, 106], "ALT derived bottom-slot origin")

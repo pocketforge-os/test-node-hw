@@ -10,22 +10,28 @@ function alt1205t_base_size() = [77.5, 110];
 function alt1205t_label_side_size() = [110, 36.86];
 function alt1205t_m3_nominal_diameter() = 3;
 // The first coupon established that the photographed corner feature is an M3
-// mount. Re-read the paired 3.45 mm annotations as its centre datums from the
-// top and left exterior edges, not as the size of a square aperture.
-function alt1205t_upper_left_m3_centre() = [3.45, 3.45];
+// mount. The second physical fit moved that first-fit centre -2.5 mm X/left
+// and +2.5 mm Y/down in the fixed underside datum.
+function alt1205t_first_fit_upper_left_m3_centre() = [3.45, 3.45];
+function alt1205t_second_fit_upper_left_m3_correction() = [-2.5, 2.5];
+function alt1205t_upper_left_m3_centre() = [0.95, 5.95];
 function alt1205t_upper_right_slot_size() = [3.3, 4.7];
 function alt1205t_upper_right_slot_top_tangent() = 2.94;
 function alt1205t_upper_right_slot_right_tangent() = 3.15;
-// Owner correction from the first physical coupon: all three centres moved
-// exactly +3.0 mm X/right and +3.0 mm Y/down from the worksheet reading.
-function alt1205t_m3_centres() = [[26.8, 32.9], [26.8, 69], [54.8, 69]];
+function alt1205t_first_fit_m3_centres() =
+    [[26.8, 32.9], [26.8, 69], [54.8, 69]];
+function alt1205t_second_fit_internal_m3_correction() = [-1.5, -2];
+function alt1205t_m3_centres() =
+    [[25.3, 30.9], [25.3, 67], [53.3, 67]];
 function alt1205t_lower_left_m3_left_tangent() = 5.75;
 function alt1205t_lower_left_m3_bottom_centre_datum() = 10.4;
-function alt1205t_lower_left_m3_centre() = [
+function alt1205t_first_fit_lower_left_m3_centre() = [
     alt1205t_lower_left_m3_left_tangent() +
         alt1205t_m3_nominal_diameter() / 2,
     alt1205t_base_size().y - alt1205t_lower_left_m3_bottom_centre_datum()
 ];
+function alt1205t_second_fit_lower_left_m3_correction() = [-1.5, -2];
+function alt1205t_lower_left_m3_centre() = [5.75, 97.6];
 function alt1205t_all_m3_centres() = concat(
     [alt1205t_upper_left_m3_centre()],
     alt1205t_m3_centres(),
@@ -50,15 +56,31 @@ module alt1205t_contract() {
     assert(alt1205t_base_size() == [77.5, 110], "ALT-1205T base datum changed");
     assert(alt1205t_label_side_size() == [110, 36.86], "ALT-1205T corrected label height changed");
     assert(alt1205t_m3_nominal_diameter() == 3 &&
-           alt1205t_upper_left_m3_centre() == [3.45, 3.45],
+           alt1205t_first_fit_upper_left_m3_centre() == [3.45, 3.45] &&
+           alt1205t_second_fit_upper_left_m3_correction() == [-2.5, 2.5] &&
+           norm(alt1205t_first_fit_upper_left_m3_centre() +
+                alt1205t_second_fit_upper_left_m3_correction() - [0.95, 5.95]) < 0.000001 &&
+           alt1205t_upper_left_m3_centre() == [0.95, 5.95],
            "ALT-1205T upper-left M3 centre datum changed");
     assert(alt1205t_upper_right_slot_size() == [3.3, 4.7] && alt1205t_upper_right_slot_top_tangent() == 2.94 && alt1205t_upper_right_slot_right_tangent() == 3.15, "ALT-1205T underside upper-right slot mapping changed");
-    assert(alt1205t_m3_centres() == [[26.8, 32.9], [26.8, 69], [54.8, 69]],
-           "ALT-1205T physical-fit-corrected internal M3 coordinates changed");
+    assert(alt1205t_first_fit_m3_centres() ==
+               [[26.8, 32.9], [26.8, 69], [54.8, 69]] &&
+           alt1205t_second_fit_internal_m3_correction() == [-1.5, -2] &&
+           max([for (i = [0:2])
+               norm(alt1205t_first_fit_m3_centres()[i] +
+                    alt1205t_second_fit_internal_m3_correction() -
+                    alt1205t_m3_centres()[i])]) < 0.000001 &&
+           alt1205t_m3_centres() ==
+               [[25.3, 30.9], [25.3, 67], [53.3, 67]],
+           "ALT-1205T second-fit internal M3 coordinates changed");
     assert(alt1205t_lower_left_m3_left_tangent() == 5.75 &&
            alt1205t_lower_left_m3_bottom_centre_datum() == 10.4 &&
-           alt1205t_lower_left_m3_centre() == [7.25, 99.6],
-           "ALT-1205T lower-left M3 derived centre changed");
+           alt1205t_first_fit_lower_left_m3_centre() == [7.25, 99.6] &&
+           alt1205t_second_fit_lower_left_m3_correction() == [-1.5, -2] &&
+           norm(alt1205t_first_fit_lower_left_m3_centre() +
+                alt1205t_second_fit_lower_left_m3_correction() - [5.75, 97.6]) < 0.000001 &&
+           alt1205t_lower_left_m3_centre() == [5.75, 97.6],
+           "ALT-1205T second-fit lower-left M3 centre changed");
     assert(alt1205t_bottom_slot_left_tangent() == 2.28 &&
            alt1205t_bottom_slot_size() == [2.61, 4] &&
            alt1205t_bottom_slot_origin() == [2.28, 106],
