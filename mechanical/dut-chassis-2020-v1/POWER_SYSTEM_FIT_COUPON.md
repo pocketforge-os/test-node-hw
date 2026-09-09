@@ -26,9 +26,16 @@ facets in a different order, so every raw hash must be labeled
 **build-instance-specific** and must not be used as the acceptance identity.
 
 The defaults are 0.20 mm IEC clearance per side, 0.40 mm added to the nominal
-M3 screw-hole diameter, 0.25 mm added across the nominal 5.5 mm nut flats, a
-3.0 mm wall, and 0.35 mm recessed labels. Each is independently overridable
-with the matching OpenSCAD define without changing component-library constants.
+M3 screw-hole diameter, 0.25 mm added across the nominal 5.5 mm nut flats, and
+a 3.0 mm wall. Each is independently overridable with the matching OpenSCAD
+define without changing component-library constants.
+
+After the corrected coupon was printed with a 0.8 mm nozzle, the owner found
+the physical lettering unreadable and mostly unable to fit on the sparse part.
+The printable selector is therefore intentionally label-free: it contains no
+raised, recessed, embossed, engraved, coordinate, warning, or process text.
+Annotations exist only in the separately selected PNG evidence scene and are
+never part of the default STL export.
 
 ## Physical acceptance gate
 

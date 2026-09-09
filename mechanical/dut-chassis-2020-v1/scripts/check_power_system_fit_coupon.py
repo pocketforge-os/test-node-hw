@@ -27,6 +27,9 @@ require(
     "coupon_iec_nominal_profile() = iecc14_body_profile_size()",
     "function coupon_iec_faceplate_overlap_per_side()",
     "IEC faceplate must cover the clearanced panel opening on every side",
+    'PART = is_undef(PART) ? "printable_coupon" : PART;',
+    'if (PART == "printable_coupon") printable_coupon();',
+    'else if (PART == "evidence")',
     'text("FIT COUPON"',
     'text("NO MAINS"',
     "relaxed tongues are deliberately",
@@ -35,12 +38,28 @@ require(
     'text("NOT PSU"',
 )
 
+# Printable geometry and evidence annotations are deliberately separated. The
+# default selector reaches only modules defined before evidence_overlay(), so a
+# text primitive cannot become physical geometry without this contract failing.
+evidence_marker = "module evidence_overlay()"
+if SOURCE.count(evidence_marker) != 1:
+    raise SystemExit("coupon must define exactly one evidence-only annotation module")
+printable_source, evidence_source = SOURCE.split(evidence_marker, 1)
+if "text(" in printable_source:
+    raise SystemExit("printable coupon path contains text-derived geometry")
+if "evidence_overlay" in printable_source:
+    raise SystemExit("printable coupon path calls the evidence annotation module")
+for retired in ("LABEL_DEPTH", "recessed_label", "EVIDENCE"):
+    if retired in SOURCE:
+        raise SystemExit(f"retired printable label path remains: {retired}")
+if "text(" not in evidence_source:
+    raise SystemExit("evidence selector unexpectedly lost its non-printable annotations")
+
 expected_defaults = {
     "IEC_CLEARANCE": "0.20",
     "M3_HOLE_CLEARANCE": "0.40",
     "NUT_TRAP_CLEARANCE": "0.25",
     "WALL_THICKNESS": "3.0",
-    "LABEL_DEPTH": "0.35",
 }
 for name, expected in expected_defaults.items():
     match = re.search(rf"{name} = is_undef\({name}\) \? ([0-9.]+) : {name};", SOURCE)
@@ -71,17 +90,42 @@ mesh = ROOT / "build/power-system-fit-coupon.stl"
 topology = inspect_topology(mesh)
 if topology["invalid_edges"] or topology["components"] != 1 or topology["degenerate_facets"]:
     raise SystemExit(f"coupon topology failure: {topology}")
-points = [point for tri in triangles(mesh) for point in tri]
 facets = triangles(mesh)
+points = [point for tri in facets for point in tri]
 mins = tuple(min(p[axis] for p in points) for axis in range(3))
 maxs = tuple(max(p[axis] for p in points) for axis in range(3))
-if mins[2] != 0 or maxs[2] != 5:
+approved_corrected_bounds = ((-36.5, -5.0, 0.0), (91.5, 112.0, 5.0))
+if (mins, maxs) != approved_corrected_bounds:
     raise SystemExit(
-        "coupon must lie flat at Z=0 with a 3.0 mm bed and 2.0 mm register, "
-        f"got {mins[2]}..{maxs[2]}"
+        "label removal changed the approved corrected coupon bounds: "
+        f"expected={approved_corrected_bounds} got={(mins, maxs)}"
     )
-if mins[0] > -36.5 or maxs[0] < 91 or mins[1] > -5 or maxs[1] < 112:
-    raise SystemExit(f"coupon absolute L/datum bounds unexpectedly contracted: min={mins} max={maxs}")
+
+
+def signed_volume(triangle) -> float:
+    """Return one triangle's signed tetrahedral volume against the origin."""
+    a, b, c = triangle
+    return (
+        a[0] * (b[1] * c[2] - b[2] * c[1])
+        - a[1] * (b[0] * c[2] - b[2] * c[0])
+        + a[2] * (b[0] * c[1] - b[1] * c[0])
+    ) / 6
+
+
+volume_mm3 = abs(sum(signed_volume(triangle) for triangle in facets))
+approved_corrected_recessed_text_volume_mm3 = 9114.568
+if volume_mm3 <= approved_corrected_recessed_text_volume_mm3:
+    raise SystemExit(
+        "removing recessed text must restore solid material without changing "
+        f"the mating envelope: baseline={approved_corrected_recessed_text_volume_mm3} "
+        f"got={volume_mm3:.3f}"
+    )
+expected_label_free_volume_mm3 = 9127.349
+if not math.isclose(volume_mm3, expected_label_free_volume_mm3, abs_tol=0.01):
+    raise SystemExit(
+        "label-free solid volume drifted from its reviewed geometry: "
+        f"expected={expected_label_free_volume_mm3} got={volume_mm3:.3f}"
+    )
 
 
 def is_register_face(triangle, axis: int) -> bool:
@@ -149,4 +193,4 @@ if any(
 ):
     raise SystemExit("bottom slot is closed by a vertical face at the coupon edge")
 
-print("power_system_fit_coupon_contract=pass wall_mm=3.0 register_axes=X0,Y0 register_height_mm=2.0 iec_profile_mm=27x46.86 iec_clearance_per_side_mm=0.20 m3_checks=5 m3_hole_diameter_mm=3.4 bottom_open_slot_mm=2.61x4 nut_pocket_af_mm=5.75")
+print(f"power_system_fit_coupon_contract=pass physical_text=none evidence_annotations=isolated wall_mm=3.0 register_axes=X0,Y0 register_height_mm=2.0 iec_profile_mm=27x46.86 iec_clearance_per_side_mm=0.20 m3_checks=5 m3_hole_diameter_mm=3.4 bottom_open_slot_mm=2.61x4 nut_pocket_af_mm=5.75 volume_mm3={volume_mm3:.3f}")

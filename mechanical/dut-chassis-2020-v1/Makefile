@@ -53,6 +53,7 @@ POWER_SYSTEM_EVIDENCE := \
 POWER_SYSTEM_COUPON_SOURCE := power-system-fit-coupon.scad
 POWER_SYSTEM_COUPON_STL := $(BUILD)/power-system-fit-coupon.stl
 POWER_SYSTEM_COUPON_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-top.png
+POWER_SYSTEM_COUPON_CLEAN_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-top.png
 POWER_SYSTEM_COUPON_CHECK := scripts/check_power_system_fit_coupon.py
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
@@ -538,7 +539,8 @@ usb-c-interrupter: $(USB_C_INTERRUPTER_STL) $(USB_C_INTERRUPTER_PREVIEW)
 
 power-system-models: $(POWER_SYSTEM_STLS) $(POWER_SYSTEM_EVIDENCE)
 
-power-system-fit-coupon: $(POWER_SYSTEM_COUPON_STL) $(POWER_SYSTEM_COUPON_EVIDENCE)
+power-system-fit-coupon: $(POWER_SYSTEM_COUPON_STL) $(POWER_SYSTEM_COUPON_EVIDENCE) \
+	$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE)
 
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
@@ -668,20 +670,29 @@ $(POWER_SYSTEM_COUPON_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
 		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
 		--projection=ortho --viewall --autocenter --camera=0,0,0,0,0,0,50 \
-		-D 'EVIDENCE=true' $<
+		-D 'PART="evidence"' $<
+
+$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,0,0,0,50 \
+		-D 'PART="printable_coupon"' $<
 
 validate-power-system-fit-coupon: power-system-fit-coupon
 	$(PYTHON) $(POWER_SYSTEM_COUPON_CHECK)
-	$(PYTHON) $(FINGERPRINT) $(POWER_SYSTEM_COUPON_STL)
+	@fingerprint=$$($(PYTHON) $(FINGERPRINT) $(POWER_SYSTEM_COUPON_STL)); \
+	printf '%s\n' "$$fingerprint"; \
+	printf '%s\n' "$$fingerprint" | \
+		grep -q '"sha256":"1fb96bef8acd4d375d371a661fcce2335aef94dc1fb2ae9acb831d7010e21d66"'
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-fit-coupon-overrides.csg \
 		-D 'IEC_CLEARANCE=0.30' -D 'M3_HOLE_CLEARANCE=0.50' \
 		-D 'NUT_TRAP_CLEARANCE=0.35' -D 'WALL_THICKNESS=3.2' \
-		-D 'LABEL_DEPTH=0.25' $(POWER_SYSTEM_COUPON_SOURCE)
+		$(POWER_SYSTEM_COUPON_SOURCE)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_COUPON_STL)
 	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 125 --max-z 5 \
 		--bed-x 247 --bed-y 207 --min-bed-contact-area 900 $(POWER_SYSTEM_COUPON_STL)
-	@test -s $(POWER_SYSTEM_COUPON_EVIDENCE)
-	@echo 'power_system_fit_coupon=pass orientation=flat supports=none wall_mm=3.0 overrides=pass identity=normalized-mesh-fingerprint raw-stl-sha256=build-instance-specific'
+	@test -s $(POWER_SYSTEM_COUPON_EVIDENCE) -a -s $(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE)
+	@echo 'power_system_fit_coupon=pass physical_text=none evidence_annotations=isolated orientation=flat supports=none wall_mm=3.0 overrides=pass identity=normalized-mesh-fingerprint raw-stl-sha256=build-instance-specific'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \

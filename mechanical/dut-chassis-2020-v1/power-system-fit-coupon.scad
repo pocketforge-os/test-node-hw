@@ -12,8 +12,7 @@ IEC_CLEARANCE = is_undef(IEC_CLEARANCE) ? 0.20 : IEC_CLEARANCE; // per side
 M3_HOLE_CLEARANCE = is_undef(M3_HOLE_CLEARANCE) ? 0.40 : M3_HOLE_CLEARANCE; // on diameter
 NUT_TRAP_CLEARANCE = is_undef(NUT_TRAP_CLEARANCE) ? 0.25 : NUT_TRAP_CLEARANCE; // across flats
 WALL_THICKNESS = is_undef(WALL_THICKNESS) ? 3.0 : WALL_THICKNESS;
-LABEL_DEPTH = is_undef(LABEL_DEPTH) ? 0.35 : LABEL_DEPTH;
-EVIDENCE = is_undef(EVIDENCE) ? false : EVIDENCE;
+PART = is_undef(PART) ? "printable_coupon" : PART;
 
 function coupon_m3_nominal_diameter() = 3.0;
 function coupon_m3_hole_diameter() = coupon_m3_nominal_diameter() + M3_HOLE_CLEARANCE;
@@ -75,8 +74,6 @@ module coupon_contract() {
     assert(WALL_THICKNESS > 0, "Coupon wall thickness must be positive");
     assert(IEC_CLEARANCE >= 0 && M3_HOLE_CLEARANCE >= 0 && NUT_TRAP_CLEARANCE >= 0,
            "Print clearances cannot be negative");
-    assert(LABEL_DEPTH > 0 && LABEL_DEPTH < WALL_THICKNESS,
-           "Label depth must remain within the coupon wall");
     assert(coupon_m3_hole_diameter() == 3 + M3_HOLE_CLEARANCE,
            "M3 clearance must apply to the nominal diameter");
     assert(coupon_nut_nominal_af() == 5.5 && coupon_nut_nominal_thickness() == 2.4 &&
@@ -157,12 +154,6 @@ module hex_prism(af, height) {
     cylinder(r=af/sqrt(3), h=height, $fn=6);
 }
 
-module recessed_label(label, at, size=3.0, halign="center") {
-    translate([at.x, at.y, WALL_THICKNESS - LABEL_DEPTH])
-        linear_extrude(height=LABEL_DEPTH + 0.01)
-            text(label, size=size, halign=halign, valign="center", font="Liberation Sans:style=Bold");
-}
-
 module printable_coupon() {
     coupon_contract()
     difference() {
@@ -181,12 +172,6 @@ module printable_coupon() {
         translate([coupon_nut_centre().x, coupon_nut_centre().y,
                    WALL_THICKNESS - coupon_nut_pocket_depth()])
             hex_prism(coupon_nut_pocket_af(), coupon_nut_pocket_depth() + 0.01);
-        recessed_label("PSU 5x M3 + 2 SLOTS", [7,18], 2.35, "left");
-        recessed_label("IEC 27x46.86", coupon_iec_centre()+[0,-24], 2.0);
-        recessed_label("+0.20 / SIDE", coupon_iec_centre()+[0,-27], 1.7);
-        recessed_label("WALL 3.0", coupon_iec_centre()+[0,25], 2.4);
-        recessed_label("M3 NUT TEST", [77,15], 1.7);
-        recessed_label("NOT PSU", [79,12.5], 1.55);
     }
 }
 
@@ -245,5 +230,8 @@ module evidence_overlay() {
                                          font="Liberation Sans:style=Bold");
 }
 
-printable_coupon();
-if (EVIDENCE) evidence_overlay();
+if (PART == "printable_coupon") printable_coupon();
+else if (PART == "evidence") {
+    printable_coupon();
+    evidence_overlay();
+} else assert(false, str("Unknown power-system fit-coupon PART: ", PART));
