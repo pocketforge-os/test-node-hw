@@ -437,6 +437,7 @@ def main() -> int:
     device_examples = dry_run("device-example-previews")
     usb_c_interrupter = dry_run("validate-usb-c-interrupter")
     power_system = dry_run("validate-power-system-models")
+    power_coupon = dry_run("validate-power-system-fit-coupon")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
@@ -478,6 +479,8 @@ def main() -> int:
         'PART="iec_c14_fused_switch"',
         "build/alt-1205t-psu.stl",
         "build/iec-c14-fused-switch.stl",
+        "build/iec-c14-panel-cutout-clearance-0.20.stl",
+        "IEC_CLEARANCE=0.20",
         "build/layout-alt-1205t-underside.png",
         "build/layout-alt-1205t-label-side.png",
         "build/layout-alt-1205t-side.png",
@@ -490,6 +493,34 @@ def main() -> int:
         if required not in power_system:
             raise SystemExit(
                 f"power-system production validation omits {required}"
+            )
+    for required in (
+        "build/power-system-fit-coupon.stl",
+        "build/layout-power-system-fit-coupon-top.png",
+        "build/layout-power-system-fit-coupon-clean-top.png",
+        "build/layout-power-system-fit-coupon-clean-isometric.png",
+        "build/layout-power-system-fit-coupon-clean-thickness.png",
+        "power-system-fit-coupon.scad",
+        "scripts/check_power_system_fit_coupon.py",
+        "--min-bed-contact-area 900",
+        "IEC_CLEARANCE=0.30",
+        "M3_HOLE_CLEARANCE=0.50",
+        "NUT_TRAP_CLEARANCE=0.35",
+        "WALL_THICKNESS=3.2",
+        'PART="evidence"',
+        'PART="printable_coupon"',
+        "physical_text=none evidence_annotations=isolated",
+        "3b29014e5aa3c569194d01817ac03b5023947bcb7c82408062abe7198dd0249c",
+        "orientation=flat supports=none structural_wall_mm=3.0",
+        "iec_snap_wall_mm=1.2 iec_surface_allowance_mm=0.1",
+        "iec_budgeted_wall_max_mm=1.3 iec_owner_wall_hard_limit_mm=1.5",
+        "identity=normalized-mesh-fingerprint",
+        "raw-stl-sha256=build-instance-specific",
+        "mesh_fingerprint.py",
+    ):
+        if required not in power_coupon:
+            raise SystemExit(
+                f"power-system coupon validation omits {required}"
             )
     require_names(handbook, DUALBAR_CORE_OUTPUTS, "handbook-assets")
     require(handbook, DEVICE_EXAMPLE_BATCHES, "handbook-assets")

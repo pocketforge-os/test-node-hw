@@ -1,0 +1,81 @@
+# Power-system fit coupon
+
+This disposable planar coupon checks the owner-approved ALT-1205T underside
+datums, the rigid 27 × 46.86 mm IEC C14 insertion profile in a local 1.2 mm snap panel,
+and a separate M3 nut-trap/process sample. It prints at the source orientation:
+broad face flat on the bed, Z upward, with no supports. It is **not an electrical
+part** and must never be used as a mains enclosure or powered-wire guard.
+
+Build and validate it with:
+
+```sh
+make power-system-fit-coupon
+make validate-power-system-fit-coupon
+```
+
+The PSU region checks the owner-release M3 centres: `(4.95, 4.95)`,
+`(25.3, 30.9)`, `(25.3, 67)`, `(53.3, 67)`, and `(6.75, 98.6)`. This final
+source correction moves only the upper-left centre by +1.0 mm X/right and
++1.0 mm Y/down from `(3.95, 3.95)`. The lower-left and three internal centres
+remain frozen. It also checks
+the frozen upper-right 3.3 × 4.7 mm slot and frozen 2.61 × 4.0 mm bottom-open
+slot. The IEC opening applies a true
+uniform 0.20 mm contour offset per side. The nut sampler is connected for printing
+but is explicitly process-only geometry, not part of the PSU pattern.
+
+The validation output's `pocketforge-normalized-stl-v1` fingerprint is the
+reproducible acceptance identity for the coupon mesh. A raw STL SHA-256 checks
+only one exported file's transport integrity: OpenSCAD may emit equivalent
+facets in a different order, so every raw hash must be labeled
+**build-instance-specific** and must not be used as the acceptance identity.
+
+The defaults are 0.20 mm IEC clearance per side, 0.40 mm added to the nominal
+M3 screw-hole diameter, 0.25 mm added across the nominal 5.5 mm nut flats, and
+a 3.0 mm structural wall. The IEC snap-in region alone is 1.2 mm thick, with a
+named 0.1 mm printed-surface allowance. Its budgeted maximum is therefore
+1.3 mm, comfortably below the owner's hard 1.5 mm physical limit.
+The 31 × 50.3 mm faceplate/tab seating and retention footprint is protected from
+the surrounding 3.0 mm structure. Process-clearance and structural-wall defaults
+remain independently overridable without changing component-library constants;
+the 1.2 mm IEC snap wall is a fit-critical local contract.
+
+After the corrected coupon was printed with a 0.8 mm nozzle, the owner found
+the physical lettering unreadable and mostly unable to fit on the sparse part.
+The printable selector is therefore intentionally label-free: it contains no
+raised, recessed, embossed, engraved, coordinate, warning, or process text.
+Annotations exist only in the separately selected PNG evidence scene and are
+never part of the default STL export.
+
+## Physical acceptance record
+
+The physical coupon established these checks before the release correction:
+
+- all five PSU M3 checks and the upper-right slot align with the real PSU without
+  forcing after placing its underside on the coupon and sliding the PSU left and
+  up until its outer left edge seats against the crisp `X=0` shoulder and its
+  outer top edge seats against the crisp `Y=0` shoulder;
+- the 2.61 × 4.0 mm bottom slot aligns at X=2.28 and remains genuinely open at
+  the bottom edge;
+- the IEC rigid body and both 5 mm locking tongues insert through the local
+  1.2 mm panel, whose budgeted printed thickness including surface roughness is
+  1.3 mm and must remain below the 1.5 mm hard limit; the tongues spring outward
+  after insertion and retain behind the wall without interference from the
+  surrounding 3.0 mm structure;
+- the provisional, unmeasured 0.6 mm resting tongue projection is adequate, or
+  the required correction is reported numerically;
+- the 31 × 50.3 mm IEC faceplate fully covers the clearanced opening; and
+- a real M3 screw passes and a real nominal 5.5 mm-across-flats, 2.4 mm-thick
+  nut fits and remains captured in the separate sampler.
+
+The physical-fit iterations, including the owner-authorized release correction,
+were evaluated in private photos
+`1-Photo-1.jpg`, `2-Photo-2.jpg`, and `3-Photo-3.jpg`. These provenance identifiers
+are basenames only; the private files are not copied into Git.
+
+The owner approved the C14 interface and every frozen feature above, then
+accepted the small residual risk of applying the final upper-left-hole
+correction from `1-Photo-1.jpg` without another coupon print. That explicit
+waiver authorizes proceeding to complete-enclosure work.
+
+This coupon evidence does not qualify a final enclosure or authorize wiring or
+powered use.

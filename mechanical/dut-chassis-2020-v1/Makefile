@@ -40,7 +40,8 @@ USB_C_INTERRUPTER_PREVIEW := $(BUILD)/dual-usb-c-interrupter-installed.png
 POWER_SYSTEM_SOURCE := power-system-models.scad
 POWER_SYSTEM_CHECK := scripts/check_power_system_models.py
 POWER_SYSTEM_STLS := $(BUILD)/alt-1205t-psu.stl $(BUILD)/iec-c14-fused-switch.stl \
-	$(BUILD)/iec-c14-panel-cutout-negative.stl
+	$(BUILD)/iec-c14-panel-cutout-negative.stl \
+	$(BUILD)/iec-c14-panel-cutout-clearance-0.20.stl
 POWER_SYSTEM_EVIDENCE := \
 	$(BUILD)/layout-alt-1205t-underside.png \
 	$(BUILD)/layout-alt-1205t-label-side.png \
@@ -49,6 +50,13 @@ POWER_SYSTEM_EVIDENCE := \
 	$(BUILD)/layout-iec-c14-side.png \
 	$(BUILD)/layout-iec-c14-rear.png \
 	$(BUILD)/layout-power-system-review.png
+POWER_SYSTEM_COUPON_SOURCE := power-system-fit-coupon.scad
+POWER_SYSTEM_COUPON_STL := $(BUILD)/power-system-fit-coupon.stl
+POWER_SYSTEM_COUPON_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-top.png
+POWER_SYSTEM_COUPON_CLEAN_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-top.png
+POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-isometric.png
+POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE := $(BUILD)/layout-power-system-fit-coupon-clean-thickness.png
+POWER_SYSTEM_COUPON_CHECK := scripts/check_power_system_fit_coupon.py
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
 	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
@@ -493,6 +501,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 .PHONY: all batches core-batches dualbar dualbar-batches dualbar-preview \
 	brick-dualbar-preview device-example-previews usb-c-interrupter \
 	power-system-models validate-power-system-models \
+	power-system-fit-coupon validate-power-system-fit-coupon \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
@@ -531,6 +540,10 @@ device-example-previews: $(DEVICE_EXAMPLE_REVIEW)
 usb-c-interrupter: $(USB_C_INTERRUPTER_STL) $(USB_C_INTERRUPTER_PREVIEW)
 
 power-system-models: $(POWER_SYSTEM_STLS) $(POWER_SYSTEM_EVIDENCE)
+
+power-system-fit-coupon: $(POWER_SYSTEM_COUPON_STL) $(POWER_SYSTEM_COUPON_EVIDENCE) \
+	$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE) $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE) \
+	$(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE)
 
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
@@ -591,6 +604,11 @@ $(BUILD)/iec-c14-panel-cutout-negative.stl: $(POWER_SYSTEM_SOURCE) \
 		lib/iec-c14-fused-switch.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="iec_c14_panel_cutout_negative"' $<
 
+$(BUILD)/iec-c14-panel-cutout-clearance-0.20.stl: $(POWER_SYSTEM_SOURCE) \
+		lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="iec_c14_panel_cutout_negative"' \
+		-D 'IEC_CLEARANCE=0.20' $<
+
 $(BUILD)/layout-alt-1205t-underside.png: $(POWER_SYSTEM_SOURCE) \
 		lib/alt-1205t-power-supply.scad | $(BUILD)
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1200,900 \
@@ -640,10 +658,59 @@ validate-power-system-models: power-system-models
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/alt-1205t-psu.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/iec-c14-fused-switch.stl
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/iec-c14-panel-cutout-negative.stl
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(BUILD)/iec-c14-panel-cutout-clearance-0.20.stl
 	@test -s $(BUILD)/alt-1205t-psu.stl -a -s $(BUILD)/iec-c14-fused-switch.stl \
-		-a -s $(BUILD)/iec-c14-panel-cutout-negative.stl
+		-a -s $(BUILD)/iec-c14-panel-cutout-negative.stl \
+		-a -s $(BUILD)/iec-c14-panel-cutout-clearance-0.20.stl
 	@for image in $(POWER_SYSTEM_EVIDENCE); do test -s $$image; done
-	@echo 'power_system_models=pass hardwarnings=true stls=3 evidence_pngs=7'
+	@echo 'power_system_models=pass hardwarnings=true stls=4 evidence_pngs=7 iec_clearance_normal_mm=0.20'
+
+$(POWER_SYSTEM_COUPON_STL): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ $<
+
+$(POWER_SYSTEM_COUPON_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,0,0,0,50 \
+		-D 'PART="evidence"' $<
+
+$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,0,0,0,50 \
+		-D 'PART="printable_coupon"' $<
+
+$(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
+		--projection=ortho --viewall --autocenter --camera=0,0,0,55,0,25,200 \
+		-D 'PART="printable_coupon"' $<
+
+$(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE): $(POWER_SYSTEM_COUPON_SOURCE) \
+		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,800 \
+		--projection=ortho --camera=-13,80,2.5,90,0,0,55 \
+		-D 'PART="printable_coupon"' $<
+
+validate-power-system-fit-coupon: power-system-fit-coupon
+	$(PYTHON) $(POWER_SYSTEM_COUPON_CHECK)
+	@fingerprint=$$($(PYTHON) $(FINGERPRINT) $(POWER_SYSTEM_COUPON_STL)); \
+	printf '%s\n' "$$fingerprint"; \
+	printf '%s\n' "$$fingerprint" | \
+		grep -q '"sha256":"3b29014e5aa3c569194d01817ac03b5023947bcb7c82408062abe7198dd0249c"'
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-fit-coupon-overrides.csg \
+		-D 'IEC_CLEARANCE=0.30' -D 'M3_HOLE_CLEARANCE=0.50' \
+		-D 'NUT_TRAP_CLEARANCE=0.35' -D 'WALL_THICKNESS=3.2' \
+		$(POWER_SYSTEM_COUPON_SOURCE)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_COUPON_STL)
+	$(PYTHON) $(BOUNDS) --max-x 130 --max-y 125 --max-z 5 \
+		--bed-x 247 --bed-y 207 --min-bed-contact-area 900 $(POWER_SYSTEM_COUPON_STL)
+	@test -s $(POWER_SYSTEM_COUPON_EVIDENCE) \
+		-a -s $(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE) \
+		-a -s $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE) \
+		-a -s $(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE)
+	@echo 'power_system_fit_coupon=pass physical_text=none evidence_annotations=isolated orientation=flat supports=none structural_wall_mm=3.0 iec_snap_wall_mm=1.2 iec_surface_allowance_mm=0.1 iec_budgeted_wall_max_mm=1.3 iec_owner_wall_hard_limit_mm=1.5 overrides=pass identity=normalized-mesh-fingerprint raw-stl-sha256=build-instance-specific'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \
@@ -2404,7 +2471,8 @@ validate-right-angle-checker: $(RIGHT_ANGLE_CHECKER_STL) \
 	@echo 'right_angle_checker_validation=pass default=150x150x5 custom=100x100x4 angle_deg=90'
 
 validate: lint all calibration preview device-example-previews \
-	validate-usb-c-interrupter validate-power-system-models validate-margin-guard \
+	validate-usb-c-interrupter validate-power-system-models \
+	validate-power-system-fit-coupon validate-margin-guard \
 	validate-fov-guard validate-nut-carrier-guard \
 	validate-gantry-travel-guard validate-registration-tab-guard \
 	validate-power-strip-guard \
