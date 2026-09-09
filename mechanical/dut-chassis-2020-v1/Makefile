@@ -698,7 +698,7 @@ validate-power-system-fit-coupon: power-system-fit-coupon
 	@fingerprint=$$($(PYTHON) $(FINGERPRINT) $(POWER_SYSTEM_COUPON_STL)); \
 	printf '%s\n' "$$fingerprint"; \
 	printf '%s\n' "$$fingerprint" | \
-		grep -q '"sha256":"650ac2056ff6876047647757c962aa93be85b81bfc11abab0c19f0150d36edbb"'
+		grep -q '"sha256":"0b509a5be8534679189d0d38edc3770ef309923e99d346f1a200e67ebda39a88"'
 	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-fit-coupon-overrides.csg \
 		-D 'IEC_CLEARANCE=0.30' -D 'M3_HOLE_CLEARANCE=0.50' \
 		-D 'NUT_TRAP_CLEARANCE=0.35' -D 'WALL_THICKNESS=3.2' \

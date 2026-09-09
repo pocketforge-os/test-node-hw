@@ -510,7 +510,7 @@ def main() -> int:
         'PART="evidence"',
         'PART="printable_coupon"',
         "physical_text=none evidence_annotations=isolated",
-        "650ac2056ff6876047647757c962aa93be85b81bfc11abab0c19f0150d36edbb",
+        "0b509a5be8534679189d0d38edc3770ef309923e99d346f1a200e67ebda39a88",
         "orientation=flat supports=none structural_wall_mm=3.0",
         "iec_snap_wall_mm=1.2 iec_surface_allowance_mm=0.1",
         "iec_budgeted_wall_max_mm=1.3 iec_owner_wall_hard_limit_mm=1.5",

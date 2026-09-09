@@ -14,7 +14,9 @@ function alt1205t_m3_nominal_diameter() = 3;
 // and +2.5 mm Y/down in the fixed underside datum.
 function alt1205t_first_fit_upper_left_m3_centre() = [3.45, 3.45];
 function alt1205t_second_fit_upper_left_m3_correction() = [-2.5, 2.5];
-function alt1205t_upper_left_m3_centre() = [0.95, 5.95];
+function alt1205t_final_fit_upper_left_m3_baseline() = [0.95, 5.95];
+function alt1205t_final_fit_upper_left_m3_correction() = [3, -2];
+function alt1205t_upper_left_m3_centre() = [3.95, 3.95];
 function alt1205t_upper_right_slot_size() = [3.3, 4.7];
 function alt1205t_upper_right_slot_top_tangent() = 2.94;
 function alt1205t_upper_right_slot_right_tangent() = 3.15;
@@ -35,7 +37,9 @@ function alt1205t_second_fit_lower_left_m3_centre() = [5.75, 97.6];
 // Third physical fit: only this PSU M3 moves +0.5 mm X/right and
 // +1.0 mm Y/down. All other mounting features remain frozen.
 function alt1205t_third_fit_lower_left_m3_correction() = [0.5, 1];
-function alt1205t_lower_left_m3_centre() = [6.25, 98.6];
+function alt1205t_final_fit_lower_left_m3_baseline() = [6.25, 98.6];
+function alt1205t_final_fit_lower_left_m3_correction() = [0.5, 0];
+function alt1205t_lower_left_m3_centre() = [6.75, 98.6];
 function alt1205t_all_m3_centres() = concat(
     [alt1205t_upper_left_m3_centre()],
     alt1205t_m3_centres(),
@@ -63,9 +67,14 @@ module alt1205t_contract() {
            alt1205t_first_fit_upper_left_m3_centre() == [3.45, 3.45] &&
            alt1205t_second_fit_upper_left_m3_correction() == [-2.5, 2.5] &&
            norm(alt1205t_first_fit_upper_left_m3_centre() +
-                alt1205t_second_fit_upper_left_m3_correction() - [0.95, 5.95]) < 0.000001 &&
-           alt1205t_upper_left_m3_centre() == [0.95, 5.95],
-           "ALT-1205T upper-left M3 centre datum changed");
+                alt1205t_second_fit_upper_left_m3_correction() -
+                alt1205t_final_fit_upper_left_m3_baseline()) < 0.000001 &&
+           alt1205t_final_fit_upper_left_m3_baseline() == [0.95, 5.95] &&
+           alt1205t_final_fit_upper_left_m3_correction() == [3, -2] &&
+           norm(alt1205t_final_fit_upper_left_m3_baseline() +
+                alt1205t_final_fit_upper_left_m3_correction() - [3.95, 3.95]) < 0.000001 &&
+           alt1205t_upper_left_m3_centre() == [3.95, 3.95],
+           "ALT-1205T final-fit upper-left M3 centre datum changed");
     assert(alt1205t_upper_right_slot_size() == [3.3, 4.7] && alt1205t_upper_right_slot_top_tangent() == 2.94 && alt1205t_upper_right_slot_right_tangent() == 3.15, "ALT-1205T underside upper-right slot mapping changed");
     assert(alt1205t_first_fit_m3_centres() ==
                [[26.8, 32.9], [26.8, 69], [54.8, 69]] &&
@@ -88,8 +97,12 @@ module alt1205t_contract() {
            alt1205t_third_fit_lower_left_m3_correction() == [0.5, 1] &&
            norm(alt1205t_second_fit_lower_left_m3_centre() +
                 alt1205t_third_fit_lower_left_m3_correction() - [6.25, 98.6]) < 0.000001 &&
-           alt1205t_lower_left_m3_centre() == [6.25, 98.6],
-           "ALT-1205T third-fit lower-left M3 centre changed");
+           alt1205t_final_fit_lower_left_m3_baseline() == [6.25, 98.6] &&
+           alt1205t_final_fit_lower_left_m3_correction() == [0.5, 0] &&
+           norm(alt1205t_final_fit_lower_left_m3_baseline() +
+                alt1205t_final_fit_lower_left_m3_correction() - [6.75, 98.6]) < 0.000001 &&
+           alt1205t_lower_left_m3_centre() == [6.75, 98.6],
+           "ALT-1205T final-fit lower-left M3 centre changed");
     assert(alt1205t_bottom_slot_left_tangent() == 2.28 &&
            alt1205t_bottom_slot_size() == [2.61, 4] &&
            alt1205t_bottom_slot_origin() == [2.28, 106],

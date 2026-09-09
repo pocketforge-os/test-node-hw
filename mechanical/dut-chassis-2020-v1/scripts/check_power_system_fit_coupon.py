@@ -75,9 +75,9 @@ for name, expected in expected_defaults.items():
 for assertion in (
     "alt1205t_base_size() == [77.5, 110]",
     "[[25.3,30.9], [25.3,67], [53.3,67]]",
-    "alt1205t_upper_left_m3_centre() == [0.95,5.95]",
-    "alt1205t_lower_left_m3_centre() == [6.25,98.6]",
-    "[[0.95,5.95], [25.3,30.9], [25.3,67], [53.3,67], [6.25,98.6]]",
+    "alt1205t_upper_left_m3_centre() == [3.95,3.95]",
+    "alt1205t_lower_left_m3_centre() == [6.75,98.6]",
+    "[[3.95,3.95], [25.3,30.9], [25.3,67], [53.3,67], [6.75,98.6]]",
     "coupon_slot_origin() == [71.05, 2.94]",
     "coupon_bottom_slot_origin() == [2.28,106]",
     "coupon_bottom_slot_size() == [2.61,4]",
@@ -125,18 +125,18 @@ def signed_volume(triangle) -> float:
 
 
 volume_mm3 = abs(sum(signed_volume(triangle) for triangle in facets))
-approved_second_correction_volume_mm3 = 8123.559
-if volume_mm3 >= approved_second_correction_volume_mm3:
+approved_pre_final_volume_mm3 = 8006.327
+if volume_mm3 >= approved_pre_final_volume_mm3:
     raise SystemExit(
-        "local IEC wall reduction must reduce volume from the approved "
-        f"second-correction baseline={approved_second_correction_volume_mm3}; "
+        "final edge-hole moves unexpectedly failed to reduce volume from the "
+        f"approved pre-final baseline={approved_pre_final_volume_mm3}; "
         f"got={volume_mm3:.3f}"
     )
-expected_third_fit_volume_mm3 = 8006.327
-if not math.isclose(volume_mm3, expected_third_fit_volume_mm3, abs_tol=0.01):
+expected_final_fit_volume_mm3 = 7994.313
+if not math.isclose(volume_mm3, expected_final_fit_volume_mm3, abs_tol=0.01):
     raise SystemExit(
-        "third-fit coupon solid volume drifted: "
-        f"expected={expected_third_fit_volume_mm3} got={volume_mm3:.3f}"
+        "final-fit coupon solid volume drifted: "
+        f"expected={expected_final_fit_volume_mm3} got={volume_mm3:.3f}"
     )
 
 
@@ -160,11 +160,10 @@ if any(x > 1e-6 and y > 1e-6 and z > 3 + 1e-6 for x, y, z in points):
     raise SystemExit("origin register overlaps the PSU plan envelope above its seating face")
 
 # Prove that the rendered coupon, not just its source text, contains the five
-# physical M3 checks at the owner-confirmed third-fit centers. OpenSCAD's
-# 36-sided cylinders give complete rims at Z=0 and the local wall top. The
-# upper-left rim also extends through the intersecting outside-only X register.
-m3_centres = ((0.95, 5.95), (25.3, 30.9), (25.3, 67),
-              (53.3, 67), (6.25, 98.6))
+# physical M3 checks at the owner-confirmed final-fit centers. OpenSCAD's
+# 36-sided cylinders give complete rims at Z=0 and the 3.0 mm wall top.
+m3_centres = ((3.95, 3.95), (25.3, 30.9), (25.3, 67),
+              (53.3, 67), (6.75, 98.6))
 m3_radius = 1.7
 for centre in m3_centres:
     rim = {
@@ -176,8 +175,7 @@ for centre in m3_centres:
         )
     }
     rim_planes = {point[2] for point in rim}
-    expected_rim_planes = {0.0, 3.0, 5.0} if centre == m3_centres[0] else {0.0, 3.0}
-    if len(rim) < 60 or rim_planes != expected_rim_planes:
+    if len(rim) < 60 or rim_planes != {0.0, 3.0}:
         raise SystemExit(
             f"coupon lacks a complete 3.4 mm through-hole rim at {centre}: "
             f"vertices={len(rim)} z={sorted(rim_planes)}"
