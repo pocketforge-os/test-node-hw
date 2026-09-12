@@ -438,6 +438,7 @@ def main() -> int:
     usb_c_interrupter = dry_run("validate-usb-c-interrupter")
     power_system = dry_run("validate-power-system-models")
     power_coupon = dry_run("validate-power-system-fit-coupon")
+    power_enclosure = dry_run("validate-power-system-enclosure")
 
     require(core, CORE_BATCHES, "batches")
     reject(core, DEVICE_EXAMPLE_BATCHES, "batches")
@@ -521,6 +522,81 @@ def main() -> int:
         if required not in power_coupon:
             raise SystemExit(
                 f"power-system coupon validation omits {required}"
+            )
+    for required in (
+        "build/power-system-enclosure-base.stl",
+        "build/power-system-enclosure-hood.stl",
+        "build/power-system-enclosure-c14-cassette.stl",
+        "build/power-system-terminal-barrier-template.dxf",
+        "build/power-system-terminal-barrier-template.svg",
+        "build/power-system-terminal-partition-slice.stl",
+        "build/power-system-dc-route-keepout.stl",
+        "build/layout-power-system-enclosure-assembly.png",
+        "build/layout-power-system-enclosure-installed.png",
+        "build/layout-power-system-enclosure-exploded.png",
+        "build/layout-power-system-enclosure-open-top.png",
+        "build/layout-power-system-enclosure-rear.png",
+        "build/layout-power-system-enclosure-c14-cassette-section.png",
+        "build/layout-power-system-enclosure-barrier-seam-section.png",
+        "build/layout-power-system-enclosure-front-fastener-hook-section.png",
+        "build/layout-power-system-enclosure-support-risk.png",
+        "build/layout-power-system-enclosure-print-orientations.png",
+        "build/layout-power-system-enclosure-size-comparison.png",
+        "power-system-enclosure.scad",
+        "scripts/check_power_system_enclosure.py",
+        "scripts/check_power_system_supports.py",
+        "scripts/test_power_system_supports.py",
+        "scripts/prusaslicer-power-system-support-off.ini",
+        'PART="base"',
+        'PART="hood"',
+        'PART="cassette"',
+        'PART="barrier_template"',
+        'PART="installed_preview"',
+        'PART="exploded"',
+        'PART="open_top"',
+        'PART="rear"',
+        'PART="cassette_section"',
+        'PART="barrier_seam_section"',
+        'PART="front_fastener_hook_section"',
+        'PART="support_risk"',
+        'PART="print_orientations"',
+        'PART="size_comparison"',
+        'PART="partition_slice"',
+        'PART="dc_route"',
+        "size=196.270,132.800,56.033",
+        "size=132.800,128.000,46.200",
+        "size=64.700,39.000,7.200",
+        "base_hood_intersection",
+        "c14_terminal_intersection",
+        "ac_service_intersection",
+        "pe_route_intersection",
+        "dc_route_intersection",
+        "barrier_intersection",
+        "cassette_insertion_intersection",
+        "base_psu_intersection",
+        "c14_print_intersection",
+        "for nozzle in 0.4 0.8 1.2",
+        "NOZZLE_DIAMETER=1.6",
+        "WARNING: C14 snap membrane is 1.6 mm",
+        "power_system_enclosure_empty_intersections=clear",
+        "candidate=V2-pre-DUT02",
+        "printable_parts=3",
+        "supports=off",
+        "fuse=TBD certification=none",
+    ):
+        if required not in power_enclosure:
+            raise SystemExit(
+                f"power-system enclosure validation omits {required}"
+            )
+    for forbidden in (
+        "production-batch-04-frame-hardware.stl",
+        "pocketforge-node-chassis-usb-c.scad",
+        "power-strip-system",
+    ):
+        if forbidden in power_enclosure:
+            raise SystemExit(
+                "standalone power-system enclosure target reaches immutable "
+                f"production path {forbidden}"
             )
     require_names(handbook, DUALBAR_CORE_OUTPUTS, "handbook-assets")
     require(handbook, DEVICE_EXAMPLE_BATCHES, "handbook-assets")
