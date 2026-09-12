@@ -1,1073 +1,794 @@
 /*
- * PocketForge single-supply enclosure candidate.
+ * PocketForge single-supply mains enclosure, V2 print candidate.
  *
- * This is a pre-DUT02 prototype, not a certified mains enclosure.  The PSU's
- * metal shell and a separately fabricated 1.0 mm inner barrier remain primary
- * electrical safeguards.  Unplug the IEC lead before removing the hood.
- * Never use the printed structure as protective-earth continuity.
+ * Three support-free printed parts: floor-down base, roof-down hood, and
+ * broad-face-down IEC C14 cassette.  The separately fabricated 1.0 mm
+ * terminal barrier remains part of the assembly.  This is a prototype, not a
+ * certified mains enclosure.  Unplug before opening and never use printed
+ * plastic as protective-earth continuity.
  */
 
 include <lib/alt-1205t-power-supply.scad>
 include <lib/iec-c14-fused-switch.scad>
 
 PART = is_undef(PART) ? "assembly" : PART;
+NOZZLE_DIAMETER = is_undef(NOZZLE_DIAMETER) ? 0.8 : NOZZLE_DIAMETER;
 
-WALL = is_undef(WALL) ? 3.2 : WALL;
-FLOOR = is_undef(FLOOR) ? 4.0 : FLOOR;
-ROOF = is_undef(ROOF) ? 4.0 : ROOF;
-IEC_CLEARANCE = is_undef(IEC_CLEARANCE) ? 0.20 : IEC_CLEARANCE;
-IEC_SNAP_WALL = is_undef(IEC_SNAP_WALL) ? 1.2 : IEC_SNAP_WALL;
-M3_CLEARANCE_DIAMETER = is_undef(M3_CLEARANCE_DIAMETER) ? 3.6 : M3_CLEARANCE_DIAMETER;
-HOOD_NUT_AF = is_undef(HOOD_NUT_AF) ? 5.60 : HOOD_NUT_AF;
-HOOD_NUT_DEPTH = is_undef(HOOD_NUT_DEPTH) ? 2.80 : HOOD_NUT_DEPTH;
-HOOD_NUT_LEAD_AF = is_undef(HOOD_NUT_LEAD_AF) ? 6.20 : HOOD_NUT_LEAD_AF;
-HOOD_NUT_LEAD_DEPTH = is_undef(HOOD_NUT_LEAD_DEPTH) ? 0.80 : HOOD_NUT_LEAD_DEPTH;
-HOOD_NUT_CAPTURE_WALL = is_undef(HOOD_NUT_CAPTURE_WALL) ? 2.40 : HOOD_NUT_CAPTURE_WALL;
-PSU_NUT_MEASURED_DEPTH = is_undef(PSU_NUT_MEASURED_DEPTH) ? 2.30 : PSU_NUT_MEASURED_DEPTH;
-PSU_NUT_AF = is_undef(PSU_NUT_AF) ? 5.60 : PSU_NUT_AF;
-PSU_NUT_DEPTH = is_undef(PSU_NUT_DEPTH) ? 2.60 : PSU_NUT_DEPTH;
-SEAM_GAP = is_undef(SEAM_GAP) ? 0.8 : SEAM_GAP;
-SEAM_OVERLAP = is_undef(SEAM_OVERLAP) ? 6.4 : SEAM_OVERLAP;
-SAFETY_DISTANCE = is_undef(SAFETY_DISTANCE) ? 8.0 : SAFETY_DISTANCE;
+function nozzle_lines_at_least(v) = ceil(v / NOZZLE_DIAMETER) * NOZZLE_DIAMETER;
+function printable_at_least(v) = max(NOZZLE_DIAMETER, nozzle_lines_at_least(v));
 
-BARRIER_THICKNESS = is_undef(BARRIER_THICKNESS) ? 1.0 : BARRIER_THICKNESS;
-BARRIER_CLEARANCE = is_undef(BARRIER_CLEARANCE) ? 0.4 : BARRIER_CLEARANCE;
-BARRIER_HEIGHT = is_undef(BARRIER_HEIGHT) ? 46.0 : BARRIER_HEIGHT;
-DC_BUSHING_DIAMETER = is_undef(DC_BUSHING_DIAMETER) ? 8.0 : DC_BUSHING_DIAMETER;
-DC_BUSHING_CENTRE = is_undef(DC_BUSHING_CENTRE) ? [305.6,191,54] : DC_BUSHING_CENTRE;
-DC_ROUTE_BEND_ENVELOPE = is_undef(DC_ROUTE_BEND_ENVELOPE) ? 10.0 : DC_ROUTE_BEND_ENVELOPE;
+NOMINAL_WALL = 3.2;
+WALL = printable_at_least(NOMINAL_WALL);
+FLOOR = printable_at_least(4.0);
+ROOF = WALL;
+FRAME = printable_at_least(4.0);
+RECEIVER_WALL = WALL;
+POSITIVE_UNION = WALL;
+LOCAL_UNION = NOZZLE_DIAMETER;
+KEY_UNION = NOZZLE_DIAMETER;
+IEC_CLEARANCE = 0.20;
+IEC_SNAP_NOMINAL = 1.2;
+IEC_SNAP_WALL = max(IEC_SNAP_NOMINAL, NOZZLE_DIAMETER);
+M3_CLEARANCE_DIAMETER = 3.6;
+HOOD_NUT_AF = 5.60;
+HOOD_NUT_DEPTH = 2.80;
+HOOD_NUT_LEAD_AF = 6.20;
+HOOD_NUT_LEAD_DEPTH = 0.80;
+HOOD_NUT_BACKSTOP = 2.40;
+HOOD_NUT_RADIAL_CAPTURE = 2.40;
+PSU_NUT_AF = 5.60;
+PSU_NUT_DEPTH = 2.60;
+SEAM_GAP = 0.60;
+SEAM_OVERLAP = 6.40;
+BARRIER_THICKNESS = 1.0;
+BARRIER_CLEARANCE = 0.4;
+BARRIER_GROOVE = BARRIER_THICKNESS + 2 * BARRIER_CLEARANCE;
+BARRIER_HEIGHT = 46.0;
+DC_BUSHING_DIAMETER = 8.0;
+DC_BUNDLE_OD = 6.0;
+DC_GLAND_CUTOUT_DIAMETER = 12.5;
+DC_ROUTE_BEND_ENVELOPE = 10.0;
+VENT_SLOT = min(1.6, 2 * NOZZLE_DIAMETER);
+VENT_PITCH = 6.4;
+SAFETY_DISTANCE = 8.0;
 
-DC_CONDUCTOR_COUNT = is_undef(DC_CONDUCTOR_COUNT) ? 2 : DC_CONDUCTOR_COUNT;
-DC_CONDUCTOR_GAUGE_AWG = is_undef(DC_CONDUCTOR_GAUGE_AWG) ? 18 : DC_CONDUCTOR_GAUGE_AWG;
-DC_BUNDLE_OD = is_undef(DC_BUNDLE_OD) ? 6.0 : DC_BUNDLE_OD;
-DC_GLAND_CUTOUT_DIAMETER = is_undef(DC_GLAND_CUTOUT_DIAMETER) ? 12.5 : DC_GLAND_CUTOUT_DIAMETER;
-DC_GLAND_FLAT = is_undef(DC_GLAND_FLAT) ? 11.8 : DC_GLAND_FLAT;
-
-AC_TERMINAL_PROJECTION = is_undef(AC_TERMINAL_PROJECTION) ? 14.0 : AC_TERMINAL_PROJECTION;
-AC_WIRE_BEND_RADIUS = is_undef(AC_WIRE_BEND_RADIUS) ? 18.0 : AC_WIRE_BEND_RADIUS;
-IEC_TERMINAL_PROJECTION = is_undef(IEC_TERMINAL_PROJECTION) ? 12.0 : IEC_TERMINAL_PROJECTION;
-PE_LUG_SERVICE_DIAMETER = is_undef(PE_LUG_SERVICE_DIAMETER) ? 12.0 : PE_LUG_SERVICE_DIAMETER;
-VENT_SLOT = is_undef(VENT_SLOT) ? 1.6 : VENT_SLOT;
-VENT_PITCH = is_undef(VENT_PITCH) ? 4.8 : VENT_PITCH;
-VENT_PLENUM = is_undef(VENT_PLENUM) ? 10.0 : VENT_PLENUM;
-
-// Coordinator-reviewed expansion: the provisional X=191 wall would overlap
-// the exact PSU keepout by 0.2 mm.  X=190 preserves the 3.2 mm wall and leaves
-// a nominal 0.8 mm PSU-side clearance without moving the approved component.
-function enclosure_outer_min() = [190, 160, 0];
-function enclosure_outer_max() = [326, 300, 78];
-function enclosure_case_max_x() = 322.8;
-function enclosure_rail_min() = [322.8, 117.73, 0];
-function enclosure_rail_max() = [326, 338, 20];
-function enclosure_rail_hole_yz() = [[125.73,10], [149.73,10], [306,10], [330,10]];
-function enclosure_psu_origin() = [194, 257.5, 4];
+function enclosure_outer_min() = [190,160,0];
+function enclosure_outer_max() = [322.8,288,60];
+function enclosure_outer_size() = enclosure_outer_max()-enclosure_outer_min();
+function enclosure_corner_radius() = 6;
+function enclosure_base_wall_top() = 20;
+function enclosure_hood_wall_bottom() = 20.2;
+function enclosure_roof_bottom() = enclosure_outer_max().z-ROOF;
+function enclosure_psu_origin() = [194,243.7,FLOOR];
 function enclosure_psu_rotation() = [0,0,-90];
-function enclosure_psu_keepout_min() = [194,180,4];
-function enclosure_psu_keepout_max() = [304,257.5,40.86];
-function enclosure_c14_origin() = [308,300,49.15];
-function enclosure_c14_rotation() = [90,0,0];
-function enclosure_c14_face_direction() = [0,1,0];
-function enclosure_barrier_world_y() = [178,259.5];
-function enclosure_barrier_world_z() = [4,4+BARRIER_HEIGHT];
-function enclosure_barrier_world_x() = 318.6;
+function enclosure_psu_keepout_min() = [194,166.2,FLOOR];
+function enclosure_psu_keepout_max() = [304,243.7,FLOOR+36.86];
+function enclosure_c14_origin() = [284,286,30];
+function enclosure_c14_rotation_a() = [90,0,0];
+function enclosure_c14_rotation_b() = [0,0,90];
+function enclosure_c14_body_bounds() = [[260.57,264.2,16.5],[307.43,286,43.5]];
+function enclosure_c14_faceplate_bounds() = [[258.85,286,14.5],[309.15,288,45.5]];
+function enclosure_c14_terminal_bounds() = [[270,252.2,20],[298,264.2,40]];
 function enclosure_partition_x() = [304,304+WALL];
-function enclosure_partition_y() = [261.8,261.8+WALL];
-// Three side screws retain their accepted datums. The fourth fastener moves
-// to the rear panel because no safe right-side corridor exists between the
-// PSU terminal service and the IEC terminal-projection envelopes.
-function enclosure_hood_screw_y(side) = side=="left" ? [170,290] : [170];
-function enclosure_hood_screw_z() = 25.6;
-function enclosure_hood_nut_boss_min_x(side) = side=="left" ? 194.0 : 312.0;
-function enclosure_hood_nut_boss_max_x(side) = side=="left" ? 200.4 : 318.8;
-function enclosure_hood_nut_mouth_x(side) = side=="left" ?
-    enclosure_hood_nut_boss_min_x(side) : enclosure_hood_nut_boss_max_x(side);
-function enclosure_hood_nut_direction(side) = side=="left" ? 1 : -1;
-function enclosure_hood_nut_pocket_inner_x(side) =
-    enclosure_hood_nut_mouth_x(side) + enclosure_hood_nut_direction(side) *
-        (HOOD_NUT_LEAD_DEPTH+HOOD_NUT_DEPTH);
-function enclosure_hood_nut_backstop_depth(side) = side=="left" ?
-    enclosure_hood_nut_boss_max_x(side)-enclosure_hood_nut_pocket_inner_x(side) :
-    enclosure_hood_nut_pocket_inner_x(side)-enclosure_hood_nut_boss_min_x(side);
-function enclosure_hood_nut_boss_top() = 32.0;
-function enclosure_rear_hood_screw_x() = 282.0;
-function enclosure_rear_hood_screw_y() = 296.0;
-function enclosure_rear_hood_screw_z() = 13.0;
-function enclosure_rear_hood_nut_boss_min_y() = 290.0;
-function enclosure_rear_hood_nut_boss_max_y() = 296.0;
-function enclosure_rear_hood_nut_pocket_inner_y() =
-    enclosure_rear_hood_screw_y()-HOOD_NUT_LEAD_DEPTH-HOOD_NUT_DEPTH;
-function enclosure_rear_hood_nut_backstop_depth() =
-    enclosure_rear_hood_nut_pocket_inner_y()-enclosure_rear_hood_nut_boss_min_y();
-function enclosure_rear_hood_nut_boss_top() = 20.0;
-function enclosure_front_vent_x() = [210,282];
-function enclosure_front_vent_z0() = 46;
-function enclosure_gland_centre() = [270,160,31];
+function enclosure_partition_y() = [248.4,248.4+WALL];
+function enclosure_barrier_x() = 318.2;
+function enclosure_barrier_y() = [166.2,248.4];
+function enclosure_barrier_z() = [FLOOR-2.0,FLOOR-2.0+BARRIER_HEIGHT];
+function enclosure_groove_x() = [enclosure_barrier_x()-BARRIER_CLEARANCE,
+                                  enclosure_barrier_x()+BARRIER_THICKNESS+BARRIER_CLEARANCE];
+function enclosure_cassette_face_min() = [284-iecc14_faceplate_size().y/2-FRAME,
+                                          30-iecc14_faceplate_size().x/2-FRAME];
+function enclosure_cassette_face_max() = [284+iecc14_faceplate_size().y/2+FRAME,
+                                          30+iecc14_faceplate_size().x/2+FRAME];
+function enclosure_cassette_key_min_x() = enclosure_cassette_face_min().x-FRAME;
+function enclosure_cassette_key_max_x() = enclosure_cassette_face_max().x+FRAME;
+function enclosure_cassette_y() = [282.8,286];
+function enclosure_cassette_key_y() = [278.8,enclosure_cassette_y().x+KEY_UNION];
+function enclosure_front_fastener_x() = [215,300];
+function enclosure_front_fastener_axis_y() = 163.8;
+function enclosure_front_fastener_z() = 50.4;
+function enclosure_front_post_root_y() = [162.4,166.0];
+function enclosure_front_post_flare_z() = enclosure_psu_keepout_max().z+1.6;
+function enclosure_fastener_outer_radius() = HOOD_NUT_AF/sqrt(3)+HOOD_NUT_RADIAL_CAPTURE;
+function enclosure_fastener_stack() = HOOD_NUT_LEAD_DEPTH+HOOD_NUT_DEPTH+HOOD_NUT_BACKSTOP;
+function enclosure_rail_x() = [318,322.8];
+function enclosure_front_rail_y() = [141.73,170];
+function enclosure_rear_rail_y() = [278,338];
+function enclosure_rail_hole_yz() = [[149.73,10],[306,10],[330,10]];
 function enclosure_print_bed() = [247,207];
-function enclosure_base_print_size() = [338-117.73,326-190,20];
-function enclosure_hood_print_size() = [300-160,326-190,78-4];
-function enclosure_psu_point_world(p) = [enclosure_psu_origin().x + p.y,
-                                         enclosure_psu_origin().y - p.x];
-function enclosure_barrier_size() = [enclosure_barrier_world_y().y-enclosure_barrier_world_y().x,
-                                     BARRIER_HEIGHT];
-function enclosure_upper_service_max_x() = min(
-    enclosure_partition_x().x+AC_TERMINAL_PROJECTION,
-    enclosure_barrier_world_x()
-        -(BARRIER_THICKNESS+2*BARRIER_CLEARANCE)/2-WALL
-);
-
-module hex_prism(af, height) {
-    cylinder(r=af/sqrt(3), h=height, $fn=6);
-}
-
-module tapered_hex_prism(start_af, end_af, height) {
-    linear_extrude(height=height, scale=end_af/start_af)
-        circle(r=start_af/sqrt(3),$fn=6);
-}
+function enclosure_base_print_size() = [338-141.73,322.8-190,enclosure_front_fastener_z()+enclosure_fastener_outer_radius()];
+function enclosure_dc_bushing_centre() = [305.6,174,50];
+function enclosure_gland_centre() = [270,160,50];
 
 module enclosure_contract() {
-    assert(WALL == 3.2 && FLOOR == 4.0 && ROOF == 4.0,
-           "Structural wall/floor/roof contract changed");
-    assert(enclosure_outer_min() == [190,160,0] && enclosure_outer_max() == [326,300,78],
-           "Enclosure world bounds changed");
-    assert(enclosure_psu_keepout_min().x-(enclosure_outer_min().x+WALL) >= 0.8,
-           "Expanded X-min must preserve at least 0.8 mm beside the PSU");
-    assert(enclosure_rail_min() == [322.8,117.73,0] &&
-           enclosure_rail_max() == [326,338,20], "Rail-spine bounds changed");
-    assert(enclosure_rail_hole_yz() == [[125.73,10],[149.73,10],[306,10],[330,10]],
-           "Existing rail M3 datums changed");
-    assert(enclosure_psu_origin() == [194,257.5,4] && enclosure_psu_rotation() == [0,0,-90],
-           "Approved PSU transform changed");
-    assert(enclosure_psu_keepout_min() == [194,180,4] &&
-           enclosure_psu_keepout_max() == [304,257.5,40.86],
-           "PSU world keepout changed");
-    assert(alt1205t_upper_left_m3_centre() == [4.95,4.95] &&
-           alt1205t_lower_left_m3_centre() == [6.75,98.6] &&
-           alt1205t_m3_centres() == [[25.3,30.9],[25.3,67],[53.3,67]],
-           "Physically approved PSU pattern changed");
-    assert(enclosure_c14_origin() == [308,300,49.15] &&
-           enclosure_c14_rotation() == [90,0,0] &&
-           enclosure_c14_face_direction() == [0,1,0],
-           "Rear/wall-facing C14 transform changed");
-    assert(iecc14_body_profile_size() == [27,46.86] &&
-           iecc14_faceplate_size() == [31,50.3,2] && IEC_CLEARANCE == 0.20,
-           "Physically approved C14 interface changed");
-    assert(IEC_SNAP_WALL == 1.2 && IEC_SNAP_WALL < WALL,
-           "C14 snap island must remain exactly 1.2 mm");
-    assert(SEAM_GAP <= 1.0 && SEAM_OVERLAP >= 2*WALL,
-           "Labyrinth seam gap/overlap contract failed");
-    assert(VENT_SLOT <= 1.6 && VENT_PLENUM >= 10,
-           "Touch-resistant vent/plenum guard failed");
-    assert(SAFETY_DISTANCE >= 8,
-           "Prototype AC separation guard may not be reduced below 8 mm");
-    assert(BARRIER_THICKNESS > 0 && BARRIER_HEIGHT > alt1205t_label_side_size().y,
-           "Separate barrier must cover the full PSU terminal edge");
-    assert(DC_BUSHING_DIAMETER == 8.0 && DC_BUSHING_CENTRE == [305.6,191,54],
-           "Provisional insulated DC bushing contract changed");
-    assert(DC_ROUTE_BEND_ENVELOPE >= DC_BUNDLE_OD,
-           "DC bend envelope must contain the complete bundle");
-    assert(enclosure_upper_service_max_x()-(304+WALL) >= DC_BUNDLE_OD,
-           "Upper terminal service corridor must fit the provisional DC bundle");
-    assert(DC_CONDUCTOR_COUNT >= 2 && DC_BUNDLE_OD > 0 &&
-           DC_GLAND_CUTOUT_DIAMETER == 12.5,
-           "Provisional DC conductor/gland contract changed");
-    assert(HOOD_NUT_AF == 5.60 && HOOD_NUT_DEPTH == 2.80 &&
-           HOOD_NUT_LEAD_AF == 6.20 && HOOD_NUT_LEAD_DEPTH == 0.80 &&
-           HOOD_NUT_CAPTURE_WALL == 2.40,
-           "Qualified hood M3 pressure-fit geometry changed");
-    assert(PSU_NUT_MEASURED_DEPTH == 2.30 && PSU_NUT_AF == 5.60 &&
-           PSU_NUT_DEPTH == 2.60 && FLOOR-PSU_NUT_DEPTH == 1.40,
-           "PSU top-loaded nut socket/floor contract changed");
-    assert(enclosure_hood_screw_z() == 25.6 &&
-           enclosure_hood_screw_y("left") == [170,290] &&
-           enclosure_hood_screw_y("right") == [170] &&
-           enclosure_hood_nut_boss_top() == 32.0,
-           "Hood screw axes/boss tops must remain above the rail");
-    assert(enclosure_rear_hood_screw_x() == 282 &&
-           enclosure_rear_hood_screw_y() == 296 &&
-           enclosure_rear_hood_screw_z() == 13 &&
-           enclosure_rear_hood_nut_boss_top() == 20,
-           "Rear-panel hood-fastener datum changed");
-    assert(enclosure_rear_hood_nut_backstop_depth()+0.001 >=
-               HOOD_NUT_CAPTURE_WALL &&
-           6-HOOD_NUT_LEAD_AF/sqrt(3) >= HOOD_NUT_CAPTURE_WALL &&
-           enclosure_rear_hood_nut_boss_top()-enclosure_rear_hood_screw_z()-
-               HOOD_NUT_AF/sqrt(3) >= HOOD_NUT_CAPTURE_WALL,
-           "Rear hood socket lost its pressure-fit capture material");
-    assert(enclosure_hood_screw_z()-HOOD_NUT_LEAD_AF/sqrt(3)-
-               enclosure_rail_max().z >= 2.0,
-           "Rail-side nut lead-in needs at least 2.0 mm vertical clearance");
-    assert(6-HOOD_NUT_AF/sqrt(3) >= HOOD_NUT_CAPTURE_WALL &&
-           enclosure_hood_nut_boss_top()-enclosure_hood_screw_z()-
-               HOOD_NUT_AF/sqrt(3) >= HOOD_NUT_CAPTURE_WALL &&
-           enclosure_hood_nut_backstop_depth("left") >= HOOD_NUT_CAPTURE_WALL &&
-           enclosure_hood_nut_backstop_depth("right") >= HOOD_NUT_CAPTURE_WALL,
-           "Hood nut sockets need complete 2.4 mm capture/backstop material");
-    assert(enclosure_base_print_size().x <= enclosure_print_bed().x &&
-           enclosure_base_print_size().y <= enclosure_print_bed().y,
-           "Base does not fit the 247 x 207 bed in declared orientation");
-    assert(enclosure_hood_print_size().x <= enclosure_print_bed().x &&
-           enclosure_hood_print_size().y <= enclosure_print_bed().y,
-           "Hood does not fit the 247 x 207 bed in declared orientation");
+    assert(NOZZLE_DIAMETER > 0, "NOZZLE_DIAMETER must be greater than zero");
+    assert(WALL >= NOZZLE_DIAMETER && FLOOR >= NOZZLE_DIAMETER &&
+           ROOF >= NOZZLE_DIAMETER && FRAME >= NOZZLE_DIAMETER &&
+           RECEIVER_WALL >= NOZZLE_DIAMETER && POSITIVE_UNION >= NOZZLE_DIAMETER &&
+           LOCAL_UNION >= NOZZLE_DIAMETER && KEY_UNION >= NOZZLE_DIAMETER,
+           "Every intentional wall/positive structural connection must be at least one nozzle line");
+    assert(WALL >= 3.2 && FRAME >= 4.0 && POSITIVE_UNION >= 3.2,
+           "V2 broad structural unions must retain 3.2/4.0 mm minima");
+    assert(IEC_SNAP_WALL == max(1.2,NOZZLE_DIAMETER),
+           "C14 effective snap membrane must be max(1.2, NOZZLE_DIAMETER)");
+    if (IEC_SNAP_WALL > 1.5)
+        echo(str("WARNING: C14 snap membrane is ", IEC_SNAP_WALL,
+                 " mm (>1.5 mm clip budget); owner-authorized sanding is required before fit qualification"));
+    assert(enclosure_outer_min()==[190,160,0] && enclosure_outer_max()==[322.8,288,60],
+           "V2 sealed envelope changed");
+    assert(enclosure_outer_size().x<=132.8 && enclosure_outer_size().y<=128 &&
+           enclosure_outer_size().z<=60, "V2 sealed envelope exceeds target");
+    assert(enclosure_corner_radius()==6 && enclosure_base_wall_top()==20,
+           "R6/base-wall contract changed");
+    assert(enclosure_psu_origin()==[194,243.7,FLOOR] &&
+           enclosure_psu_rotation()==[0,0,-90], "Approved V2 PSU transform changed");
+    assert(alt1205t_upper_left_m3_centre()==[4.95,4.95] &&
+           alt1205t_lower_left_m3_centre()==[6.75,98.6] &&
+           alt1205t_m3_centres()==[[25.3,30.9],[25.3,67],[53.3,67]],
+           "Physically accepted PSU hole pattern changed");
+    assert(enclosure_c14_origin()==[284,286,30] &&
+           iecc14_body_profile_size()==[27,46.86] &&
+           iecc14_faceplate_size()==[31,50.3,2] && IEC_CLEARANCE==0.20,
+           "Physically accepted horizontal C14 interface changed");
+    assert(enclosure_c14_faceplate_bounds()[0].x>=enclosure_outer_min().x &&
+           enclosure_c14_faceplate_bounds()[1].x<=enclosure_outer_max().x &&
+           enclosure_c14_faceplate_bounds()[0].y>=enclosure_outer_min().y &&
+           enclosure_c14_faceplate_bounds()[1].y<=enclosure_outer_max().y &&
+           enclosure_c14_faceplate_bounds()[0].z>=0 &&
+           enclosure_c14_faceplate_bounds()[1].z<=60,
+           "C14 faceplate must remain entirely inside the sealed envelope");
+    assert(enclosure_cassette_face_min()==[258.85-FRAME,14.5-FRAME] &&
+           enclosure_cassette_face_max()==[309.15+FRAME,45.5+FRAME],
+           "Cassette frame must derive from the exact faceplate plus FRAME");
+    assert(enclosure_cassette_key_y().y-enclosure_cassette_y().x>=NOZZLE_DIAMETER-0.000001 &&
+           KEY_UNION>=NOZZLE_DIAMETER-0.000001,
+           "Cassette keys must share at least one nozzle line with the broad frame");
+    assert(enclosure_outer_max().z-enclosure_roof_bottom()>=NOZZLE_DIAMETER &&
+           enclosure_outer_max().z-enclosure_roof_bottom()>=RECEIVER_WALL,
+           "Cassette receivers and roof features need a broad positive roof union");
+    assert(abs(BARRIER_GROOVE-1.8)<0.000001 &&
+           norm(enclosure_groove_x()-[317.8,319.6])<0.000001,
+           "Barrier groove must remain 1.8 mm with 0.4 mm per-side clearance");
+    assert(enclosure_partition_y().x-enclosure_psu_keepout_max().y>=4.7-0.001,
+           "Rear separation wall lost PSU clearance");
+    assert(enclosure_c14_terminal_bounds()[0].y-enclosure_partition_y().y>=0.2-0.001,
+           "C14 terminal projection lost separation-wall clearance");
+    assert(enclosure_front_fastener_z()==50.4 && enclosure_fastener_stack()==6.0 &&
+           HOOD_NUT_AF==5.60 && HOOD_NUT_DEPTH==2.80 &&
+           HOOD_NUT_LEAD_AF==6.20 && HOOD_NUT_LEAD_DEPTH==0.80 &&
+           HOOD_NUT_BACKSTOP>=2.4 && HOOD_NUT_RADIAL_CAPTURE>=2.4,
+           "Qualified upper-plenum pressure-fit socket changed");
+    assert(enclosure_front_post_flare_z()>=enclosure_psu_keepout_max().z+1.6,
+           "Front posts may flare inward only 1.6 mm above the PSU");
+    assert(enclosure_front_post_root_y().y<enclosure_psu_keepout_min().y,
+           "Front-post root must remain ahead of the PSU keepout");
+    assert(enclosure_front_fastener_z()+enclosure_fastener_outer_radius()<enclosure_roof_bottom(),
+           "Front posts need explicit roof assembly clearance");
+    assert(enclosure_rail_hole_yz()==[[149.73,10],[306,10],[330,10]],
+           "Rail datums changed or retired Y=125.73 was restored");
+    assert(enclosure_base_print_size().x<=enclosure_print_bed().x &&
+           enclosure_base_print_size().y<=enclosure_print_bed().y,
+           "Base does not fit the 247x207 bed in its declared rotation");
+    assert(VENT_SLOT<=1.6, "Touch-resistant vent width exceeds 1.6 mm");
+    echo(str("V2 nozzle=",NOZZLE_DIAMETER," wall=",WALL," frame=",FRAME,
+             " snap=",IEC_SNAP_WALL," sealed=132.8x128x60 supports=OFF"));
     children();
 }
+
+module rounded_rect_2d(p=[0,0], q=[10,10], r=2) {
+    translate([p.x+r,p.y+r])
+        offset(r=r,$fn=48) square([q.x-p.x-2*r,q.y-p.y-2*r]);
+}
+
+module rounded_plate(p=[0,0], q=[10,10], r=2, z0=0, h=1) {
+    translate([0,0,z0]) linear_extrude(height=h) rounded_rect_2d(p,q,r);
+}
+
+module rounded_ring(p=[0,0], q=[10,10], r=2, wall=WALL, z0=0, h=1) {
+    translate([0,0,z0]) linear_extrude(height=h)
+        difference() {
+            rounded_rect_2d(p,q,r);
+            rounded_rect_2d(p+[wall,wall],q-[wall,wall],max(0.2,r-wall));
+        }
+}
+
+module hex_prism(af,h) { cylinder(r=af/sqrt(3),h=h,$fn=6); }
 
 module in_psu_frame() {
     translate(enclosure_psu_origin()) rotate(enclosure_psu_rotation()) children();
 }
 
 module in_c14_frame() {
-    translate(enclosure_c14_origin()) rotate(enclosure_c14_rotation()) children();
+    translate(enclosure_c14_origin())
+        rotate(enclosure_c14_rotation_a()) rotate(enclosure_c14_rotation_b()) children();
 }
 
-module rail_spine_blank() {
-    p=enclosure_rail_min(); q=enclosure_rail_max();
-    translate(p) cube(q-p);
+module psu_mount_negatives() {
+    in_psu_frame() alt1205t_mounting_negatives(FLOOR,M3_CLEARANCE_DIAMETER,0.04);
+    for (p=alt1205t_all_m3_centres()) {
+        wp=[enclosure_psu_origin().x+p.y,enclosure_psu_origin().y-p.x];
+        translate([wp.x,wp.y,FLOOR-PSU_NUT_DEPTH-0.01])
+            hex_prism(PSU_NUT_AF,PSU_NUT_DEPTH+0.02);
+    }
+}
+
+module rail_pad(y0,y1) {
+    gusset_depth=y0<160 ? 2 : 4;
+    union() {
+        translate([enclosure_rail_x().x,y0,0])
+            cube([enclosure_rail_x().y-enclosure_rail_x().x,y1-y0,20]);
+        // A 1:1 floor-rooted load path replaces the old 220 mm spine.
+        translate([0,y1,0]) rotate([90,0,0]) linear_extrude(height=gusset_depth)
+            polygon([[304.4,FLOOR],[318,FLOOR],[318,FLOOR+13.6]]);
+    }
 }
 
 module rail_mount_negatives() {
     for (p=enclosure_rail_hole_yz())
-        translate([enclosure_rail_min().x-0.01,p.x,p.y])
-            rotate([0,90,0]) cylinder(d=M3_CLEARANCE_DIAMETER,h=3.22,$fn=36);
+        translate([317.98,p.x,p.y]) rotate([0,90,0])
+            cylinder(d=M3_CLEARANCE_DIAMETER,h=4.84,$fn=36);
 }
 
-module psu_top_pressure_nut_negative(world_p) {
-    // The measured 2.30 mm nut loads visibly from the top before the PSU.
-    // A 2.60 mm-deep qualified-AF pocket preserves 1.40 mm of the 4 mm floor.
-    translate([world_p.x,world_p.y,FLOOR-PSU_NUT_DEPTH])
-        hex_prism(PSU_NUT_AF,PSU_NUT_DEPTH+0.02);
+module barrier_floor_groove_negative() {
+    translate([enclosure_groove_x().x,enclosure_barrier_y().x-0.4,FLOOR-2.2])
+        cube([BARRIER_GROOVE,enclosure_barrier_y().y-enclosure_barrier_y().x+0.8,
+              enclosure_barrier_z().y-(FLOOR-2.2)+0.1]);
 }
 
-module psu_mount_negatives() {
-    in_psu_frame()
-        alt1205t_mounting_negatives(FLOOR,M3_CLEARANCE_DIAMETER,0.02);
-    for (p=alt1205t_all_m3_centres())
-        psu_top_pressure_nut_negative(enclosure_psu_point_world(p));
-}
-
-module seam_tongue() {
-    z0=FLOOR-0.02;
-    h=SEAM_OVERLAP+0.02;
-    // One continuous inset tongue forces two direction changes at the joint.
-    // The left run breaks around the exact PSU envelope; the PSU metal shell
-    // blocks that local seam from ever becoming a path to its terminal end.
-    translate([194,164,z0]) cube([3.2,16,h]);
-    // The rear left run clears the transverse AC/SELV partition on both
-    // sides; the partition itself closes that short portion of the joint.
-    translate([194,257.5,z0]) cube([3.2,3.5,h]);
-    translate([194,265.8,z0]) cube([3.2,30.2,h]);
-    translate([315.6,164,z0]) cube([3.2,132,h]);
-    // The front run likewise clears the longitudinal partition.  Keeping the
-    // tongue and hood volume-disjoint avoids assembly force and slicer scars.
-    translate([197.2,164,z0]) cube([106.0,3.2,h]);
-    translate([308.0,164,z0]) cube([7.6,3.2,h]);
-    translate([197.2,292.8,z0]) cube([118.4,3.2,h]);
-}
-
-module barrier_lower_capture() {
-    y0=enclosure_barrier_world_y().x;
-    len=enclosure_barrier_size().x;
-    gap=BARRIER_THICKNESS+2*BARRIER_CLEARANCE;
-    translate([enclosure_barrier_world_x()-gap/2-WALL,y0,FLOOR-0.02]) cube([WALL,len,4.02]);
-    translate([enclosure_barrier_world_x()+gap/2,y0,FLOOR-0.02]) cube([WALL,len,4.02]);
-}
-
-module vertical_nut_insert_boss(side,y) {
-    x0=enclosure_hood_nut_boss_min_x(side);
-    w=enclosure_hood_nut_boss_max_x(side)-x0;
-    translate([x0,y-6,FLOOR-0.02])
-        cube([w,12,enclosure_hood_nut_boss_top()-(FLOOR-0.02)]);
-}
-
-module vertical_nut_insert_negative(side,y) {
-    z=enclosure_hood_screw_z();
-    face=enclosure_hood_nut_mouth_x(side);
-    inner=enclosure_hood_nut_pocket_inner_x(side);
-    // Broad-face axial insertion copies the owner-qualified 5.60-AF pocket.
-    // The provisional 0.8 mm taper starts the nut square; there is no rigid
-    // undersized throat, bed-facing mouth, support-filled chute, or hidden turn.
-    if (side=="left")
-        translate([face-0.01,y,z]) rotate([0,90,0]) {
-            tapered_hex_prism(HOOD_NUT_LEAD_AF,HOOD_NUT_AF,
-                              HOOD_NUT_LEAD_DEPTH+0.02);
-            translate([0,0,HOOD_NUT_LEAD_DEPTH])
-                hex_prism(HOOD_NUT_AF,HOOD_NUT_DEPTH+0.02);
-        }
-    else
-        translate([face+0.01,y,z]) rotate([0,-90,0]) {
-            tapered_hex_prism(HOOD_NUT_LEAD_AF,HOOD_NUT_AF,
-                              HOOD_NUT_LEAD_DEPTH+0.02);
-            translate([0,0,HOOD_NUT_LEAD_DEPTH])
-                hex_prism(HOOD_NUT_AF,HOOD_NUT_DEPTH+0.02);
-        }
-    // The bore reaches 0.4 mm beyond the nut for full thread engagement, then
-    // stops inside the solid boss so no opening reaches the protected cavity.
-    if (side=="left")
-        translate([189.99,y,z]) rotate([0,90,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,
-                     h=inner+0.4-189.99,$fn=36);
-    else
-        translate([inner-0.4,y,z]) rotate([0,90,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,
-                     h=326.01-(inner-0.4),$fn=36);
-}
-
-module rear_nut_insert_boss() {
-    x=enclosure_rear_hood_screw_x();
-    y0=enclosure_rear_hood_nut_boss_min_y();
-    translate([x-6,y0,FLOOR-0.02])
-        cube([12,
-              enclosure_rear_hood_nut_boss_max_y()-y0,
-              enclosure_rear_hood_nut_boss_top()-(FLOOR-0.02)]);
-}
-
-module rear_nut_insert_transform(y=enclosure_rear_hood_screw_y()+0.01) {
-    // Local +Z enters toward world -Y. The 30-degree spin makes one hex
-    // vertex point upward in the floor-down base orientation.
-    translate([enclosure_rear_hood_screw_x(),y,
-               enclosure_rear_hood_screw_z()])
-        rotate([90,0,0]) rotate([0,0,30]) children();
-}
-
-module rear_nut_insert_negative() {
-    inner=enclosure_rear_hood_nut_pocket_inner_y();
-    rear_nut_insert_transform() {
-        tapered_hex_prism(HOOD_NUT_LEAD_AF,HOOD_NUT_AF,
-                          HOOD_NUT_LEAD_DEPTH+0.02);
-        translate([0,0,HOOD_NUT_LEAD_DEPTH])
-            hex_prism(HOOD_NUT_AF,HOOD_NUT_DEPTH+0.02);
-    }
-    // Exterior rear screw path stops 0.4 mm beyond the nut in the solid boss.
-    translate([enclosure_rear_hood_screw_x(),inner-0.4,
-               enclosure_rear_hood_screw_z()])
-        rotate([-90,0,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,
-                     h=300.01-(inner-0.4),$fn=36);
-}
-
-module conductor_retention_saddle(p=[310,272,4]) {
-    difference() {
-        translate(p) cube([8,9,10]);
-        translate([p.x-0.01,p.y+2.5,p.z+4]) cube([8.02,4,2.4]);
-    }
-}
-
-module installed_base() {
-    enclosure_contract()
-    difference() {
-        union() {
-            translate(enclosure_outer_min()) cube([136,140,FLOOR]);
-            rail_spine_blank();
-            seam_tongue();
-            barrier_lower_capture();
-            for (side=["left","right"], y=enclosure_hood_screw_y(side))
-                vertical_nut_insert_boss(side,y);
-            rear_nut_insert_boss();
-            // Separate retention points for IEC/PE and insulated DC routing.
-            conductor_retention_saddle([309,268,FLOOR-0.02]);
-            conductor_retention_saddle([309,244,FLOOR-0.02]);
-            conductor_retention_saddle([286,168,FLOOR-0.02]);
-        }
-        rail_mount_negatives();
-        psu_mount_negatives();
-        for (side=["left","right"], y=enclosure_hood_screw_y(side))
-            vertical_nut_insert_negative(side,y);
-        rear_nut_insert_negative();
-    }
-}
-
-module c14_faceplate_recess_negative() {
-    // Recess only below the 31 x 50.3 faceplate, leaving a 1.2 mm snap island.
-    translate([308-iecc14_faceplate_size().x/2,296.79,
-               49.15-iecc14_faceplate_size().y/2])
-        cube([iecc14_faceplate_size().x, WALL-IEC_SNAP_WALL+0.01,
-              iecc14_faceplate_size().y]);
-}
-
-module c14_panel_negative() {
-    in_c14_frame() iecc14_panel_cutout_negative(IEC_SNAP_WALL,IEC_CLEARANCE);
-}
-
-module hood_screw_negatives() {
-    z=enclosure_hood_screw_z();
-    for (y=enclosure_hood_screw_y("left"))
-        translate([189.99,y,z]) rotate([0,90,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,h=8,$fn=36);
-    for (y=enclosure_hood_screw_y("right"))
-        translate([318.8,y,z]) rotate([0,90,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,h=7.22,$fn=36);
-    translate([enclosure_rear_hood_screw_x(),295.99,
-               enclosure_rear_hood_screw_z()])
-        rotate([-90,0,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,h=4.02,$fn=36);
-}
-
-module front_outer_vent_negatives() {
-    for (z=[enclosure_front_vent_z0():VENT_PITCH:65])
-        translate([enclosure_front_vent_x().x,159.99,z])
-            cube([enclosure_front_vent_x().y-enclosure_front_vent_x().x,
-                  WALL+0.02,VENT_SLOT]);
-}
-
-module front_inner_baffle_negative() {
-    // Half-pitch shift prevents a straight tool/finger line through both banks.
-    for (z=[enclosure_front_vent_z0()+VENT_PITCH/2:VENT_PITCH:67])
-        translate([enclosure_front_vent_x().x,166.39,z])
-            cube([enclosure_front_vent_x().y-enclosure_front_vent_x().x,
-                  WALL+0.02,VENT_SLOT]);
-}
-
-module gland_negative() {
-    c=enclosure_gland_centre();
-    translate([c.x,159.99,c.z]) rotate([-90,0,0])
-        intersection() {
-            cylinder(d=DC_GLAND_CUTOUT_DIAMETER,h=WALL+0.02,$fn=48);
-            translate([-DC_GLAND_FLAT/2,-DC_GLAND_CUTOUT_DIAMETER/2,-0.01])
-                cube([DC_GLAND_FLAT,DC_GLAND_CUTOUT_DIAMETER,WALL+0.04]);
-        }
-}
-
-module barrier_lower_capture_clearance_negative() {
-    // The base's outboard barrier rail keys into this hood-wall pocket.  The
-    // rail itself replaces the removed wall segment, creating a stepped joint
-    // instead of two printable parts occupying the same volume.
-    translate([319.4,177.8,FLOOR-0.2]) cube([3.42,81.9,4.4]);
-}
-
-module partition_dc_bushing_negative(clearance=0) {
-    c=DC_BUSHING_CENTRE;
-    translate([enclosure_partition_x().x-0.01,c.y,c.z])
-        rotate([0,90,0])
-            cylinder(d=DC_BUSHING_DIAMETER+2*clearance,
-                     h=WALL+0.02,$fn=48);
-}
-
-module terminal_partition_required_solid() {
-    // Complete X=304 boundary from the PSU metal-shell top to the roof-side
-    // partition.  The DC bushing below is the only intentional breach.
-    translate([enclosure_partition_x().x,177.98,
-               enclosure_psu_keepout_max().z])
-        cube([WALL,81.54,74.02-enclosure_psu_keepout_max().z]);
-}
-
-module separation_partition() {
-    // Composite L-shaped boundary.  The removable nonprinted plate fills the
-    // lower gap over the PSU's entire terminal edge; printed wall continues
-    // above it and around both ends.
-    x0=enclosure_partition_x().x;
-    translate([x0,160,FLOOR]) cube([WALL,18.02,FLOOR+BARRIER_HEIGHT]);
-    translate([x0,259.48,FLOOR]) cube([WALL,5.54,70.02]);
-    difference() {
-        terminal_partition_required_solid();
-        partition_dc_bushing_negative();
-    }
-    translate([190,enclosure_partition_y().x,FLOOR])
-        cube([117.22,WALL,70.02]);
-}
-
-module barrier_upper_capture() {
-    y0=enclosure_barrier_world_y().x;
-    len=enclosure_barrier_size().x;
-    gap=BARRIER_THICKNESS+2*BARRIER_CLEARANCE;
-    z0=FLOOR+BARRIER_HEIGHT-4;
-    translate([enclosure_barrier_world_x()-gap/2-WALL,y0,z0]) cube([WALL,len+0.02,4.02]);
-    translate([enclosure_barrier_world_x()+gap/2,y0,z0]) cube([WALL,len+0.02,4.02]);
-    // Bridges enter the already-solid partition at its upper/rear corner.
-    translate([enclosure_barrier_world_x()-gap/2-WALL,259.48,z0])
-        cube([2*WALL+gap,0.04,4.02]);
-}
-
-module hood_shell_blank() {
-    // Roof and four walls.  The wall depth below the tongue creates a
-    // 6.4 mm overlap; the 0.8 mm lateral gap never forms a direct seam.
-    translate([190,160,74]) cube([132.8,140,ROOF]);
-    translate([190,160,FLOOR]) cube([WALL,140,70.02]);
-    translate([319.6,160,FLOOR]) cube([WALL,140,70.02]);
-    translate([193.18,160,FLOOR]) cube([126.44,WALL,70.02]);
-    translate([193.18,296.8,FLOOR]) cube([126.44,WALL,70.02]);
-    // Local rear reinforcement supports the complete 31 mm faceplate while
-    // preserving the global X=326 box/rail bound.
-    translate([319.58,296.8,23.98]) cube([6.42,WALL,50.34]);
-    separation_partition();
-    barrier_upper_capture();
-    // Staggered inner baffle is separated from the front skin by 3.2 mm air.
-    translate([enclosure_front_vent_x().x-WALL,166.4,43])
-        cube([enclosure_front_vent_x().y-enclosure_front_vent_x().x+2*WALL,
-              WALL,31.02]);
-}
-
-module installed_hood() {
-    enclosure_contract()
-    difference() {
-        hood_shell_blank();
-        c14_faceplate_recess_negative();
-        c14_panel_negative();
-        hood_screw_negatives();
-        front_outer_vent_negatives();
-        front_inner_baffle_negative();
-        gland_negative();
-        barrier_lower_capture_clearance_negative();
-    }
-}
-
-module barrier_template_2d() {
-    // Continuous finger shield: insulated DC now crosses the printed X=304
-    // partition above the PSU instead of entering the former dead side gap.
-    square(enclosure_barrier_size());
-}
-
-module installed_barrier() {
-    y0=enclosure_barrier_world_y().x;
-    z0=enclosure_barrier_world_z().x;
-    translate([enclosure_barrier_world_x()-BARRIER_THICKNESS/2,y0,z0])
-        cube([BARRIER_THICKNESS,enclosure_barrier_size().x,enclosure_barrier_size().y]);
-}
-
-function dc_route_points() = [
-    [312,191,54], [300,191,54], [270,191,54], [270,173,54],
-    [270,173,38], [270,164,31], [270,157,31]
-];
-
-module dc_bundle_route_keepout() {
-    pts=dc_route_points();
-    // A connected 6 mm sweep crosses only the named partition bushing and
-    // front gland.  Enlarged elbow envelopes reserve provisional bend space.
-    color([0.1,0.55,0.95,0.42]) {
-        for (i=[0:len(pts)-2])
-            hull() for (p=[pts[i],pts[i+1]])
-                translate(p) sphere(d=DC_BUNDLE_OD,$fn=32);
-        for (p=[pts[2],pts[4]])
-            translate(p) sphere(d=DC_ROUTE_BEND_ENVELOPE,$fn=32);
-    }
-}
-
-module ac_terminal_service_keepout() {
-    // Full projection below the PSU top; above it the envelope steps outward
-    // to X>=307.2 so the continuous printed partition remains honest.
-    color([1,0.3,0.05,0.25]) {
-        translate([304,180,8])
-            cube([AC_TERMINAL_PROJECTION,77.5,
-                  enclosure_psu_keepout_max().z-8]);
-        translate([304+WALL,180,enclosure_psu_keepout_max().z])
-            cube([enclosure_upper_service_max_x()-(304+WALL),77.5,
-                  FLOOR+BARRIER_HEIGHT-enclosure_psu_keepout_max().z]);
-    }
-}
-
-module ac_terminal_service_clearance_core() {
-    // The 0.02 mm inset removes intentional tangencies from the interference
-    // proof while retaining the complete two-level service-volume topology.
-    translate([304.02,180.02,8.02])
-        cube([AC_TERMINAL_PROJECTION-0.04,77.46,
-              enclosure_psu_keepout_max().z-8.04]);
-    translate([304+WALL+0.02,180.02,
-               enclosure_psu_keepout_max().z+0.02])
-        cube([enclosure_upper_service_max_x()-(304+WALL)-0.04,77.46,
-              FLOOR+BARRIER_HEIGHT-enclosure_psu_keepout_max().z-0.04]);
-}
-
-module ac_wire_bend_service_clearance_core() {
-    // Inset only to distinguish allowed boundary contact from intrusion.
-    translate([296.02,270.02,25.02])
-        cube([23.96,AC_WIRE_BEND_RADIUS-0.04,34.96]);
-    translate([302,276,38]) sphere(d=PE_LUG_SERVICE_DIAMETER-0.04,$fn=32);
-}
-
-module ac_wire_bend_service_keepout_core() {
-    translate([296,270,25]) cube([24,AC_WIRE_BEND_RADIUS,35]);
-}
-
-module pe_lug_service_keepout_core() {
-    translate([302,276,38]) sphere(d=PE_LUG_SERVICE_DIAMETER,$fn=32);
-}
-
-module iec_terminal_projection_keepout_core() {
-    translate([294.5,278.2-IEC_TERMINAL_PROJECTION,25.72])
-        cube([27,IEC_TERMINAL_PROJECTION,46.86]);
-}
-
-module pe_route_keepout_core() {
-    hull() for (p=[[310,276,49],[312,266,43]])
-        translate(p) sphere(d=3.2,$fn=24);
-    hull() for (p=[[312,266,43],[312,244,34]])
-        translate(p) sphere(d=3.2,$fn=24);
-}
-
-module c14_rigid_body_world_keepout() {
-    in_c14_frame()
-        iecc14_rigid_insertion_body_keepout(iecc14_body_depth(),0,0);
-}
-
-module c14_faceplate_world_keepout() {
-    // The physical faceplate extends outward from the local insertion face.
-    in_c14_frame()
-        translate([-iecc14_faceplate_size().x/2,
-                   -iecc14_faceplate_size().y/2,
-                   -iecc14_faceplate_size().z])
-            cube(iecc14_faceplate_size());
-}
-
-module service_keepouts() {
-    // Transparent evidence volumes; every value is an overridable assumption.
-    ac_terminal_service_keepout();
-    color([1,0.75,0.05,0.22]) ac_wire_bend_service_keepout_core();
-    color([0.95,0.8,0.15,0.30]) pe_lug_service_keepout_core();
-    dc_bundle_route_keepout();
-    color([0.85,0.4,0.12,0.18]) iec_terminal_projection_keepout_core();
-    // Reserved direct copper PE route: C14 PE lug to the PSU PE terminal
-    // region.  Endpoint screw coordinates remain deliberately unspecified.
-    color([0.95,0.75,0.05,0.70]) pe_route_keepout_core();
-}
-
-module open_top_evidence() {
-    color([0.18,0.48,0.78]) installed_base();
-    color([0.78,0.82,0.86,0.38])
-        intersection() {
-            installed_hood();
-            translate([189,159,3.9]) cube([138,142,70]);
-        }
-    color([0.70,0.72,0.74]) in_psu_frame() alt1205t_keepout();
-    color([0.10,0.11,0.12]) in_c14_frame() iecc14_keepout();
-    color([0.95,0.75,0.12,0.72]) installed_barrier();
-    service_keepouts();
-}
-
-module assembly_evidence(section=false,show_service=false) {
-    if (section) {
-        color([0.18,0.48,0.78]) installed_base();
-        color([0.78,0.82,0.86,0.72])
-            difference() {
-                installed_hood();
-                // Evidence-only front/left corner removal exposes the PSU,
-                // L-partition, terminal shield and both routing volumes.
-                translate([189,159,3.9]) cube([131,111,75]);
-            }
-        color([0.70,0.72,0.74]) in_psu_frame() alt1205t_keepout();
-        color([0.10,0.11,0.12]) in_c14_frame() iecc14_keepout();
-        color([0.95,0.75,0.12,0.72]) installed_barrier();
-        if (show_service) service_keepouts();
-    } else {
-        color([0.18,0.48,0.78]) installed_base();
-        color([0.78,0.82,0.86,0.68]) installed_hood();
-        color([0.70,0.72,0.74]) in_psu_frame() alt1205t_keepout();
-        color([0.10,0.11,0.12]) in_c14_frame() iecc14_keepout();
-        color([0.95,0.75,0.12,0.72]) installed_barrier();
-        if (show_service) service_keepouts();
-    }
-}
-
-module installed_preview() {
-    assembly_evidence(false,true);
-    // Existing 20-series rail datum proxy only; no legacy chassis source edit.
-    color([0.6,0.62,0.65,0.45])
-        translate([322.8,117.73,0]) cube([20,220.27,20]);
-}
-
-module base_hood_forbidden_intersection() {
-    // Seating faces at the floor, rail spine and captive-nut bosses are
-    // intentional boundary contacts.  These interior base features must have
-    // no volume in common with the hood or its internal partitions.
-    intersection() {
-        union() {
-            seam_tongue();
-            barrier_lower_capture();
-            conductor_retention_saddle([309,268,FLOOR-0.02]);
-            conductor_retention_saddle([309,244,FLOOR-0.02]);
-            conductor_retention_saddle([286,168,FLOOR-0.02]);
-        }
-        installed_hood();
-    }
-}
-
-module partition_missing_material() {
-    difference() {
-        difference() {
-            terminal_partition_required_solid();
-            partition_dc_bushing_negative();
-        }
-        installed_hood();
-    }
-}
-
-module terminal_partition_slice() {
-    intersection() {
-        terminal_partition_required_solid();
-        installed_hood();
-    }
-}
-
-module terminal_service_hood_interference() {
-    intersection() {
-        ac_terminal_service_clearance_core();
-        installed_hood();
-    }
-}
-
-module dc_route_hood_interference() {
-    intersection() {
-        dc_bundle_route_keepout();
-        installed_hood();
-    }
-}
-
-module dc_route_psu_interference() {
-    intersection() {
-        dc_bundle_route_keepout();
-        in_psu_frame() alt1205t_keepout();
-    }
-}
-
-module hood_fastener_bosses_solid() {
-    for (side=["left","right"], y=enclosure_hood_screw_y(side))
-        vertical_nut_insert_boss(side,y);
-    rear_nut_insert_boss();
-}
-
-module hood_fastener_metal_screw_axes_solid() {
-    z=enclosure_hood_screw_z();
-    for (y=enclosure_hood_screw_y("left"))
-        translate([186,y,z]) rotate([0,90,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,h=17,$fn=36);
-    for (y=enclosure_hood_screw_y("right"))
-        translate([310,y,z]) rotate([0,90,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,h=17,$fn=36);
-    translate([enclosure_rear_hood_screw_x(),288,
-               enclosure_rear_hood_screw_z()])
-        rotate([-90,0,0])
-            cylinder(d=M3_CLEARANCE_DIAMETER,h=15,$fn=36);
-}
-
-module hood_fastener_nut_service_axes_solid() {
-    // Conservative round sweeps contain the complete 6.20-AF lead-in and
-    // a straight exterior insertion/tool path for every pressure-loaded nut.
-    z=enclosure_hood_screw_z();
-    for (y=enclosure_hood_screw_y("left"))
-        translate([186,y,z]) rotate([0,90,0])
-            cylinder(d=2*HOOD_NUT_LEAD_AF/sqrt(3),h=17,$fn=48);
-    for (y=enclosure_hood_screw_y("right"))
-        translate([310,y,z]) rotate([0,90,0])
-            cylinder(d=2*HOOD_NUT_LEAD_AF/sqrt(3),h=17,$fn=48);
-    translate([enclosure_rear_hood_screw_x(),288,
-               enclosure_rear_hood_screw_z()])
-        rotate([-90,0,0])
-            cylinder(d=2*HOOD_NUT_LEAD_AF/sqrt(3),h=15,$fn=48);
-}
-
-module hood_fastener_caps_solid() {
-    for (side=["left","right"], y=enclosure_hood_screw_y(side))
-        hood_nut_cap_required_solid(side,y);
-    rear_hood_nut_cap_required_solid();
-}
-
-module hood_fastener_audit_solid() {
+module mains_selv_boundary() {
     union() {
-        hood_fastener_bosses_solid();
-        hood_fastener_caps_solid();
-        hood_fastener_metal_screw_axes_solid();
-        hood_fastener_nut_service_axes_solid();
+        translate([enclosure_partition_x().x,enclosure_psu_keepout_min().y,FLOOR])
+            cube([WALL,enclosure_partition_y().y-enclosure_psu_keepout_min().y+WALL,
+                  enclosure_barrier_z().y-FLOOR]);
+        translate([enclosure_partition_x().x,enclosure_partition_y().x,FLOOR])
+            cube([enclosure_barrier_x()+BARRIER_THICKNESS-enclosure_partition_x().x,
+                  WALL,enclosure_barrier_z().y-FLOOR]);
     }
 }
 
-module base_c14_body_interference() {
-    intersection() {
-        installed_base();
-        c14_rigid_body_world_keepout();
+module rear_hook(x) {
+    // Bed-rooted locator: the 2.9 mm inward move also rises 2.9 mm.
+    translate([x,284,17]) cube([10,4,2.2]);
+    hull() {
+        translate([x,284,19.2-LOCAL_UNION])
+            cube([10,LOCAL_UNION,LOCAL_UNION]);
+        translate([x,281.1,22.1-LOCAL_UNION])
+            cube([10,LOCAL_UNION,LOCAL_UNION]);
     }
 }
 
-module base_c14_faceplate_interference() {
-    intersection() {
-        installed_base();
-        c14_faceplate_world_keepout();
-    }
+module front_post_outer(x) {
+    r=enclosure_fastener_outer_radius();
+    // Root stays wholly ahead of the PSU until its exact top + 1.6 mm.
+    translate([x-r,enclosure_front_post_root_y().x,FLOOR])
+        cube([2*r,enclosure_front_post_root_y().y-enclosure_front_post_root_y().x,
+              enclosure_front_post_flare_z()-FLOOR]);
+    // 45-degree floor-down flare supports the inward socket/backstop depth.
+    translate([x-4.2,enclosure_front_post_root_y().y-LOCAL_UNION,
+               enclosure_front_post_flare_z()-LOCAL_UNION])
+        rotate([90,0,90]) linear_extrude(height=8.4)
+            polygon([[0,0],[4.6,4.6],[4.6,8.8],[0,8.8]]);
+    translate([x,enclosure_front_fastener_axis_y(),enclosure_front_fastener_z()])
+        rotate([-90,0,0]) cylinder(r=r,h=HOOD_NUT_LEAD_DEPTH+HOOD_NUT_DEPTH,$fn=48);
+    // Backstop narrows only after the hex pocket while retaining 2.4 mm
+    // radial material around the screw bore.
+    translate([x,enclosure_front_fastener_axis_y()+HOOD_NUT_LEAD_DEPTH+HOOD_NUT_DEPTH,
+               enclosure_front_fastener_z()])
+        rotate([-90,0,0]) cylinder(r=M3_CLEARANCE_DIAMETER/2+HOOD_NUT_RADIAL_CAPTURE,
+                                   h=HOOD_NUT_BACKSTOP,$fn=48);
 }
 
-module hood_fastener_ac_service_interference() {
-    intersection() {
-        hood_fastener_audit_solid();
+module front_post_negative(x) {
+    translate([x,enclosure_front_fastener_axis_y()-0.02,enclosure_front_fastener_z()])
+        rotate([-90,0,0]) hex_prism(HOOD_NUT_LEAD_AF,HOOD_NUT_LEAD_DEPTH+0.04);
+    translate([x,enclosure_front_fastener_axis_y()+HOOD_NUT_LEAD_DEPTH-0.01,
+               enclosure_front_fastener_z()])
+        rotate([-90,0,0]) hex_prism(HOOD_NUT_AF,HOOD_NUT_DEPTH+0.02);
+    translate([x,159.8,enclosure_front_fastener_z()]) rotate([-90,0,0])
+        cylinder(d=M3_CLEARANCE_DIAMETER,h=10.05,$fn=36);
+}
+
+module front_fastener_structure() {
+    for (x=enclosure_front_fastener_x()) front_post_outer(x);
+}
+
+module front_screw_sweep() {
+    // A 0.05 mm radial proof margin avoids counting the intended bore skin.
+    for (x=enclosure_front_fastener_x())
+        translate([x,152,enclosure_front_fastener_z()]) rotate([-90,0,0])
+            cylinder(d=M3_CLEARANCE_DIAMETER-0.1,h=18,$fn=36);
+}
+
+module front_tool_sweep() {
+    // Driver body remains wholly outside the sealed wall; only the screw
+    // continues through the dedicated clearance bore.
+    for (x=enclosure_front_fastener_x())
+        translate([x,151.5,enclosure_front_fastener_z()]) rotate([-90,0,0])
+            cylinder(d=10,h=8.2,$fn=36);
+}
+
+module front_nut_loading_sweep() {
+    // With the hood removed the qualified 6.20 AF lead is directly
+    // approachable from the open front side of each upper-plenum post.
+    for (x=enclosure_front_fastener_x())
+        translate([x,159.8,enclosure_front_fastener_z()]) rotate([-90,0,0])
+            hex_prism(HOOD_NUT_LEAD_AF,
+                      enclosure_front_fastener_axis_y()-159.8-0.01);
+}
+
+module cassette_base_seat() {
+    // The broad floor-rooted ledge supports the cassette at Z=10.5. The hood
+    // stop later captures it; there is no blind pocket or support cavity.
+    translate([enclosure_cassette_key_min_x()-0.3,278.5,FLOOR])
+        cube([enclosure_cassette_key_max_x()-enclosure_cassette_key_min_x()+0.6,
+              9.5,6.2]);
+}
+
+module base_wall_openings() {
+    // Cassette opens at the rear without any outboard protrusion.
+    translate([enclosure_cassette_face_min().x-0.3,284.4,10.2])
+        cube([enclosure_cassette_face_max().x-enclosure_cassette_face_min().x+0.6,
+              3.61,10.1]);
+}
+
+module enclosure_base_installed() {
+    enclosure_contract()
+    difference() {
         union() {
-            ac_terminal_service_keepout();
-            ac_wire_bend_service_keepout_core();
-            pe_lug_service_keepout_core();
-        }
-    }
-}
-
-module hood_fastener_dc_route_interference() {
-    intersection() {
-        hood_fastener_audit_solid();
-        dc_bundle_route_keepout();
-    }
-}
-
-module hood_fastener_c14_interference() {
-    intersection() {
-        hood_fastener_audit_solid();
-        union() {
-            c14_rigid_body_world_keepout();
-            c14_faceplate_world_keepout();
-        }
-    }
-}
-
-module hood_fastener_iec_terminal_interference() {
-    intersection() {
-        hood_fastener_audit_solid();
-        iec_terminal_projection_keepout_core();
-    }
-}
-
-module hood_fastener_pe_route_interference() {
-    intersection() {
-        hood_fastener_audit_solid();
-        pe_route_keepout_core();
-    }
-}
-
-module hood_fastener_psu_interference() {
-    intersection() {
-        hood_fastener_audit_solid();
-        in_psu_frame() alt1205t_keepout();
-    }
-}
-
-module psu_forbidden_interior() {
-    // The partition intentionally begins on the PSU shell's Z=40.86 boundary
-    // so the metal top and printed wall close the vestibule together.  Test
-    // the keepout interior, inset by 0.01 mm, to distinguish that shared
-    // zero-thickness boundary from a forbidden positive-volume intrusion.
-    p=enclosure_psu_keepout_min();
-    q=enclosure_psu_keepout_max();
-    translate(p+[0.01,0.01,0.01]) cube(q-p-[0.02,0.02,0.02]);
-}
-
-module hood_nut_cap_required_solid(side,y) {
-    z=enclosure_hood_screw_z();
-    difference() {
-        if (side=="left")
-            translate([190,y,z]) rotate([0,90,0])
-                hex_prism(HOOD_NUT_LEAD_AF,WALL);
-        else
-            translate([319.6,y,z]) rotate([0,90,0])
-                hex_prism(HOOD_NUT_LEAD_AF,WALL);
-        if (side=="left")
-            translate([189.99,y,z]) rotate([0,90,0])
-                cylinder(d=M3_CLEARANCE_DIAMETER,h=WALL+0.02,$fn=36);
-        else
-            translate([319.59,y,z]) rotate([0,90,0])
-                cylinder(d=M3_CLEARANCE_DIAMETER,h=WALL+0.02,$fn=36);
-    }
-}
-
-module rear_hood_nut_cap_required_solid() {
-    difference() {
-        translate([enclosure_rear_hood_screw_x(),300,
-                   enclosure_rear_hood_screw_z()])
-            rotate([90,0,0]) rotate([0,0,30])
-                hex_prism(HOOD_NUT_LEAD_AF,WALL);
-        translate([enclosure_rear_hood_screw_x(),296.79,
-                   enclosure_rear_hood_screw_z()])
-            rotate([-90,0,0])
-                cylinder(d=M3_CLEARANCE_DIAMETER,h=WALL+0.02,$fn=36);
-    }
-}
-
-module hood_nut_backstop_required_solid(side,y) {
-    z=enclosure_hood_screw_z();
-    inner=enclosure_hood_nut_pocket_inner_x(side);
-    depth=enclosure_hood_nut_backstop_depth(side);
-    required_radius=HOOD_NUT_AF/sqrt(3)+HOOD_NUT_CAPTURE_WALL;
-    if (side=="left")
-        translate([inner+0.02,y,z]) rotate([0,90,0])
             difference() {
-                cylinder(r=required_radius,h=depth-0.04,$fn=48);
-                translate([0,0,-0.01])
-                    cylinder(d=M3_CLEARANCE_DIAMETER+0.04,h=0.46,$fn=36);
-            }
-    else
-        translate([inner-0.02,y,z]) rotate([0,-90,0])
-            difference() {
-                cylinder(r=required_radius,h=depth-0.04,$fn=48);
-                translate([0,0,-0.01])
-                    cylinder(d=M3_CLEARANCE_DIAMETER+0.04,h=0.46,$fn=36);
-            }
-}
-
-module hood_nut_cap_missing() {
-    for (side=["left","right"], y=enclosure_hood_screw_y(side))
-        difference() {
-            hood_nut_cap_required_solid(side,y);
-            installed_hood();
-        }
-    difference() {
-        rear_hood_nut_cap_required_solid();
-        installed_hood();
-    }
-}
-
-module hood_nut_backstop_missing() {
-    for (side=["left","right"], y=enclosure_hood_screw_y(side))
-        difference() {
-            hood_nut_backstop_required_solid(side,y);
-            installed_base();
-        }
-    difference() {
-        x=enclosure_rear_hood_screw_x();
-        y0=enclosure_rear_hood_nut_boss_min_y()+0.02;
-        depth=enclosure_rear_hood_nut_backstop_depth()-0.04;
-        required_radius=HOOD_NUT_AF/sqrt(3)+HOOD_NUT_CAPTURE_WALL;
-        translate([x,y0,enclosure_rear_hood_screw_z()])
-            rotate([-90,0,0]) rotate([0,0,30])
-                difference() {
-                    cylinder(r=required_radius,h=depth,$fn=48);
-                    translate([0,0,depth-0.41])
-                        cylinder(d=M3_CLEARANCE_DIAMETER+0.04,h=0.42,$fn=36);
+                union() {
+                    rounded_plate(enclosure_outer_min(),enclosure_outer_max(),
+                                  enclosure_corner_radius(),0,FLOOR);
+                    rounded_ring(enclosure_outer_min(),enclosure_outer_max(),
+                                 enclosure_corner_radius(),WALL,FLOOR,
+                                 enclosure_base_wall_top()-FLOOR);
                 }
-        installed_base();
+                base_wall_openings();
+            }
+            mains_selv_boundary();
+            cassette_base_seat();
+            rail_pad(enclosure_front_rail_y().x,enclosure_front_rail_y().y);
+            rail_pad(enclosure_rear_rail_y().x,enclosure_rear_rail_y().y);
+            for (x=enclosure_front_fastener_x()) front_post_outer(x);
+            rear_hook(200); rear_hook(230);
+        }
+        psu_mount_negatives();
+        barrier_floor_groove_negative();
+        rail_mount_negatives();
+        // Assembly-clearance notch where the roof-rooted right cassette
+        // receiver passes the otherwise local rear rail pad.
+        translate([317.7,277.9,enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.3])
+            cube([3.0,6.6,SEAM_OVERLAP+0.4]);
+        for (x=enclosure_front_fastener_x()) front_post_negative(x);
+        translate([303.8,enclosure_dc_bushing_centre().y,
+                   enclosure_dc_bushing_centre().z]) rotate([0,90,0])
+            cylinder(d=DC_BUSHING_DIAMETER,h=WALL+0.4,$fn=48);
     }
 }
 
-module psu_nut_floor_missing() {
-    // Inset proof volume under each complete socket.  It must remain solid so
-    // the 2.60 mm top opening cannot become a bed-facing feeder or fall path.
-    for (p=alt1205t_all_m3_centres())
-        let (w=enclosure_psu_point_world(p))
-            difference() {
-                translate([w.x,w.y,0.02])
-                    hex_prism(PSU_NUT_AF,1.36);
-                installed_base();
-            }
+module hood_seam_lip() {
+    z0=enclosure_hood_wall_bottom()-SEAM_OVERLAP;
+    front_lip_y=enclosure_outer_min().y+WALL+SEAM_GAP;
+    front_shoulder_y=enclosure_outer_min().y+WALL-LOCAL_UNION;
+    rear_lip_y=enclosure_outer_max().y-2*WALL-SEAM_GAP;
+    rear_shoulder_max_y=enclosure_outer_max().y-WALL+LOCAL_UNION;
+    left_lip_x=enclosure_outer_min().x+WALL+SEAM_GAP;
+    left_shoulder_x=enclosure_outer_min().x+WALL-LOCAL_UNION;
+    // A single short overlap band; never a second full-height shell.
+    for (seg=[[196,front_lip_y,12.0,WALL],[222,front_lip_y,71,WALL],
+              [307.8,front_lip_y,9.0,WALL],
+              [196,rear_lip_y,3.4,WALL],[210.6,rear_lip_y,18.8,WALL],
+              [240.6,rear_lip_y,9.65,WALL],
+              [left_lip_x,167,WALL,114]])
+        translate([seg.x,seg.y,z0])
+            cube([seg.z,seg[3],SEAM_OVERLAP+LOCAL_UNION]);
+    // One-nozzle positive shoulders join the inset band to the structural
+    // shell; the lower 6.4 mm remains the only parallel seam geometry.
+    for (seg=[[196,front_shoulder_y,12.0,front_lip_y+WALL-front_shoulder_y],
+              [222,front_shoulder_y,71,front_lip_y+WALL-front_shoulder_y],
+              [307.8,front_shoulder_y,9.0,front_lip_y+WALL-front_shoulder_y],
+              [196,rear_lip_y,3.4,rear_shoulder_max_y-rear_lip_y],
+              [210.6,rear_lip_y,18.8,rear_shoulder_max_y-rear_lip_y],
+              [240.6,rear_lip_y,9.65,rear_shoulder_max_y-rear_lip_y]])
+        translate([seg.x,seg.y,enclosure_hood_wall_bottom()])
+            cube([seg.z,seg[3],LOCAL_UNION]);
+    translate([left_shoulder_x,167,enclosure_hood_wall_bottom()])
+        cube([left_lip_x+WALL-left_shoulder_x,114,LOCAL_UNION]);
 }
 
-module installed_right_hood_nut_coupon_base() {
-    // Exact retained right/front base neighborhood: floor, socket boss,
-    // 3.2 mm gap, and the frozen 20 mm rail obstruction. It remains floor-down.
+module cassette_receiver_block(side="left") {
+    xmin=side=="left" ? enclosure_cassette_key_min_x()-RECEIVER_WALL :
+                         enclosure_cassette_face_max().x-KEY_UNION-0.3;
+    xmax=side=="left" ? enclosure_cassette_face_min().x+KEY_UNION+0.3 :
+                         enclosure_cassette_key_max_x()+RECEIVER_WALL;
+    difference() {
+        translate([xmin,278.2,enclosure_hood_wall_bottom()-SEAM_OVERLAP])
+            cube([xmax-xmin,6.0,enclosure_outer_max().z-(enclosure_hood_wall_bottom()-SEAM_OVERLAP)]);
+        // Keyway is open at the hood lower edge.  0.30 mm each-side running
+        // clearance and the full broad face path are explicit.
+        keyxmin=side=="left" ? enclosure_cassette_key_min_x()-0.3 :
+                               enclosure_cassette_face_max().x-KEY_UNION-0.3;
+        keyxmax=side=="left" ? enclosure_cassette_face_min().x+KEY_UNION+0.3 :
+                               enclosure_cassette_key_max_x()+0.3;
+        translate([keyxmin,278.5,enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.01])
+            cube([keyxmax-keyxmin,
+                  enclosure_cassette_key_y().y-278.5+0.3,
+                  enclosure_cassette_face_max().y-(enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.31]);
+        translate([enclosure_cassette_face_min().x-0.3,
+                   282.5,enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.01])
+            cube([enclosure_cassette_face_max().x-
+                      enclosure_cassette_face_min().x+0.6,
+                  3.8,
+                  enclosure_cassette_face_max().y-(enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.31]);
+    }
+}
+
+module hood_openings() {
+    // Rear cassette assembly opening, including its 0.30 mm running clearance.
+    translate([enclosure_cassette_face_min().x-0.3,284.4,
+               enclosure_cassette_face_min().y-0.3])
+        cube([enclosure_cassette_face_max().x-enclosure_cassette_face_min().x+0.6,
+              3.61,enclosure_cassette_face_max().y-enclosure_cassette_face_min().y+0.6]);
+    // Only vertical <=1.6 mm slots: no former 72 mm unsupported ceilings.
+    for (x=[231:VENT_PITCH:282])
+        translate([x-VENT_SLOT/2,159.9,42]) cube([VENT_SLOT,WALL+0.2,11]);
+    for (x=enclosure_front_fastener_x())
+        translate([x,159.8,enclosure_front_fastener_z()]) rotate([-90,0,0])
+            cylinder(d=M3_CLEARANCE_DIAMETER,h=WALL+4.8,$fn=36);
+    translate([enclosure_gland_centre().x,159.8,enclosure_gland_centre().z])
+        rotate([-90,0,0]) cylinder(d=DC_GLAND_CUTOUT_DIAMETER,h=WALL+0.4,$fn=48);
+    // Clear the front shell around each base post; the separate local cap
+    // below closes the nut mouth with 0.30 mm assembly clearance.
+    for (x=enclosure_front_fastener_x())
+        translate([x-enclosure_fastener_outer_radius()-0.3,162.1,19.9])
+            cube([2*enclosure_fastener_outer_radius()+0.6,1.4,36.5]);
+}
+
+module roof_baffle() {
+    // Roof-rooted <=45-degree drip/light baffle behind the front slots.
+    for (span=[[228,35],[277,9]])
+        translate([span.x,0,0]) rotate([90,0,90]) linear_extrude(height=span.y)
+            polygon([[163.2,enclosure_roof_bottom()+LOCAL_UNION],
+                     [169.6,enclosure_roof_bottom()+LOCAL_UNION],
+                     [169.6,enclosure_roof_bottom()-6.4],
+                     // Cross the roof plane by a full nozzle line rather
+                     // than ending tangent to it.  Besides guaranteeing a
+                     // printable root, this avoids a non-manifold T-edge in
+                     // quantized STL consumers.
+                     [163.2,enclosure_roof_bottom()-LOCAL_UNION]]);
+}
+
+module roof_open_cleats() {
+    // Roof-down vertical tabs locate one side of the DC bundle while leaving
+    // the other side completely open to fingers/pliers during service.
+    for (x=[280,292])
+        translate([x,177.5,47.2]) cube([WALL,2.0,enclosure_outer_max().z-47.2]);
+}
+
+module barrier_roof_compression_rib() {
+    translate([enclosure_barrier_x()-0.8,enclosure_barrier_y().x,
+               enclosure_barrier_z().y+0.4])
+        cube([BARRIER_THICKNESS+1.6,
+              enclosure_barrier_y().y-enclosure_barrier_y().x,
+              enclosure_roof_bottom()-(enclosure_barrier_z().y+0.4)+LOCAL_UNION]);
+}
+
+module enclosure_hood_installed() {
+    enclosure_contract()
     difference() {
         union() {
-            translate([310,164,0]) cube([16,12,FLOOR]);
-            vertical_nut_insert_boss("right",170);
-            translate([322.8,164,0]) cube([3.2,12,20]);
+            difference() {
+                union() {
+                    rounded_ring(enclosure_outer_min(),enclosure_outer_max(),
+                                 enclosure_corner_radius(),WALL,
+                                 enclosure_hood_wall_bottom(),
+                                 enclosure_roof_bottom()-enclosure_hood_wall_bottom());
+                    rounded_plate(enclosure_outer_min(),enclosure_outer_max(),
+                                  enclosure_corner_radius(),enclosure_roof_bottom(),ROOF);
+                }
+                hood_openings();
+            }
+            hood_seam_lip();
+            cassette_receiver_block("left");
+            cassette_receiver_block("right");
+            roof_baffle();
+            roof_open_cleats();
+            barrier_roof_compression_rib();
+            // Local front caps retain the loaded nuts while preserving screw access.
+            for (x=enclosure_front_fastener_x())
+                difference() {
+                    translate([x-6,160,44])
+                        cube([12,enclosure_front_fastener_axis_y()-0.3-160,12.4]);
+                    translate([x,159.8,enclosure_front_fastener_z()]) rotate([-90,0,0])
+                        cylinder(d=M3_CLEARANCE_DIAMETER,h=4,$fn=36);
+                }
         }
-        vertical_nut_insert_negative("right",170);
+        // The rear hook ramps remain outside the lip with 0.5 mm installed
+        // clearance; no blind receiver or inaccessible support is required.
     }
 }
 
-module installed_right_hood_cap_coupon() {
-    // Exact local hood-wall/bore crop.  The coupon keeps the production
-    // roof-down orientation but translates this remote wall segment to Z=0.
-    intersection() {
-        installed_hood();
-        translate([313.2,164,20]) cube([9.6,12,12]);
-    }
+module cassette_relief_negative() {
+    // Back-relief leaves exactly the effective snap membrane at the front.
+    translate([enclosure_c14_faceplate_bounds()[0].x,
+               enclosure_cassette_y().x-0.01,
+               enclosure_c14_faceplate_bounds()[0].z])
+        cube([iecc14_faceplate_size().y,
+              enclosure_cassette_y().y-enclosure_cassette_y().x-IEC_SNAP_WALL+0.01,
+              iecc14_faceplate_size().x]);
 }
 
-module psu_nut_coupon() {
+module cassette_key(side="left") {
+    x0=side=="left" ? enclosure_cassette_key_min_x() :
+                       enclosure_cassette_face_max().x-KEY_UNION;
+    x1=side=="left" ? enclosure_cassette_face_min().x+KEY_UNION :
+                       enclosure_cassette_key_max_x();
+    translate([x0,enclosure_cassette_key_y().x,
+               enclosure_c14_faceplate_bounds()[0].z-0.5])
+        cube([x1-x0,enclosure_cassette_key_y().y-enclosure_cassette_key_y().x,
+              iecc14_faceplate_size().x+1.0]);
+}
+
+module enclosure_c14_cassette_installed() {
+    enclosure_contract()
     difference() {
-        translate([0,0,0]) cube([12,12,FLOOR]);
-        psu_top_pressure_nut_negative([6,6]);
+        union() {
+            translate([enclosure_cassette_face_min().x,enclosure_cassette_y().x,
+                       enclosure_cassette_face_min().y])
+                cube([enclosure_cassette_face_max().x-enclosure_cassette_face_min().x,
+                      enclosure_cassette_y().y-enclosure_cassette_y().x,
+                      enclosure_cassette_face_max().y-enclosure_cassette_face_min().y]);
+            cassette_key("left"); cassette_key("right");
+        }
+        cassette_relief_negative();
+        in_c14_frame() iecc14_panel_cutout_negative(4.0,IEC_CLEARANCE);
     }
 }
 
-module nut_fit_coupon() {
-    // Three support-free, text-free pieces in the production orientations:
-    // exact right base socket/rail, roof-down hood cap, and floor-down PSU pad.
-    translate([-162,-120,0])
-        translate([338,-190,0]) rotate([0,0,90])
-            installed_right_hood_nut_coupon_base();
-    translate([20-129.6,-124,-46])
-        translate([-190,300,78]) rotate([180,0,0])
-            installed_right_hood_cap_coupon();
-    translate([38,0,0]) psu_nut_coupon();
+module barrier_plate_keepout() {
+    translate([enclosure_barrier_x(),enclosure_barrier_y().x,enclosure_barrier_z().x])
+        cube([BARRIER_THICKNESS,enclosure_barrier_y().y-enclosure_barrier_y().x,
+              enclosure_barrier_z().y-enclosure_barrier_z().x]);
 }
 
-module hood_nut_proxy(side,y) {
-    // Evidence-only measured nut proxy, centered in the 2.8 mm pocket.
-    inner=enclosure_hood_nut_pocket_inner_x(side);
-    if (side=="left")
-        translate([inner-HOOD_NUT_DEPTH+0.2,y,enclosure_hood_screw_z()])
-            rotate([0,90,0]) hex_prism(5.5,2.4);
-    else
-        translate([inner+HOOD_NUT_DEPTH-0.2,y,enclosure_hood_screw_z()])
-            rotate([0,-90,0]) hex_prism(5.5,2.4);
+module dc_route_keepout() {
+    points=[[312,174,50],[305.6,174,50],[270,174,50],[270,164,50],[270,157,50]];
+    for(i=[0:len(points)-2]) hull() for(p=[points[i],points[i+1]])
+        translate(p) sphere(d=DC_BUNDLE_OD,$fn=24);
+    for(p=[[270,174,50],[270,164,50]])
+        translate(p) sphere(d=DC_ROUTE_BEND_ENVELOPE,$fn=24);
 }
 
-module rear_hood_nut_proxy() {
-    // Same qualified pocket under a world-Z rotation: pressure depth,
-    // point-up orientation, and support behavior remain unchanged.
-    translate([enclosure_rear_hood_screw_x(),
-               enclosure_rear_hood_nut_pocket_inner_y()+2.4,
-               enclosure_rear_hood_screw_z()])
-        rotate([90,0,0]) rotate([0,0,30]) hex_prism(5.5,2.4);
+module ac_service_keepout() {
+    points=[[312,240,36],[312,244,52],[312,256,52],[312,260,36]];
+    for(i=[0:len(points)-2]) hull() for(p=[points[i],points[i+1]])
+        translate(p) sphere(d=8,$fn=24);
 }
 
-module nut_socket_section_evidence() {
-    // Direct half-section through the relocated rear mouth, pressure-fit nut,
-    // hood cap, screw path and solid backstop. Evidence only; no text.
-    color([0.18,0.48,0.78])
-        intersection() {
-            installed_base();
-            translate([279,288,0]) cube([6,13,22]);
-        }
-    color([0.78,0.82,0.86,0.72])
-        intersection() {
-            installed_hood();
-            translate([279,288,4]) cube([6,13,18]);
-        }
-    color([0.85,0.56,0.12])
-        intersection() {
-            rear_hood_nut_proxy();
-            translate([279,288,0]) cube([6,13,22]);
-        }
-    color([0.68,0.70,0.74])
-        translate([enclosure_rear_hood_screw_x(),291.8,
-                   enclosure_rear_hood_screw_z()]) rotate([-90,0,0])
-            cylinder(d=3,h=10.2,$fn=32);
+module pe_lug_route_keepout() {
+    points=[[311.5,238,37],[311.5,244,52],[311.5,258,52],[306,268,48]];
+    for(i=[0:len(points)-2]) hull() for(p=[points[i],points[i+1]])
+        translate(p) sphere(d=7,$fn=24);
 }
 
-module printable_base() {
-    // Floor down; long rail spine becomes printer X (220.27 x 136 mm).
-    translate([338,-190,0]) rotate([0,0,90]) installed_base();
+module c14_terminal_keepout() {
+    p=enclosure_c14_terminal_bounds()[0]; q=enclosure_c14_terminal_bounds()[1];
+    translate(p) cube(q-p);
 }
 
-module printable_hood() {
-    // Roof down; 140 x 136 mm footprint, no support material intended.
-    translate([-190,300,78]) rotate([180,0,0]) installed_hood();
+module cassette_insertion_path_keepout() {
+    // Exact face/key silhouette swept from the hood's open lower edge to the
+    // installed stop.  Receiver clearance is 0.30 mm on every running side.
+    union() {
+        translate([enclosure_cassette_face_min().x-0.3,282.5,
+                   enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.3])
+            cube([enclosure_cassette_face_max().x-enclosure_cassette_face_min().x+0.6,
+                  3.8,enclosure_cassette_face_max().y-
+                      (enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.6]);
+        translate([enclosure_cassette_key_min_x()-0.3,278.5,
+                   enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.3])
+            cube([enclosure_cassette_face_min().x+KEY_UNION-
+                      enclosure_cassette_key_min_x()+0.6,
+                  enclosure_cassette_key_y().y-278.5+0.3,
+                  enclosure_cassette_face_max().y-
+                      (enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.6]);
+        translate([enclosure_cassette_face_max().x-KEY_UNION-0.3,278.5,
+                   enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.3])
+            cube([enclosure_cassette_key_max_x()-
+                      (enclosure_cassette_face_max().x-KEY_UNION)+0.6,
+                  enclosure_cassette_key_y().y-278.5+0.3,
+                  enclosure_cassette_face_max().y-
+                      (enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.6]);
+    }
 }
 
-if (PART == "base") printable_base();
-else if (PART == "hood") printable_hood();
-else if (PART == "barrier_template") barrier_template_2d();
-else if (PART == "assembly") assembly_evidence(false);
-else if (PART == "installed_preview") installed_preview();
-else if (PART == "evidence_top") open_top_evidence();
-else if (PART == "evidence_rear") assembly_evidence(false,true);
-else if (PART == "evidence_section") assembly_evidence(true,true);
-else if (PART == "base_hood_interference") base_hood_forbidden_intersection();
-else if (PART == "partition_missing_material") partition_missing_material();
-else if (PART == "partition_slice") terminal_partition_slice();
-else if (PART == "terminal_service_hood_interference") terminal_service_hood_interference();
-else if (PART == "dc_route_keepout") dc_bundle_route_keepout();
-else if (PART == "dc_route_hood_interference") dc_route_hood_interference();
-else if (PART == "dc_route_psu_interference") dc_route_psu_interference();
-else if (PART == "base_c14_body_interference") base_c14_body_interference();
-else if (PART == "base_c14_faceplate_interference") base_c14_faceplate_interference();
-else if (PART == "hood_fastener_ac_service_interference")
-    hood_fastener_ac_service_interference();
-else if (PART == "hood_fastener_dc_route_interference")
-    hood_fastener_dc_route_interference();
-else if (PART == "hood_fastener_c14_interference")
-    hood_fastener_c14_interference();
-else if (PART == "hood_fastener_iec_terminal_interference")
-    hood_fastener_iec_terminal_interference();
-else if (PART == "hood_fastener_pe_route_interference")
-    hood_fastener_pe_route_interference();
-else if (PART == "hood_fastener_psu_interference")
-    hood_fastener_psu_interference();
-else if (PART == "hood_nut_cap_missing") hood_nut_cap_missing();
-else if (PART == "hood_nut_backstop_missing") hood_nut_backstop_missing();
-else if (PART == "psu_nut_floor_missing") psu_nut_floor_missing();
-else if (PART == "nut_fit_coupon") nut_fit_coupon();
-else if (PART == "evidence_nut_section") nut_socket_section_evidence();
-else if (PART == "hood_psu_interference") intersection() {
-    installed_hood(); psu_forbidden_interior();
+module installed_printed_assembly() {
+    enclosure_base_installed(); enclosure_hood_installed(); enclosure_c14_cassette_installed();
 }
-else assert(false,str("Unknown power-system enclosure PART: ",PART));
+
+module rendered_printed_assembly() {
+    // Evidence scenes force each printable part through CGAL independently.
+    // This removes OpenCSG epsilon/occlusion artifacts without unioning away
+    // component colors or hiding the physical three-part split.
+    render(convexity=20) enclosure_base_installed();
+    render(convexity=20) enclosure_hood_installed();
+    render(convexity=20) enclosure_c14_cassette_installed();
+}
+
+module installed_components() {
+    color([0.62,0.65,0.68]) in_psu_frame() alt1205t_keepout();
+    color([0.08,0.09,0.10]) in_c14_frame() iecc14_complete_rest_state_keepout();
+    color([0.88,0.55,0.12,0.55]) c14_terminal_keepout();
+    color([0.8,0.76,0.25,0.65]) barrier_plate_keepout();
+    color([0.15,0.55,0.9,0.45]) dc_route_keepout();
+}
+
+module exploded_scene() {
+    color([0.18,0.48,0.78]) render(convexity=20) enclosure_base_installed();
+    color([0.80,0.82,0.86]) translate([0,0,20])
+        render(convexity=20) enclosure_hood_installed();
+    color([0.92,0.55,0.12]) translate([0,16,0])
+        render(convexity=20) enclosure_c14_cassette_installed();
+    installed_components();
+}
+
+module cassette_section_scene() {
+    p=[248,276,8]; q=[321,290,52];
+    color([0.18,0.48,0.78]) render(convexity=20) intersection() {
+        enclosure_base_installed(); translate(p) cube(q-p);
+    }
+    color([0.80,0.82,0.86]) render(convexity=20) intersection() {
+        enclosure_hood_installed(); translate(p) cube(q-p);
+    }
+    color([0.92,0.55,0.12]) render(convexity=20) intersection() {
+        enclosure_c14_cassette_installed(); translate(p) cube(q-p);
+    }
+    color([0.08,0.09,0.10]) render(convexity=20) intersection() {
+        in_c14_frame() iecc14_complete_rest_state_keepout();
+        translate(p) cube(q-p);
+    }
+}
+
+module barrier_seam_section_scene() {
+    p=[300,200,0]; q=[323,208,60];
+    color([0.18,0.48,0.78]) render(convexity=20) intersection() {
+        enclosure_base_installed(); translate(p) cube(q-p);
+    }
+    color([0.80,0.82,0.86]) render(convexity=20) intersection() {
+        enclosure_hood_installed(); translate(p) cube(q-p);
+    }
+    color([0.92,0.55,0.12]) render(convexity=20) intersection() {
+        barrier_plate_keepout(); translate(p) cube(q-p);
+    }
+}
+
+module front_fastener_hook_section_scene() {
+    fp=[208,158,0]; fq=[222,172,58];
+    hp=[195,278,12]; hq=[240,290,27];
+    color([0.18,0.48,0.78]) render(convexity=20) intersection() {
+        enclosure_base_installed(); translate(fp) cube(fq-fp);
+    }
+    color([0.80,0.82,0.86]) render(convexity=20) intersection() {
+        enclosure_hood_installed(); translate(fp) cube(fq-fp);
+    }
+    color([0.2,0.75,0.35,0.55]) render(convexity=20) intersection() {
+        front_nut_loading_sweep(); translate(fp) cube(fq-fp);
+    }
+    color([0.18,0.48,0.78]) render(convexity=20) intersection() {
+        enclosure_base_installed(); translate(hp) cube(hq-hp);
+    }
+    color([0.80,0.82,0.86]) render(convexity=20) intersection() {
+        enclosure_hood_installed(); translate(hp) cube(hq-hp);
+    }
+}
+
+module support_risk_scene() {
+    color([0.18,0.48,0.78]) render(convexity=20) enclosure_base_installed();
+    color([0.82,0.84,0.88,0.55]) render(convexity=20) enclosure_hood_installed();
+    color([0.95,0.5,0.1]) translate([-28,0,0])
+        render(convexity=20) front_post_outer(enclosure_front_fastener_x().x);
+    color([0.2,0.75,0.35]) translate([0,150,0])
+        render(convexity=20) roof_baffle();
+}
+
+module old_size_reference() {
+    color([0.85,0.18,0.15,0.12]) translate([190,160,0]) cube([136,140,78]);
+    color([0.18,0.55,0.85,0.55]) rendered_printed_assembly();
+}
+
+module base_print_orientation() {
+    translate([338,-190,0]) rotate([0,0,90]) enclosure_base_installed();
+}
+
+module hood_print_orientation() {
+    translate([-190,288,60]) rotate([180,0,0]) enclosure_hood_installed();
+}
+
+module cassette_print_orientation() {
+    translate([-enclosure_cassette_key_min_x(),-enclosure_cassette_face_min().y,286])
+        rotate([-90,0,0]) enclosure_c14_cassette_installed();
+}
+
+enclosure_contract() {
+    if (PART=="base") base_print_orientation();
+    else if (PART=="hood") hood_print_orientation();
+    else if (PART=="cassette") cassette_print_orientation();
+    else if (PART=="assembly") rendered_printed_assembly();
+    else if (PART=="installed_preview") { rendered_printed_assembly(); installed_components(); }
+    else if (PART=="exploded") exploded_scene();
+    else if (PART=="open_top") {
+        render(convexity=20) enclosure_base_installed();
+        render(convexity=20) enclosure_c14_cassette_installed();
+        installed_components();
+    }
+    else if (PART=="rear") { rendered_printed_assembly(); installed_components(); }
+    else if (PART=="cassette_section") cassette_section_scene();
+    else if (PART=="barrier_seam_section") barrier_seam_section_scene();
+    else if (PART=="front_fastener_hook_section") front_fastener_hook_section_scene();
+    else if (PART=="support_risk") support_risk_scene();
+    else if (PART=="print_orientations") {
+        base_print_orientation(); translate([0,142,0]) hood_print_orientation();
+        translate([140,142,0]) cassette_print_orientation();
+    }
+    else if (PART=="size_comparison") old_size_reference();
+    else if (PART=="barrier_template")
+        square([enclosure_barrier_y().y-enclosure_barrier_y().x,
+                enclosure_barrier_z().y-enclosure_barrier_z().x]);
+    else if (PART=="partition_slice") intersection() {
+        mains_selv_boundary(); translate([300,160,20]) cube([20,100,1]);
+    }
+    else if (PART=="dc_route") dc_route_keepout();
+    else if (PART=="base_hood_intersection") intersection() {
+        enclosure_base_installed(); enclosure_hood_installed();
+    }
+    else if (PART=="base_psu_intersection") intersection() {
+        enclosure_base_installed(); in_psu_frame() alt1205t_keepout();
+    }
+    else if (PART=="c14_print_intersection") intersection() {
+        installed_printed_assembly(); in_c14_frame() iecc14_complete_rest_state_keepout();
+    }
+    else if (PART=="c14_terminal_intersection") intersection() {
+        installed_printed_assembly(); c14_terminal_keepout();
+    }
+    else if (PART=="ac_service_intersection") intersection() {
+        installed_printed_assembly(); ac_service_keepout();
+    }
+    else if (PART=="pe_route_intersection") intersection() {
+        installed_printed_assembly(); pe_lug_route_keepout();
+    }
+    else if (PART=="dc_route_intersection") intersection() {
+        installed_printed_assembly(); dc_route_keepout();
+    }
+    else if (PART=="barrier_intersection") intersection() {
+        installed_printed_assembly(); barrier_plate_keepout();
+    }
+    else if (PART=="cassette_insertion_intersection") intersection() {
+        enclosure_hood_installed(); cassette_insertion_path_keepout();
+    }
+    else if (PART=="cassette_hood_intersection") intersection() {
+        enclosure_c14_cassette_installed(); enclosure_hood_installed();
+    }
+    else if (PART=="cassette_base_intersection") intersection() {
+        enclosure_c14_cassette_installed(); enclosure_base_installed();
+    }
+    else if (PART=="front_fastener_keepout_intersection") union() {
+        intersection() { front_fastener_structure(); in_psu_frame() alt1205t_keepout(); }
+        intersection() { front_fastener_structure(); in_c14_frame() iecc14_complete_rest_state_keepout(); }
+        intersection() { front_fastener_structure(); c14_terminal_keepout(); }
+        intersection() { front_fastener_structure(); ac_service_keepout(); }
+        intersection() { front_fastener_structure(); pe_lug_route_keepout(); }
+        intersection() { front_fastener_structure(); dc_route_keepout(); }
+        intersection() { front_fastener_structure(); barrier_plate_keepout(); }
+        intersection() { front_fastener_structure(); cassette_insertion_path_keepout(); }
+    }
+    else if (PART=="front_fastener_service_intersection") union() {
+        intersection() { installed_printed_assembly(); front_screw_sweep(); }
+        intersection() { installed_printed_assembly(); front_tool_sweep(); }
+        intersection() { enclosure_base_installed(); front_nut_loading_sweep(); }
+    }
+    else if (PART=="rear_hook_intersection") intersection() {
+        union() { rear_hook(200); rear_hook(230); }
+        enclosure_hood_installed();
+    }
+    else assert(false,str("Unknown PART selector: ",PART));
+}

@@ -1,5 +1,6 @@
 OPENSCAD ?= openscad
 OPENSCAD_FLAGS := --hardwarnings --check-parameters=true --check-parameter-ranges=true
+NOZZLE_DIAMETER ?= 0.8
 PYTHON ?= python3
 BUILD := build
 DUALBAR_BUILD := $(BUILD)/dualbar
@@ -60,7 +61,8 @@ POWER_SYSTEM_COUPON_CHECK := scripts/check_power_system_fit_coupon.py
 POWER_SYSTEM_ENCLOSURE_SOURCE := power-system-enclosure.scad
 POWER_SYSTEM_ENCLOSURE_BASE := $(BUILD)/power-system-enclosure-base.stl
 POWER_SYSTEM_ENCLOSURE_HOOD := $(BUILD)/power-system-enclosure-hood.stl
-POWER_SYSTEM_ENCLOSURE_NUT_COUPON := $(BUILD)/power-system-enclosure-nut-fit-coupon.stl
+POWER_SYSTEM_ENCLOSURE_CASSETTE := $(BUILD)/power-system-enclosure-c14-cassette.stl
+POWER_SYSTEM_ENCLOSURE_DEFINES := -D 'NOZZLE_DIAMETER=$(NOZZLE_DIAMETER)'
 POWER_SYSTEM_ENCLOSURE_BARRIER_DXF := $(BUILD)/power-system-terminal-barrier-template.dxf
 POWER_SYSTEM_ENCLOSURE_BARRIER_SVG := $(BUILD)/power-system-terminal-barrier-template.svg
 POWER_SYSTEM_ENCLOSURE_BASE_HOOD_INTERSECTION := $(BUILD)/power-system-enclosure-base-hood-interference.stl
@@ -68,12 +70,16 @@ POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE := $(BUILD)/power-system-terminal-partiti
 POWER_SYSTEM_ENCLOSURE_DC_ROUTE := $(BUILD)/power-system-dc-route-keepout.stl
 POWER_SYSTEM_ENCLOSURE_EVIDENCE := \
 	$(BUILD)/layout-power-system-enclosure-assembly.png \
-	$(BUILD)/layout-power-system-enclosure-top.png \
+	$(BUILD)/layout-power-system-enclosure-installed.png \
+	$(BUILD)/layout-power-system-enclosure-exploded.png \
+	$(BUILD)/layout-power-system-enclosure-open-top.png \
 	$(BUILD)/layout-power-system-enclosure-rear.png \
-	$(BUILD)/layout-power-system-enclosure-section.png \
-	$(BUILD)/layout-power-system-enclosure-nut-section.png \
-	$(BUILD)/layout-power-system-enclosure-nut-coupon-isometric.png \
-	$(BUILD)/layout-power-system-enclosure-nut-coupon-top.png
+	$(BUILD)/layout-power-system-enclosure-c14-cassette-section.png \
+	$(BUILD)/layout-power-system-enclosure-barrier-seam-section.png \
+	$(BUILD)/layout-power-system-enclosure-front-fastener-hook-section.png \
+	$(BUILD)/layout-power-system-enclosure-support-risk.png \
+	$(BUILD)/layout-power-system-enclosure-print-orientations.png \
+	$(BUILD)/layout-power-system-enclosure-size-comparison.png
 POWER_SYSTEM_ENCLOSURE_CHECK := scripts/check_power_system_enclosure.py
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
@@ -520,7 +526,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 	brick-dualbar-preview device-example-previews usb-c-interrupter \
 	power-system-models validate-power-system-models \
 	power-system-fit-coupon validate-power-system-fit-coupon \
-	power-system-enclosure power-system-enclosure-nut-coupon \
+	check-power-system-enclosure-nozzle power-system-enclosure \
 	validate-power-system-enclosure \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
@@ -565,12 +571,13 @@ power-system-fit-coupon: $(POWER_SYSTEM_COUPON_STL) $(POWER_SYSTEM_COUPON_EVIDEN
 	$(POWER_SYSTEM_COUPON_CLEAN_EVIDENCE) $(POWER_SYSTEM_COUPON_ISOMETRIC_EVIDENCE) \
 	$(POWER_SYSTEM_COUPON_THICKNESS_EVIDENCE)
 
-power-system-enclosure: $(POWER_SYSTEM_ENCLOSURE_BASE) \
-	$(POWER_SYSTEM_ENCLOSURE_HOOD) $(POWER_SYSTEM_ENCLOSURE_NUT_COUPON) \
+check-power-system-enclosure-nozzle:
+	@$(PYTHON) -c 'import sys; n=float(sys.argv[1]); assert n>0, "NOZZLE_DIAMETER must be greater than zero"' '$(NOZZLE_DIAMETER)'
+
+power-system-enclosure: check-power-system-enclosure-nozzle $(POWER_SYSTEM_ENCLOSURE_BASE) \
+	$(POWER_SYSTEM_ENCLOSURE_HOOD) $(POWER_SYSTEM_ENCLOSURE_CASSETTE) \
 	$(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF) \
 	$(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG) $(POWER_SYSTEM_ENCLOSURE_EVIDENCE)
-
-power-system-enclosure-nut-coupon: $(POWER_SYSTEM_ENCLOSURE_NUT_COUPON)
 
 device-example-batches: $(DEVICE_EXAMPLE_BATCHES)
 
@@ -741,130 +748,146 @@ validate-power-system-fit-coupon: power-system-fit-coupon
 
 $(POWER_SYSTEM_ENCLOSURE_BASE): $(POWER_SYSTEM_ENCLOSURE_SOURCE) \
 		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="base"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) -o $@ -D 'PART="base"' $<
 
 $(POWER_SYSTEM_ENCLOSURE_HOOD): $(POWER_SYSTEM_ENCLOSURE_SOURCE) \
 		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="hood"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) -o $@ -D 'PART="hood"' $<
 
-$(POWER_SYSTEM_ENCLOSURE_NUT_COUPON): $(POWER_SYSTEM_ENCLOSURE_SOURCE) \
+$(POWER_SYSTEM_ENCLOSURE_CASSETTE): $(POWER_SYSTEM_ENCLOSURE_SOURCE) \
 		lib/alt-1205t-power-supply.scad lib/iec-c14-fused-switch.scad | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="nut_fit_coupon"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) -o $@ -D 'PART="cassette"' $<
 
 $(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="barrier_template"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) -o $@ -D 'PART="barrier_template"' $<
 
 $(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="barrier_template"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) -o $@ -D 'PART="barrier_template"' $<
 
 $(POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="partition_slice"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) -o $@ -D 'PART="partition_slice"' $<
 
 $(POWER_SYSTEM_ENCLOSURE_DC_ROUTE): $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ -D 'PART="dc_route_keepout"' $<
+	$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) -o $@ -D 'PART="dc_route"' $<
 
 $(BUILD)/layout-power-system-enclosure-assembly.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
-		--projection=ortho --viewall --autocenter --camera=0,0,0,55,0,25,260 \
-		-D 'PART="assembly"' $<
+		--projection=ortho --viewall --camera=256,224,30,55,0,25,260 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="assembly"' $<
 
-$(BUILD)/layout-power-system-enclosure-top.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+$(BUILD)/layout-power-system-enclosure-installed.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
-		--projection=ortho --viewall --autocenter --camera=0,0,0,0,0,0,260 \
-		-D 'PART="evidence_top"' $<
+		--projection=ortho --viewall --camera=256,224,30,55,0,25,260 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="installed_preview"' $<
+
+$(BUILD)/layout-power-system-enclosure-exploded.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --camera=256,224,40,55,0,25,280 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="exploded"' $<
+
+$(BUILD)/layout-power-system-enclosure-open-top.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --camera=256,224,20,32,0,18,250 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="open_top"' $<
 
 $(BUILD)/layout-power-system-enclosure-rear.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
-		--projection=ortho --viewall --autocenter --camera=0,0,0,-90,0,0,260 \
-		-D 'PART="evidence_rear"' $<
+		--projection=ortho --viewall --camera=284,286,30,55,0,205,260 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="rear"' $<
 
-$(BUILD)/layout-power-system-enclosure-section.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+$(BUILD)/layout-power-system-enclosure-c14-cassette-section.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
-		--projection=ortho --viewall --autocenter --camera=0,0,0,62,0,28,220 \
-		-D 'PART="evidence_section"' $<
+		--projection=ortho --autocenter --viewall --camera=0,0,0,62,0,28,200 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="cassette_section"' $<
 
-$(BUILD)/layout-power-system-enclosure-nut-section.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+$(BUILD)/layout-power-system-enclosure-barrier-seam-section.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
 	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
-		--projection=ortho --camera=282,294,12,70,0,120,55 \
-		-D 'PART="evidence_nut_section"' $<
+		--projection=ortho --autocenter --viewall --camera=0,0,0,65,0,30,200 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="barrier_seam_section"' $<
 
-$(BUILD)/layout-power-system-enclosure-nut-coupon-isometric.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
-	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1200 \
-		--projection=ortho --camera=25,8,13,55,0,-30,145 \
-		-D 'PART="nut_fit_coupon"' $<
+$(BUILD)/layout-power-system-enclosure-front-fastener-hook-section.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --autocenter --viewall --camera=0,0,0,65,0,25,220 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="front_fastener_hook_section"' $<
 
-$(BUILD)/layout-power-system-enclosure-nut-coupon-top.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
-	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,900 \
-		--projection=ortho --camera=25,8,0,0,0,0,100 \
-		-D 'PART="nut_fit_coupon"' $<
+$(BUILD)/layout-power-system-enclosure-support-risk.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --camera=256,220,30,58,0,28,240 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="support_risk"' $<
+
+$(BUILD)/layout-power-system-enclosure-print-orientations.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --camera=110,135,25,55,0,25,320 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="print_orientations"' $<
+
+$(BUILD)/layout-power-system-enclosure-size-comparison.png: $(POWER_SYSTEM_ENCLOSURE_SOURCE) | $(BUILD)
+	DISPLAY=$${DISPLAY:-:1} $(OPENSCAD) $(OPENSCAD_FLAGS) -o $@ --imgsize=1800,1400 \
+		--projection=ortho --viewall --camera=258,230,38,55,0,25,280 \
+		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="size_comparison"' $<
 
 validate-power-system-enclosure: power-system-enclosure \
 		$(POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE) $(POWER_SYSTEM_ENCLOSURE_DC_ROUTE)
 	@set -eu; \
-	log=$(BUILD)/power-system-enclosure-base-hood-interference.log; \
-	mesh=$(POWER_SYSTEM_ENCLOSURE_BASE_HOOD_INTERSECTION); \
-	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="base_hood_interference"' \
-			$(POWER_SYSTEM_ENCLOSURE_SOURCE) >$$log 2>&1; then \
-		echo 'ERROR: base interior features intersect the hood' >&2; exit 1; \
-	fi; \
-	grep -q 'Current top level object is empty' $$log; \
-	echo 'power_system_enclosure_base_hood_interference=clear'
-	@set -eu; \
-	for selector in partition_missing_material terminal_service_hood_interference \
-			dc_route_hood_interference dc_route_psu_interference \
-			base_c14_body_interference base_c14_faceplate_interference \
-			hood_fastener_ac_service_interference \
-			hood_fastener_dc_route_interference \
-			hood_fastener_c14_interference \
-			hood_fastener_iec_terminal_interference \
-			hood_fastener_pe_route_interference \
-			hood_fastener_psu_interference \
-			hood_nut_cap_missing hood_nut_backstop_missing \
-			psu_nut_floor_missing; do \
+	for selector in base_hood_intersection c14_terminal_intersection \
+			ac_service_intersection pe_route_intersection dc_route_intersection \
+			barrier_intersection cassette_insertion_intersection \
+			cassette_hood_intersection cassette_base_intersection \
+			front_fastener_keepout_intersection front_fastener_service_intersection \
+			rear_hook_intersection; do \
 		log=$(BUILD)/power-system-enclosure-$$selector.log; \
 		mesh=$(BUILD)/power-system-enclosure-$$selector.stl; \
-		if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D "PART=\"$$selector\"" \
+		if $(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) \
+				-o $$mesh -D "PART=\"$$selector\"" \
 				$(POWER_SYSTEM_ENCLOSURE_SOURCE) >$$log 2>&1; then \
 			echo "ERROR: nonempty enclosure diagnostic $$selector" >&2; exit 1; \
 		fi; \
 		grep -q 'Current top level object is empty' $$log; \
 	done; \
-	echo 'power_system_enclosure_partition_route_interference=clear'
+	echo 'power_system_enclosure_empty_intersections=clear'
+	@for selector in base_psu_intersection c14_print_intersection; do \
+		mesh=$(BUILD)/power-system-enclosure-$$selector.stl; \
+		rm -f $$mesh; \
+		$(OPENSCAD) $(OPENSCAD_FLAGS) $(POWER_SYSTEM_ENCLOSURE_DEFINES) \
+			-o $$mesh \
+			-D "PART=\"$$selector\"" $(POWER_SYSTEM_ENCLOSURE_SOURCE) >/dev/null 2>&1 || true; \
+	done
 	$(PYTHON) $(POWER_SYSTEM_ENCLOSURE_CHECK)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_BASE)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_HOOD)
-	$(PYTHON) $(TOPOLOGY) --expected-components 3 $(POWER_SYSTEM_ENCLOSURE_NUT_COUPON)
+	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_CASSETTE)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE)
 	$(PYTHON) $(TOPOLOGY) --expected-components 1 $(POWER_SYSTEM_ENCLOSURE_DC_ROUTE)
-	@base_bounds=$$($(PYTHON) $(BOUNDS) --max-x 220.27 --max-y 136 --max-z 32 \
+	@for mesh in $(POWER_SYSTEM_ENCLOSURE_BASE) $(POWER_SYSTEM_ENCLOSURE_HOOD) \
+			$(POWER_SYSTEM_ENCLOSURE_CASSETTE); do \
+		$(PYTHON) $(FINGERPRINT) $$mesh; \
+	done
+	@base_bounds=$$($(PYTHON) $(BOUNDS) --max-x 196.27 --max-y 132.8 --max-z 56.1 \
 		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_BASE)); \
 	printf '%s\n' "$$base_bounds"; \
-	printf '%s\n' "$$base_bounds" | grep -q 'size=220.270,136.000,32.000'
-	@hood_bounds=$$($(PYTHON) $(BOUNDS) --max-x 136 --max-y 140 --max-z 74 \
+	printf '%s\n' "$$base_bounds" | grep -q 'size=196.270,132.800,56.033'
+	@hood_bounds=$$($(PYTHON) $(BOUNDS) --max-x 132.8 --max-y 128 --max-z 46.2 \
 		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_HOOD)); \
 	printf '%s\n' "$$hood_bounds"; \
-	printf '%s\n' "$$hood_bounds" | grep -q 'size=136.000,140.000,74.000'
-	@coupon_bounds=$$($(PYTHON) $(BOUNDS) --max-x 50 --max-y 16 --max-z 32 \
-		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_NUT_COUPON)); \
-	printf '%s\n' "$$coupon_bounds"; \
-	printf '%s\n' "$$coupon_bounds" | grep -q 'size=50.000,16.000,32.000'
-	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-enclosure-overrides.csg \
-		-D 'DC_BUNDLE_OD=7.0' -D 'BARRIER_THICKNESS=1.2' \
-		-D 'AC_TERMINAL_PROJECTION=16.0' -D 'PART="installed_preview"' \
-		$(POWER_SYSTEM_ENCLOSURE_SOURCE)
+	printf '%s\n' "$$hood_bounds" | grep -q 'size=132.800,128.000,46.200'
+	@cassette_bounds=$$($(PYTHON) $(BOUNDS) --max-x 66.3 --max-y 39 --max-z 7.2 \
+		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_CASSETTE)); \
+	printf '%s\n' "$$cassette_bounds"; \
+	printf '%s\n' "$$cassette_bounds" | grep -q 'size=66.300,39.000,7.200'
 	@set -eu; \
-	log=$(BUILD)/power-system-enclosure-hood-psu-interference.log; \
-	mesh=$(BUILD)/power-system-enclosure-hood-psu-interference.stl; \
-	if $(OPENSCAD) $(OPENSCAD_FLAGS) -o $$mesh -D 'PART="hood_psu_interference"' \
-			$(POWER_SYSTEM_ENCLOSURE_SOURCE) >$$log 2>&1; then \
-		echo 'ERROR: hood intersects the exact PSU keepout' >&2; exit 1; \
-	fi; \
-	grep -q 'Current top level object is empty' $$log; \
-	echo 'power_system_enclosure_psu_interference=clear'
+	for nozzle in 0.4 0.8 1.2; do for part in base hood cassette; do \
+		$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-enclosure-$$part-nozzle-$$nozzle.stl \
+			-D "NOZZLE_DIAMETER=$$nozzle" -D "PART=\"$$part\"" \
+			$(POWER_SYSTEM_ENCLOSURE_SOURCE) >/dev/null; \
+	done; done; \
+	warning_log=$(BUILD)/power-system-enclosure-nozzle-warning.log; \
+	$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-enclosure-cassette-nozzle-1.6.stl \
+		-D 'NOZZLE_DIAMETER=1.6' -D 'PART="cassette"' \
+		$(POWER_SYSTEM_ENCLOSURE_SOURCE) >$$warning_log 2>&1; \
+	grep -q 'WARNING: C14 snap membrane is 1.6 mm' $$warning_log
 	@test -s $(POWER_SYSTEM_ENCLOSURE_BARRIER_DXF) \
 		-a -s $(POWER_SYSTEM_ENCLOSURE_BARRIER_SVG)
 	@for image in $(POWER_SYSTEM_ENCLOSURE_EVIDENCE); do test -s $$image; done
-	@echo 'power_system_enclosure=pass candidate=pre-DUT02 printable_parts=2 coupon=test-only barrier=nonprinted world_bounds_mm=190..326x160..300x0..78 c14_snap_wall_mm=1.2 hood_nut_af_mm=5.60 side_nut_z_mm=25.6 rear_axis_xyz_mm=282,296,13 c14_rigid_clearance_mm=8.66 ac_bend_clearance_mm=9.64 psu_nut_af_mm=5.60 supports=none fuse=TBD certification=none'
+	@$(PYTHON) -c 'import math,sys; n=float(sys.argv[1]); q=lambda v:max(n,math.ceil(v/n)*n); print("power_system_enclosure=pass candidate=V2-pre-DUT02 printable_parts=3 barrier=nonprinted sealed_bounds_mm=132.8x128x60 nozzle_mm=%g wall_mm=%g frame_mm=%g c14_snap_effective_mm=%g hood_nut_af_mm=5.60 front_nut_z_mm=50.4 psu_nut_af_mm=5.60 supports=off fuse=TBD certification=none"%(n,q(3.2),q(4.0),max(1.2,n)))' '$(NOZZLE_DIAMETER)'
 
 $(BUILD) $(DUALBAR_BUILD) $(BRICK_DUALBAR_BUILD) $(GUIDE_BUILD) $(GUIDE_LAYER_BUILD) \
 $(GUIDE_BATCH_LAYER_BUILD) \

@@ -1,213 +1,83 @@
-# Single-supply enclosure candidate
+# Single-supply enclosure V2 candidate
 
-This package is a **pre-DUT02 mechanical prototype**, not a certified mains
-enclosure. It is a secondary mounting and finger guard around the PSU's metal
-shell. Do not install or energize mains wiring until every pre-power gate below
-is closed by a competent reviewer. Always unplug the IEC cord before removing
-the hood or servicing the fuse drawer.
+This package is a **V2 pre-DUT02 mechanical prototype**, not a certified mains enclosure. It is a secondary mount and finger guard around the PSU's metal shell and a separately fabricated terminal barrier. Do not install or energize mains wiring until every pre-power gate below is closed by a competent reviewer. Always unplug the IEC cord before removing the hood or servicing the fuse drawer.
 
-## Artifacts
+## What changed after the full ABS print
 
-`power-system-enclosure.scad` owns six stable build selectors:
+The first full enclosure print is retired. Its rail-side seam used three adjacent structures, its barrier tongue positively occluded the intended slot, and its C14 reinforcement reached outside the true shell. Most importantly, the C14 disconnect was caused by only **0.02/0.04 mm** modeled overlap at its structural joins. It was not caused by the accepted 1.2 mm snap membrane. A trapped roof-down support pocket behind that holder also had no plier access.
 
-- `PART="base"`: floor-down base/tray, PSU mount pattern, exterior nut traps,
-  barrier capture, conductor saddles, and the existing rail interface;
-- `PART="hood"`: roof-down tool-removable hood, rear C14 island, structural
-  walls, labyrinth joint, partition, and baffled front vents;
-- `PART="barrier_template"`: 2D template for a separately fabricated inner
-  shield (DXF and SVG outputs; this part is not printed);
-- `PART="assembly"`: clean candidate assembly preview;
-- `PART="installed_preview"`: evidence assembly with rail proxy and named
-  service volumes;
-- `PART="nut_fit_coupon"`: a small, text-free process coupon containing the
-  exact final right/front rail-side hood socket and obstruction, its installed
-  hood-cap/screw-path proxy, and one exact PSU top socket. The rear socket is
-  the same pressure geometry under a world-Z rotation, so it does not add a
-  redundant coupon component. This is a fit-test artifact, not a third
-  enclosure piece.
+V2 is a coherent three-part architecture:
 
-The evidence-only selectors (`evidence_top`, `evidence_rear`,
-`evidence_section`, `evidence_nut_section`, and `installed_preview`) may
-display colored service keep-outs or hardware proxies. No `text()` geometry
-occurs in any printable selector.
+- a rounded, floor-down base/tray;
+- a rounded hood printed roof-exterior-down;
+- a separate C14 cassette printed broad-face-down and inserted into open-bottom hood keyways;
+- the existing nonprinted terminal barrier remains separate.
 
-Validation also exports `partition_slice` and `dc_route_keepout` meshes. These
-are measurement evidence only: the former isolates the complete printed
-partition and its single intended bushing, while the latter isolates the
-continuous provisional 12 V routing envelope. Neither is a printable part.
+The sealed case is 132.8 × 128 × 60 mm (world X=190..322.8, Y=160..288, Z=0..60) with continuous R6 plan corners. The former case was 136 × 140 × 78 mm before its long rail spine. V2 deletes that spine and the redundant full-height seam walls.
 
-Build and validate with:
+## Build and nozzle control
+
+The default flow is qualified around a **0.8 mm nozzle**:
 
 ```sh
 make power-system-enclosure
-make power-system-enclosure-nut-coupon
 make validate-power-system-enclosure
 ```
 
-## Coordinate and fit contract
+Override the nozzle explicitly when exporting:
 
-The sealed case envelope is X=190..326, Y=160..300, Z=0..78 mm. The complete
-installed rail-bearing envelope extends to Y=117.73..338 because the exposed
-rail spine reaches beyond both sealed case walls. The provisional case audit
-envelope began at X=191, but a 3.2 mm wall there would overlap the exact PSU
-keep-out by 0.2 mm. The reviewed X=190 expansion preserves the exact PSU
-transform while providing 0.8 mm nominal side clearance. It does not move a
-chassis rail datum.
-
-The base rail spine is X=322.8..326, Y=117.73..338, Z=0..20 mm. Its four M3
-axes remain at `(Y,Z)=(125.73,10), (149.73,10), (306,10), (330,10)` and are
-driven from the exterior, outside the sealed cavity.
-
-The PSU calls the merged measured component library at exactly:
-
-```scad
-translate([194,257.5,4]) rotate([0,0,-90])
+```sh
+make power-system-enclosure NOZZLE_DIAMETER=0.4
+openscad -o cassette.stl -D 'NOZZLE_DIAMETER=1.2' -D 'PART="cassette"' power-system-enclosure.scad
 ```
 
-That produces the X=194..304, Y=180..257.5, Z=4..40.86 mm metal keep-out.
-The final physical-fit M3 centers are inherited, not copied into negatives:
-upper-left `(4.95,4.95)`, lower-left `(6.75,98.6)`, and internal centers
-`(25.3,30.9)`, `(25.3,67)`, `(53.3,67)` in the PSU datum.
+`NOZZLE_DIAMETER` must be greater than zero. Structural walls and positive joins are quantized upward to at least one complete nozzle line while retaining the 3.2 mm shell/receiver and 4.0 mm cassette-frame minima. The effective C14 snap membrane is exactly **max(1.2 mm, nozzle diameter)**; the normal cutout clearance remains exactly +0.20 mm. If the chosen nozzle makes the membrane thicker than the accepted 1.5 mm clip budget, the export emits a conspicuous warning. It will still generate, but owner-authorized sanding is required before fit can be claimed. There is no printable text.
 
-The inlet calls the merged measured library at exactly:
+Print the base floor-down, the hood roof-exterior-down, and the cassette on its broad exterior face, with **supports off**. The base print envelope is 196.27 × 132.8 × 56.033 mm after its declared 90-degree bed rotation; the hood is 132.8 × 128 × 46.2 mm; the cassette is 66.3 × 39 × 7.2 mm. Together they occupy 239,172.703 mm³, a 28.93% reduction from the retired 336,547.259 mm³ print. Use a brim for ABS. The R6 corners, shallow 60 mm sealed height, short rail pads, vertical 1.6 mm vent slots, 45-degree baffles/gussets, and open-side cable cleats reduce warp and eliminate trapped support cavities.
+
+All three exports are connected and manifold both at source precision and on the repository's 0.0001 mm fingerprint grid.
+
+## Component and assembly datums
+
+The accepted PSU hole pattern remains source-owned by `alt-1205t-power-supply.scad`. V2 installs it at:
 
 ```scad
-translate([308,300,49.15]) rotate([90,0,0])
+translate([194,243.7,4]) rotate([0,0,-90])
 ```
 
-Its cable face points toward world +Y (the DUT rear/wall). The nominal body is
-27 × 46.86 mm with a true +0.20 mm contour clearance. Only the region entirely
-under the 31 × 50.3 mm faceplate is thinned to the physically approved 1.2 mm
-snap wall; surrounding rear structure remains 3.2 mm.
+The measured metal keepout is X=194..304, Y=166.2..243.7, Z=4..40.86. Five 5.60 mm-AF direct top-open pressure sockets remain visible before the PSU is installed; there is no underside nut feeder.
 
-## Print and assembly assumptions
+The accepted horizontal C14 geometry remains source-owned by `iec-c14-fused-switch.scad` and is installed at:
 
-- Base: print floor-down, no supports; 220.27 × 136 × 32 mm. The rail remains
-  20 mm tall; only the three exterior side hood-fastener bosses reach 32 mm.
-  The rear-panel boss reaches 20 mm.
-- Hood: print roof-down, no supports; 136 × 140 × 74 mm.
-- Initial process: 0.8 mm nozzle; 3.2 mm walls and 4.0 mm floor/roof are nozzle
-  multiples. Material, layer height, temperatures, and flammability/temperature
-  suitability remain unapproved.
-- Hood: three short horizontal side M3 screws remain on world Z=25.6 mm: the
-  left pair at Y=170/290 and the right/front fastener at Y=170. The fourth
-  rear-panel axis is X=282, Y=296, Z=13 mm. Before fitting the hood, press each
-  standard M3 nut point-up
-  from the directly visible side mouth into a blind 5.60 mm-AF × 2.80 mm-deep
-  socket. A 6.20 mm-AF × 0.80 mm tapered lead-in starts the press; that lead-in
-  is provisional until the coupon passes. Each side boss reaches Z=32 mm, has at
-  least 2.4 mm complete radial material and a 2.8 mm left/3.2 mm right solid
-  protected-cavity backstop, and presents no nut-sized path into the enclosure.
-  The installed hood caps each mouth while exposing only the 3.6 mm screw bore.
-  Screw length must be selected so it cannot enter the protected cavity.
-- The rear socket loads from exterior +Y at its directly visible Y=296 face
-  toward -Y, through the same 6.20-to-5.60 mm pressure geometry. Its 12 mm-wide
-  boss is X=276..288, Y=290..296, Z=3.98..20, with an exact 2.40 mm solid
-  protected-cavity backstop. The rear hood wall at Y=296.8..300 caps the mouth
-  across the 0.8 mm seam gap. The boss is 8.66 mm from the rigid C14 body by
-  combined X/Z separation and 9.64 mm from the AC bend envelope by combined
-  X/Y/Z separation. Its nut/tool service axis has still larger clearance.
-  Mesh selectors collide every boss, cap, screw axis, and conservative 6.20 mm
-  nut/service sweep against the exact C14 body/faceplate, the complete IEC
-  terminal-projection volume, AC terminal/bend and PE-lug service volumes, the
-  PE route, PSU, and DC route; every selector must remain empty.
-- PSU: before placing the PSU, visibly press five measured 2.30 mm-thick M3
-  nuts into the straight top-open 5.60 mm-AF × 2.60 mm-deep sockets at the
-  approved hole centers. Each socket retains 1.40 mm of floor below it; there
-  is no underside feeder or hidden support-removal passage. Verify the actual
-  screw stack before installation.
-- The superseded base with 5.2 mm throats and bed-facing nut chutes failed the
-  physical insertion trial. Do not force nuts into that print and do not use it
-  for assembly. Print the new nut-fit coupon first, in its exported orientation;
-  it needs no supports and intentionally reproduces the right-rail obstruction.
-- Joint: 0.8 mm nominal lateral gap and 6.4 mm overlap. The left tongue routes
-  around the PSU, and both affected tongue runs clear the hood's internal
-  partition crossings. The PSU metal side and the intersecting partition walls
-  close those local portions of the labyrinth without part-to-part overlap.
-- Vent slots are at most 1.6 mm. The inner bank is vertically staggered by half
-  a pitch, has no direct line of sight, stays out of the terminal zone, and
-  preserves a nominal 10 mm or greater PSU-side vent plenum.
+```scad
+translate([284,286,30]) rotate([90,0,0]) rotate([0,0,90])
+```
 
-## Barrier, wiring, and protective earth
+Its cable points toward the DUT rear wall (+Y). The nominal cutout remains 27 × 46.86 mm with true +0.20 mm normal clearance. The 31 × 50.3 × 2 mm faceplate is entirely inside the sealed envelope. The visible cassette frame provides at least 4.0 mm continuous material around it and never projects beyond the box. Hidden keys have 0.30 mm per-side running clearance, load through keyways open at the hood's lower edge, stop under the roof, and rest on the base seat after assembly.
 
-Fabricate the exported continuous terminal shield from **1.0 mm G10/FR-4 or a
-suitably rated polycarbonate**, only after the exact material and temperature/
-flammability properties are approved. The template is a continuous 81.5 × 46 mm
-plate covering the whole terminal edge instead of inventing individual
-L/N/PE/DC screw positions. It has no cable hole. The barrier is captured at its
-base and hood; it is not a decorative insert.
+Two operator/front M3 screws are at X=215 and 300, Y=160, Z=50.4. With the hood removed, each standard M3 nut loads into a directly visible horizontal socket with a 6.20 mm-AF × 0.80 mm lead, 5.60 mm-AF × 2.80 mm pocket, 2.40 mm blind backstop, and at least 2.40 mm radial capture. Each base post is rooted continuously in the floor/front structure. It stays ahead of the PSU below the metal top, then flares inward only after 1.6 mm additional vertical clearance. The hood cap closes the loading mouth with assembly clearance and exposes only the 3.6 mm screw bore. Two rear bed-rooted 45-degree locator hooks register the other edge without a blind receiver.
 
-The printed X=304..307.2 partition is continuous from the PSU shell top at
-Z=40.86 through the upper partition, closing the former Z=40.86..49.98 slit.
-Its only intentional breach is the provisional 8.0 mm insulating-bushing hole
-at world X=305.6, Y=191, Z=54, safely above the PSU. Below the PSU top the
-terminal service envelope retains the full X=304..318 projection; above the
-PSU it steps outward to X=307.2..314.5 to avoid the continuous wall and barrier
-capture while preserving a real service corridor.
+Rail mounting uses three retained axes at world Y=149.73, 306, and 330 mm, all Z=10 mm. The old Y=125.73 axis is deleted. Short local pads positively overlap the composite rail-side wall and use floor-rooted 45-degree load gussets; no continuous 220 mm spine remains. Physical rail load, fastener creep, and driver access are owner gates.
 
-The partition deliberately shares the zero-thickness Z=40.86 boundary with
-the PSU shell top so those surfaces close the vestibule together. The
-interference proof checks the PSU keep-out interior with a 0.01 mm numerical
-inset; it permits that boundary contact but still rejects any positive-volume
-hood intrusion.
+## Separation, cable routing, and barrier
 
-AC L/N/PE and inlet terminal volumes stay in the protected vestibule. Printed
-saddles provide separate conductor retention before the terminal bends. The
-yellow evidence route reserves a direct copper C14-PE-to-PSU-PE path, plus
-ring- or fork-lug and anti-loosening hardware clearance. Printed parts and hood
-screws are never part of protective-earth bonding. No PSU chassis bonding hole
-is assumed or invented.
+One printed L-shaped mains/SELV boundary follows the PSU terminal side at X=304..307.2 nominal and turns across Y=248.4..251.6 at the default nozzle. The accepted 1.0 mm barrier loads into a **1.8 mm top-open groove** with 0.4 mm clearance on both sides. The groove cuts every intersecting base/pad solid, has zero tongue occlusion, and is compressed by a roof-rooted rib with a deliberate vertical gap. There are no duplicate full-height barrier rails or rail spine.
 
-The front/operator wall contains a provisional flattened 12.5 mm opening for a
-recognized M12/PG7-class gland around a named 6.0 mm, two-conductor 18-AWG
-bundle. Those defaults are geometry placeholders, not a gland selection.
-Insulated 12 V conductors cross from the terminal vestibule only through the
-printed partition's rated bushing at X=305.6, Y=191, Z=54. The modeled connected
-route then passes over the PSU with more than 10 mm nominal vertical clearance,
-moves forward of the PSU, drops below the vent baffle, and reaches the existing
-front gland center at X=270, Y=160, Z=31. It remains provisional and powered use
-is blocked until the actual cable, insulating bushing, and gland are confirmed.
+The provisional insulated DC bushing is centered near X=305.6, Y=174, Z=50. The provisional front gland was raised to X=270, Y=160, Z=50 after collision audit proved the old Z=31 route could not pass between the shifted PSU and front wall. The modeled 6 mm bundle now stays in the upper plenum and uses a 10 mm bend envelope only at its two actual bends. Roof-rooted cleats are open on one side for inspection and removal.
 
-The 8.0 mm separation parameter is a conservative prototype geometry target,
-not a declaration of creepage, clearance, regulatory category, or compliance.
+AC terminal/bend, IEC terminal projection, PE-lug/service, PE route, PSU, DC route, C14 body/faceplate, barrier, base/hood fit, cassette insertion, fastener, nut, and tool sweeps have dedicated selectors. The support-risk evidence shows the complete front posts from bed-root to sockets plus the roof baffle and print orientations. These checks are geometry evidence, not electrical certification.
 
-## Hardware assumptions
+Printed parts and fasteners are never part of protective-earth continuity. Use a dedicated green/yellow conductor and suitable metal lug/anti-loosening hardware from C14 PE to PSU PE. No PSU chassis bonding hole is invented by the model. Fuse remains TBD until the actual nameplate, load, and inrush are reviewed.
 
-- five M3 PSU screws/nuts as selected after real stack measurement;
-- four short M3 hood screws and four standard M3 hex nuts;
-- one separately fabricated terminal shield, provisionally 1.0 mm thick;
-- one rated M12/PG7-class gland or bushing matching the measured cable;
-- insulated, temperature-rated AC conductors and insulated terminals;
-- dedicated green/yellow PE conductor with ring or fork lug and suitable
-  anti-loosening metal hardware;
-- cable ties/retainers appropriate for the provided saddles.
+## Required pre-power and rollout gates
 
-## Required pre-power gates
+1. Confirm the PSU and inlet approvals/ratings, load and inrush, conductor insulation/gauge, terminals, and an appropriately selected fuse. **Fuse remains TBD.**
+2. Confirm the actual C14 rear terminals, dressed AC bend/slack, PE lug, PE route, insulating bushing, DC cable, and gland against every service volume.
+3. Fabricate the continuous barrier only from approved 1.0 mm G10/FR-4 or appropriately rated polycarbonate; confirm fit in the unoccluded groove and roof compression rib.
+4. Approve the polymer/process for temperature and flammability. Perform a full-load thermal/ventilation test with the hood fitted and supports off print surfaces inspected.
+5. Verify all five PSU sockets, both hood pressure sockets, screw lengths, hood mouth caps, rear hooks, cassette seat/stop/key engagement, and rail driver access. Perform the physical rail-load and ABS-creep gate.
+6. Establish direct metal protective-earth bonding, torque/retain its hardware, and record a PE continuity test. The print must never carry fault current.
+7. Verify strain relief and that no finger/tool path reaches energized terminals. Unplug before fuse service or hood removal; never work live.
+8. Complete the separately authorized DUT02 physical fit, unpowered wiring inspection, powered thermal test, and owner sign-off before production docs, website parts lists, or fleet retrofit instructions change.
 
-1. Confirm the exact PSU nameplate/datasheet, inlet approvals and ratings,
-   conductor insulation/gauge, terminal style, load, and inrush.
-2. Select the fuse type/value from that electrical evidence. **Fuse remains
-   TBD; CAD does not select it.**
-3. Confirm the exact cable and gland part, thread/retention envelope, pull-out
-   rating, bend radius, and the 12 V bundle OD/count/gauge.
-4. Confirm AC terminal, insulated-lug, IEC rear, wire-bend, and slack envelopes;
-   edit the named assumptions if required and rerun validation. In particular,
-   physically confirm the terminal wiring/service fit around the rear-panel
-   fastener and its exterior tool path before any powered use; CAD clearance
-   is not that gate.
-5. Approve the barrier material, thickness, temperature/flammability rating,
-   partition bushing, and final continuous cut template against the dressed
-   real terminal strip.
-6. Approve the printed polymer/process for temperature and flammability, then
-   perform a full-load thermal/ventilation test with the hood installed.
-7. Establish direct metal PE bonding with a competent wiring review; torque and
-   retain the metal hardware, then perform and record a protective-earth
-   continuity test. The print must not carry fault current.
-8. Confirm tool-only hood access, screw lengths, nut retention, strain relief,
-   the physical coupon's pressure fit and lead-in, seam engagement, baffle
-   integrity, and absence of any touch/tool path to energized terminals.
-9. Unplug before fuse service or hood removal. Never work live. Complete the
-   separately authorized DUT02 integration/inspection procedure before any
-   fleet rollout.
-
-No certification or powered-use approval is claimed by these files.
+No certification, powered-use approval, production release, or fleet rollout is claimed by these files.
