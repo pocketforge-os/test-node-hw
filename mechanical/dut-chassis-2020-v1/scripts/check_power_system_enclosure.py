@@ -40,7 +40,9 @@ require(
     "function enclosure_c14_origin() = [284,286,30]",
     "function enclosure_front_fastener_x() = [215,300]",
     "function enclosure_front_fastener_z() = 50.4",
+    "function enclosure_rear_rail_pad_y() = [[298,314],[322,338]]",
     "function enclosure_rail_hole_yz() = [[149.73,10],[306,10],[330,10]]",
+    "RAIL_STRUT = printable_at_least(1.6);",
     "HOOD_NUT_AF = 5.60;",
     "HOOD_NUT_DEPTH = 2.80;",
     "HOOD_NUT_LEAD_AF = 6.20;",
@@ -49,7 +51,13 @@ require(
     "HOOD_NUT_RADIAL_CAPTURE = 2.40;",
     "BARRIER_GROOVE = BARRIER_THICKNESS + 2 * BARRIER_CLEARANCE;",
     "module mains_selv_boundary()",
+    "module rear_rail_load_paths()",
+    "module vertical_floor_strut",
     "module cassette_receiver_block",
+    "function cassette_key_profile",
+    "module cassette_keyway_sweep",
+    "module cassette_key_insertion_sweep",
+    "offset(delta=0.3,chamfer=true)",
     "module cassette_insertion_path_keepout()",
     "module roof_open_cleats()",
     "module roof_baffle()",
@@ -77,6 +85,7 @@ require(
 for retired in (
     "module seam_tongue",
     "module rail_spine_blank",
+    "function enclosure_rear_rail_y()",
     "module barrier_lower_capture",
     "module barrier_upper_capture",
     "module conductor_retention_saddle",
@@ -96,6 +105,10 @@ require(
     'assert n>0, "NOZZLE_DIAMETER must be greater than zero"',
     "POWER_SYSTEM_ENCLOSURE_DEFINES := -D 'NOZZLE_DIAMETER=$(NOZZLE_DIAMETER)'",
     "POWER_SYSTEM_ENCLOSURE_CASSETTE",
+    "POWER_SYSTEM_SUPPORT_CHECK := scripts/check_power_system_supports.py",
+    "POWER_SYSTEM_SUPPORT_PROFILE := scripts/prusaslicer-power-system-support-off.ini",
+    "validate-power-system-supports:",
+    "PRUSA_SLICER='$(PRUSA_SLICER)'",
     'PART="base"',
     'PART="hood"',
     'PART="cassette"',
@@ -120,6 +133,9 @@ require(
     "Always unplug",
     "132.8 × 128 × 60 mm",
     "supports off",
+    "PrusaSlicer 2.9.6",
+    "Floating bridge anchors",
+    "three local rail pads",
     "0.8 mm nozzle",
     "NOZZLE_DIAMETER",
     "max(1.2 mm, nozzle diameter)",
@@ -196,7 +212,7 @@ def mesh_contract(
 
 base_volume = mesh_contract("power-system-enclosure-base.stl", (196.27, 132.8, 56.033), 1000)
 hood_volume = mesh_contract("power-system-enclosure-hood.stl", (132.8, 128.0, 46.2), 1000)
-cassette_volume = mesh_contract("power-system-enclosure-c14-cassette.stl", (66.3, 39.0, 7.2), 500)
+cassette_volume = mesh_contract("power-system-enclosure-c14-cassette.stl", (64.7, 39.0, 7.2), 500)
 combined = base_volume + hood_volume + cassette_volume
 if combined > 270000:
     raise SystemExit(f"combined printed volume exceeds 270000 mm3: {combined:.3f}")

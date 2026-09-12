@@ -51,6 +51,7 @@ DC_ROUTE_BEND_ENVELOPE = 10.0;
 VENT_SLOT = min(1.6, 2 * NOZZLE_DIAMETER);
 VENT_PITCH = 6.4;
 SAFETY_DISTANCE = 8.0;
+RAIL_STRUT = printable_at_least(1.6);
 
 function enclosure_outer_min() = [190,160,0];
 function enclosure_outer_max() = [322.8,288,60];
@@ -80,10 +81,21 @@ function enclosure_cassette_face_min() = [284-iecc14_faceplate_size().y/2-FRAME,
                                           30-iecc14_faceplate_size().x/2-FRAME];
 function enclosure_cassette_face_max() = [284+iecc14_faceplate_size().y/2+FRAME,
                                           30+iecc14_faceplate_size().x/2+FRAME];
-function enclosure_cassette_key_min_x() = enclosure_cassette_face_min().x-FRAME;
-function enclosure_cassette_key_max_x() = enclosure_cassette_face_max().x+FRAME;
+function enclosure_cassette_key_min_x() = enclosure_cassette_face_min().x-FRAME+KEY_UNION;
+function enclosure_cassette_key_max_x() = enclosure_cassette_face_max().x+FRAME-KEY_UNION;
 function enclosure_cassette_y() = [282.8,286];
 function enclosure_cassette_key_y() = [278.8,enclosure_cassette_y().x+KEY_UNION];
+function cassette_key_profile(side="left") = side=="left" ?
+    [[enclosure_cassette_face_min().x+KEY_UNION,enclosure_cassette_key_y().y],
+     [enclosure_cassette_face_min().x+2*KEY_UNION,enclosure_cassette_key_y().y],
+     [enclosure_cassette_face_min().x+2*KEY_UNION,enclosure_cassette_key_y().x],
+     [enclosure_cassette_key_min_x(),enclosure_cassette_key_y().x],
+     [enclosure_cassette_key_min_x(),enclosure_cassette_key_y().y-FRAME]] :
+    [[enclosure_cassette_face_max().x-KEY_UNION,enclosure_cassette_key_y().y],
+     [enclosure_cassette_face_max().x-2*KEY_UNION,enclosure_cassette_key_y().y],
+     [enclosure_cassette_face_max().x-2*KEY_UNION,enclosure_cassette_key_y().x],
+     [enclosure_cassette_key_max_x(),enclosure_cassette_key_y().x],
+     [enclosure_cassette_key_max_x(),enclosure_cassette_key_y().y-FRAME]];
 function enclosure_front_fastener_x() = [215,300];
 function enclosure_front_fastener_axis_y() = 163.8;
 function enclosure_front_fastener_z() = 50.4;
@@ -93,7 +105,7 @@ function enclosure_fastener_outer_radius() = HOOD_NUT_AF/sqrt(3)+HOOD_NUT_RADIAL
 function enclosure_fastener_stack() = HOOD_NUT_LEAD_DEPTH+HOOD_NUT_DEPTH+HOOD_NUT_BACKSTOP;
 function enclosure_rail_x() = [318,322.8];
 function enclosure_front_rail_y() = [141.73,170];
-function enclosure_rear_rail_y() = [278,338];
+function enclosure_rear_rail_pad_y() = [[298,314],[322,338]];
 function enclosure_rail_hole_yz() = [[149.73,10],[306,10],[330,10]];
 function enclosure_print_bed() = [247,207];
 function enclosure_base_print_size() = [338-141.73,322.8-190,enclosure_front_fastener_z()+enclosure_fastener_outer_radius()];
@@ -143,6 +155,11 @@ module enclosure_contract() {
     assert(enclosure_cassette_key_y().y-enclosure_cassette_y().x>=NOZZLE_DIAMETER-0.000001 &&
            KEY_UNION>=NOZZLE_DIAMETER-0.000001,
            "Cassette keys must share at least one nozzle line with the broad frame");
+    assert(abs(enclosure_cassette_face_min().x+KEY_UNION-
+                   enclosure_cassette_key_min_x()-FRAME)<0.000001 &&
+           abs(enclosure_cassette_key_y().y-
+                   (enclosure_cassette_key_y().y-FRAME)-FRAME)<0.000001,
+           "Cassette key undersides must use matched 45-degree FRAME ramps");
     assert(enclosure_outer_max().z-enclosure_roof_bottom()>=NOZZLE_DIAMETER &&
            enclosure_outer_max().z-enclosure_roof_bottom()>=RECEIVER_WALL,
            "Cassette receivers and roof features need a broad positive roof union");
@@ -166,6 +183,13 @@ module enclosure_contract() {
            "Front posts need explicit roof assembly clearance");
     assert(enclosure_rail_hole_yz()==[[149.73,10],[306,10],[330,10]],
            "Rail datums changed or retired Y=125.73 was restored");
+    assert(len(enclosure_rear_rail_pad_y())==2 &&
+           enclosure_front_rail_y()==[141.73,170] &&
+           enclosure_rear_rail_pad_y()==[[298,314],[322,338]] &&
+           enclosure_rear_rail_pad_y()[1].x-enclosure_rear_rail_pad_y()[0].y==8,
+           "Rail attachment must be exactly three local pads with an 8 mm rear gap");
+    assert(RAIL_STRUT>=1.6 && RAIL_STRUT>=NOZZLE_DIAMETER,
+           "Each independent rear-rail load path needs a >=1.6 mm positive union");
     assert(enclosure_base_print_size().x<=enclosure_print_bed().x &&
            enclosure_base_print_size().y<=enclosure_print_bed().y,
            "Base does not fit the 247x207 bed in its declared rotation");
@@ -213,14 +237,25 @@ module psu_mount_negatives() {
 }
 
 module rail_pad(y0,y1) {
-    gusset_depth=y0<160 ? 2 : 4;
-    union() {
-        translate([enclosure_rail_x().x,y0,0])
-            cube([enclosure_rail_x().y-enclosure_rail_x().x,y1-y0,20]);
-        // A 1:1 floor-rooted load path replaces the old 220 mm spine.
-        translate([0,y1,0]) rotate([90,0,0]) linear_extrude(height=gusset_depth)
-            polygon([[304.4,FLOOR],[318,FLOOR],[318,FLOOR+13.6]]);
-    }
+    translate([enclosure_rail_x().x,y0,0])
+        cube([enclosure_rail_x().y-enclosure_rail_x().x,y1-y0,20]);
+}
+
+module vertical_floor_strut(a,b,w=RAIL_STRUT) {
+    // Constant-height hulls are vertical extrusions of their complete bed
+    // footprint: no one-sided underside or bridge is introduced.
+    hull() for (p=[a,b]) translate([p.x,p.y,0]) cube([w,w,20]);
+}
+
+module rear_rail_load_paths() {
+    pads=enclosure_rear_rail_pad_y();
+    for (span=pads) rail_pad(span.x,span.y);
+
+    // Two genuinely independent floor-rooted paths replace the old rear
+    // spine.  The farther path stays inboard until the first pad has ended.
+    vertical_floor_strut([317,284.8],[318,298]);
+    vertical_floor_strut([313.5,284.8],[313.5,315.6]);
+    vertical_floor_strut([313.5,315.6],[318,322]);
 }
 
 module rail_mount_negatives() {
@@ -247,10 +282,10 @@ module mains_selv_boundary() {
 }
 
 module rear_hook(x) {
-    // Bed-rooted locator: the 2.9 mm inward move also rises 2.9 mm.
-    translate([x,284,17]) cube([10,4,2.2]);
+    // Bed-rooted locator: its inboard reach grows at less than 45 degrees.
+    // The former y=284..284.8 horizontal underside has been removed.
     hull() {
-        translate([x,284,19.2-LOCAL_UNION])
+        translate([x,284.8,17])
             cube([10,LOCAL_UNION,LOCAL_UNION]);
         translate([x,281.1,22.1-LOCAL_UNION])
             cube([10,LOCAL_UNION,LOCAL_UNION]);
@@ -348,7 +383,7 @@ module enclosure_base_installed() {
             mains_selv_boundary();
             cassette_base_seat();
             rail_pad(enclosure_front_rail_y().x,enclosure_front_rail_y().y);
-            rail_pad(enclosure_rear_rail_y().x,enclosure_rear_rail_y().y);
+            rear_rail_load_paths();
             for (x=enclosure_front_fastener_x()) front_post_outer(x);
             rear_hook(200); rear_hook(230);
         }
@@ -369,31 +404,42 @@ module enclosure_base_installed() {
 module hood_seam_lip() {
     z0=enclosure_hood_wall_bottom()-SEAM_OVERLAP;
     front_lip_y=enclosure_outer_min().y+WALL+SEAM_GAP;
-    front_shoulder_y=enclosure_outer_min().y+WALL-LOCAL_UNION;
     rear_lip_y=enclosure_outer_max().y-2*WALL-SEAM_GAP;
-    rear_shoulder_max_y=enclosure_outer_max().y-WALL+LOCAL_UNION;
     left_lip_x=enclosure_outer_min().x+WALL+SEAM_GAP;
-    left_shoulder_x=enclosure_outer_min().x+WALL-LOCAL_UNION;
-    // A single short overlap band; never a second full-height shell.
-    for (seg=[[196,front_lip_y,12.0,WALL],[222,front_lip_y,71,WALL],
-              [307.8,front_lip_y,9.0,WALL],
-              [196,rear_lip_y,3.4,WALL],[210.6,rear_lip_y,18.8,WALL],
-              [240.6,rear_lip_y,9.65,WALL],
-              [left_lip_x,167,WALL,114]])
-        translate([seg.x,seg.y,z0])
-            cube([seg.z,seg[3],SEAM_OVERLAP+LOCAL_UNION]);
-    // One-nozzle positive shoulders join the inset band to the structural
-    // shell; the lower 6.4 mm remains the only parallel seam geometry.
-    for (seg=[[196,front_shoulder_y,12.0,front_lip_y+WALL-front_shoulder_y],
-              [222,front_shoulder_y,71,front_lip_y+WALL-front_shoulder_y],
-              [307.8,front_shoulder_y,9.0,front_lip_y+WALL-front_shoulder_y],
-              [196,rear_lip_y,3.4,rear_shoulder_max_y-rear_lip_y],
-              [210.6,rear_lip_y,18.8,rear_shoulder_max_y-rear_lip_y],
-              [240.6,rear_lip_y,9.65,rear_shoulder_max_y-rear_lip_y]])
-        translate([seg.x,seg.y,enclosure_hood_wall_bottom()])
-            cube([seg.z,seg[3],LOCAL_UNION]);
-    translate([left_shoulder_x,167,enclosure_hood_wall_bottom()])
-        cube([left_lip_x+WALL-left_shoulder_x,114,LOCAL_UNION]);
+    ramp_root_z=enclosure_hood_wall_bottom()+4.6;
+    ramp_tip_z=enclosure_hood_wall_bottom()-LOCAL_UNION;
+
+    module front_or_rear_segment(x0,length,rear=false) {
+        lip_y=rear ? rear_lip_y : front_lip_y;
+        root_y=rear ? enclosure_outer_max().y-WALL :
+                      enclosure_outer_min().y+WALL-LOCAL_UNION;
+        union() {
+            translate([x0,lip_y,z0]) cube([length,WALL,SEAM_OVERLAP]);
+            // In roof-down orientation the one-nozzle root prints first and
+            // expands to the inset lip over 4.6 mm: every free face <=45°.
+            hull() {
+                translate([x0,root_y,ramp_root_z])
+                    cube([length,LOCAL_UNION,LOCAL_UNION]);
+                translate([x0,lip_y,ramp_tip_z])
+                    cube([length,WALL,LOCAL_UNION]);
+            }
+        }
+    }
+
+    for (seg=[[196,12.0],[222,71],[307.8,9.0]])
+        front_or_rear_segment(seg.x,seg.y,false);
+    for (seg=[[196,3.4],[210.6,18.8],[240.6,9.65]])
+        front_or_rear_segment(seg.x,seg.y,true);
+
+    union() {
+        translate([left_lip_x,167,z0]) cube([WALL,114,SEAM_OVERLAP]);
+        hull() {
+            translate([enclosure_outer_min().x+WALL-LOCAL_UNION,167,ramp_root_z])
+                cube([LOCAL_UNION,114,LOCAL_UNION]);
+            translate([left_lip_x,167,ramp_tip_z])
+                cube([WALL,114,LOCAL_UNION]);
+        }
+    }
 }
 
 module cassette_receiver_block(side="left") {
@@ -402,18 +448,20 @@ module cassette_receiver_block(side="left") {
     xmax=side=="left" ? enclosure_cassette_face_min().x+KEY_UNION+0.3 :
                          enclosure_cassette_key_max_x()+RECEIVER_WALL;
     difference() {
-        translate([xmin,278.2,enclosure_hood_wall_bottom()-SEAM_OVERLAP])
-            cube([xmax-xmin,6.0,enclosure_outer_max().z-(enclosure_hood_wall_bottom()-SEAM_OVERLAP)]);
-        // Keyway is open at the hood lower edge.  0.30 mm each-side running
-        // clearance and the full broad face path are explicit.
-        keyxmin=side=="left" ? enclosure_cassette_key_min_x()-0.3 :
-                               enclosure_cassette_face_max().x-KEY_UNION-0.3;
-        keyxmax=side=="left" ? enclosure_cassette_face_min().x+KEY_UNION+0.3 :
-                               enclosure_cassette_key_max_x()+0.3;
-        translate([keyxmin,278.5,enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.01])
-            cube([keyxmax-keyxmin,
-                  enclosure_cassette_key_y().y-278.5+0.3,
-                  enclosure_cassette_face_max().y-(enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.31]);
+        union() {
+            // The front key reaction wall is a full receiver wall.  Above the
+            // base/hood seam, the rear reaction wall grows into the complete
+            // 3.2 mm rear shell rather than relying on a thin local tab.
+            translate([xmin,275.3,enclosure_hood_wall_bottom()-SEAM_OVERLAP])
+                cube([xmax-xmin,8.9,
+                      enclosure_outer_max().z-(enclosure_hood_wall_bottom()-SEAM_OVERLAP)]);
+            translate([xmin,284.2,enclosure_hood_wall_bottom()+SEAM_GAP])
+                cube([xmax-xmin,3.8,
+                      enclosure_outer_max().z-(enclosure_hood_wall_bottom()+SEAM_GAP)]);
+        }
+        // Matched dovetail is open at the hood lower edge.  offset() gives
+        // true 0.30 mm normal clearance around every 45-degree key face.
+        cassette_keyway_sweep(side);
         translate([enclosure_cassette_face_min().x-0.3,
                    282.5,enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.01])
             cube([enclosure_cassette_face_max().x-
@@ -421,6 +469,22 @@ module cassette_receiver_block(side="left") {
                   3.8,
                   enclosure_cassette_face_max().y-(enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.31]);
     }
+}
+
+module cassette_keyway_sweep(side="left") {
+    z0=enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.01;
+    z1=enclosure_c14_faceplate_bounds()[1].z+0.5+0.3;
+    translate([0,0,z0]) linear_extrude(height=z1-z0)
+        offset(delta=0.3,chamfer=true) polygon(points=cassette_key_profile(side));
+}
+
+module cassette_key_insertion_sweep(side="left") {
+    // Physical key silhouette swept from the open hood edge to the installed
+    // stop.  The receiver subtracts the separate +0.30 mm normal envelope.
+    z0=enclosure_hood_wall_bottom()-SEAM_OVERLAP;
+    z1=enclosure_c14_faceplate_bounds()[1].z+0.5;
+    translate([0,0,z0]) linear_extrude(height=z1-z0)
+        polygon(points=cassette_key_profile(side));
 }
 
 module hood_openings() {
@@ -519,14 +583,9 @@ module cassette_relief_negative() {
 }
 
 module cassette_key(side="left") {
-    x0=side=="left" ? enclosure_cassette_key_min_x() :
-                       enclosure_cassette_face_max().x-KEY_UNION;
-    x1=side=="left" ? enclosure_cassette_face_min().x+KEY_UNION :
-                       enclosure_cassette_key_max_x();
-    translate([x0,enclosure_cassette_key_y().x,
-               enclosure_c14_faceplate_bounds()[0].z-0.5])
-        cube([x1-x0,enclosure_cassette_key_y().y-enclosure_cassette_key_y().x,
-              iecc14_faceplate_size().x+1.0]);
+    translate([0,0,enclosure_c14_faceplate_bounds()[0].z-0.5])
+        linear_extrude(height=iecc14_faceplate_size().x+1.0)
+            polygon(points=cassette_key_profile(side));
 }
 
 module enclosure_c14_cassette_installed() {
@@ -577,28 +636,17 @@ module c14_terminal_keepout() {
 }
 
 module cassette_insertion_path_keepout() {
-    // Exact face/key silhouette swept from the hood's open lower edge to the
-    // installed stop.  Receiver clearance is 0.30 mm on every running side.
+    // Exact face/key silhouettes swept from the hood's open lower edge to the
+    // installed stop. Receiver clearance is 0.30 mm normal to every face.
     union() {
-        translate([enclosure_cassette_face_min().x-0.3,282.5,
-                   enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.3])
-            cube([enclosure_cassette_face_max().x-enclosure_cassette_face_min().x+0.6,
-                  3.8,enclosure_cassette_face_max().y-
-                      (enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.6]);
-        translate([enclosure_cassette_key_min_x()-0.3,278.5,
-                   enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.3])
-            cube([enclosure_cassette_face_min().x+KEY_UNION-
-                      enclosure_cassette_key_min_x()+0.6,
-                  enclosure_cassette_key_y().y-278.5+0.3,
+        translate([enclosure_cassette_face_min().x,enclosure_cassette_y().x,
+                   enclosure_hood_wall_bottom()-SEAM_OVERLAP])
+            cube([enclosure_cassette_face_max().x-enclosure_cassette_face_min().x,
+                  enclosure_cassette_y().y-enclosure_cassette_y().x,
                   enclosure_cassette_face_max().y-
-                      (enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.6]);
-        translate([enclosure_cassette_face_max().x-KEY_UNION-0.3,278.5,
-                   enclosure_hood_wall_bottom()-SEAM_OVERLAP-0.3])
-            cube([enclosure_cassette_key_max_x()-
-                      (enclosure_cassette_face_max().x-KEY_UNION)+0.6,
-                  enclosure_cassette_key_y().y-278.5+0.3,
-                  enclosure_cassette_face_max().y-
-                      (enclosure_hood_wall_bottom()-SEAM_OVERLAP)+0.6]);
+                      (enclosure_hood_wall_bottom()-SEAM_OVERLAP)]);
+        cassette_key_insertion_sweep("left");
+        cassette_key_insertion_sweep("right");
     }
 }
 

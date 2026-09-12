@@ -1,6 +1,7 @@
 OPENSCAD ?= openscad
 OPENSCAD_FLAGS := --hardwarnings --check-parameters=true --check-parameter-ranges=true
 NOZZLE_DIAMETER ?= 0.8
+PRUSA_SLICER ?=
 PYTHON ?= python3
 BUILD := build
 DUALBAR_BUILD := $(BUILD)/dualbar
@@ -81,6 +82,9 @@ POWER_SYSTEM_ENCLOSURE_EVIDENCE := \
 	$(BUILD)/layout-power-system-enclosure-print-orientations.png \
 	$(BUILD)/layout-power-system-enclosure-size-comparison.png
 POWER_SYSTEM_ENCLOSURE_CHECK := scripts/check_power_system_enclosure.py
+POWER_SYSTEM_SUPPORT_CHECK := scripts/check_power_system_supports.py
+POWER_SYSTEM_SUPPORT_TEST := scripts/test_power_system_supports.py
+POWER_SYSTEM_SUPPORT_PROFILE := scripts/prusaslicer-power-system-support-off.ini
 GUIDE_SCENE_DEFINES := \
 	-D 'CHASSIS_VARIANT="$(GUIDE_CHASSIS_VARIANT)"' \
 	-D 'CARRIER_LINK_REVISION="stack_clear_v2"' \
@@ -527,7 +531,7 @@ $(GUIDE_DUALBAR_ASSEMBLY_STEPS): private OPENSCAD_FLAGS += $(GUIDE_SCENE_DEFINES
 	power-system-models validate-power-system-models \
 	power-system-fit-coupon validate-power-system-fit-coupon \
 	check-power-system-enclosure-nozzle power-system-enclosure \
-	validate-power-system-enclosure \
+	validate-power-system-enclosure validate-power-system-supports \
 	dualbar-replacements device-example-batches calibration \
 	replacements fabrication-tools right-angle-checker lint preview \
 	presentation-assets \
@@ -825,7 +829,18 @@ $(BUILD)/layout-power-system-enclosure-size-comparison.png: $(POWER_SYSTEM_ENCLO
 		--projection=ortho --viewall --camera=258,230,38,55,0,25,280 \
 		$(POWER_SYSTEM_ENCLOSURE_DEFINES) -D 'PART="size_comparison"' $<
 
+validate-power-system-supports: $(POWER_SYSTEM_ENCLOSURE_BASE) \
+		$(POWER_SYSTEM_ENCLOSURE_HOOD) $(POWER_SYSTEM_ENCLOSURE_CASSETTE) \
+		$(POWER_SYSTEM_SUPPORT_CHECK) $(POWER_SYSTEM_SUPPORT_TEST) \
+		$(POWER_SYSTEM_SUPPORT_PROFILE)
+	$(PYTHON) $(POWER_SYSTEM_SUPPORT_TEST)
+	PRUSA_SLICER='$(PRUSA_SLICER)' DISPLAY=$${DISPLAY:-:1} \
+		$(PYTHON) $(POWER_SYSTEM_SUPPORT_CHECK) \
+		--profile $(POWER_SYSTEM_SUPPORT_PROFILE) \
+		$(if $(CI),--allow-missing-slicer,)
+
 validate-power-system-enclosure: power-system-enclosure \
+		validate-power-system-supports \
 		$(POWER_SYSTEM_ENCLOSURE_PARTITION_SLICE) $(POWER_SYSTEM_ENCLOSURE_DC_ROUTE)
 	@set -eu; \
 	for selector in base_hood_intersection c14_terminal_intersection \
@@ -869,10 +884,10 @@ validate-power-system-enclosure: power-system-enclosure \
 		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_HOOD)); \
 	printf '%s\n' "$$hood_bounds"; \
 	printf '%s\n' "$$hood_bounds" | grep -q 'size=132.800,128.000,46.200'
-	@cassette_bounds=$$($(PYTHON) $(BOUNDS) --max-x 66.3 --max-y 39 --max-z 7.2 \
+	@cassette_bounds=$$($(PYTHON) $(BOUNDS) --max-x 64.71 --max-y 39.01 --max-z 7.21 \
 		--bed-x 247 --bed-y 207 $(POWER_SYSTEM_ENCLOSURE_CASSETTE)); \
 	printf '%s\n' "$$cassette_bounds"; \
-	printf '%s\n' "$$cassette_bounds" | grep -q 'size=66.300,39.000,7.200'
+	printf '%s\n' "$$cassette_bounds" | grep -q 'size=64.700,39.000,7.200'
 	@set -eu; \
 	for nozzle in 0.4 0.8 1.2; do for part in base hood cassette; do \
 		$(OPENSCAD) $(OPENSCAD_FLAGS) -o $(BUILD)/power-system-enclosure-$$part-nozzle-$$nozzle.stl \

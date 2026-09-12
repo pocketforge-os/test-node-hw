@@ -22,6 +22,7 @@ The default flow is qualified around a **0.8 mm nozzle**:
 ```sh
 make power-system-enclosure
 make validate-power-system-enclosure
+make validate-power-system-supports
 ```
 
 Override the nozzle explicitly when exporting:
@@ -33,7 +34,9 @@ openscad -o cassette.stl -D 'NOZZLE_DIAMETER=1.2' -D 'PART="cassette"' power-sys
 
 `NOZZLE_DIAMETER` must be greater than zero. Structural walls and positive joins are quantized upward to at least one complete nozzle line while retaining the 3.2 mm shell/receiver and 4.0 mm cassette-frame minima. The effective C14 snap membrane is exactly **max(1.2 mm, nozzle diameter)**; the normal cutout clearance remains exactly +0.20 mm. If the chosen nozzle makes the membrane thicker than the accepted 1.5 mm clip budget, the export emits a conspicuous warning. It will still generate, but owner-authorized sanding is required before fit can be claimed. There is no printable text.
 
-Print the base floor-down, the hood roof-exterior-down, and the cassette on its broad exterior face, with **supports off**. The base print envelope is 196.27 × 132.8 × 56.033 mm after its declared 90-degree bed rotation; the hood is 132.8 × 128 × 46.2 mm; the cassette is 66.3 × 39 × 7.2 mm. Together they occupy 239,172.703 mm³, a 28.93% reduction from the retired 336,547.259 mm³ print. Use a brim for ABS. The R6 corners, shallow 60 mm sealed height, short rail pads, vertical 1.6 mm vent slots, 45-degree baffles/gussets, and open-side cable cleats reduce warp and eliminate trapped support cavities.
+Print the base floor-down, the hood roof-exterior-down, and the cassette on its broad exterior face, with **supports off**. The base print envelope is 196.27 × 132.8 × 56.033 mm after its declared 90-degree bed rotation; the hood is 132.8 × 128 × 46.2 mm; the cassette is 64.7 × 39 × 7.2 mm. Together they occupy 242,349.860 mm³, a 27.99% reduction from the retired 336,547.259 mm³ print. Use a brim for ABS. The R6 corners, shallow 60 mm sealed height, short rail pads, vertical 1.6 mm vent slots, 45-degree baffles/gussets, and open-side cable cleats reduce warp and eliminate trapped support cavities.
+
+`validate-power-system-supports` first rejects large horizontal downward faces and the exact print-Z bands of the three retired defects. It then slices all three artifacts with PrusaSlicer 2.9.6, the committed 0.8 mm nozzle / 0.4 mm layer ABS audit profile, and supports disabled. It fails on `Floating bridge anchors` or `Long bridging extrusions`. Set `PRUSA_SLICER` to an alternate command path when needed; the strict local gate requires the exact slicer version. CI may explicitly report a slicer skip only when that binary is unavailable, while the geometric rejection remains mandatory. The audit profile is not a production printer/material profile and does not authorize powered use.
 
 All three exports are connected and manifold both at source precision and on the repository's 0.0001 mm fingerprint grid.
 
@@ -57,7 +60,7 @@ Its cable points toward the DUT rear wall (+Y). The nominal cutout remains 27 ×
 
 Two operator/front M3 screws are at X=215 and 300, Y=160, Z=50.4. With the hood removed, each standard M3 nut loads into a directly visible horizontal socket with a 6.20 mm-AF × 0.80 mm lead, 5.60 mm-AF × 2.80 mm pocket, 2.40 mm blind backstop, and at least 2.40 mm radial capture. Each base post is rooted continuously in the floor/front structure. It stays ahead of the PSU below the metal top, then flares inward only after 1.6 mm additional vertical clearance. The hood cap closes the loading mouth with assembly clearance and exposes only the 3.6 mm screw bore. Two rear bed-rooted 45-degree locator hooks register the other edge without a blind receiver.
 
-Rail mounting uses three retained axes at world Y=149.73, 306, and 330 mm, all Z=10 mm. The old Y=125.73 axis is deleted. Short local pads positively overlap the composite rail-side wall and use floor-rooted 45-degree load gussets; no continuous 220 mm spine remains. Physical rail load, fastener creep, and driver access are owner gates.
+Rail mounting uses three retained axes at world Y=149.73, 306, and 330 mm, all Z=10 mm. The old Y=125.73 axis is deleted. There are exactly **three local rail pads**: the front pad spans Y=141.73..170, while independent rear pads span Y=298..314 and Y=322..338, leaving an 8 mm clear gap. Each positively overlaps the composite rail-side wall and has its own floor-rooted load path of at least 1.6 mm; no continuous 220 mm spine remains. Physical rail load, fastener creep, and driver access are owner gates.
 
 ## Separation, cable routing, and barrier
 
