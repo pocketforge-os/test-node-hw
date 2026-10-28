@@ -161,6 +161,7 @@ xvfb-run -a make power-system-v3-concept
 python3 scripts/power_system_v3_slice_audit.py
 # Same Python environment, also with trimesh, shapely and numpy:
 python3 scripts/power_system_v3_printability.py
+python3 scripts/test_power_system_v3_provenance.py
 xvfb-run -a make validate
 # Fast visual iteration without replacing the validation report:
 xvfb-run -a python3 scripts/power_system_v3_concept.py --views-only --views internals dc-section shield
@@ -187,6 +188,18 @@ Inspect the fixed views and actual layer sheets; successful export alone is not
 visual review. Refer to the exact-head validation report/PR for checks actually
 run; this document describes the intended checks and is not a substitute for
 those results.
+
+CAD, slice and printability reports carry source receipts. The CAD receipt
+covers all six declared SCAD inputs, the CAD producer, topology helper and
+receipt helper. Every OpenSCAD export emits its actual transitive dependency
+list; an undeclared input fails the export. The slice receipt additionally
+binds its producer and profile; the final audit binds its own producer. Consumers
+verify receipts before work and again before publishing their result, as well
+as checking the STL/G-code hashes. Missing legacy receipts and stale inputs
+require regenerating CAD, slices and printability evidence in that order.
+The provenance test runs both consumers against each mutated CAD input, each
+slice input against the print audit, legacy receipts, integrity/end checks,
+and declared/undeclared dependency lists. It never edits the real source tree.
 
 The source chassis check includes its default plate proxies and rails. Actual
 DUT cable bundles and unsurveyed board components are outside that model. The

@@ -17,6 +17,7 @@ from shapely import make_valid
 from shapely.affinity import rotate, translate
 from shapely.ops import unary_union
 from power_system_v3_slice_audit import OUT, ROOT, read_paths
+from power_system_v3_provenance import CAD_INPUTS, SLICE_INPUTS, PRINT_INPUTS, receipt, require_current
 
 
 def polygons(g):
@@ -73,10 +74,15 @@ def main():
     (OUT/'printability-report.json').unlink(missing_ok=True)
     source=json.loads((OUT/'report.json').read_text())
     sliced=json.loads((OUT/'slice-report.json').read_text())
+    require_current(source.get('cad_inputs'),CAD_INPUTS)
+    require_current(sliced.get('cad_inputs'),CAD_INPUTS)
+    require_current(sliced.get('slice_inputs'),SLICE_INPUTS)
+    print_inputs=receipt(PRINT_INPUTS)
     profile=ROOT/'scripts/prusaslicer-power-system-v3-audit.ini'
     if hashlib.sha256(profile.read_bytes()).hexdigest()!=sliced['profile_sha256']:
         raise RuntimeError('slice profile changed since the audit')
-    report={'profile_sha256':sliced['profile_sha256'],'limits':{'layer_mm':.4,'self_support_lateral_growth_mm':.4,
+    report={'cad_inputs':source['cad_inputs'],'slice_inputs':sliced['slice_inputs'],
+            'print_inputs':print_inputs,'profile_sha256':sliced['profile_sha256'],'limits':{'layer_mm':.4,'self_support_lateral_growth_mm':.4,
                      'maximum_residual_straight_segment_mm':{'tray':8.8,'others':1.0}},'parts':{}}
     for part in ('panel','lid','bridge','dc_insert','tray'):
         mesh=print_mesh(part)
@@ -164,6 +170,14 @@ def main():
     ax.set_aspect('equal'); ax.set_xlabel('Tray X (mm)'); ax.set_ylabel('Tray Y (mm)')
     ax.set_title('Supports: exposed rail keys and shallow underside screw recesses only')
     fig.savefig(OUT/'tray-support-map.png',dpi=160); plt.close(fig)
+    require_current(source['cad_inputs'],CAD_INPUTS)
+    require_current(sliced['slice_inputs'],SLICE_INPUTS)
+    require_current(print_inputs,PRINT_INPUTS)
+    for part,info in report['parts'].items():
+        if hashlib.sha256((OUT/f'{part}.stl').read_bytes()).hexdigest()!=info['stl_sha256']:
+            raise RuntimeError(f'{part}: mesh changed during audit')
+        if hashlib.sha256((OUT/f'{part}.audit.gcode').read_bytes()).hexdigest()!=sliced['parts'][part]['gcode_sha256']:
+            raise RuntimeError(f'{part}: toolpaths changed during audit')
     (OUT/'printability-report.json').write_text(json.dumps(report,indent=2)+'\n')
     print('Tray support paths exported for location/removal inspection:',report['tray']['support_point_bounds'])
 
