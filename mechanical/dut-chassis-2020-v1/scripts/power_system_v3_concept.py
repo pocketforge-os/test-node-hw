@@ -13,7 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "power-system-v3-concept.scad"
 OUT = ROOT / "build/power-system-v3-concept"
 VIEWS = {
+    "guard-install": ("guard_install", "-150,200,230,65,107,45"),
     "tray": ("tray", "270,360,280,74,72,20"),
+    "lid-print-section": ("lid_print_section", "74,-180,10,74,104,7"),
     "lid": ("lid", "270,360,230,74,72,0"),
     "internals": ("internals", "-200,220,380,74,72,42"),
     "dc-section": ("dc_section", "65,-100,30,65,107,30"),
@@ -81,7 +83,7 @@ def vertical_hits(path, x, y):
     return sorted(hits)
 
 COLLISIONS=("collision_parts", "collision_components", "collision_service",
-            "collision_chassis", "collision_plug", "collision_drivers", "collision_wires")
+            "collision_chassis", "collision_plug", "collision_drivers", "collision_wires", "collision_guard_install")
 
 def clean_empty(result, dest):
     # OpenSCAD 2021.01 exits 1 for its documented empty-export result. No other

@@ -47,6 +47,7 @@ def covered(segments,point):
     return False
 
 def main():
+    (OUT/'slice-report.json').unlink(missing_ok=True)
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -57,7 +58,7 @@ def main():
     selections={'tray':[0.4,4,18,26,32,34,42,46.4,48,49.6,54,96],
                 'panel':[0.4,0.8,1.2,1.6,4,4.4,8,10],
                 'lid':[0.4,4,4.4,8,11.2,11.6,12,14.4],
-                'bridge':[0.4,4,4.4,6.4], 'dc_insert':[0.4,2,4]}
+                'bridge':[0.4,4,4.4,6.4], 'dc_insert':[0.4,2,4,4.4,8,12]}
     for part,heights in selections.items():
         path=OUT/f'{part}.audit.gcode'
         mesh=OUT/f'{part}.stl'
