@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Reproduce and check the V3 unpowered mechanical fit candidate."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
 from pathlib import Path
@@ -14,6 +15,10 @@ OUT = ROOT / "build/power-system-v3-concept"
 VIEWS = {
     "tray": ("tray", "270,360,280,74,72,20"),
     "lid": ("lid", "270,360,230,74,72,0"),
+    "internals": ("internals", "-200,220,380,74,72,42"),
+    "dc-section": ("dc_section", "65,-100,30,65,107,30"),
+    "dc-insert": ("dc_insert", "100,130,100,26,107,2"),
+    "shield": ("shield", "270,360,280,74,72,36"),
     "bridge": ("bridge", "55,70,60,12,12,3"),
     "vent-section": ("vent_section", "300,72,34,39,72,34"),
     "front": ("assembly", "74,-350,34,74,72,34"),
@@ -76,7 +81,7 @@ def vertical_hits(path, x, y):
     return sorted(hits)
 
 COLLISIONS=("collision_parts", "collision_components", "collision_service",
-            "collision_chassis", "collision_plug", "collision_drivers")
+            "collision_chassis", "collision_plug", "collision_drivers", "collision_wires")
 
 def clean_empty(result, dest):
     # OpenSCAD 2021.01 exits 1 for its documented empty-export result. No other
@@ -112,11 +117,20 @@ def check_collision_controls():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--render", action="store_true")
+    parser.add_argument("--views-only", action="store_true")
+    parser.add_argument("--views", nargs="+", choices=list(VIEWS))
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "report.json").unlink(missing_ok=True)
+    if not args.views_only: (OUT / "report.json").unlink(missing_ok=True)
+    if args.views_only:
+        for name in args.views or VIEWS:
+            part,camera=VIEWS[name]
+            result=export(part,OUT/f"{name}.png",["--imgsize=1600,1200","--projection=o",
+                "--colorscheme=Tomorrow","--viewall",f"--camera={camera}"])
+            if result.returncode: raise RuntimeError(f"render {name}: see log")
+        return
     report = {"status": "unpowered-mechanical-fit-candidate", "parts": {}, "collisions": {}}
-    for part in ("tray", "panel", "lid", "bridge"):
+    for part in ("tray", "panel", "lid", "bridge", "dc_insert"):
         dest = OUT / f"{part}.stl"
         result = export(part, dest)
         if result.returncode:
@@ -130,9 +144,9 @@ def main():
         report["parts"][part] = {"topology": mesh, "bounds": bounds,
             "sha256": hashlib.sha256(dest.read_bytes()).hexdigest()}
         print(f"PASS {part}: one closed connected mesh; bounds={bounds}", flush=True)
-    for x,y,thickness in ((38,38,1.2),(88,38,1.2),(63,23,1.2),
-                          (63,53,1.2),(29,38,4),(97,38,4),
-                          (63,16,4),(63,60,4)):
+    for x,y,thickness in ((38,68,1.2),(88,68,1.2),(63,53,1.2),
+                          (63,83,1.2),(29,68,4),(97,68,4),
+                          (63,46,4),(63,90,4)):
         hits=vertical_hits(OUT/"panel.stl",x,y)
         if hits != [0.0,thickness]:
             raise RuntimeError(f"panel thickness at {(x,y)}: {hits}, expected {thickness}")
@@ -146,21 +160,57 @@ def main():
             raise RuntimeError(f"PSU screw web at {(x,y)}: {hits}")
     report["psu_screw_paths"]="five through shafts; 3.2 mm bearing webs between head and fitting reliefs"
     print("PASS PSU screw shafts, head clearance and 3.2 mm bearing webs",flush=True)
+    for part in ("dc_roof_template", "terminal_shield_template"):
+        for ext in ("svg","dxf"):
+            dest=OUT/f"{part}.{ext}"
+            result=export(part,dest)
+            if result.returncode or not dest.exists():
+                raise RuntimeError(f"{part}: sheet template export failed")
+    print("PASS two nonprinted sheet templates, SVG and DXF",flush=True)
+    # Probe the actual tray along X at every sampled point across the outlet.
+    # This proves an axial obstruction, not a standardized articulated-finger test.
+    tray_faces=triangles(OUT/"tray.stl")
+    def x_hits(y,z):
+        hits=set()
+        for tri in tray_faces:
+            a,b,c=[(p[1],p[2],p[0]) for p in tri]
+            denom=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1])
+            if abs(denom)<1e-9: continue
+            u=((b[1]-c[1])*(y-c[0])+(c[0]-b[0])*(z-c[1]))/denom
+            v=((c[1]-a[1])*(y-c[0])+(a[0]-c[0])*(z-c[1]))/denom
+            if u>=-1e-7 and v>=-1e-7 and u+v<=1+1e-7:
+                hits.add(round(u*a[2]+v*b[2]+(1-u-v)*c[2],5))
+        return sorted(hits)
+    for y in (100,102,104,106,108,110,112,114,115):
+        for z in (22,24,26,28,30):
+            hits=x_hits(y,z)
+            if 20.0 not in hits or 23.2 not in hits:
+                raise RuntimeError(f"DC outlet lost axial baffle at {(y,z)}: {hits}")
+    report["dc_exit"]={"axial_baffle_probes":45,"port_mm":[15.8,8.8],
+                       "assumed_cables":"one <=8 mm or two <=6 mm jackets; physical fit unverified",
+                       "finger_protection_certified":False}
+    print("PASS DC outlet: 45 axial mesh rays strike the solid internal baffle",flush=True)
     check_collision_controls()
     report["collision_sample_offset_per_axis_mm"]=0.01
     report["collision_sub_0_02_mm_clearance_qualified"]=False
     report["collision_controls"]="contact/gap clean-empty; 1 mm and 0.02 mm overlap rejected"
-    for part in COLLISIONS:
+    def collision_check(part):
         dest = OUT / f"{part}.stl"
         dest.unlink(missing_ok=True)
         result = export(part, dest)
         if not clean_empty(result,dest):
             raise RuntimeError(f"{part}: nonempty, failed or invalid intersection export; see log")
-        report["collisions"][part]="clean empty at 0.01 mm audit tolerance"
-        print(f"PASS {part}: clean empty",flush=True)
+        return part
+    # Separate OpenSCAD processes and output paths; bound memory/CPU use.
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        pending=[pool.submit(collision_check,part) for part in COLLISIONS]
+        for future in as_completed(pending):
+            part=future.result()
+            report["collisions"][part]="clean empty at 0.01 mm audit tolerance"
+            print(f"PASS {part}: clean empty",flush=True)
     if args.render:
         for name, (part, camera) in VIEWS.items():
-            result = export(part, OUT / f"{name}.png", (["--render"] if part in ("tray","lid","panel","bridge","panel_section") else []) + ["--imgsize=1600,1200",
+            result = export(part, OUT / f"{name}.png", (["--render"] if part in ("tray","lid","panel","bridge","panel_section","dc_insert","dc_section") else []) + ["--imgsize=1600,1200",
                 "--projection=o", "--colorscheme=Tomorrow", "--viewall",
                 f"--camera={camera}"])
             if result.returncode:
