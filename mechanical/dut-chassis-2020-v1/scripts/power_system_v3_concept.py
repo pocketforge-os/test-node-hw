@@ -17,10 +17,10 @@ VIEWS = {
     "lid": ("lid", "270,360,230,74,72,0"),
     "internals": ("internals", "-200,220,380,74,72,42"),
     "dc-section": ("dc_section", "65,-100,30,65,107,30"),
-    "dc-insert": ("dc_insert", "100,130,100,26,107,2"),
+    "dc-insert": ("dc_insert", "90,110,80,21,15,2"),
     "shield": ("shield", "270,360,280,74,72,36"),
     "bridge": ("bridge", "55,70,60,12,12,3"),
-    "vent-section": ("vent_section", "300,72,34,39,72,34"),
+    "vent-section": ("vent_section", "300,72,50,39,72,50"),
     "front": ("assembly", "74,-350,34,74,72,34"),
     "left": ("assembly", "-350,72,34,74,72,34"),
     "right": ("assembly", "450,72,34,74,72,34"),
@@ -35,7 +35,7 @@ VIEWS = {
     "chassis": ("chassis", "520,650,420,-5,20,100"),
     "plug-access": ("plug_access", "520,650,420,-5,20,100"),
     "panel": ("panel", "74,34,-250,74,34,0"),
-    "panel-section": ("panel_section", "74,-200,20,74,38,4"),
+    "panel-section": ("panel_section", "74,-200,20,74,68,4"),
 }
 
 def export(part, dest, extra=()):

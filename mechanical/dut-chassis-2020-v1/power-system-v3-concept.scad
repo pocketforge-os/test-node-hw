@@ -483,7 +483,7 @@ else if(PART=="tray") tray();
 else if(PART=="bridge") translate([-(REAR_MOUNT_X-12),REAR_RAIL+16,24]) rotate([180,0,0]) rail_bridge();
 else if(PART=="bottom") rotate([0,180,0]) assembly(open=true);
 else if(PART=="vent_section") intersection() {
-    assembly(); translate([39,-1,0]) cube([1,D+2,72]);
+    assembly(); translate([39,-1,0]) cube([1,D+2,H+LID+4]);
 }
 else if(PART=="dc_insert") translate([52,-92,4]) rotate([0,-90,0]) dc_insert();
 else if(PART=="dc_roof_template") dc_roof_template();
