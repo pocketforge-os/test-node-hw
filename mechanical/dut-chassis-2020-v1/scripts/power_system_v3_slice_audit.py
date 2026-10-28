@@ -54,10 +54,10 @@ def main():
     report={'profile':'0.8 mm nozzle / 0.4 mm layers / ABS geometry audit / supports disabled',
             'profile_sha256':hashlib.sha256((ROOT/'scripts/prusaslicer-power-system-v3-audit.ini').read_bytes()).hexdigest(),
             'parts':{}}
-    selections={'tray':[0.4,2.4,4.0,5.6,8,10,18,30,61.6,64],
+    selections={'tray':[0.4,4,18,26,32,34,42,46.4,48,49.6,54,96],
                 'panel':[0.4,0.8,1.2,1.6,4,4.4,8,10],
                 'lid':[0.4,4,4.4,8,11.2,11.6,12,14.4],
-                'bridge':[0.4,4,4.4,6.4]}
+                'bridge':[0.4,4,4.4,6.4], 'dc_insert':[0.4,2,4]}
     for part,heights in selections.items():
         path=OUT/f'{part}.audit.gcode'
         mesh=OUT/f'{part}.stl'
@@ -81,8 +81,8 @@ def main():
             raise RuntimeError(f'{part}: path centres exceed audit bed {bounds}')
         if part=='panel':
             for z in (0.4,0.8,1.2,1.6):
-                for px,py in ((38,38),(88,38),(63,23),(63,53)):
-                    actual=covered(layers[z],(px+49.5,py+69.5))
+                for px,py in ((38,68),(88,68),(63,53),(63,83)):
+                    actual=covered(layers[z],(px+49.5,py+53.5))
                     if actual != (z<=1.2):
                         raise RuntimeError(f'panel island toolpath coverage at {(px,py,z)}: {actual}')
             report['panel_snap_island']='4 probes covered on all 3 layers to 1.2 mm; absent at 1.6 mm'
