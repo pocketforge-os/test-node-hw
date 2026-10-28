@@ -139,7 +139,7 @@ module rail_bridge() {
     }
 }
 // Lower front intake: offset slots in two vertical walls, with substantial
-// ribs connecting the inner baffle. Short 2.4 mm bridges only when upright.
+// ribs connecting the inner baffle. Eight mm bridges when upright.
 module intake_baffle() {
     difference() {
         union() {
@@ -156,11 +156,18 @@ module roof_baffle() {
             translate([24,24,H-10.4]) cube([84,54,3.2]);
             for(x=[24:12:108]) translate([x-1.6,24,H-10.4]) cube([3.2,54,11.4]);
             for(y=[24,74.8]) translate([24,y,H-10.4]) cube([84,3.2,11.4]);
+            // In roof-down orientation these 45-degree corbels grow from
+            // both ribs, replacing the former 8.8 mm horizontal ceilings.
+            for(x=[25.6:12:97.6])
+                translate([x,78,0]) rotate([90,0,0]) linear_extrude(54) {
+                    polygon([[0,H-7.3],[4.5,H-7.3],[0,H-2.8]]);
+                    polygon([[4.3,H-7.3],[8.8,H-7.3],[8.8,H-2.8]]);
+                }
         }
-        // Slots offset 6 mm from the outer vents; transverse ribs divide
-        // long spans into <=8.8 mm bridges when printed roof-down.
+        // Slots offset 6 mm from outer vents; cut through the corbels too.
+        // Small 2.4 mm slot edges remain short, accessible bridges.
         for(x=[27.2:12:99.2],y=[36,48,60,72])
-            translate([x,y,H-10.5]) cube([5.6,2.4,3.4]);
+            translate([x,y,H-10.5]) cube([5.6,2.4,10.5]);
     }
 }
 
@@ -217,8 +224,12 @@ module tray() {
         panel_transform() {
             for(x=[WALL,W-2*WALL-0.8])
                 translate([x,FLOOR,4]) cube([WALL+0.8,H-12.0,6.4]);
-            translate([WALL,FLOOR,4]) cube([W-2*WALL,WALL+0.8,6.4]);
+            // Bottom overlap receiver is cut separately with a ramped roof.
         }
+        // Rear-facing bottom receiver: a 45-degree roof removes the
+        // former 6.4 mm-deep horizontal ledge over the panel overlap.
+        translate([WALL,0,0]) rotate([90,0,90]) linear_extrude(W-2*WALL)
+            polygon([[133.6,4],[140,4],[140,15.2],[133.6,8.8]]);
         // Lid skirt receivers at corner pillars.
         translate([0,0,H-4.4]) linear_extrude(4.5)
             offset(delta=0.4) skirt_profile();
@@ -253,23 +264,30 @@ assert(IEC_CENTRE.y+18 < 90);
 assert(H == 96 && SHEET == 1.6);
 
 // A separate, blind DC vestibule below the inlet. Its roof is a nonprinted
-// sheet sliding in three grooves; the bolted outlet insert closes the feed
-// slot. The two offset openings do not look through to the terminal bay.
+// sheet dropped into open rebates, tucked under a ramped right lip and
+// retained by tabs on the bolted outlet insert. No long enclosed feed slot.
 module dc_vestibule() {
     difference() {
         union() {
             translate([3.2,92.4,4]) cube([114,4.8,45.6]);
             translate([3.2,118,4]) cube([114,3.2,45.6]);
-            translate([114,94,4]) cube([3.2,27.2,45.6]);
+            translate([114,94,4]) cube([3.2,27.2,48]);
             // Two staggered walls form the accessible cable labyrinth.
             translate([20,97.2,4]) cube([3.2,20.8,28]);
             translate([36,97.2,4]) cube([3.2,20.8,42]);
-            for(y=[98,116]) translate([0,y,42]) rotate([0,90,0]) cylinder(d=12,h=11.2);
+            for(y=[98,116]) {
+                translate([0,y,42]) rotate([0,90,0]) cylinder(d=12,h=11.2);
+                // Grow each horizontal nut boss on a 45-degree underside.
+                translate([0,y+4,0]) rotate([90,0,0]) linear_extrude(8)
+                    polygon([[3.2,28],[11.2,36],[11.2,42],[3.2,42]]);
+            }
             // Solid tie bridges: the slots open sideways, never through floor.
             for(x=[53,77]) translate([x,102,4]) cube([12,10,7]);
         }
-        translate([-0.1,95.6,46]) cube([115.3,24,2]);
-        translate([35.9,99.2,34]) cube([3.4,16.8,10]);
+        dc_roof_rebate();
+        // Open-top cable notch: the separate sheet supplies its roof,
+        // so no 16.8 mm bridge or trapped supports are printed here.
+        translate([35.9,99.2,34]) cube([3.4,16.8,20]);
         // Intentional insulated DC transfer to the terminal bay. Use sleeve.
         translate([113.9,107,36]) rotate([0,90,0]) cylinder(d=14.8,h=3.4);
         for(x=[53,77]) translate([x+3,101.9,5.6]) cube([6,10.2,3.2]);
@@ -279,7 +297,7 @@ module ac_tie_bridges() {
     for(y=[72,100]) difference() {
         // Attached to the sidewall; 6 mm projection with a ramped underside.
         hull() {
-            translate([143.2,y,48.4]) cube([0.8,10,18]);
+            translate([143.6,y,48.4]) cube([0.4,10,18]);
             translate([138,y,54.4]) cube([6,10,12]);
         }
         translate([139.6,y-0.1,57.6]) cube([2.8,10.2,5.6]);
@@ -289,9 +307,23 @@ module dc_port_shape() {
     // 15.8 x 8.8 mm capsule: allowance for one 8 mm or two 6 mm jackets.
     hull() for(y=[104,111]) translate([0,y,26]) rotate([0,90,0]) cylinder(d=8.8,h=1);
 }
+// Extrude an X/Z section along Y. Open rebates permit a tilted top-loading
+// sheet. The right retaining lip has a 45-degree underside (1.2 mm reach).
+// Cutting through the rear block removes its otherwise hidden overhang too.
+module dc_roof_rebate() {
+    translate([0,119.6,0]) rotate([90,0,0]) linear_extrude(24)
+        polygon([[4,46],[115.2,46],[115.2,48],[114,49.2],
+                 [114,H+1],[4,H+1]]);
+}
+module dc_retaining_tabs(clearance=0) {
+    for(y=[100,111])
+        translate([-0.8-clearance,y-clearance,48-clearance])
+            cube([8.8+2*clearance,3+2*clearance,2+2*clearance]);
+}
 module dc_port_negatives() {
     translate([-4.1,0,0]) scale([8.3,1,1]) dc_port_shape();
-    translate([-0.1,95.6,46]) cube([115.3,24,2]);
+    dc_roof_rebate();
+    dc_retaining_tabs(0.2);
     for(y=[98,116]) {
         translate([-0.1,y,42]) rotate([0,90,0]) cylinder(d=3.6,h=12);
         translate([8.4,y,42]) rotate([0,90,0]) hex_pocket(5.6,3);
@@ -299,14 +331,17 @@ module dc_port_negatives() {
 }
 module dc_insert() {
     difference() {
-        translate([-4,92,10]) cube([4,30,42]);
+        union() {
+            translate([-4,92,10]) cube([4,30,42]);
+            dc_retaining_tabs();
+        }
         translate([-4.1,0,0]) scale([4.3,1,1]) dc_port_shape();
         for(y=[98,116]) translate([-4.1,y,42]) rotate([0,90,0]) cylinder(d=3.6,h=4.2);
     }
 }
-module dc_roof_template() { square([114.8,23.6]); }
+module dc_roof_template() { square([110.6,23.6]); }
 module dc_roof_sheet() {
-    translate([0,95.8,46.2]) linear_extrude(SHEET) dc_roof_template();
+    translate([4.2,95.8,46.2]) linear_extrude(SHEET) dc_roof_template();
 }
 // Flat insulating sheet carried below the lid. It covers both the PSU
 // terminal bay and the inlet wiring; three exterior-loaded captive nuts.
@@ -318,6 +353,19 @@ module terminal_shield_template() {
         }
         for(p=SHIELD_FIXINGS) translate(p) circle(d=3.6);
     }
+}
+// The roof sheet installs before the inlet wiring and outlet insert. The
+// convex swept segments cover lowering, tuck and sampled rotation.
+// One-degree chords differ from the arc by <0.005 mm, below the collision
+// audit's 0.02 mm qualification floor.
+module dc_roof_install_pose(angle=0,dx=0,dz=0) {
+    translate([114.8+dx,0,47+dz]) rotate([0,angle,0])
+        translate([-114.8,0,-47]) dc_roof_sheet();
+}
+module dc_roof_install_sweep() {
+    hull() { dc_roof_install_pose(14,-2,60); dc_roof_install_pose(14,-2,0); }
+    hull() { dc_roof_install_pose(14,-2,0); dc_roof_install_pose(14,0,0); }
+    for(a=[0:1:13]) hull() { dc_roof_install_pose(a); dc_roof_install_pose(a+1); }
 }
 module terminal_shield_sheet() {
     translate([0,0,90]) linear_extrude(SHEET) terminal_shield_template();
@@ -443,6 +491,10 @@ else if(part=="collision_components") positive_overlap() {
     fitted_solids();
     union() { psu_transform() alt1205t_keepout(); inlet_transform() iecc14_keepout(); }
 }
+else if(part=="collision_guard_install") positive_overlap() {
+    dc_roof_install_sweep();
+    union() { tray(); psu_transform() alt1205t_keepout(); }
+}
 else if(part=="collision_wires") positive_overlap() {
     fitted_solids(); union() { wire_routes(); for(dy=[-3.5,3.5]) dc_wire_route(6,dy); }
 }
@@ -493,7 +545,15 @@ else if(PART=="dc_section") intersection() {
     union() { tray(); dc_insert(); dc_roof_sheet(); wire_routes(); }
     translate([-5,105.5,0]) cube([124,1,55]);
 }
+else if(PART=="guard_install") {
+    color([0.17,0.34,0.43]) tray();
+    color([0.70,0.62,0.25]) dc_roof_install_pose(14,-2,0);
+}
 else if(PART=="shield") { terminal_shield_sheet(); dc_roof_sheet(); }
+else if(PART=="lid_print_section") intersection() {
+    translate([0,D,H+LID]) rotate([180,0,0]) lid();
+    translate([0,103.5,-1]) cube([W,1,20]);
+}
 else if(PART=="lid") translate([0,D,H+LID]) rotate([180,0,0]) lid();
 else if(PART=="collision_control_contact") collision_control(10);
 else if(PART=="collision_control_gap") collision_control(10.1);
@@ -501,6 +561,6 @@ else if(PART=="collision_control_overlap") collision_control(9);
 else if(PART=="collision_control_thin") collision_control(9.98);
 else if(PART=="collision_parts" || PART=="collision_components" ||
         PART=="collision_service" || PART=="collision_chassis" ||
-        PART=="collision_plug" || PART=="collision_drivers" || PART=="collision_wires")
+        PART=="collision_plug" || PART=="collision_drivers" || PART=="collision_wires" || PART=="collision_guard_install")
     raw_collision(PART);
 else assert(false,str("Unknown PART: ",PART));

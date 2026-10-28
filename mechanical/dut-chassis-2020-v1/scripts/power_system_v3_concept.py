@@ -8,12 +8,15 @@ from pathlib import Path
 import subprocess
 
 from check_stl_topology import DisjointSet, inspect_topology, triangles
+from power_system_v3_provenance import CAD_INPUTS, receipt, require_current, check_dependencies
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "power-system-v3-concept.scad"
 OUT = ROOT / "build/power-system-v3-concept"
 VIEWS = {
+    "guard-install": ("guard_install", "-150,200,230,65,107,45"),
     "tray": ("tray", "270,360,280,74,72,20"),
+    "lid-print-section": ("lid_print_section", "74,-180,10,74,104,7"),
     "lid": ("lid", "270,360,230,74,72,0"),
     "internals": ("internals", "-200,220,380,74,72,42"),
     "dc-section": ("dc_section", "65,-100,30,65,107,30"),
@@ -39,11 +42,16 @@ VIEWS = {
 }
 
 def export(part, dest, extra=()):
+    before=receipt(CAD_INPUTS)
+    deps=dest.with_suffix(dest.suffix+'.deps')
+    deps.unlink(missing_ok=True)
     cmd = ["openscad", "--hardwarnings", "--check-parameters=true",
-           "--check-parameter-ranges=true", "-o", str(dest),
+           "--check-parameter-ranges=true", "-d", str(deps), "-o", str(dest),
            "-D", f'PART="{part}"', *extra, str(SOURCE)]
     result = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
     (OUT / f"{dest.stem}.log").write_text(result.stdout + result.stderr)
+    check_dependencies(deps)
+    require_current(before,CAD_INPUTS)
     return result
 
 def volume(path):
@@ -81,7 +89,7 @@ def vertical_hits(path, x, y):
     return sorted(hits)
 
 COLLISIONS=("collision_parts", "collision_components", "collision_service",
-            "collision_chassis", "collision_plug", "collision_drivers", "collision_wires")
+            "collision_chassis", "collision_plug", "collision_drivers", "collision_wires", "collision_guard_install")
 
 def clean_empty(result, dest):
     # OpenSCAD 2021.01 exits 1 for its documented empty-export result. No other
@@ -129,7 +137,8 @@ def main():
                 "--colorscheme=Tomorrow","--viewall",f"--camera={camera}"])
             if result.returncode: raise RuntimeError(f"render {name}: see log")
         return
-    report = {"status": "unpowered-mechanical-fit-candidate", "parts": {}, "collisions": {}}
+    source_receipt=receipt(CAD_INPUTS)
+    report = {"cad_inputs":source_receipt,"status": "unpowered-mechanical-fit-candidate", "parts": {}, "collisions": {}}
     for part in ("tray", "panel", "lid", "bridge", "dc_insert"):
         dest = OUT / f"{part}.stl"
         result = export(part, dest)
@@ -216,6 +225,7 @@ def main():
             if result.returncode:
                 raise RuntimeError(f"render {name}: see log")
             print(f"PASS render {name}", flush=True)
+    require_current(source_receipt,CAD_INPUTS)
     (OUT / "report.json").write_text(json.dumps(report, indent=2)+"\n")
 
 if __name__ == "__main__":

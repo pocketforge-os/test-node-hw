@@ -9,6 +9,7 @@ import math
 from pathlib import Path
 import re
 import subprocess
+from power_system_v3_provenance import CAD_INPUTS, SLICE_INPUTS, receipt, require_current
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'build/power-system-v3-concept'
@@ -47,21 +48,27 @@ def covered(segments,point):
     return False
 
 def main():
+    (OUT/'slice-report.json').unlink(missing_ok=True)
+    source=json.loads((OUT/'report.json').read_text())
+    require_current(source.get('cad_inputs'),CAD_INPUTS)
+    slice_inputs=receipt(SLICE_INPUTS)
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection
-    report={'profile':'0.8 mm nozzle / 0.4 mm layers / ABS geometry audit / supports disabled',
+    report={'cad_inputs':source['cad_inputs'],'slice_inputs':slice_inputs,'profile':'0.8 mm nozzle / 0.4 mm layers / ABS geometry audit / supports disabled',
             'profile_sha256':hashlib.sha256((ROOT/'scripts/prusaslicer-power-system-v3-audit.ini').read_bytes()).hexdigest(),
             'parts':{}}
     selections={'tray':[0.4,4,18,26,32,34,42,46.4,48,49.6,54,96],
                 'panel':[0.4,0.8,1.2,1.6,4,4.4,8,10],
                 'lid':[0.4,4,4.4,8,11.2,11.6,12,14.4],
-                'bridge':[0.4,4,4.4,6.4], 'dc_insert':[0.4,2,4]}
+                'bridge':[0.4,4,4.4,6.4], 'dc_insert':[0.4,2,4,4.4,8,12]}
     for part,heights in selections.items():
         path=OUT/f'{part}.audit.gcode'
         mesh=OUT/f'{part}.stl'
         before=hashlib.sha256(mesh.read_bytes()).hexdigest()
+        if before!=source['parts'][part]['sha256']:
+            raise RuntimeError(f'{part}: stale CAD mesh')
         path.unlink(missing_ok=True)
         result=subprocess.run(['flatpak','run','--command=prusa-slicer',
             'com.prusa3d.PrusaSlicer','--load',str(ROOT/'scripts/prusaslicer-power-system-v3-audit.ini'),
@@ -102,6 +109,11 @@ def main():
             'layer_count':len(layers),'max_z':max(layers),'path_centre_bounds_including_brim':bounds,
             'support_paths':0,'reviewed_layer_heights':heights}
         print(f'PASS {part}: {len(layers)} layers, bed fit, no support paths')
+    require_current(source['cad_inputs'],CAD_INPUTS)
+    require_current(slice_inputs,SLICE_INPUTS)
+    for part,info in report['parts'].items():
+        if hashlib.sha256((OUT/f'{part}.stl').read_bytes()).hexdigest()!=info['stl_sha256']:
+            raise RuntimeError(f'{part}: mesh changed during audit')
     (OUT/'slice-report.json').write_text(json.dumps(report,indent=2)+'\n')
 
 if __name__=='__main__': main()

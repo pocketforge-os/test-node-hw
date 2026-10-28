@@ -1,7 +1,7 @@
-# PSU enclosure V3 — generic-hardware design candidate
+# PSU enclosure V3 — first unpowered print candidate
 
 Owner-directed enclosure redesign, `tsp-bcx.21.45.3`. This iteration builds on
-PR86's mechanical fit candidate at `a19dd3f`. The owner asked to complete design
+PR86's mechanical fit candidate and PR87's internal layout at `893948f`. The owner asked to complete design
 work before any filament, and authorized conservative allowances for existing
 assorted connectors/wires instead of requiring purchase identifiers. A gland
 and dust seal are optional; preventing access to mains terminals remains the
@@ -20,7 +20,7 @@ projects from the left wall. These are deliberate exterior changes, not hidden
 inside the previous envelope.
 
 The enclosure uses a tray, flat lid, full rear panel, small rear-rail bridge and
-small cable-exit insert. Main walls/floor/lid/panel frame remain 4 mm. The C14
+small cable-exit insert with integral guard-retaining tabs. Main walls/floor/lid/panel frame remain 4 mm. The C14
 cutout remains the physically accepted contour with 0.20 mm normal clearance in
 a 1.2 mm seating island. The complete faceplate is surrounded by thick panel;
 there is no thin region at a corner or edge. Print the panel face-down so the
@@ -56,11 +56,14 @@ size. The shell is a secondary guard around the PSU metal case.
 
 The DC outlet opens into a separate compartment behind the PSU. Front, rear and
 right walls connect to the floor; a nonprinted sheet closes its roof. The sheet
-slides from the left through grooves on three edges. The bolted outlet insert
-covers the insertion slot and prevents the sheet sliding out.
+drops in from above into open rebates, tucks under a short right-hand lip, and
+is retained on the left by two tabs on the bolted outlet insert. This replaces
+the former 24 mm bridge over a 2 mm-high loading slot, where support removal
+would have been impractical. The right lip has a 45-degree underside.
 
 The outer cable slot is centred at Z26. A solid baffle at X20..23.2 rises to Z32;
-the second baffle at X36..39.2 has its passage at Z34..44. A cable therefore has
+the second baffle at X36..39.2 has an open-top notch starting at Z34.
+The nonprinted sheet supplies the notch roof at Z46.2; there is no printed bridge. A cable therefore has
 to turn upward. The external slot has no axial straight path into the enclosure.
 The compartment ends at a separate 14.8 mm DC transfer opening in the right wall,
 centred Y107/Z36, well beyond the accessible baffles. Sleeve the DC conductors
@@ -87,8 +90,9 @@ loose AC conductors cannot reach the DC circuit.
 
 Two source-owned SVG/DXF templates describe **nonprinted** 1.6 mm sheets:
 
-- `dc_roof_template`: 114.8 × 23.6, installed Z46.2..47.8. The tray grooves
-  leave 0.2 mm clearance on either face. The bolted side insert retains it.
+- `dc_roof_template`: **110.6 × 23.6**, installed X4.2..114.8, Y95.8..119.4,
+  Z46.2..47.8. Open rebates provide 0.2 mm nominal fit clearance; the short
+  right lip and two insert tabs retain it. Do not reuse PR87's wider template.
 - `terminal_shield_template`: an L-shaped sheet over the PSU terminal bay and
   C14 wiring, installed Z90..91.6. It attaches below the lid to three bosses,
   using M3 screws into captive nuts loaded from the exterior top of the lid.
@@ -105,7 +109,9 @@ allowance includes PE; continuity to the metal case still needs verification.
 No new hole into the PSU is specified and no undocumented case screw is declared
 an earth stud. The insulating sheets need no earth connection.
 
-Front and roof vents retain offset baffles. The roof baffle is now 40.74 mm above
+Front and roof vents retain offset baffles. The roof baffle now has 45-degree
+corbels between its ribs instead of 8.8 mm horizontal ceilings. Inner vent cuts
+extend through the corbels and stay offset 6 mm from the outer vents. The roof baffle is now 40.74 mm above
 the PSU's measured upper surface, leaving the upper inlet wiring clear of it.
 Cooling and material temperatures need physical validation. No IP, finger-probe,
 thermal, flame or electrical certification follows from a successful CAD check.
@@ -122,11 +128,14 @@ Work unplugged. The design package does not instruct mains wiring or energizatio
 2. Load the exterior-accessible panel/lid/bridge nuts and fit the separate rear
    bridge. A rear top-slot M3 rail nut is required in addition to the side nuts.
 3. Seat the C14 in its loose rear panel and check both locking tabs engage.
-   Route and retain the selected insulated wiring with the covers removed.
-   Preserve the shown connector and wire-turn space.
+   Keep this panel off the tray while installing the DC sheet; fit inlet wiring
+   after the sheet is seated. Preserve the shown connector and wire-turn space.
 4. Lay DC cables through the open baffles and retain each independently at the
-   internal bridges. Fit suitable edge protection/sleeving. Slide in the DC
-   roof sheet, then bolt the outlet insert on. Its M3 nuts load from the isolated
+   internal bridges. Fit suitable edge protection/sleeving. With the lid, rear
+   panel and outlet insert off, tilt the DC roof sheet about 14 degrees (left
+   edge raised), lower it into the open compartment, slide its right edge
+   under the retaining lip, and lower the left edge into the rebates. Then
+   bolt the outlet insert on; both tabs must sit above the sheet. Its M3 nuts load from the isolated
    DC side into 5.6 AF pockets; the installed screws capture them.
 5. Attach the L-shaped insulating shield beneath the lid. Three M3 nuts load
    from the exterior top; the screws enter from below the sheet. Check hardware
@@ -150,6 +159,9 @@ python3 scripts/test_power_system_v3_collision_gate.py
 xvfb-run -a make power-system-v3-concept
 # Python with matplotlib and installed PrusaSlicer Flatpak:
 python3 scripts/power_system_v3_slice_audit.py
+# Same Python environment, also with trimesh, shapely and numpy:
+python3 scripts/power_system_v3_printability.py
+python3 scripts/test_power_system_v3_provenance.py
 xvfb-run -a make validate
 # Fast visual iteration without replacing the validation report:
 xvfb-run -a python3 scripts/power_system_v3_concept.py --views-only --views internals dc-section shield
@@ -164,7 +176,9 @@ only expected cache/timing lines. Warnings, emitted meshes, other exits and
 unknown output fail closed. Per-solid translated self-intersection uses 0.01 mm
 per-axis inset; sub-0.02 mm features are outside this audit's qualification.
 Real contact/gap and positive-penetration controls exercise the producer. The
-result matrix covers seven selectors × twelve outcomes.
+result matrix covers eight selectors × twelve outcomes. A piecewise convex swept
+volume (one-degree rotation chords, <0.005 mm deviation) also checks the DC sheet's lower/tuck/rotate installation path against
+the tray and seated PSU, with the inlet wiring and outlet insert absent.
 
 The slice audit uses 0.8 mm nozzle / 0.4 mm layers, four perimeters, 20% infill,
 8 mm brim and supports off. It binds mesh/profile hashes, checks bed fit and
@@ -175,20 +189,76 @@ visual review. Refer to the exact-head validation report/PR for checks actually
 run; this document describes the intended checks and is not a substitute for
 those results.
 
+CAD, slice and printability reports carry source receipts. The CAD receipt
+covers all six declared SCAD inputs, the CAD producer, topology helper and
+receipt helper. Every OpenSCAD export emits its actual transitive dependency
+list; an undeclared input fails the export. The slice receipt additionally
+binds its producer and profile; the final audit binds its own producer. Consumers
+verify receipts before work and again before publishing their result, as well
+as checking the STL/G-code hashes. Missing legacy receipts and stale inputs
+require regenerating CAD, slices and printability evidence in that order.
+The provenance test runs both consumers against each mutated CAD input, each
+slice input against the print audit, legacy receipts, integrity/end checks,
+and declared/undeclared dependency lists. It never edits the real source tree.
+
 The source chassis check includes its default plate proxies and rails. Actual
 DUT cable bundles and unsurveyed board components are outside that model. The
 owner's original private photos remain outside Git.
 
-## Remaining release gates
+## Print setup and support removal
 
-This is an unpowered design candidate. Owner visual approval, physical fit and
+Use the STLs in their exported orientations; do not automatically stand the
+panel or lid on edge. The audited process uses a **0.8 mm nozzle, 0.4 mm fixed
+layers, four perimeters, 20% infill and 8 mm brim**, with the owner's ABS process.
+Choose the printer's calibrated material/temperature profile; audit G-code is
+not a machine release. The tray fits the audited 247 × 207 mm bed rotated
+90 degrees with brim. The large ABS tray still needs normal warping control.
+
+| STL | Bed face | Supports |
+| --- | --- | --- |
+| `tray.stl` | Outside floor down, open cavity up | Build-plate-only, 45-degree threshold, avoid supporting bridges; inspect locations below |
+| `panel.stl` | Exterior face down; C14 island starts on bed | Off |
+| `lid.stl` | Exterior roof down; skirt/baffle grow upward | Off |
+| `bridge.stl` | Broad top face down; slot key upward | Off |
+| `dc_insert.stl` | Exterior face down; retaining tabs upward | Off |
+
+For the tray, permit supports **only under the two exposed rail keys and in the
+five 7 mm-wide, 2.4 mm-deep PSU screw-head recesses on the underside**. The slicer
+audit checks every generated support extrusion, including width, stays within
+these removable regions. Peel the key supports sideways from the exposed edge;
+pick the shallow recess supports out from below. No support is allowed inside
+the vents, cable passages, nut pockets, guard rebates or AC/DC compartments.
+Do not select supports everywhere. Check your final slicer preview against
+`tray-support-map.png`; block any additional interior supports it proposes.
+
+The lid corbels and DC nut-boss ramps grow at 45 degrees. The DC cable notch is
+open at the top. Front intake slots, tie slots, horizontal screw bores and the
+rear panel receivers retain short bridges. The independent printability audit
+checks every layer for floating islands and clips actual extrusion segments
+against prior-layer mesh sections expanded by 0.4 mm (45-degree growth). The
+remaining unsupported straight segments must be at most 1.0 mm on the four
+support-free parts and 8.8 mm on the tray outside its support zones. Curved or segmented paths still require the visual layer review; this gate
+does not certify bridge anchoring or filament behaviour. These are geometric limits, not a measurement of the owner's printer's bridging quality.
+The former lid ceilings exceed this gate; support-disabled slicing alone would
+not have caught that regression.
+
+Check the C14 island is continuous, vent passages are open, screw recesses are
+clean and no tabs are cracked after printing. Stop assembly if the print is
+warped, delaminated or has holes. All five parts are for a first **unpowered**
+fit check; no separate disposable coupon is required by this iteration.
+
+## Remaining physical and electrical gates
+
+After the exact candidate passes the recorded CAD, slice, visual and independent
+review checks, it is ready for the owner's first unpowered print. Owner visual approval, physical fit and
 finger-access checks, confirmed PSU screw engagement, actual cable retention,
 sheet/material suitability, PE continuity, fuse selection and full-load thermal
 and electrical checks remain open. Generic dimensional allowances remove the
 need for part numbers during CAD; they do not establish hardware ratings.
-No filament is requested by this iteration. Do not merge/close the bead, replace
-historical Downloads artifacts or roll out to other DUTs from this document.
+Physical fit and powered qualification follow the print; they are not further
+CAD work prerequisites. Do not merge/close the bead, replace historical Downloads
+artifacts or roll out to other DUTs from this document.
 
 Implementation: owner-attended Codex GPT-6; exact deployed model ID unavailable.
-PR86's independent approval covers its previous mechanical head only. This
-internal-layout scope requires its own exact-head review.
+PR86/87 approvals cover their previous heads. The printability changes require
+their own exact-head independent review; see the package receipt and linked PR.
