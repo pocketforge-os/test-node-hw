@@ -75,6 +75,40 @@ def vertical_hits(path, x, y):
             hits.add(round(u*a[2]+v*b[2]+(1-u-v)*c[2],5))
     return sorted(hits)
 
+COLLISIONS=("collision_parts", "collision_components", "collision_service",
+            "collision_chassis", "collision_plug", "collision_drivers")
+
+def clean_empty(result, dest):
+    # OpenSCAD 2021.01 exits 1 for its documented empty-export result. No other
+    # failure code, emitted file, warning, error or unexpected log is accepted.
+    lines=[line.strip() for line in (result.stdout+result.stderr).splitlines() if line.strip()]
+    prefixes=("Geometries in cache:","Geometry cache size in bytes:",
+              "CGAL Polyhedrons in cache:","CGAL cache size in bytes:",
+              "Total rendering time:")
+    return (result.returncode==1 and not dest.exists() and bool(lines) and
+            lines[-1]=="Current top level object is empty." and
+            all(line.startswith(prefixes) for line in lines[:-1]))
+
+def check_collision_controls():
+    for name,empty in (("contact",True),("gap",True),("overlap",False),("thin",False)):
+        dest=OUT/f"collision_control_{name}.stl"
+        dest.unlink(missing_ok=True)
+        result=export(f"collision_control_{name}",dest)
+        accepted=clean_empty(result,dest)
+        if empty:
+            if not accepted: raise RuntimeError(f"collision control {name}: expected clean empty")
+        else:
+            # Require a successful real solid before asserting the guard
+            # rejected it: an exporter failure is not a positive control.
+            log=result.stdout+result.stderr
+            if result.returncode or "WARNING" in log or "ERROR" in log or not dest.exists():
+                raise RuntimeError(f"collision control {name}: invalid export")
+            mesh=inspect_topology(dest)
+            if mesh["invalid_edges"] or mesh["degenerate_facets"] or volume(dest)<=0 or accepted:
+                raise RuntimeError(f"collision control {name}: did not reject a valid overlap")
+        print(f"PASS collision control {name}: {'clean empty' if empty else 'real overlap rejected'}",flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--render", action="store_true")
@@ -112,27 +146,18 @@ def main():
             raise RuntimeError(f"PSU screw web at {(x,y)}: {hits}")
     report["psu_screw_paths"]="five through shafts; 3.2 mm bearing webs between head and fitting reliefs"
     print("PASS PSU screw shafts, head clearance and 3.2 mm bearing webs",flush=True)
-    for part in ("collision_parts", "collision_components", "collision_service",
-                 "collision_chassis", "collision_plug", "collision_drivers"):
+    check_collision_controls()
+    report["collision_sample_offset_per_axis_mm"]=0.01
+    report["collision_sub_0_02_mm_clearance_qualified"]=False
+    report["collision_controls"]="contact/gap clean-empty; 1 mm and 0.02 mm overlap rejected"
+    for part in COLLISIONS:
         dest = OUT / f"{part}.stl"
         dest.unlink(missing_ok=True)
         result = export(part, dest)
-        log = result.stdout + result.stderr
-        if dest.exists():
-            # Intentional floor/panel and lid/rim seating contacts produce
-            # zero-volume sheets in CGAL, rather than an empty STL.
-            overlap = volume(dest)
-            if overlap > 0.0001 or "ERROR:" in log:
-                raise RuntimeError(f"{part}: overlap={overlap}; see log")
-            report["collisions"][part] = {"volume_mm3": overlap,
-                "interpretation": "nominal surface contact only"}
-            print(f"PASS {part}: contact volume={overlap:.9f} mm3", flush=True)
-        elif ("Current top level object is empty" in log and
-              "WARNING:" not in log and "ERROR:" not in log):
-            report["collisions"][part] = "empty"
-            print(f"PASS {part}: empty", flush=True)
-        else:
-            raise RuntimeError(f"{part}: no usable intersection result; see log")
+        if not clean_empty(result,dest):
+            raise RuntimeError(f"{part}: nonempty, failed or invalid intersection export; see log")
+        report["collisions"][part]="clean empty at 0.01 mm audit tolerance"
+        print(f"PASS {part}: clean empty",flush=True)
     if args.render:
         for name, (part, camera) in VIEWS.items():
             result = export(part, OUT / f"{name}.png", (["--render"] if part in ("tray","lid","panel","bridge","panel_section") else []) + ["--imgsize=1600,1200",

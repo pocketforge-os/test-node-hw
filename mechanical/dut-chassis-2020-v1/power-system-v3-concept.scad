@@ -303,6 +303,55 @@ module assembly(open=false,explode=false,services=false) {
 }
 module printable_solids() { tray(); rear_panel(); lid(); rail_bridge(); }
 
+// A 0.01 mm translated self-intersection insets each SOLID before comparing
+// the pair, so nominal mating sheets are never formed as intermediate geometry.
+// Clearances/penetrations below 0.02 mm are not qualified by this audit.
+// All exported collision results must then be CLEAN EMPTY, never invalid STL.
+module positive_thickness() {
+    intersection() {
+        children();
+        translate([0.01,0,0]) children();
+        translate([0,0.01,0]) children();
+        translate([0,0,0.01]) children();
+    }
+}
+module positive_overlap() {
+    intersection() {
+        positive_thickness() children(0);
+        positive_thickness() children(1);
+    }
+}
+module raw_collision(part) {
+if(part=="collision_parts") union() {
+    positive_overlap() { tray(); rear_panel(); }
+    positive_overlap() { tray(); lid(); }
+    positive_overlap() { rear_panel(); lid(); }
+    positive_overlap() { rail_bridge(); union() { tray(); rear_panel(); lid(); } }
+}
+else if(part=="collision_components") positive_overlap() {
+    printable_solids();
+    union() { psu_transform() alt1205t_keepout(); inlet_transform() iecc14_keepout(); }
+}
+else if(part=="collision_service") positive_overlap() {
+    printable_solids(); service_volumes();
+}
+else if(part=="collision_chassis") positive_overlap() {
+    printable_solids(); existing_chassis();
+}
+else if(part=="collision_plug") positive_overlap() {
+    plug_access(); union() { printable_solids(); existing_chassis(); }
+}
+else if(part=="collision_drivers") positive_overlap() {
+    driver_access(); union() { printable_solids(); existing_chassis(); }
+}
+    else assert(false,str("Unknown collision selector: ",part));
+}
+module collision_control(offset_x) {
+    positive_overlap() {
+        cube([10,10,10]); translate([offset_x,0,0]) cube([10,10,10]);
+    }
+}
+
 if(PART=="assembly") assembly();
 else if(PART=="open") assembly(open=true,services=true);
 else if(PART=="exploded") assembly(explode=true);
@@ -323,26 +372,12 @@ else if(PART=="vent_section") intersection() {
     assembly(); translate([39,-1,0]) cube([1,D+2,72]);
 }
 else if(PART=="lid") translate([0,D,H+LID]) rotate([180,0,0]) lid();
-else if(PART=="collision_parts") {
-    intersection() { tray(); rear_panel(); }
-    intersection() { tray(); lid(); }
-    intersection() { rear_panel(); lid(); }
-    intersection() { rail_bridge(); union() { tray(); rear_panel(); lid(); } }
-}
-else if(PART=="collision_components") intersection() {
-    printable_solids();
-    union() { psu_transform() alt1205t_keepout(); inlet_transform() iecc14_keepout(); }
-}
-else if(PART=="collision_service") intersection() {
-    printable_solids(); service_volumes();
-}
-else if(PART=="collision_chassis") intersection() {
-    printable_solids(); existing_chassis();
-}
-else if(PART=="collision_plug") intersection() {
-    plug_access(); union() { printable_solids(); existing_chassis(); }
-}
-else if(PART=="collision_drivers") intersection() {
-    driver_access(); union() { printable_solids(); existing_chassis(); }
-}
+else if(PART=="collision_control_contact") collision_control(10);
+else if(PART=="collision_control_gap") collision_control(10.1);
+else if(PART=="collision_control_overlap") collision_control(9);
+else if(PART=="collision_control_thin") collision_control(9.98);
+else if(PART=="collision_parts" || PART=="collision_components" ||
+        PART=="collision_service" || PART=="collision_chassis" ||
+        PART=="collision_plug" || PART=="collision_drivers")
+    raw_collision(PART);
 else assert(false,str("Unknown PART: ",PART));

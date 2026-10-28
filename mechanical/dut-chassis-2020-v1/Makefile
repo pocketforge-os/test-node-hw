@@ -2506,7 +2506,9 @@ clean:
 # Explicit concept targets; these are not production-pack or print releases.
 .PHONY: power-system-v3-concept validate-power-system-v3-concept
 power-system-v3-concept:
+	$(PYTHON) scripts/test_power_system_v3_collision_gate.py
 	$(PYTHON) scripts/power_system_v3_concept.py --render
 
 validate-power-system-v3-concept:
+	$(PYTHON) scripts/test_power_system_v3_collision_gate.py
 	$(PYTHON) scripts/power_system_v3_concept.py

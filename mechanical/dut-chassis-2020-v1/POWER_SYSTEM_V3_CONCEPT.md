@@ -108,6 +108,7 @@ before opening it. No live device action is part of this CAD work.
 From `mechanical/dut-chassis-2020-v1`:
 
 ```sh
+python3 scripts/test_power_system_v3_collision_gate.py
 xvfb-run -a make power-system-v3-concept
 # Python environment with matplotlib; PrusaSlicer Flatpak installed:
 python3 scripts/power_system_v3_slice_audit.py
@@ -123,9 +124,17 @@ Slice with the owner's actual printer profile for any eventual physical print.
 
 The source exports four independently closed, connected meshes. The checker
 measures eight panel thickness probes and five PSU screw bores/bearing webs,
-then intersects parts, measured components, provisional service volumes,
-source chassis, plug corridor and straight 8 mm driver corridors. Nominal
-surface contacts are distinguished from positive-volume overlap.
+then compares parts, measured components, provisional service volumes,
+source chassis, plug corridor and straight 8 mm driver corridors. Each solid is inset by translated self-intersections at +0.01 mm along X, Y and
+Z before comparing it to its mate. This avoids creating nominal-contact sheets
+in CGAL. Clearances/penetrations below 0.02 mm are outside the qualification of this
+numerical audit; the per-axis sample offset is 0.01 mm.
+Only an absent output file, OpenSCAD's exact clean-empty diagnostic, expected
+exit code 1 and ordinary cache/timing lines can pass. Every emitted STL, warning,
+error, unexpected log or other exit code fails, regardless of calculated volume.
+Real contact/gap controls must be clean-empty; 1 mm and 0.02 mm penetration
+controls must export valid positive solids that the acceptance gate rejects.
+A 72-case matrix sweeps all six selectors across 12 exporter-result classes.
 
 The slice audit binds its results to the exact mesh and profile hashes, checks
 all extrusion-path centres against the bed, rejects support toolpaths, and
