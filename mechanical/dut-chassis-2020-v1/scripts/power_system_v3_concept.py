@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
-"""Reproduce and check the V3 layout study; outputs are not print releases."""
+"""Reproduce and check the V3 unpowered mechanical fit candidate."""
 import argparse
 import hashlib
 import json
 from pathlib import Path
 import subprocess
 
-from check_stl_topology import inspect_topology, triangles
+from check_stl_topology import DisjointSet, inspect_topology, triangles
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "power-system-v3-concept.scad"
 OUT = ROOT / "build/power-system-v3-concept"
 VIEWS = {
+    "tray": ("tray", "270,360,280,74,72,20"),
+    "lid": ("lid", "270,360,230,74,72,0"),
+    "bridge": ("bridge", "55,70,60,12,12,3"),
+    "vent-section": ("vent_section", "300,72,34,39,72,34"),
+    "front": ("assembly", "74,-350,34,74,72,34"),
+    "left": ("assembly", "-350,72,34,74,72,34"),
+    "right": ("assembly", "450,72,34,74,72,34"),
+    "top": ("assembly", "74,72,500,74,72,34"),
+    "bottom": ("bottom", "-74,72,500,-74,72,0"),
     "assembly": ("assembly", "270,360,230,74,72,30"),
     "open": ("open", "270,360,280,74,72,20"),
     "exploded": ("exploded", "290,400,280,74,90,44"),
@@ -33,12 +42,25 @@ def export(part, dest, extra=()):
     return result
 
 def volume(path):
-    total = 0.0
-    for a,b,c in triangles(path):
-        total += (a[0]*(b[1]*c[2]-b[2]*c[1]) +
-                  a[1]*(b[2]*c[0]-b[0]*c[2]) +
-                  a[2]*(b[0]*c[1]-b[1]*c[0]))
-    return abs(total/6)
+    # Sum absolute volumes per connected shell so disconnected inverted
+    # shells cannot cancel a real collision. Zero-volume mating sheets pass.
+    facets=triangles(path)
+    groups=DisjointSet(len(facets))
+    seen={}
+    for i,tri in enumerate(facets):
+        for point in tri:
+            if point in seen:
+                groups.union(i,seen[point])
+            else:
+                seen[point]=i
+    totals={}
+    for i,(a,b,c) in enumerate(facets):
+        root=groups.find(i)
+        value=(a[0]*(b[1]*c[2]-b[2]*c[1]) +
+               a[1]*(b[2]*c[0]-b[0]*c[2]) +
+               a[2]*(b[0]*c[1]-b[1]*c[0]))/6
+        totals[root]=totals.get(root,0)+value
+    return sum(abs(v) for v in totals.values())
 
 def vertical_hits(path, x, y):
     """Intersect the exported mesh with a Z ray, away from holes/edges."""
@@ -59,8 +81,8 @@ def main():
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "report.json").unlink(missing_ok=True)
-    report = {"status": "layout-study-only", "parts": {}, "collisions": {}}
-    for part in ("tray", "panel", "lid"):
+    report = {"status": "unpowered-mechanical-fit-candidate", "parts": {}, "collisions": {}}
+    for part in ("tray", "panel", "lid", "bridge"):
         dest = OUT / f"{part}.stl"
         result = export(part, dest)
         if result.returncode:
@@ -82,6 +104,14 @@ def main():
             raise RuntimeError(f"panel thickness at {(x,y)}: {hits}, expected {thickness}")
     report["panel_thickness"]="four 1.2 mm island probes and four 4 mm frame probes pass"
     print("PASS panel mesh thickness: 1.2 mm island, 4 mm surrounding frame",flush=True)
+    for x,y in ((12.95,86.55),(38.9,66.2),(75,66.2),(75,38.2),(106.6,84.75)):
+        if vertical_hits(OUT/"tray.stl",x,y) != []:
+            raise RuntimeError(f"PSU screw shaft blocked at {(x,y)}")
+        hits=vertical_hits(OUT/"tray.stl",x+3,y)
+        if hits != [2.4,5.6]:
+            raise RuntimeError(f"PSU screw web at {(x,y)}: {hits}")
+    report["psu_screw_paths"]="five through shafts; 3.2 mm bearing webs between head and fitting reliefs"
+    print("PASS PSU screw shafts, head clearance and 3.2 mm bearing webs",flush=True)
     for part in ("collision_parts", "collision_components", "collision_service",
                  "collision_chassis", "collision_plug", "collision_drivers"):
         dest = OUT / f"{part}.stl"
@@ -105,7 +135,7 @@ def main():
             raise RuntimeError(f"{part}: no usable intersection result; see log")
     if args.render:
         for name, (part, camera) in VIEWS.items():
-            result = export(part, OUT / f"{name}.png", ["--imgsize=1600,1200",
+            result = export(part, OUT / f"{name}.png", (["--render"] if part in ("tray","lid","panel","bridge","panel_section") else []) + ["--imgsize=1600,1200",
                 "--projection=o", "--colorscheme=Tomorrow", "--viewall",
                 f"--camera={camera}"])
             if result.returncode:

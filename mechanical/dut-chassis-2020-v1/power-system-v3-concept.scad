@@ -21,7 +21,7 @@ ORIGIN = [178,156,0];
 // Offset 11 mm from panel midline and raise 4 mm to clear the rear carrier
 // link and bottom rail with the provisional plug corridor. Still well inboard.
 IEC_CENTRE = [W/2-11,38]; // panel X / installed Z
-PSU_ORIGIN = [8,91.5,6.4];
+PSU_ORIGIN = [8,91.5,8];
 RIGHT_MOUNTS = [149.73-ORIGIN.y,306-ORIGIN.y];
 REAR_RAIL = 338-ORIGIN.y;
 REAR_MOUNT_X = 24;
@@ -111,21 +111,59 @@ module rear_brace() {
         union() {
             translate([REAR_MOUNT_X-12,D-12,0]) cube([24,12,4]);
             translate([REAR_MOUNT_X-12,D-0.8,0]) cube([24,REAR_RAIL-D+0.8,4]);
-            translate([REAR_MOUNT_X-12,REAR_RAIL-8,0]) cube([24,8,24]);
+            translate([REAR_MOUNT_X-12,REAR_RAIL-18,0]) cube([24,18,20]);
             for(x=[REAR_MOUNT_X-12,REAR_MOUNT_X+8])
                 hull() {
                     translate([x,D,0]) cube([4,1,4]);
-                    translate([x,REAR_RAIL-8,0]) cube([4,8,20]);
+                    translate([x,REAR_RAIL-18,0]) cube([4,8,20]);
                 }
-            // Top-access rear-rail fastener avoids trapping a horizontal
-            // screwdriver between the box and rear rail. The external pad
-            // needs an accessible support strategy before print release.
-            translate([REAR_MOUNT_X-12,REAR_RAIL-8,20]) cube([24,24,4]);
-            translate([REAR_MOUNT_X-7,REAR_RAIL+6.9,17.6]) cube([14,6.2,3.2]);
         }
-        translate([REAR_MOUNT_X,REAR_RAIL+10,16]) cylinder(d=3.6,h=10);
+        for(x=[REAR_MOUNT_X-8,REAR_MOUNT_X+8]) {
+            translate([x,REAR_RAIL-14,17.2]) hex_pocket(5.6,3);
+            translate([x,REAR_RAIL-14,13]) cylinder(d=3.6,h=8);
+        }
     }
 }
+// Separate top bridge prints broad face down: the rail key grows upward,
+// removing the inaccessible underside overhang from the large tray.
+module rail_bridge() {
+    difference() {
+        union() {
+            translate([REAR_MOUNT_X-12,REAR_RAIL-18,20]) cube([24,34,4]);
+            translate([REAR_MOUNT_X-7,REAR_RAIL+6.9,17.6]) cube([14,6.2,3.2]);
+        }
+        for(p=[[REAR_MOUNT_X-8,REAR_RAIL-14],
+               [REAR_MOUNT_X+8,REAR_RAIL-14],
+               [REAR_MOUNT_X,REAR_RAIL+10]])
+            translate([p.x,p.y,16]) cylinder(d=3.6,h=10);
+    }
+}
+// Lower front intake: offset slots in two vertical walls, with substantial
+// ribs connecting the inner baffle. Short 2.4 mm bridges only when upright.
+module intake_baffle() {
+    difference() {
+        union() {
+            translate([28,8,4]) cube([80,3.2,32]);
+            for(x=[28:16:108]) translate([x-1.6,3.2,4]) cube([3.2,8,32]);
+        }
+        for(x=[32:16:96],z=[14,26])
+            translate([x,7.9,z]) cube([8,3.4,2.4]);
+    }
+}
+module roof_baffle() {
+    difference() {
+        union() {
+            translate([24,24,53.6]) cube([84,54,3.2]);
+            for(x=[24:12:108]) translate([x-1.6,24,53.6]) cube([3.2,54,11.4]);
+            for(y=[24,74.8]) translate([24,y,53.6]) cube([84,3.2,11.4]);
+        }
+        // Slots offset 6 mm from the outer vents; transverse ribs divide
+        // long spans into <=8.8 mm bridges when printed roof-down.
+        for(x=[27.2:12:99.2],y=[36,48,60,72])
+            translate([x,y,53.5]) cube([5.6,2.4,3.4]);
+    }
+}
+
 module tray() {
     difference() {
         union() {
@@ -140,7 +178,7 @@ module tray() {
                 }
             }
             for(p=alt1205t_all_m3_centres())
-                translate(concat(psu_hole(p),[3.2])) cylinder(d=12,h=3.2);
+                translate(concat(psu_hole(p),[3.2])) cylinder(d=12,h=4.8);
             // Front lid pillars are outside the PSU footprint.
             intersection() {
                 linear_extrude(H) round_plan(W,D);
@@ -151,10 +189,15 @@ module tray() {
             right_ear(RIGHT_MOUNTS[0],true);
             right_ear(RIGHT_MOUNTS[1]);
             rear_brace();
+            intake_baffle();
         }
         for(p=alt1205t_all_m3_centres()) {
             xy=psu_hole(p);
-            translate([xy.x,xy.y,3.8]) hex_pocket(5.6,3);
+            // Screw heads load from beneath; the PSU already has threaded
+            // fittings. Upper relief accommodates their unmeasured projection.
+            translate([xy.x,xy.y,-0.1]) cylinder(d=7,h=2.5);
+            translate([xy.x,xy.y,-0.1]) cylinder(d=3.6,h=8.2);
+            translate([xy.x,xy.y,5.6]) cylinder(d=7,h=2.5);
         }
         for(p=LID_POINTS) {
             translate([p.x,p.y,H-2.8]) hex_pocket(5.6,3);
@@ -164,6 +207,8 @@ module tray() {
             translate([x,D-WALL,z]) rotate([90,0,0]) hex_pocket(5.6,2.8);
             translate([x,D-WALL+0.02,z]) rotate([90,0,0]) cylinder(d=3.6,h=6);
         }
+        for(x=[32:16:96],z=[8,20])
+            translate([x,-0.1,z]) cube([8,4.2,2.4]);
         // Receiver clearance for the panel's overlap; preserves full 4 mm
         // outer walls at the rear screw blocks.
         panel_transform() {
@@ -181,7 +226,10 @@ module lid() {
         union() {
             translate([0,0,H]) linear_extrude(LID) round_plan(W,D);
             translate([0,0,H-4]) linear_extrude(5) skirt_profile();
+            roof_baffle();
         }
+        for(x=[27.2:12:99.2],y=[30,42,54,66])
+            translate([x,y,63.9]) cube([5.6,2.4,4.2]);
         for(p=LID_POINTS)
             translate([p.x,p.y,H-5]) cylinder(d=3.6,h=10);
     }
@@ -210,7 +258,9 @@ module driver_access() {
         translate([x,D+2,z]) rotate([-90,0,0]) cylinder(d=8,h=100);
     for(y=RIGHT_MOUNTS)
         translate([W-10,y,10]) rotate([0,-90,0]) cylinder(d=8,h=70);
-    translate([REAR_MOUNT_X,REAR_RAIL+10,26]) cylinder(d=8,h=100);
+    for(p=[[REAR_MOUNT_X-8,REAR_RAIL-14],[REAR_MOUNT_X+8,REAR_RAIL-14],
+           [REAR_MOUNT_X,REAR_RAIL+10]])
+        translate([p.x,p.y,26]) cylinder(d=8,h=100);
 }
 module rail_context() {
     color([0.57,0.61,0.65]) translate(-ORIGIN) {
@@ -244,13 +294,14 @@ module screw_markers() {
 }
 module assembly(open=false,explode=false,services=false) {
     color([0.17,0.34,0.43]) tray();
+    color([0.26,0.48,0.55]) translate([0,0,explode?15:0]) rail_bridge();
     color([0.26,0.48,0.55]) translate([0,explode?30:0,0]) rear_panel();
     if(!open) color([0.80,0.83,0.83]) translate([0,0,explode?42:0]) lid();
     components();
     if(!explode && !open) screw_markers();
     if(services) service_volumes();
 }
-module printable_solids() { tray(); rear_panel(); lid(); }
+module printable_solids() { tray(); rear_panel(); lid(); rail_bridge(); }
 
 if(PART=="assembly") assembly();
 else if(PART=="open") assembly(open=true,services=true);
@@ -266,11 +317,17 @@ else if(PART=="panel_section") intersection() {
     rear_panel_flat(); translate([0,IEC_CENTRE.y-0.5,-1]) cube([W,1,14]);
 }
 else if(PART=="tray") tray();
+else if(PART=="bridge") translate([-(REAR_MOUNT_X-12),REAR_RAIL+16,24]) rotate([180,0,0]) rail_bridge();
+else if(PART=="bottom") rotate([0,180,0]) assembly(open=true);
+else if(PART=="vent_section") intersection() {
+    assembly(); translate([39,-1,0]) cube([1,D+2,72]);
+}
 else if(PART=="lid") translate([0,D,H+LID]) rotate([180,0,0]) lid();
 else if(PART=="collision_parts") {
     intersection() { tray(); rear_panel(); }
     intersection() { tray(); lid(); }
     intersection() { rear_panel(); lid(); }
+    intersection() { rail_bridge(); union() { tray(); rear_panel(); lid(); } }
 }
 else if(PART=="collision_components") intersection() {
     printable_solids();

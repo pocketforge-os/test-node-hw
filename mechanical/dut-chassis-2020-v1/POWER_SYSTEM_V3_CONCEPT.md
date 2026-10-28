@@ -1,131 +1,161 @@
-# PSU enclosure V3 — layout study
+# PSU enclosure V3 — mechanical fit candidate
 
-This is the first layout for the owner's 2026-10-28 redesign request, tracked
-under `tsp-bcx.21.45.3`. It is a review artifact, not an approved print or
-electrical enclosure. PR85's earlier enclosure remains historical evidence.
-The component and coupon foundation is merged at `0b1e3b7`; no production pack
-or existing component measurement changes in this study.
+A complete mechanical redesign for the owner's 2026-10-28 request, tracked under
+`tsp-bcx.21.45.3`. This candidate is for **unpowered fit review**. It is not an
+approved powered enclosure or a production pack change. PR85 remains historical;
+this branch builds on the merged, physically corrected component/coupon source
+at `0b1e3b7` without changing those measurements.
 
-## Architecture
+## What changed
 
-Three printed structural pieces: an open tray, a flat top lid, and a full rear
-panel. The rear panel prints exterior-face-down. Its small C14 snap island is
-surrounded on all sides by substantial panel material; it is never a bridge
-to a nearby corner or a separate thin strip attached to a lid edge.
+Three large parts — tray, rear panel and lid — plus a small removable rear-rail
+bridge. The main walls, floor, lid and rear panel frame are 4 mm. The C14 cutout
+sits in a local 1.2 mm island surrounded by the full rear panel, well away from
+edges and corners. The panel is a continuous solid; it does not depend on tiny
+boolean joins or a separate cassette edge. It prints exterior-face-down so the
+thin island is three full 0.4 mm layers, not an upright thin-wall extrusion.
 
-The tray has 4 mm walls/floor and a 4 mm lid. The rear panel has a 4 mm frame
-with a local 1.2 mm snap island under the inlet flange. Its continuous U-shaped
-inner overlap reaches 10 mm behind the exterior face. The lid has a 3.2 mm
-thick, 4 mm deep overlap that steps around the front fastener pillars.
-Nominal seating surfaces meet; 0.4 mm running clearance is behind the overlaps.
-These are assembly joints, not an IP seal or a demonstrated electrical barrier.
+Two spaced right-rail ears and the rear-rail bridge make a triangular mounting
+pattern. The bridge prints separately, broad face down, eliminating the large
+tray's rear flange overhang. Its two tray screws are forward of the rear carrier
+plate so a straight driver can reach them. The third screw enters the top slot
+of the rear extrusion. Positive keys fit within the measured rail openings.
 
-The panel and lid each use four M3 axes. Visible top/rear loading pockets reuse
-the previously qualified 5.60 mm across-flats / 2.80 mm deep nut geometry.
-The installed cover captures the nuts. Screw lengths, entry chamfers, loading
-sequence and actual hardware fit still need physical qualification. PSU pockets
-reuse the corrected five-hole pattern, with 2.6 mm pocket depth in 12 mm pads.
+The lid and rear panel have overlapping joints. The panel's U-shaped overlap
+extends 10 mm inward; the lid skirt is 3.2 mm thick and 4 mm deep. Nominal exterior
+seating faces meet; 0.4 mm clearance lies behind the overlap. These are assembly
+joints, not an IP seal. The only intentional external openings are component,
+fastener and ventilation openings. Rendered and sampled sliced geometry shows
+no unintended open seams; this is not a global minimum-wall certificate.
 
-## Fit and coordinates
+Offset front intake slots and a ribbed, double-layer roof vent provide an air
+path around the PSU shell. The roof baffle sits 8.74 mm above the measured PSU
+keepout. Offset openings block a normal straight-through line; this does not
+establish a finger-probe rating or replace the required terminal shield. Cooling
+performance remains untested. The roof baffle prints with short bridges between
+ribs; ABS bridging and shrink still require a physical print check.
 
-All values are millimetres. Local +Y points toward the DUT/wall; +Z is up.
-Installed origin is `[178,156,0]` in the existing chassis coordinates.
+## Dimensions and fit provenance
 
-| Item | Geometry / evidence |
+All values are millimetres. Local +Y is rearward and +Z is up. Installed origin
+is `[178,156,0]` in the source chassis coordinates.
+
+| Item | Current geometry |
 | --- | --- |
 | Main case including lid | 148 X × 144 Y × 68 Z |
-| PSU | 110 × 77.5 × 36.86; exact existing component keepout |
-| PSU placement | `translate([8,91.5,6.4]) rotate([0,0,-90])` |
-| C14 faceplate | 50.3 horizontal × 31 vertical, rotated from the approved model |
-| C14 nominal insertion profile | Approved 27 × 46.86 contour, +0.20 normal clearance |
-| C14 face datum | Local X=63, Y=144, Z=38; faces rearward |
-| Flange margin to nearest panel edge | 10.5 above, 18.5 below, 37.85 left, 59.85 right |
-| Right rail screws | Retained world Y=149.73 and 306; X=326 contact plane, Z=10 axes |
-| Rear rail screw | World X=202, Y=348, vertical axis through the rail's top slot |
-| Rail keys | 6.2 wide × 2.4 deep, based on measured 6.73 opening / 6.48 slot depth |
-| Tray export including mounts | 150.4 × 214.27 × 64 |
-| Panel export | 148 × 60 × 10, lying exterior-face-down |
-| Lid export | 148 × 144 × 8, lying exterior-roof-down |
+| PSU | ALT-1205T, nameplate **12 V / 5 A**, 110 × 77.5 × 36.86 |
+| PSU placement | `translate([8,91.5,8]) rotate([0,0,-90])` |
+| C14 faceplate | 50.3 horizontal × 31 vertical |
+| Insertion profile | Approved 27 × 46.86 contour, +0.20 normal clearance |
+| C14 face datum | X=63, Y=144, Z=38, facing rearward |
+| Flange margins | 10.5 above, 18.5 below, 37.85 left, 59.85 right |
+| Right rail screws | World Y=149.73 and 306, X=326 contact plane, Z=10 axes |
+| Rear rail screw | World X=202, Y=348, vertical axis into top slot |
+| Bridge-to-tray screws | World X=194 / 210, Y=324, vertical axes |
+| Rail keys | 6.2 wide × 2.4 deep; measured opening 6.73 / slot depth 6.48 |
+| Tray print envelope | 150.4 × 198.27 × 64 |
+| Rear panel print envelope | 148 × 60 × 10 |
+| Lid print envelope | 148 × 144 × 14.4, roof down |
+| Bridge print envelope | 24 × 34 × 6.4, top face down |
 
-Two spaced right-rail ears and a rear-rail brace form a triangular support
-pattern. The rear screw is accessed from above: a horizontal screw would trap
-the driver between the panel and the rear rail. Both rail key shapes and the
-rear top pad are checked against the source-owned extrusion geometry.
-Availability and relocation of a suitable rear-rail T-nut remain physical
-installation questions; the old four right-rail nuts do not establish this.
+The C14 is slightly left of centre to clear the chassis rear carrier link and
+bottom rail. The original centred layout intersected the provisional plug
+corridor by 2660.597 mm³. The first split-bridge screw placement also intersected
+the rear plate's driver corridor; moving those screws 10 mm forward clears it.
+These are checked failures corrected in the final geometry, not just visual
+assumptions.
 
-The original centered inlet at X=74/Z=34 produced **2660.597 mm³** of interference
-between a provisional 50 × 32 × 80 plug-access corridor and the rear chassis
-structures. Moving it 11 mm left and 4 mm up clears that corridor while keeping
-the thin region well inside the panel. This is why the final inlet is slightly
-off the panel's exact centre. The corridor is a design allowance, not a measured
-C13 plug or cable-bend model.
+PSU hole centres remain the owner-finalized underside coordinates:
+`(4.95,4.95), (25.3,30.9), (25.3,67), (53.3,67), (6.75,98.6)`.
+The photos show threaded fittings on the PSU underside. Screws now enter from
+below through 3.6 mm clearance bores. Each pad has a 7 mm head recess 2.4 mm deep,
+a 7 mm upper fitting relief 2.4 mm deep, and a 3.2 mm bearing web between them.
+The fitting projection and permitted screw penetration are unmeasured. The pad
+is therefore a fit allowance, not a verified screw-length prescription. The
+owner accepted the last corner-hole correction without another coupon print.
 
-## Reproduce and inspect
+Measured component contracts and all corrections remain in
+`lib/alt-1205t-power-supply.md` and `lib/iec-c14-fused-switch.md`. Private source
+photos were inspected without copying them into this package or repository.
 
-From this directory, with OpenSCAD and Python available:
+## Assembly and hardware review
+
+1. Check the tray against the two right-rail positions and rear rail. Insert
+   suitable M3 rail nuts before access is obstructed. A rear top-slot nut is
+   additional hardware; availability is not established by the old strip nuts.
+2. With the tray off the chassis, seat the PSU on its pads. Fit screws upward
+   through the underside recesses into the PSU's own fittings. Use heads that
+   fit the 7 mm diameter / 2.4 mm depth recess. Verify engagement and internal
+   penetration against the actual PSU before tightening; no invented length.
+3. Load the two rear bridge M3 nuts into the top-open pockets. Fit the bridge
+   and secure it to the tray. Load the four lid nuts and four rear-panel nuts
+   into their accessible pockets before the covers are installed.
+4. Seat the C14 in the panel while the panel is loose. Confirm both locking tabs
+   engage the locally thin island. It must not be retained by friction alone.
+5. Fit the rear panel and lid using their four screws each. M3 × 8 is a nominal
+   starting length for these 4 mm panels and the bridge's tray screws; confirm
+   actual nut/head fit and no bottoming. The 5.60 AF / 2.80 deep panel nut
+   pockets are pressure-fit allowances; installed covers retain the nuts.
+6. Attach the tray at both right-rail positions and the rear top slot. Check
+   screw lengths against the real T-nuts. Confirm plug/fuse access, removal
+   order, rail clamping and resistance to cable pull by hand, unpowered.
+
+The fit package contains no mains wiring instructions. Disconnect and unplug
+before opening it. No live device action is part of this CAD work.
+
+## Reproduce the checks
+
+From `mechanical/dut-chassis-2020-v1`:
 
 ```sh
 xvfb-run -a make power-system-v3-concept
-xvfb-run -a make validate-power-system-v3-concept
+# Python environment with matplotlib; PrusaSlicer Flatpak installed:
+python3 scripts/power_system_v3_slice_audit.py
+xvfb-run -a make validate
 ```
 
-Outputs are under `build/power-system-v3-concept/`: meshes, fixed-camera PNGs,
-per-export logs and `report.json` with mesh hashes, bounds and checks. The model
-entrypoint is `power-system-v3-concept.scad`. Open its `PART="assembly"` selector
-for the assembled view. Other useful selectors are `open`, `exploded`, `frame`,
-`chassis`, `plug_access`, `panel`, and `panel_section`.
+Generated output: `build/power-system-v3-concept/`. The slice script uses
+`scripts/prusaslicer-power-system-v3-audit.ini`: PrusaSlicer 2.9.6, 0.8 mm nozzle,
+0.4 mm layers, four perimeters, 20% infill, 8 mm brim, supports disabled. The
+tray rotates 90 degrees to fit the audit 247 × 207 bed with its brim. This is a
+geometry-audit profile, **not a machine/material profile to print G-code from**.
+Slice with the owner's actual printer profile for any eventual physical print.
 
-Checks use the exported meshes, not just source text:
+The source exports four independently closed, connected meshes. The checker
+measures eight panel thickness probes and five PSU screw bores/bearing webs,
+then intersects parts, measured components, provisional service volumes,
+source chassis, plug corridor and straight 8 mm driver corridors. Nominal
+surface contacts are distinguished from positive-volume overlap.
 
-- Each structural piece must be one closed connected edge-manifold mesh.
-- Four Z-ray probes measure the panel island at 1.2 mm; four measure the
-  surrounding frame at 4 mm.
-- Solid intersections check parts, PSU/inlet, provisional internal service
-  volumes, existing lower rails/plate proxies/carrier links, the plug corridor,
-  and 8 mm straight screwdriver corridors.
-- Nominal mating surface contact can produce CGAL zero-volume sheets. The
-  report distinguishes these from empty intersections and rejects positive
-  overlap above 0.0001 mm³. This is a layout interference check, not a general
-  tolerance, strength or minimum-wall certificate.
+The slice audit binds its results to the exact mesh and profile hashes, checks
+all extrusion-path centres against the bed, rejects support toolpaths, and
+checks four snap-island probe locations on each of the three 0.4 mm layers plus
+the first layer above the island. Layer sheets show the actual extrusion paths
+at selected critical heights. A clean support-off slice is not proof that a
+printer will bridge perfectly. Inspect `*-layers.png`, the panel section, vent
+section, six orthographic views, open/exploded views and chassis context.
 
-The chassis check uses the existing source's default Smart Pro / legacy-gantry
-layout and accurate slot extrusions, with plate proxies. It does not include
-unmodeled cables, every component mounted to the boards, or a surveyed live DUT.
-The simplified two-rail render is only a readable mounting illustration; the
-`chassis` and collision selectors use the repository's chassis modules.
+The chassis collision check uses the source's default Smart Pro / legacy gantry
+layout with accurate rails and plate proxies. Unknown board components, cable
+bundles and unsurveyed live-DUT differences are outside that check. Internal
+orange volumes and the 50 × 32 × 80 C13 plug corridor are provisional allowances.
 
-## Remaining work before a print candidate
+## Open electrical and physical gates
 
-1. Review this arrangement with the owner, especially the three-piece assembly,
-   larger working space, rear rail pad and inlet location.
-2. Measure the actual C13 plug/boot, inlet lug projection, insulated terminals,
-   wire bends, cable bundle/gland and PSU terminal layout. Orange blocks in the
-   open render reserve space; their dimensions are provisional. Final AC/DC
-   separation, a nonprinted terminal shield, PE connection access, strain relief
-   and fuse data are not implemented in this concept.
-3. Add cooling and the DC exit after those paths are fixed. The current solid
-   case is intentionally incomplete in those respects and is not suitable for
-   energization.
-4. Resolve print orientation and support details with a slicer. The rear top
-   rail pad has an exposed external overhang that needs local removable support
-   or a revised brace. No support-free claim is made. Check horizontal nut
-   pockets, elephant foot, 0.8 mm nozzle treatment of the accepted 1.2 mm island,
-   ABS shrink/creep and available bed/brim space. The panel and lid print flat.
-5. Exercise actual nut loading, all driver paths, screw lengths, rail clamping,
-   plug pull loads, and joint retention. Investigate all unintended slits in
-   actual sliced layers, not only the nominal solids.
-6. Run the full repository/print regression, independent review and the owner's
-   visual/physical gates before a print release. Existing Downloads files are
-   not replaced by this layout study. The bead remains in progress.
+This is a reviewed mechanical fit candidate, not completion of the parent
+powered-enclosure bead. Before powered use, measure the C14 lug and insulated
+connector projection, actual C13 plug/boot and bend, PSU terminal layout, cable
+bundle and selected gland. The final nonprinted terminal shield, PE bonding
+interface, continuous AC/DC separation, conductor retention and rated DC egress
+are not implemented here; the case has no DC outlet hole yet. Those features
+must be resolved together from actual hardware instead of cutting an arbitrary
+exit hole now. Fuse selection, temperature/flammability suitability, thermal
+performance, strain relief and electrical checks remain open.
 
-## Measurement provenance
+Owner visual acceptance and physical fit/load checks are also open. This
+candidate does not authorize fleet rollout, replacement of old Downloads files,
+or closing `tsp-bcx.21.45.3`.
 
-The unchanged `lib/alt-1205t-power-supply.md` and
-`lib/iec-c14-fused-switch.md` preserve the owner measurements and physical-fit
-corrections. The final PSU upper-left hole correction was accepted without
-another coupon print; it must not be described as separately printed proof.
-No private photograph or screenshot is copied into this source package.
-
-Design/implementation: owner-attended Codex GPT-6 session; exact deployed model
-identifier unavailable. No independent reviewer has approved this V3 layout.
+Implementation: owner-attended Codex GPT-6 session; exact deployed model identifier
+unavailable. Independent review evidence and exact tested revision are recorded
+on PR86; do not infer approval from this document alone.
