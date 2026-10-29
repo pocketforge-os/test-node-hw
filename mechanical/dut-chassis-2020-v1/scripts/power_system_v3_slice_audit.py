@@ -88,7 +88,7 @@ def main():
             raise RuntimeError(f'{part}: path centres exceed audit bed {bounds}')
         if part=='panel':
             for z in (0.4,0.8,1.2,1.6):
-                for px,py in ((38,68),(88,68),(63,53),(63,83)):
+                for px,py in ((38,70),(88,70),(63,55),(63,85)):
                     actual=covered(layers[z],(px+49.5,py+53.5))
                     if actual != (z<=1.2):
                         raise RuntimeError(f'panel island toolpath coverage at {(px,py,z)}: {actual}')

@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "power-system-v3-concept.scad"
 OUT = ROOT / "build/power-system-v3-concept"
 VIEWS = {
+    "panel-install": ("panel_install", "270,360,280,74,120,65"),
+    "panel-inside": ("panel_inside", "210,220,240,74,50,0"),
+    "inlet-clearance": ("inlet_clearance", "310,205,160,63,115,48"),
     "guard-install": ("guard_install", "-150,200,230,65,107,45"),
     "tray": ("tray", "270,360,280,74,72,20"),
     "lid-print-section": ("lid_print_section", "74,-180,10,74,104,7"),
@@ -89,7 +92,7 @@ def vertical_hits(path, x, y):
     return sorted(hits)
 
 COLLISIONS=("collision_parts", "collision_components", "collision_service",
-            "collision_chassis", "collision_plug", "collision_drivers", "collision_wires", "collision_guard_install")
+            "collision_chassis", "collision_plug", "collision_drivers", "collision_wires", "collision_guard_install", "collision_panel_install", "collision_panel_envelope")
 
 def clean_empty(result, dest):
     # OpenSCAD 2021.01 exits 1 for its documented empty-export result. No other
@@ -153,8 +156,8 @@ def main():
         report["parts"][part] = {"topology": mesh, "bounds": bounds,
             "sha256": hashlib.sha256(dest.read_bytes()).hexdigest()}
         print(f"PASS {part}: one closed connected mesh; bounds={bounds}", flush=True)
-    for x,y,thickness in ((38,68,1.2),(88,68,1.2),(63,53,1.2),
-                          (63,83,1.2),(29,68,4),(97,68,4),
+    for x,y,thickness in ((38,70,1.2),(88,70,1.2),(63,55,1.2),
+                          (63,85,1.2),(29,70,4),(97,70,4),
                           (63,46,4),(63,90,4)):
         hits=vertical_hits(OUT/"panel.stl",x,y)
         if hits != [0.0,thickness]:
@@ -200,6 +203,17 @@ def main():
                        "finger_protection_certified":False}
     print("PASS DC outlet: 45 axial mesh rays strike the solid internal baffle",flush=True)
     check_collision_controls()
+    legacy=OUT/"collision_panel_install_legacy.stl"
+    legacy.unlink(missing_ok=True)
+    legacy_result=export("collision_panel_install_legacy",legacy)
+    if (legacy_result.returncode or "WARNING" in legacy_result.stderr or
+            "ERROR" in legacy_result.stderr or not legacy.exists() or volume(legacy)<10):
+        raise RuntimeError("legacy panel insertion control did not reproduce obstruction")
+    report["panel_install"]={"travel_mm":100,"direction":"vertical with lid removed, off chassis",
+        "continuous_conservative_sweep":True,"legacy_obstruction_volume_mm3":volume(legacy),
+        "connector_allowance_mm":[54,35,36],"connector_to_vestibule_gap_mm":2.4,
+        "physical_fit_confirmed":False}
+    print("PASS old panel rim insertion fails real continuous-sweep negative control",flush=True)
     report["collision_sample_offset_per_axis_mm"]=0.01
     report["collision_sub_0_02_mm_clearance_qualified"]=False
     report["collision_controls"]="contact/gap clean-empty; 1 mm and 0.02 mm overlap rejected"

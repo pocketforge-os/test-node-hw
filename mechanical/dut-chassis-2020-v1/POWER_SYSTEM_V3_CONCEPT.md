@@ -34,9 +34,9 @@ Local +Y points rearward, +Z upward; installed origin is `[178,156,0]`.
 | PSU | Owner-photographed ALT-1205T, **12 V / 5 A**, 77.5 × 110 × 36.86 mm |
 | PSU transform | `translate([8,91.5,8]) rotate([0,0,-90])`, unchanged |
 | PSU mounting centres | `(4.95,4.95), (25.3,30.9), (25.3,67), (53.3,67), (6.75,98.6)`, approved coupon corrections |
-| C14 faceplate | 50.3 horizontal × 31 vertical; centre X63/Y144/Z68 |
-| C14 panel margins | 12.5 top, 48.5 bottom, 37.85 left, 59.85 right |
-| C14 connection allowance | 54 wide × 35 deep × 36 high, X36..90/Y87.2..122.2/Z50..86; assumed |
+| C14 faceplate | 50.3 horizontal × 31 vertical; centre X63/Y144/Z70 |
+| C14 panel margins | 10.5 top, 50.5 bottom, 37.85 left, 59.85 right |
+| C14 connection allowance | 54 wide × 35 deep × 36 high, X36..90/Y87.2..122.2/Z52..88; assumed |
 | PSU terminal allowance | X118..142/Y14..91.5/Z8..48; assumed |
 | C13 plug corridor | 50 × 32 × 80 mm rearward; assumed, not the owner's measured cord |
 | Right rail axes | World Y149.73 / 306, contact X326, Z10 |
@@ -51,6 +51,36 @@ The owner need not provide part numbers to continue CAD. Hardware outside these
 bounds requires changing the parameters before manufacture. Wire gauge, ratings,
 crimp compatibility and allowed bend radius cannot be inferred from outside
 size. The shell is a secondary guard around the PSU metal case.
+
+## Printed-fit correction: replace only the rear panel
+
+The owner’s first full print confirmed the body/lid fit but exposed a blocked
+rear-panel assembly path. Static interference checks had missed that defect.
+The replacement panel retains its 148 × 92 × 4 mm outer plate and four fixing
+holes. Its U-rim moves inward by 20 mm per side: X24.4..28.4 and
+X119.6..123.6 now pass between the existing 24 mm rear screw blocks with
+0.4 mm lateral clearance. The lower rim spans X24.4..123.6, clearing both blocks
+throughout vertical insertion. The full plate covers the unused old grooves;
+no through-notch or exposed corner opening is introduced. Existing tray, lid,
+rail bridge, outlet insert and both sheet templates are geometrically unchanged.
+
+The inlet rises 2 mm to Z70. Its inner clip relief grows from 52.3 × 33 to
+56.3 × 37 mm, retaining the physically accepted cutout and 1.2 mm snap wall.
+A raised arrow on the INNER face identifies the lid edge. Connector space is
+X36..90/Y87.2..122.2/Z52..88: 35 mm beyond the measured inlet body for lugs,
+insulation and wire turns. This envelope clears the DC partition top (Z49.6)
+by 2.4 mm and the lid-mounted shield underside (Z90) by 2 mm. The partition
+and its protective sheet stay intact; the clearance comes from correct panel
+orientation and the higher inlet, without opening the DC compartment.
+
+The new installation gate checks a continuous 100 mm vertical swept superset
+of the actual panel blanks, inlet and connector envelope against the tray,
+PSU, DC sheet, outlet insert and bridge. An additional containment gate proves
+that the finished panel, component and connector allowance fit inside that
+swept envelope. The old rim position is a real failing geometric control.
+This proves the specified straight bench assembly path, not installation while
+mounted beneath the rest of the DUT frame. It does not measure the owner's
+particular crimps or replace the next unpowered physical fit check.
 
 ## Covered DC exit and retention
 
@@ -127,7 +157,9 @@ Work unplugged. The design package does not instruct mains wiring or energizatio
    specification/known hardware; do not probe into the PSU to discover it.
 2. Load the exterior-accessible panel/lid/bridge nuts and fit the separate rear
    bridge. A rear top-slot M3 rail nut is required in addition to the side nuts.
-3. Seat the C14 in its loose rear panel and check both locking tabs engage.
+3. Orient the rear panel with the raised arrow pointing toward the lid and
+   its ribs facing INSIDE. Insert the C14 from the opposite, flat OUTSIDE face:
+   socket/switch outside, terminals toward the ribs. Check both locking tabs engage.
    Keep this panel off the tray while installing the DC sheet; fit inlet wiring
    after the sheet is seated. Preserve the shown connector and wire-turn space.
 4. Lay DC cables through the open baffles and retain each independently at the
@@ -140,8 +172,15 @@ Work unplugged. The design package does not instruct mains wiring or energizatio
 5. Attach the L-shaped insulating shield beneath the lid. Three M3 nuts load
    from the exterior top; the screws enter from below the sheet. Check hardware
    does not protrude into the reserved terminal/wire envelope.
-6. Fit rear panel and lid. Verify plug/fuse access, cover removal, all cable
-   retention and no pinched insulation before the first physical fit is accepted.
+6. With the enclosure OFF the chassis and the lid removed, hold the panel
+   vertically above its final rear-wall plane (flat exterior at local Y144).
+   Lower it straight down: the inner ribs pass BETWEEN the two rear screw
+   blocks, not into their old narrow grooves. The side regions are relieved
+   of the old projecting ribs so they clear the mounting-block obstruction.
+   Do not push the panel inward from the rear or turn it upside down. Seat the
+   bottom edge on the floor and fasten the four panel screws. It is screw-secured;
+   only the C14 module snaps in. Then fit the lid and its screws. Verify plug/fuse
+   access, cover removal, cable retention and no pinched insulation.
 7. Secure the two right-rail points and rear top-slot point. Verify clamping
    and cable-pull resistance with power disconnected.
 
@@ -176,7 +215,7 @@ only expected cache/timing lines. Warnings, emitted meshes, other exits and
 unknown output fail closed. Per-solid translated self-intersection uses 0.01 mm
 per-axis inset; sub-0.02 mm features are outside this audit's qualification.
 Real contact/gap and positive-penetration controls exercise the producer. The
-result matrix covers eight selectors × twelve outcomes. A piecewise convex swept
+result matrix covers ten selectors × twelve outcomes. A piecewise convex swept
 volume (one-degree rotation chords, <0.005 mm deviation) also checks the DC sheet's lower/tuck/rotate installation path against
 the tray and seated PSU, with the inlet wiring and outlet insert absent.
 

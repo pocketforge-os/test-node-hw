@@ -20,7 +20,7 @@ JOINT = 0.4;
 ORIGIN = [178,156,0];
 // Keep the proven lateral offset. Raise the inlet above the PSU to admit
 // the owner-authorized 35 mm generic connection allowance behind its body.
-IEC_CENTRE = [W/2-11,68]; // panel X / installed Z
+IEC_CENTRE = [W/2-11,70]; // panel X / installed Z
 PSU_ORIGIN = [8,91.5,8];
 RIGHT_MOUNTS = [149.73-ORIGIN.y,306-ORIGIN.y];
 REAR_RAIL = 338-ORIGIN.y;
@@ -68,24 +68,33 @@ module inlet_transform() {
 }
 function psu_hole(p) = [PSU_ORIGIN.x+p.y,PSU_ORIGIN.y-p.x];
 
-// Full rear panel, printed exterior-face-down. Only the small seating island
-// is thin. Its surrounding frame and overlaps are integral, positive solids.
+// The old rim entered blind grooves in the rear screw blocks. This rim
+// instead nests BETWEEN those blocks, so it can lower from above. The full
+// exterior plate still covers the blocks, old grooves and four screw holes.
+PANEL_RIM_EDGE = 24 + JOINT;
+PANEL_TRAVEL = 100;
+assert(PANEL_RIM_EDGE == 24.4 && PANEL_TRAVEL > H);
+module rear_panel_blanks(travel=0,edge=PANEL_RIM_EDGE) {
+    translate([0,FLOOR,0]) cube([W,H-FLOOR+travel,WALL]);
+    for(x=[edge,W-edge-WALL])
+        translate([x,FLOOR+JOINT,3.2]) cube([WALL,H-12.4+travel,6.8]);
+    translate([edge,FLOOR+JOINT,3.2]) cube([W-2*edge,WALL+travel,6.8]);
+}
+// Raised arrow is on the INNER face and points at the lid edge. It prints
+// from the 4 mm plate, with no floating markings or changed bed orientation.
+module panel_up_arrow() {
+    translate([104,60,4]) linear_extrude(0.8)
+        polygon([[0,0],[4,0],[4,10],[8,10],[2,17],[-4,10],[0,10]]);
+}
 module rear_panel_flat() {
     difference() {
-        union() {
-            translate([0,FLOOR,0]) cube([W,H-FLOOR,WALL]);
-            // Broad U-shaped internal overlap, clear of tray walls by JOINT.
-            for(x=[WALL+JOINT,W-2*WALL-JOINT])
-                translate([x,FLOOR+JOINT,3.2]) cube([WALL,H-8.4-4,6.8]);
-            translate([WALL+JOINT,FLOOR+JOINT,3.2])
-                cube([W-2*(WALL+JOINT),WALL,6.8]);
-        }
+        union() { rear_panel_blanks(); panel_up_arrow(); }
         translate([IEC_CENTRE.x,IEC_CENTRE.y,-0.02]) rotate([0,0,90])
             iecc14_panel_cutout_negative(depth=12,clearance=FIT);
-        // Rear relief leaves an uninterrupted 1.2 mm membrane under the
-        // complete faceplate footprint, with 1 mm extra clip working space.
-        translate([IEC_CENTRE.x-26.15,IEC_CENTRE.y-16.5,SNAP])
-            cube([52.3,33,12]);
+        // Larger INNER relief for clip movement; the OUTER bezel seats on
+        // the unchanged 1.2 mm wall. No edge/corner is reduced to snap thickness.
+        translate([IEC_CENTRE.x-28.15,IEC_CENTRE.y-18.5,SNAP])
+            cube([56.3,37,12]);
         for(x=PANEL_X,z=PANEL_Z)
             translate([x,z,-0.02]) cylinder(d=3.6,h=12);
     }
@@ -389,12 +398,51 @@ module components() {
     color([0.62,0.66,0.70]) psu_transform() alt1205t_keepout();
     color([0.12,0.14,0.17]) inlet_transform() iecc14_keepout();
 }
+// Explicit connector/wire-turn allowance, not a measurement of generic lugs.
+module iec_connection_space() {
+    translate([IEC_CENTRE.x-27,D-21.8-IEC_CONNECTION_DEPTH,IEC_CENTRE.y-18])
+        cube([54,IEC_CONNECTION_DEPTH,36]);
+}
+// Continuous swept SUPERSET: extending each original blank up by travel
+// covers every intermediate height without sampled gaps or convex-hull ribs.
+// Filled panel cutout is conservative. The arrow gets its own swept box.
+// Inlet/connector box includes the measured bezel/body and 35 mm wire turn.
+module panel_install_sweep(edge=PANEL_RIM_EDGE) {
+    panel_transform() rear_panel_blanks(PANEL_TRAVEL,edge);
+    translate([100,D-4.8,60]) cube([12,0.8,17+PANEL_TRAVEL]);
+    translate([IEC_CENTRE.x-27,D-21.8-IEC_CONNECTION_DEPTH,IEC_CENTRE.y-18])
+        cube([54,21.8+IEC_CONNECTION_DEPTH+2,36+PANEL_TRAVEL]);
+}
+module panel_install_obstacles() {
+    tray(); rail_bridge(); dc_insert(); dc_roof_sheet();
+    psu_transform() alt1205t_keepout();
+}
+module panel_install_view() {
+    color([0.17,0.34,0.43]) tray();
+    translate([0,0,28]) {
+        color([0.26,0.48,0.55]) rear_panel();
+        color([0.12,0.14,0.17]) inlet_transform() iecc14_keepout();
+        color([1,0.52,0.08,0.4]) iec_connection_space();
+    }
+}
+module inlet_clearance_view() {
+    // Slice away the right half to expose the inlet/vestibule vertical gap.
+    intersection() {
+        union() {
+            color([0.17,0.34,0.43]) tray();
+            color([0.26,0.48,0.55]) rear_panel();
+            color([0.12,0.14,0.17]) inlet_transform() iecc14_keepout();
+            color([0.70,0.62,0.25]) dc_roof_sheet();
+        }
+        translate([-1,-20,-1]) cube([96,240,150]);
+    }
+    color([1,0.52,0.08,0.4]) iec_connection_space();
+}
 module service_volumes() {
     // Orange = provisional space, not a measured terminal model.
     color([1,0.52,0.08,0.35]) {
         translate([118,14,8]) cube([24,77.5,40]);
-        translate([IEC_CENTRE.x-27,D-21.8-IEC_CONNECTION_DEPTH,IEC_CENTRE.y-18])
-            cube([54,IEC_CONNECTION_DEPTH,36]);
+        iec_connection_space();
     }
 }
 module plug_access() {
@@ -447,12 +495,14 @@ module screw_markers() {
 module assembly(open=false,explode=false,services=false) {
     color([0.17,0.34,0.43]) tray();
     color([0.26,0.48,0.55]) translate([0,0,explode?15:0]) rail_bridge();
-    color([0.26,0.48,0.55]) translate([0,explode?30:0,0]) rear_panel();
-    if(!open) color([0.80,0.83,0.83]) translate([0,0,explode?42:0]) lid();
-    components();
+    color([0.26,0.48,0.55]) translate([0,0,explode?40:0]) rear_panel();
+    if(!open) color([0.80,0.83,0.83]) translate([0,0,explode?90:0]) lid();
+    color([0.62,0.66,0.70]) psu_transform() alt1205t_keepout();
+    color([0.12,0.14,0.17]) translate([0,0,explode?40:0])
+        inlet_transform() iecc14_keepout();
     color([0.30,0.52,0.57]) dc_insert();
     color([0.70,0.62,0.25]) dc_roof_sheet();
-    if(!open) color([0.70,0.62,0.25]) translate([0,0,explode?42:0]) terminal_shield_sheet();
+    if(!open) color([0.70,0.62,0.25]) translate([0,0,explode?90:0]) terminal_shield_sheet();
     if(!explode && !open) screw_markers();
     if(services) service_volumes();
 }
@@ -491,6 +541,18 @@ else if(part=="collision_components") positive_overlap() {
     fitted_solids();
     union() { psu_transform() alt1205t_keepout(); inlet_transform() iecc14_keepout(); }
 }
+else if(part=="collision_panel_install") positive_overlap() {
+    panel_install_sweep(); panel_install_obstacles();
+}
+else if(part=="collision_panel_envelope") difference() {
+    union() { rear_panel(); inlet_transform() iecc14_keepout(); iec_connection_space(); }
+    panel_install_sweep();
+}
+else if(part=="collision_panel_install_legacy") intersection() {
+    // Inspect the known blind-groove cap, away from nominal mating sheets.
+    translate([4.5,134.2,88.2]) cube([3.8,5.6,2.8]);
+    positive_overlap() { panel_install_sweep(4.4); tray(); }
+}
 else if(part=="collision_guard_install") positive_overlap() {
     dc_roof_install_sweep();
     union() { tray(); psu_transform() alt1205t_keepout(); }
@@ -518,7 +580,10 @@ module collision_control(offset_x) {
     }
 }
 
-if(PART=="assembly") assembly();
+if(PART=="panel_install") panel_install_view();
+else if(PART=="panel_inside") rear_panel_flat();
+else if(PART=="inlet_clearance") inlet_clearance_view();
+else if(PART=="assembly") assembly();
 else if(PART=="open") assembly(open=true,services=true);
 else if(PART=="exploded") assembly(explode=true);
 else if(PART=="frame") { rail_context(); assembly(); }
@@ -561,6 +626,7 @@ else if(PART=="collision_control_overlap") collision_control(9);
 else if(PART=="collision_control_thin") collision_control(9.98);
 else if(PART=="collision_parts" || PART=="collision_components" ||
         PART=="collision_service" || PART=="collision_chassis" ||
-        PART=="collision_plug" || PART=="collision_drivers" || PART=="collision_wires" || PART=="collision_guard_install")
+        PART=="collision_plug" || PART=="collision_drivers" || PART=="collision_wires" || PART=="collision_guard_install" || PART=="collision_panel_install" ||
+        PART=="collision_panel_envelope" || PART=="collision_panel_install_legacy")
     raw_collision(PART);
 else assert(false,str("Unknown PART: ",PART));
